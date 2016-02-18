@@ -17,8 +17,8 @@ using namespace exafmm;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
-  const real_t cycle = 20 * M_PI;
-  const real_t alpha = 10 / cycle;
+  const vec3 cycle = 20 * M_PI;
+  const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
 
@@ -63,7 +63,7 @@ int main(int argc, char ** argv) {
 
   for( int it=0; it<1; it++ ) {
     int ix[3] = {0, 0, 0};
-    FMM.R0 = 0.5 * cycle / FMM.numPartition[FMM.maxGlobLevel][0];
+    FMM.R0 = 0.5 * max(cycle) / FMM.numPartition[FMM.maxGlobLevel][0];
     for_3d FMM.RGlob[d] = FMM.R0 * FMM.numPartition[FMM.maxGlobLevel][d];
     FMM.getGlobIndex(ix,FMM.MPIRANK,FMM.maxGlobLevel);
     for_3d FMM.X0[d] = 2 * FMM.R0 * (ix[d] + .5);
@@ -122,7 +122,6 @@ int main(int argc, char ** argv) {
 #endif
   
     FMM.downwardPass();
-    /*
     logger::stopTimer("Total FMM", 0);
 
     Bodies bodies(FMM.numBodies);
@@ -196,7 +195,6 @@ int main(int argc, char ** argv) {
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
 #endif
 #endif
-    */
   }
   FMM.deallocate();
 

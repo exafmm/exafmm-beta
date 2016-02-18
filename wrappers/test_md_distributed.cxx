@@ -8,11 +8,11 @@
 
 extern "C" void FMM_Init(int images, int threads, double theta, int verbose);
 extern "C" void FMM_Finalize();
-extern "C" void Partition(int & n, int * res_index, double * x, double * q, double cycle);
-extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double cycle);
+extern "C" void Partition(int & n, int * res_index, double * x, double * q, double * cycle);
+extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double * cycle);
 extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
-			  int ksize, double alpha, double sigma, double cutoff, double cycle);
-extern "C" void FMM_Cutoff(int n, double * x, double * q, double * p, double * f, double cutoff, double cycle);
+			  int ksize, double alpha, double sigma, double cutoff, double * cycle);
+extern "C" void FMM_Cutoff(int n, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
@@ -23,10 +23,10 @@ int main(int argc, char ** argv) {
   int threads = 16;
   int verbose = 1;
   double theta = 0.5;
-  double cycle = 2 * M_PI;
-  double alpha = 10 / cycle;
+  double cycle[3] = {2*M_PI, 2*M_PI, 2*M_PI};
+  double alpha = 10 / cycle[0];
   double sigma = .25 / M_PI;
-  double cutoff = cycle / 2;
+  double cutoff = cycle[0] / 2;
   int * res_index = new int [Nmax];
   double * x = new double [3*Nmax];
   double * q = new double [Nmax];
@@ -44,9 +44,9 @@ int main(int argc, char ** argv) {
   srand48(mpirank);
   double average = 0;
   for (int i=0; i<Ni; i++) {
-    x[3*i+0] = drand48() * cycle - cycle / 2;
-    x[3*i+1] = drand48() * cycle - cycle / 2;
-    x[3*i+2] = drand48() * cycle - cycle / 2;
+    x[3*i+0] = drand48() * cycle[0] - cycle[0] / 2;
+    x[3*i+1] = drand48() * cycle[1] - cycle[1] / 2;
+    x[3*i+2] = drand48() * cycle[2] - cycle[2] / 2;
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     res_index[i] = i + mpirank*Ni;
   }

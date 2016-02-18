@@ -8,7 +8,7 @@ namespace exafmm {
   private:
     const real_t cuton;                                         //!< Cuton distance
     const real_t cutoff;                                        //!< Cutoff distance
-    const real_t cycle;                                         //!< Periodic cycle
+    const vec3 cycle;                                           //!< Periodic cycle
     const int numTypes;                                         //!< Number of atom types
     std::vector<real_t> rscale;                                 //!< Distance scaling parameter for VdW potential
     std::vector<real_t> gscale;                                 //!< Value scaling parameter for VdW potential
@@ -79,8 +79,8 @@ namespace exafmm {
 
   public:
     //! Constructor
-    VanDerWaals(double _cuton, double _cutoff, double _cycle, int _numTypes,
-		double * _rscale, double * _gscale, double * _fgscale) :
+    VanDerWaals(double _cuton, double _cutoff, vec3 _cycle, int _numTypes,
+	        double * _rscale, double * _gscale, double * _fgscale) :
       cuton(_cuton), cutoff(_cutoff), cycle(_cycle), numTypes(_numTypes) {// Initialize variables
       rscale.resize(numTypes*numTypes);
       gscale.resize(numTypes*numTypes);
@@ -100,9 +100,9 @@ namespace exafmm {
       for (int ix=-1; ix<=1; ix++) {                            // Loop over x periodic direction
 	for (int iy=-1; iy<=1; iy++) {                          //  Loop over y periodic direction
 	  for (int iz=-1; iz<=1; iz++) {                        //   Loop over z periodic direction
-	    Xperiodic[0] = ix * cycle;                          //    Coordinate offset for x periodic direction
-	    Xperiodic[1] = iy * cycle;                          //    Coordinate offset for y periodic direction
-	    Xperiodic[2] = iz * cycle;                          //    Coordinate offset for z periodic direction
+	    Xperiodic[0] = ix * cycle[0];                       //    Coordinate offset for x periodic direction
+	    Xperiodic[1] = iy * cycle[1];                       //    Coordinate offset for y periodic direction
+	    Xperiodic[2] = iz * cycle[2];                       //    Coordinate offset for z periodic direction
 	    mk_task_group;                                      //    Intitialize tasks
 	    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {//  Loop over target cells
 	      if (Ci->NCHILD == 0) {                            //     If target cell is leaf

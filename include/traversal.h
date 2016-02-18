@@ -336,7 +336,7 @@ namespace exafmm {
     };
 
     //! List based traversal
-    void listBasedTraversal(int numCells, real_t cycle, bool mutual, real_t remote) {
+    void listBasedTraversal(int numCells, vec3 cycle, bool mutual, real_t remote) {
       int list[189], periodicKeys[189];                         // Current interaction list
 #ifdef _OPENMP
 #pragma omp parallel for private(list, periodicKeys) schedule(dynamic)
@@ -351,7 +351,7 @@ namespace exafmm {
 	  C_iter Cj = Cj0 + jcell;                              //   Iterator of source cell
 	  ivec3 pX = getPeriodicIndex(periodicKey);             //   3-D periodic index of source cell
 	  for (int d=0; d<3; d++) {                             //   Loop over dimensions
-	    kernel::Xperiodic[d] = pX[d] * cycle;               //    Periodic coordinate offset
+	    kernel::Xperiodic[d] = pX[d] * cycle[d];            //    Periodic coordinate offset
 	  }                                                     //   End loop over dimensions
 	  kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
@@ -375,7 +375,7 @@ namespace exafmm {
 	    C_iter Cj = Cj0 + jcell;                            //    Iterator of source cell
 	    ivec3 pX = getPeriodicIndex(periodicKey);           //    3-D periodic index of source cell
 	    for (int d=0; d<3; d++) {                           //    Loop over dimensions
-	      kernel::Xperiodic[d] = pX[d] * cycle;             //     Periodic coordinate offset
+	      kernel::Xperiodic[d] = pX[d] * cycle[d];          //     Periodic coordinate offset
 	    }                                                   //    End loop over dimensions
 	    kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel
 	    countKernel(numP2P);                                //    Increment P2P counter
@@ -388,7 +388,7 @@ namespace exafmm {
     }
 
     //! Tree traversal of periodic cells
-    void traversePeriodic(real_t cycle) {
+    void traversePeriodic(vec3 cycle) {
       logger::startTimer("Traverse periodic");                  // Start timer
       Cells pcells; pcells.resize(27);                          // Create cells
       C_iter Ci = pcells.end()-1;                               // Last cell is periodic parent cell
@@ -404,9 +404,9 @@ namespace exafmm {
 		for (int cx=-1; cx<=1; cx++) {                  //      Loop over x periodic direction (child)
 		  for (int cy=-1; cy<=1; cy++) {                //       Loop over y periodic direction (child)
 		    for (int cz=-1; cz<=1; cz++) {              //        Loop over z periodic direction (child)
-		      kernel::Xperiodic[0] = (ix * 3 + cx) * cycle;//        Coordinate offset for x periodic direction
-		      kernel::Xperiodic[1] = (iy * 3 + cy) * cycle;//        Coordinate offset for y periodic direction
-		      kernel::Xperiodic[2] = (iz * 3 + cz) * cycle;//        Coordinate offset for z periodic direction
+		      kernel::Xperiodic[0] = (ix * 3 + cx) * cycle[0];//   Coordinate offset for x periodic direction
+		      kernel::Xperiodic[1] = (iy * 3 + cy) * cycle[1];//   Coordinate offset for y periodic direction
+		      kernel::Xperiodic[2] = (iz * 3 + cz) * cycle[2];//   Coordinate offset for z periodic direction
 		      kernel::M2L(Ci0, Ci, false);              //         M2L kernel
 		    }                                           //        End loop over z periodic direction (child)
 		  }                                             //       End loop over y periodic direction (child)
@@ -424,9 +424,9 @@ namespace exafmm {
 	  for (int iy=-1; iy<=1; iy++) {                        //   Loop over y periodic direction
 	    for (int iz=-1; iz<=1; iz++) {                      //    Loop over z periodic direction
 	      if (ix != 0 || iy != 0 || iz != 0) {              //     If periodic cell is not at center
-		Cj->X[0] = Ci->X[0] + ix * cycle;               //      Set new x coordinate for periodic image
-		Cj->X[1] = Ci->X[1] + iy * cycle;               //      Set new y cooridnate for periodic image
-		Cj->X[2] = Ci->X[2] + iz * cycle;               //      Set new z coordinate for periodic image
+		Cj->X[0] = Ci->X[0] + ix * cycle[0];            //      Set new x coordinate for periodic image
+		Cj->X[1] = Ci->X[1] + iy * cycle[1];            //      Set new y cooridnate for periodic image
+		Cj->X[2] = Ci->X[2] + iz * cycle[2];            //      Set new z coordinate for periodic image
 		Cj->M    = Ci->M;                               //      Copy multipoles to new periodic image
 		Cj++;                                           //      Increment periodic cell iterator
 	      }                                                 //     Endif for periodic center cell
@@ -484,7 +484,7 @@ namespace exafmm {
 #endif
 
     //! Evaluate P2P and M2L using list based traversal
-    void traverse(Cells & icells, Cells & jcells, real_t cycle, bool dual, bool mutual, real_t remote=1) {
+    void traverse(Cells & icells, Cells & jcells, vec3 cycle, bool dual, bool mutual, real_t remote=1) {
       if (icells.empty() || jcells.empty()) return;             // Quit if either of the cell vectors are empty
       logger::startTimer("Traverse");                           // Start timer
       logger::initTracer();                                     // Initialize tracer
@@ -498,9 +498,9 @@ namespace exafmm {
 	  for (int ix=-1; ix<=1; ix++) {                        //   Loop over x periodic direction
 	    for (int iy=-1; iy<=1; iy++) {                      //    Loop over y periodic direction
 	      for (int iz=-1; iz<=1; iz++) {                    //     Loop over z periodic direction
-		kernel::Xperiodic[0] = ix * cycle;              //      Coordinate shift for x periodic direction
-		kernel::Xperiodic[1] = iy * cycle;              //      Coordinate shift for y periodic direction
-		kernel::Xperiodic[2] = iz * cycle;              //      Coordinate shift for z periodic direction
+		kernel::Xperiodic[0] = ix * cycle[0];           //      Coordinate shift for x periodic direction
+		kernel::Xperiodic[1] = iy * cycle[1];           //      Coordinate shift for y periodic direction
+		kernel::Xperiodic[2] = iz * cycle[2];           //      Coordinate shift for z periodic direction
 		dualTreeTraversal(Ci0, Cj0, false, remote);     //      Traverse the tree for this periodic image
 	      }                                                 //     End loop over z periodic direction
 	    }                                                   //    End loop over y periodic direction
@@ -549,7 +549,7 @@ namespace exafmm {
     };
 
     //! Direct summation
-    void direct(Bodies & ibodies, Bodies & jbodies, real_t cycle) {
+    void direct(Bodies & ibodies, Bodies & jbodies, vec3 cycle) {
       Cells cells; cells.resize(2);                             // Define a pair of cells to pass to P2P kernel
       C_iter Ci = cells.begin(), Cj = cells.begin()+1;          // First cell is target, second cell is source
       int prange = 0;                                           // Range of periodic images
@@ -559,9 +559,9 @@ namespace exafmm {
       for (int ix=-prange; ix<=prange; ix++) {                  //  Loop over x periodic direction
 	for (int iy=-prange; iy<=prange; iy++) {                //   Loop over y periodic direction
 	  for (int iz=-prange; iz<=prange; iz++) {              //    Loop over z periodic direction
-	    kernel::Xperiodic[0] = ix * cycle;                  //     Coordinate shift for x periodic direction
-	    kernel::Xperiodic[1] = iy * cycle;                  //     Coordinate shift for y periodic direction
-	    kernel::Xperiodic[2] = iz * cycle;                  //     Coordinate shift for z periodic direction
+	    kernel::Xperiodic[0] = ix * cycle[0];               //     Coordinate shift for x periodic direction
+	    kernel::Xperiodic[1] = iy * cycle[1];               //     Coordinate shift for y periodic direction
+	    kernel::Xperiodic[2] = iz * cycle[2];               //     Coordinate shift for z periodic direction
 	    Ci->BODY = ibodies.begin();                         //     Iterator of first target body
 	    Ci->NBODY = ibodies.size();                         //     Number of target bodies
 	    Cj->BODY = jbodies.begin();                         //     Iterator of first source body

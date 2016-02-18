@@ -77,7 +77,9 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void Partition(int & n, int * res_index, double * x, double * q, double cycle) {
+extern "C" void Partition(int & n, int * res_index, double * x, double * q, double * cycle) {
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
   logger::printTitle("Partition Profiling");
   num_threads(args->threads);
   const int shift = 29;
@@ -85,11 +87,11 @@ extern "C" void Partition(int & n, int * res_index, double * x, double * q, doub
   Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycle / 2;
-    B->X[1] = x[3*i+1] - cycle / 2;
-    B->X[2] = x[3*i+2] - cycle / 2;
+    B->X[0] = x[3*i+0] - cycles[0] / 2;
+    B->X[1] = x[3*i+1] - cycles[1] / 2;
+    B->X[2] = x[3*i+2] - cycles[2] / 2;
     B->SRC = q[i];
-    int iwrap = wrap(B->X, cycle);
+    int iwrap = wrap(B->X, cycles);
     B->IBODY = i | (iwrap << shift);
     B->ICELL = res_index[i];
   }
@@ -104,17 +106,19 @@ extern "C" void Partition(int & n, int * res_index, double * x, double * q, doub
     int i = B-bodies.begin();
     res_index[i] = B->ICELL;
     int iwrap = unsigned(B->IBODY) >> shift;
-    unwrap(B->X, cycle, iwrap);
-    x[3*i+0] = B->X[0] + cycle / 2;
-    x[3*i+1] = B->X[1] + cycle / 2;
-    x[3*i+2] = B->X[2] + cycle / 2;
+    unwrap(B->X, cycles, iwrap);
+    x[3*i+0] = B->X[0] + cycles[0] / 2;
+    x[3*i+1] = B->X[1] + cycles[1] / 2;
+    x[3*i+2] = B->X[2] + cycles[2] / 2;
     q[i]     = B->SRC;
   }
   n = bodies.size();
 }
 
-extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double * cycle) {
   num_threads(args->threads);
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -124,10 +128,10 @@ extern "C" void FMM(int n, double * x, double * q, double * p, double * f, doubl
   Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycle / 2;
-    B->X[1] = x[3*i+1] - cycle / 2;
-    B->X[2] = x[3*i+2] - cycle / 2;
-    wrap(B->X, cycle);
+    B->X[0] = x[3*i+0] - cycles[0] / 2;
+    B->X[1] = x[3*i+1] - cycles[1] / 2;
+    B->X[2] = x[3*i+2] - cycles[2] / 2;
+    wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];
@@ -138,12 +142,12 @@ extern "C" void FMM(int n, double * x, double * q, double * p, double * f, doubl
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
-  treeMPI->setLET(cells, cycle);
+  treeMPI->setLET(cells, cycles);
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initListCount(cells);
   traversal->initWeight(cells);
-  traversal->traverse(cells, cells, cycle, args->dual, args->mutual);
+  traversal->traverse(cells, cells, cycles, args->dual, args->mutual);
 #if EXAFMM_COUNT_LIST
   traversal->writeList(cells, baseMPI->mpirank);
 #endif
@@ -154,11 +158,11 @@ extern "C" void FMM(int n, double * x, double * q, double * p, double * f, doubl
       Bodies gbodies = treeMPI->root2body();
       jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
       treeMPI->attachRoot(jcells);
-      traversal->traverse(cells, jcells, cycle, args->dual, false);
+      traversal->traverse(cells, jcells, cycles, args->dual, false);
     } else {
       for (int irank=0; irank<baseMPI->mpisize; irank++) {
 	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-	traversal->traverse(cells, jcells, cycle, args->dual, false);
+	traversal->traverse(cells, jcells, cycles, args->dual, false);
       }
     }
   }
@@ -166,7 +170,7 @@ extern "C" void FMM(int n, double * x, double * q, double * p, double * f, doubl
   vec3 localDipole = upDownPass->getDipole(bodies,0);
   vec3 globalDipole = baseMPI->allreduceVec3(localDipole);
   int numBodies = baseMPI->allreduceInt(bodies.size());
-  upDownPass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+  upDownPass->dipoleCorrection(bodies, globalDipole, numBodies, cycles);
   logger::stopPAPI();
   logger::stopTimer("Total FMM");
   logger::printTitle("Total runtime");
@@ -181,9 +185,11 @@ extern "C" void FMM(int n, double * x, double * q, double * p, double * f, doubl
 }
 
 extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
-		      int ksize, double alpha, double sigma, double cutoff, double cycle) {
+		      int ksize, double alpha, double sigma, double cutoff, double * cycle) {
   num_threads(args->threads);
-  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
+  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
   args->numBodies = n;
   logger::printTitle("Ewald Parameters");
   args->print(logger::stringLength, P);
@@ -197,7 +203,7 @@ extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
-    wrap(B->X, cycle);
+    wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];
@@ -251,7 +257,9 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
-extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * f, double cutoff, double cycle) {
+extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle) {
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
   const int Nmax = 1000000;
   const double cutoff2 = cutoff * cutoff;
   int images = args->images;
@@ -279,9 +287,9 @@ extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * 
       for (int ix=-prange; ix<=prange; ix++) {
         for (int iy=-prange; iy<=prange; iy++) {
           for (int iz=-prange; iz<=prange; iz++) {
-            Xperiodic[0] = ix * cycle;
-            Xperiodic[1] = iy * cycle;
-            Xperiodic[2] = iz * cycle;
+            Xperiodic[0] = ix * cycles[0];
+            Xperiodic[1] = iy * cycles[1];
+            Xperiodic[2] = iz * cycles[2];
             for (int j=0; j<Nj; j++) {
               double dx = x[3*i+0] - x2[3*j+0] - Xperiodic[0];
               double dy = x[3*i+1] - x2[3*j+1] - Xperiodic[1];
@@ -318,7 +326,7 @@ extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * 
   for (int d=0; d<3; d++) {
     norm += globalDipole[d] * globalDipole[d];
   }
-  float coef = 4 * M_PI / (3 * cycle * cycle * cycle);
+  float coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]);
   for (int i=0; i<Ni; i++) {
     p[i] -= coef * norm / N / q[i];
     f[3*i+0] -= coef * globalDipole[0];

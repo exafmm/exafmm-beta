@@ -140,7 +140,7 @@ namespace exafmm {
     }
 
     //! Determine which cells to send
-    void traverseLET(C_iter C, C_iter C0, Bounds bounds, real_t cycle,
+    void traverseLET(C_iter C, C_iter C0, Bounds bounds, vec3 cycle,
 		     int & irank, int & ibody, int & icell, int iparent, bool copyData) {
       int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;         // Level of local root cell
       if (mpisize == 1) level = 0;                              // Account for serial case
@@ -161,16 +161,16 @@ namespace exafmm {
 	    for (int ix=-1; ix<=1; ix++) {                      //    Loop over x periodic direction
 	      for (int iy=-1; iy<=1; iy++) {                    //     Loop over y periodic direction
 		for (int iz=-1; iz<=1; iz++) {                  //      Loop over z periodic direction
-		  Xperiodic[0] = ix * cycle;                    //       Coordinate offset for x periodic direction
-		  Xperiodic[1] = iy * cycle;                    //       Coordinate offset for y periodic direction
-		  Xperiodic[2] = iz * cycle;                    //       Coordinate offset for z periodic direction
+		  Xperiodic[0] = ix * cycle[0];                 //       Coordinate offset for x periodic direction
+		  Xperiodic[1] = iy * cycle[1];                 //       Coordinate offset for y periodic direction
+		  Xperiodic[2] = iz * cycle[2];                 //       Coordinate offset for z periodic direction
 		  real_t R2 = getDistance(CC, bounds, Xperiodic); //       Get distance to other domain
 		  divide[cc] |= 4 * CC->R * CC->R > R2;         //       Divide if cell seems too close
 		}                                               //      End loop over z periodic direction
 	      }                                                 //     End loop over y periodic direction
 	    }                                                   //    End loop over x periodic direction
 	  }                                                     //   Endif for periodic boundary condition
-	  divide[cc] |= CC->R > (cycle / (1 << (level+1)));     //   Divide if cell is larger than local root cell
+	  divide[cc] |= CC->R > (max(cycle) / (1 << (level+1)));     //   Divide if cell is larger than local root cell
 	}                                                       //  Endif for leaf
       }                                                         // End loop over child cells
       cc = 0;                                                   // Initialize child index
@@ -223,7 +223,7 @@ namespace exafmm {
     }
 
     //! Set local essential tree to send to each process
-    void setLET(Cells & cells, real_t cycle) {
+    void setLET(Cells & cells, vec3 cycle) {
       logger::startTimer("Set LET size");                       // Start timer
       C_iter C0 = cells.begin();                                // Set cells begin iterator
       Bounds bounds;                                            // Bounds of local subdomain

@@ -82,6 +82,7 @@ extern "C" void FMM_Finalize() {
 }
 
 extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, float * q, float cycle) {
+  vec3 cycles = cycle;
   logger::printTitle("Partition Profiling");
   num_threads(args->threads);
   const int shift = 29;
@@ -89,11 +90,11 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
   Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycle / 2;
-    B->X[1] = x[3*i+1] - cycle / 2;
-    B->X[2] = x[3*i+2] - cycle / 2;
+    B->X[0] = x[3*i+0] - cycles[0] / 2;
+    B->X[1] = x[3*i+1] - cycles[1] / 2;
+    B->X[2] = x[3*i+2] - cycles[2] / 2;
     B->SRC = q[i];
-    int iwrap = wrap(B->X, cycle);
+    int iwrap = wrap(B->X, cycles);
     B->IBODY = ibody[i] | (iwrap << shift);
     B->ICELL = icell[i];
   }
@@ -102,26 +103,26 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
 #if EXAFMM_CLUSTER
-  Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
+  Bodies clusters = clusterTree->setClusterCenter(bodies, cycles);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
-  clusterTree->attachClusterBodies(bodies, cells, cycle);
+  clusterTree->attachClusterBodies(bodies, cells, cycles);
 #else
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
 #endif
   upDownPass->upwardPass(cells);
 
 #if EXAFMM_CLUSTER
-  clusterTree->shiftBackBodies(bodies, cycle);
+  clusterTree->shiftBackBodies(bodies, cycles);
 #endif
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     ibody[i] = B->IBODY & mask;
     icell[i] = B->ICELL;
     int iwrap = unsigned(B->IBODY) >> shift;
-    unwrap(B->X, cycle, iwrap);
-    x[3*i+0] = B->X[0] + cycle / 2;
-    x[3*i+1] = B->X[1] + cycle / 2;
-    x[3*i+2] = B->X[2] + cycle / 2;
+    unwrap(B->X, cycles, iwrap);
+    x[3*i+0] = B->X[0] + cycles[0] / 2;
+    x[3*i+1] = B->X[1] + cycles[1] / 2;
+    x[3*i+2] = B->X[2] + cycles[2] / 2;
     q[i]     = B->SRC;
   }
   n = bodies.size();
@@ -129,6 +130,7 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
 
 extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p, float * f, float cycle) {
   num_threads(args->threads);
+  vec3 cycles = cycle;
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -138,10 +140,10 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycle / 2;
-    B->X[1] = x[3*i+1] - cycle / 2;
-    B->X[2] = x[3*i+2] - cycle / 2;
-    wrap(B->X, cycle);
+    B->X[0] = x[3*i+0] - cycles[0] / 2;
+    B->X[1] = x[3*i+1] - cycles[1] / 2;
+    B->X[2] = x[3*i+2] - cycles[2] / 2;
+    wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];
@@ -151,20 +153,20 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
     B->ICELL = index[i];
   }
 #if EXAFMM_CLUSTER
-  Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
+  Bodies clusters = clusterTree->setClusterCenter(bodies, cycles);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
-  clusterTree->attachClusterBodies(bodies, cells, cycle);
+  clusterTree->attachClusterBodies(bodies, cells, cycles);
 #else
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
 #endif
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
-  treeMPI->setLET(cells, cycle);
+  treeMPI->setLET(cells, cycles);
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initListCount(cells);
   traversal->initWeight(cells);
-  traversal->traverse(cells, cells, cycle, args->dual, args->mutual);
+  traversal->traverse(cells, cells, cycles, args->dual, args->mutual);
 #if EXAFMM_COUNT_LIST
   traversal->writeList(cells, baseMPI->mpirank);
 #endif
@@ -175,11 +177,11 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
       Bodies gbodies = treeMPI->root2body();
       jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
       treeMPI->attachRoot(jcells);
-      traversal->traverse(cells, jcells, cycle, args->dual, false);
+      traversal->traverse(cells, jcells, cycles, args->dual, false);
     } else {
       for (int irank=0; irank<baseMPI->mpisize; irank++) {
 	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-	traversal->traverse(cells, jcells, cycle, args->dual, false);
+	traversal->traverse(cells, jcells, cycles, args->dual, false);
       }
     }
   }
@@ -187,13 +189,13 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   vec3 localDipole = upDownPass->getDipole(bodies,0);
   vec3 globalDipole = baseMPI->allreduceVec3(localDipole);
   int numBodies = baseMPI->allreduceInt(bodies.size());
-  upDownPass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+  upDownPass->dipoleCorrection(bodies, globalDipole, numBodies, cycles);
   logger::stopPAPI();
   logger::stopTimer("Total FMM");
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
 #if EXAFMM_CLUSTER
-  clusterTree->shiftBackBodies(bodies, cycle);
+  clusterTree->shiftBackBodies(bodies, cycles);
 #endif
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY;
@@ -207,7 +209,8 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
 extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle) {
   num_threads(args->threads);
-  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
+  vec3 cycles = cycle;
+  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
   args->numBodies = n;
   logger::printTitle("Ewald Parameters");
   args->print(logger::stringLength, P);
@@ -221,7 +224,7 @@ extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
-    wrap(B->X, cycle);
+    wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];
@@ -276,6 +279,7 @@ void MPI_Shift(float * var, int &nold, int mpisize, int mpirank) {
 }
 
 extern "C" void Direct_Coulomb(int Ni, float * x, float * q, float * p, float * f, float cycle) {
+  vec3 cycles = cycle;
   const int Nmax = 1000000;
   int images = args->images;
   int prange = 0;
@@ -302,9 +306,9 @@ extern "C" void Direct_Coulomb(int Ni, float * x, float * q, float * p, float * 
       for (int ix=-prange; ix<=prange; ix++) {
         for (int iy=-prange; iy<=prange; iy++) {
           for (int iz=-prange; iz<=prange; iz++) {
-            Xperiodic[0] = ix * cycle;
-            Xperiodic[1] = iy * cycle;
-            Xperiodic[2] = iz * cycle;
+            Xperiodic[0] = ix * cycles[0];
+            Xperiodic[1] = iy * cycles[1];
+            Xperiodic[2] = iz * cycles[2];
             for (int j=0; j<Nj; j++) {
               double dx = x[3*i+0] - x2[3*j+0] - Xperiodic[0];
               double dy = x[3*i+1] - x2[3*j+1] - Xperiodic[1];
@@ -339,7 +343,7 @@ extern "C" void Direct_Coulomb(int Ni, float * x, float * q, float * p, float * 
   for (int d=0; d<3; d++) {
     norm += globalDipole[d] * globalDipole[d];
   }
-  float coef = 4 * M_PI / (3 * cycle * cycle * cycle);
+  float coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]);
   for (int i=0; i<Ni; i++) {
     p[i] -= coef * norm / N / q[i];
     f[3*i+0] -= coef * globalDipole[0];

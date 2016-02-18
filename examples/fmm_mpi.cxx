@@ -12,7 +12,7 @@
 using namespace exafmm;
 
 int main(int argc, char ** argv) {
-  const real_t cycle = 2 * M_PI;
+  const vec3 cycle = 2 * M_PI;
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;

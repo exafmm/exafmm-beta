@@ -20,10 +20,10 @@ using namespace exafmm;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
-  const real_t cycle = 2 * M_PI;
-  const real_t alpha = 10 / cycle;
+  const vec3 cycle = 2 * M_PI;
+  const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
-  const real_t cutoff = cycle / 2;
+  const real_t cutoff = max(cycle) / 2;
   Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;

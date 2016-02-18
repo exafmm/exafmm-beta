@@ -179,8 +179,8 @@ namespace exafmm {
     }
 
     //! Dipole correction
-    void dipoleCorrection(Bodies & bodies, vec3 dipole, int numBodies, real_t cycle) {
-      real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle);     // Precalcualte constant
+    void dipoleCorrection(Bodies & bodies, vec3 dipole, int numBodies, vec3 cycle) {
+      real_t coef = 4 * M_PI / (3 * cycle[0] * cycle[1] * cycle[2]);// Precalcualte constant
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
 	B->TRG[0] -= coef * norm(dipole) / numBodies / B->SRC;  //  Dipole correction for potential
 	for (int d=0; d!=3; d++) {                              //  Loop over dimensions

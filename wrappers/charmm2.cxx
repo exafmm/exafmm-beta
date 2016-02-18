@@ -110,6 +110,7 @@ extern "C" void fmm_finalize_() {
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
 			       double * xold, double & cycle) {
   num_threads(args->threads);
+  vec3 cycles = cycle;
   int ix[3] = {0, 0, 0};
   FMM->R0 = 0.5 * cycle / FMM->numPartition[FMM->maxGlobLevel][0];
   for_3d FMM->RGlob[d] = FMM->R0 * FMM->numPartition[FMM->maxGlobLevel][d];
@@ -140,10 +141,10 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       B->SRC = q[i];
       B->TRG = 0;
 #if NOWRAP
-      if(i % 3 == 0) iwrap = wrap(B->X, cycle);
-      else unwrap(B->X, cycle, iwrap);
+      if(i % 3 == 0) iwrap = wrap(B->X, cycles);
+      else unwrap(B->X, cycles, iwrap);
 #else
-      iwrap = wrap(B->X, cycle);
+      iwrap = wrap(B->X, cycles);
 #endif
       B->IBODY = i | (iwrap << shift);
       B++;
@@ -184,7 +185,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     int iwrap = unsigned(B->IBODY) >> shift;
-    unwrap(B->X, cycle, iwrap);
+    unwrap(B->X, cycles, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
@@ -200,6 +201,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 			     double * x, double * q, double * p, double * f,
 			     double & cycle) {
   num_threads(args->threads);
+  vec3 cycles = cycle;
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
@@ -229,10 +231,10 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B->SRC = q[i];
       B->TRG = 0;
 #if NOWRAP
-      if(i % 3 == 0) iwrap = wrap(B->X, cycle);
-      else unwrap(B->X, cycle, iwrap);
+      if(i % 3 == 0) iwrap = wrap(B->X, cycles);
+      else unwrap(B->X, cycles, iwrap);
 #else
-      iwrap = wrap(B->X, cycle);
+      iwrap = wrap(B->X, cycles);
 #endif
       B->IBODY = i | (iwrap << shift);
       B++;
@@ -275,12 +277,12 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
-  treeMPI->setLET(cells, cycle);
+  treeMPI->setLET(cells, cycles);
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initListCount(cells);
   traversal->initWeight(cells);
-  traversal->traverse(cells, cells, cycle, args->dual, args->mutual);
+  traversal->traverse(cells, cells, cycles, args->dual, args->mutual);
   Cells jcells;
   if (baseMPI->mpisize > 1) {
     if (args->graft) {
@@ -288,11 +290,11 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       Bodies gbodies = treeMPI->root2body();
       jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
       treeMPI->attachRoot(jcells);
-      traversal->traverse(cells, jcells, cycle, args->dual, false);
+      traversal->traverse(cells, jcells, cycles, args->dual, false);
     } else {
       for (int irank=0; irank<baseMPI->mpisize; irank++) {
 	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-	traversal->traverse(cells, jcells, cycle, args->dual, false);
+	traversal->traverse(cells, jcells, cycles, args->dual, false);
       }
     }
   }
@@ -316,7 +318,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   vec3 localDipole = upDownPass->getDipole(bodies,0);
   vec3 globalDipole = baseMPI->allreduceVec3(localDipole);
   int numBodies = baseMPI->allreduceInt(bodies.size());
-  upDownPass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+  upDownPass->dipoleCorrection(bodies, globalDipole, numBodies, cycles);
   logger::stopPAPI();
   logger::stopTimer("Total FMM");
   logger::printTitle("Total runtime");
@@ -334,7 +336,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     int iwrap = unsigned(B->IBODY) >> shift;
-    unwrap(B->X, cycle, iwrap);
+    unwrap(B->X, cycles, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
@@ -347,7 +349,8 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
 			       int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
   num_threads(args->threads);
-  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
+  vec3 cycles = cycle;
+  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
@@ -374,7 +377,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B->X[2] = x[3*i+2];
       B->SRC = q[i];
       B->TRG = 0;
-      int iwrap = wrap(B->X, cycle);
+      int iwrap = wrap(B->X, cycles);
       B->IBODY = i | (iwrap << shift);
       B++;
     }
@@ -413,6 +416,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
 
 extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f, double & cycle) {
   num_threads(args->threads);
+  vec3 cycles = cycle;
   logger::startTimer("Direct Coulomb");
   int images = args->images;
   int prange = 0;
@@ -426,9 +430,9 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
       for (int ix=-prange; ix<=prange; ix++) {
 	for (int iy=-prange; iy<=prange; iy++) {
 	  for (int iz=-prange; iz<=prange; iz++) {
-	    Xperiodic[0] = ix * cycle;
-	    Xperiodic[1] = iy * cycle;
-	    Xperiodic[2] = iz * cycle;
+	    Xperiodic[0] = ix * cycles[0];
+	    Xperiodic[1] = iy * cycles[1];
+	    Xperiodic[2] = iz * cycles[2];
 	    for (int j=0; j<nglobal; j++) {
 	      vec3 dX;
 	      for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d] - Xperiodic[d];
@@ -458,7 +462,7 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
   for (int d=0; d<3; d++) {
     norm += dipole[d] * dipole[d];
   }
-  real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle) * Celec;
+  real_t coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]) * Celec;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       p[i] -= coef * norm / nglobal;
@@ -474,6 +478,7 @@ extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
 				   double * x, double * q, double * p, double * f,
 				   double & cycle, int * numex, int * natex) {
   num_threads(args->threads);
+  vec3 cycles = cycle;
   logger::startTimer("Coulomb Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -482,7 +487,7 @@ extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
 	int j = natex[ic]-1;
 	vec3 dX;
 	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
-        wrap(dX, cycle);
+        wrap(dX, cycles);
 	real_t R2 = norm(dX);
 	real_t invR = 1 / std::sqrt(R2);
 	if (R2 == 0) invR = 0;
@@ -508,7 +513,8 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 				 double & cuton, double & cutoff, double & cycle,
 				 int & numTypes, double * rscale, double * gscale, double * fgscale) {
   num_threads(args->threads);
-  VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycle, numTypes, rscale, gscale, fgscale);
+  vec3 cycles = cycle;
+  VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycles, numTypes, rscale, gscale, fgscale);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
@@ -530,7 +536,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B->X[2] = x[3*i+2];
       B->SRC = atype[i] - .5;
       B->TRG = 0;
-      int iwrap = wrap(B->X, cycle);
+      int iwrap = wrap(B->X, cycles);
       B->IBODY = i | (iwrap << shift);
       B++;
     }
@@ -542,7 +548,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
-  treeMPI->setLET(cells, cycle);
+  treeMPI->setLET(cells, cycles);
   treeMPI->commBodies();
   treeMPI->commCells();
   VDW->evaluate(cells, cells);
@@ -573,6 +579,7 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 				    double & cuton, double & cutoff, double & cycle,
 				    int & numTypes, double * rscale, double * gscale, double * fgscale) {
   num_threads(args->threads);
+  vec3 cycles = cycle;
   logger::startTimer("Direct VdW");
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -581,7 +588,7 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       for (int j=0; j<nglobal; j++) {
 	vec3 dX;
 	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
-	wrap(dX, cycle);
+	wrap(dX, cycles);
 	real_t R2 = norm(dX);
 	if (R2 != 0) {
 	  int atypej = atype[j]-1;
@@ -628,6 +635,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 				       int & numTypes, double * rscale, double * gscale,
 				       double * fgscale, int * numex, int * natex) {
   num_threads(args->threads);
+  vec3 cycles = cycle;
   logger::startTimer("VdW Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -636,7 +644,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 	int j = natex[ic]-1;
 	vec3 dX;
 	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
-        wrap(dX, cycle);
+        wrap(dX, cycles);
 	real_t R2 = norm(dX);
         if (R2 != 0) {
           int atypej = atype[j]-1;

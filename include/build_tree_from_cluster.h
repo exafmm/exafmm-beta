@@ -44,7 +44,7 @@ namespace exafmm {
     }
 
     //! Set center coordinate of cluster
-    Bodies setClusterCenter(Bodies & bodies, real_t cycle) {
+    Bodies setClusterCenter(Bodies & bodies, vec3 cycle) {
       iwrap.resize(bodies.size());                              // Resize iwrap
       int numCells = getNumCells(bodies);                       // Get number of cells
       vec3s Xmin = getXmin(bodies, numCells);                   // Get Xmin
@@ -69,9 +69,9 @@ namespace exafmm {
 	}                                                       //  End if for different cell index
 	iwrap[b] = 0;                                           //  Initialize iwrap
 	for (int d=0; d<3; d++) {                               //  Loop over dimensions
-	  int flag = B->X[d] - Xmin[c][d] > cycle / 2;          //   ?
-	  B->X[d] -= cycle * flag;                              //   ?
-	  iwrap[b] |= flag << d;                                //   ?
+	  int flag = B->X[d] - Xmin[c][d] > cycle[d] / 2;       //   Wrap flag
+	  B->X[d] -= cycle[d] * flag;                           //   Wrap coordinates
+	  iwrap[b] |= flag << d;                                //   Wrap flag bit shift
 	}                                                       //  End loop over dimensions
 	C->X += B->X;                                           //  Accumulate body coordinates
 	numBodies++;                                            //  Increment number of bodies
@@ -94,7 +94,7 @@ namespace exafmm {
     }
 
     //! Turn clusters into cells
-    void attachClusterBodies(Bodies & bodies, Cells & cells, real_t cycle) {
+    void attachClusterBodies(Bodies & bodies, Cells & cells, vec3 cycle) {
       B_iter B0 = bodies.begin();                               // Iterator of first body
       int numLeafs = 0;                                         // Initialize number of leafs
       for (C_iter C=cells.begin(); C!=cells.end(); C++) {       // Loop over cells
@@ -124,7 +124,7 @@ namespace exafmm {
 	  C->IBODY = B - B0;                                    //   Store body index
 	  C->NBODY = 0;                                         //   Store number of bodies
 	  C->ICELL = key;                                       //   Store Morton key as cell index
-	  C->R = cycle / dimLeafs / 2;                          //   Store cell radius
+	  C->R = max(cycle) / dimLeafs / 2;                          //   Store cell radius
 	  while (B->ICELL == icell) {                           //   Loop while icell is same (same cell)
 	    C->NBODY++;                                         //    Increment number of bodies
 	    if (B==bodies.end()-1) break;                       //    If end of bodies then exit loop
@@ -141,7 +141,7 @@ namespace exafmm {
     }
 
     //! Shift back bodies that were wrapped
-    void shiftBackBodies(Bodies & bodies, real_t cycle) {
+    void shiftBackBodies(Bodies & bodies, vec3 cycle) {
       int b = 0;                                                // Initialize body counter
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {// Loop over bodies
 	unwrap(B->X,cycle,iwrap[b]);                            //  Unwrap body coordinate
