@@ -9,7 +9,7 @@
 extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, int verbose);
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & ni, int nimax, int * res_index, double * x, double * q, double *v, double * cycle);
-extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double * cycle);
+extern "C" void FMM_FMM(int ni, int &nj, double * x, double * q, double * p, double * f, double * cycle);
 extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
 			  int ksize, double alpha, double sigma, double cutoff, double * cycle);
 extern "C" void FMM_Cutoff(int n, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
@@ -17,6 +17,7 @@ extern "C" void FMM_Cutoff(int n, double * x, double * q, double * p, double * f
 int main(int argc, char ** argv) {
   const int nimax = 1000000;
   int ni = 1000;
+  int nj;
   int stringLength = 20;
   int images = 3;
   int ksize = 11;
@@ -61,7 +62,7 @@ int main(int argc, char ** argv) {
 
   FMM_Init(images, threads, theta, cutoff, verbose);
   FMM_Partition(ni, nimax, res_index, x, q, v, cycle);
-  FMM(ni, x, q, p, f, cycle);
+  FMM_FMM(ni, nj, x, q, p, f, cycle);
   for (int i=0; i<ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }

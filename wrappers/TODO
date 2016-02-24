@@ -1,5 +1,6 @@
-cycle[3]
-getJparticles
-startFMM
-getForce
+nimax
+-nimax
+v
+nj
+-nj
 res_index based partitioning

@@ -115,17 +115,17 @@ extern "C" void FMM_Partition(int & ni, int nimax, int * res_index, double * x, 
   ni = bodies.size();
 }
 
-extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double * cycle) {
+extern "C" void FMM_FMM(int ni, int &nj, double * x, double * q, double * p, double * f, double * cycle) {
   num_threads(args->threads);
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
-  args->numBodies = n;
+  args->numBodies = ni;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  Bodies bodies(n);
+  Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0] = x[3*i+0] - cycles[0] / 2;
