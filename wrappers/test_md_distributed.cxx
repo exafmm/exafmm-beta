@@ -10,9 +10,9 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, i
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & ni, int nimax, int * res_index, double * x, double * q, double *v, double * cycle);
 extern "C" void FMM_FMM(int ni, int &nj, double * x, double * q, double * p, double * f, double * cycle);
-extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
+extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f,
 			  int ksize, double alpha, double sigma, double cutoff, double * cycle);
-extern "C" void FMM_Cutoff(int n, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
+extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
 
 int main(int argc, char ** argv) {
   const int nimax = 1000000;

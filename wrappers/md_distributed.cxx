@@ -184,20 +184,20 @@ extern "C" void FMM_FMM(int ni, int &nj, double * x, double * q, double * p, dou
   }
 }
 
-extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
+extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f,
 		      int ksize, double alpha, double sigma, double cutoff, double * cycle) {
   num_threads(args->threads);
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
-  args->numBodies = n;
+  args->numBodies = ni;
   logger::printTitle("Ewald Parameters");
   args->print(logger::stringLength, P);
   ewald->print(logger::stringLength);
   logger::printTitle("Ewald Profiling");
   logger::startTimer("Total Ewald");
   logger::startPAPI();
-  Bodies bodies(n);
+  Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0] = x[3*i+0];
@@ -257,7 +257,7 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
-extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle) {
+extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle) {
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   const int Nmax = 1000000;
@@ -269,20 +269,20 @@ extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * 
   }
   double * x2 = new double [3*Nmax];
   double * q2 = new double [Nmax];
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     x2[3*i+0] = x[3*i+0];
     x2[3*i+1] = x[3*i+1];
     x2[3*i+2] = x[3*i+2];
     q2[i] = q[i];
   }
   float Xperiodic[3];
-  int Nj = Ni, Nj3 = 3 * Ni;
+  int nj = ni, nj3 = 3 * ni;
   if (baseMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<baseMPI->mpisize; irank++) {
     if (baseMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << baseMPI->mpisize << std::endl;
-    MPI_Shift(x2, Nj3, baseMPI->mpisize, baseMPI->mpirank);
-    MPI_Shift(q2, Nj,  baseMPI->mpisize, baseMPI->mpirank);
-    for (int i=0; i<Ni; i++) {
+    MPI_Shift(x2, nj3, baseMPI->mpisize, baseMPI->mpirank);
+    MPI_Shift(q2, nj,  baseMPI->mpisize, baseMPI->mpirank);
+    for (int i=0; i<ni; i++) {
       double pp = 0, fx = 0, fy = 0, fz = 0;
       for (int ix=-prange; ix<=prange; ix++) {
         for (int iy=-prange; iy<=prange; iy++) {
@@ -290,7 +290,7 @@ extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * 
             Xperiodic[0] = ix * cycles[0];
             Xperiodic[1] = iy * cycles[1];
             Xperiodic[2] = iz * cycles[2];
-            for (int j=0; j<Nj; j++) {
+            for (int j=0; j<nj; j++) {
               double dx = x[3*i+0] - x2[3*j+0] - Xperiodic[0];
               double dy = x[3*i+1] - x2[3*j+1] - Xperiodic[1];
               double dz = x[3*i+2] - x2[3*j+2] - Xperiodic[2];
@@ -315,11 +315,11 @@ extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * 
     }
   }
   float localDipole[3] = {0, 0, 0};
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     for (int d=0; d<3; d++) localDipole[d] += x[3*i+d] * q[i];
   }
   int N;
-  MPI_Allreduce(&Ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   float globalDipole[3];
   MPI_Allreduce(localDipole, globalDipole, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
   double norm = 0;
@@ -327,7 +327,7 @@ extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * 
     norm += globalDipole[d] * globalDipole[d];
   }
   float coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]);
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     p[i] -= coef * norm / N / q[i];
     f[3*i+0] -= coef * globalDipole[0];
     f[3*i+1] -= coef * globalDipole[1];
