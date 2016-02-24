@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-extern "C" void FMM_Init(int images, int threads, double theta, int verbose);
+extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, int verbose);
 extern "C" void FMM_Finalize();
 extern "C" void Partition(int & n, int * res_index, double * x, double * q, double * cycle);
 extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double * cycle);
@@ -40,7 +40,6 @@ int main(int argc, char ** argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 
-#if 1
   srand48(mpirank);
   double average = 0;
   for (int i=0; i<Ni; i++) {
@@ -58,22 +57,8 @@ int main(int argc, char ** argv) {
   for (int i=0; i<Ni; i++) {
     q[i] -= average;
   }
-#else
-  std::stringstream name;
-  name << "source" << std::setfill('0') << std::setw(4)
-       << mpirank << ".dat";
-  std::ifstream file(name.str().c_str(),std::ios::in);
-  for (int i=0; i<Ni; i++) {
-    file >> x[3*i+0];
-    file >> x[3*i+1];
-    file >> x[3*i+2];
-    file >> q[i];
-    res_index[i] = i + mpirank*Ni;
-  }
-  file.close();
-#endif
 
-  FMM_Init(images, threads, theta, verbose);
+  FMM_Init(images, threads, theta, cutoff, verbose);
   Partition(Ni, res_index, x, q, cycle);
   FMM(Ni, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {

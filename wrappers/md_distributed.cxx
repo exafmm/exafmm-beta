@@ -27,7 +27,7 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void FMM_Init(int images, int threads, double theta, bool verbose) {
+extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, bool verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const bool useRmax = false;
