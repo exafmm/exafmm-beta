@@ -8,15 +8,15 @@
 
 extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, int verbose);
 extern "C" void FMM_Finalize();
-extern "C" void Partition(int & n, int * res_index, double * x, double * q, double * cycle);
+extern "C" void FMM_Partition(int & ni, int nimax, int * res_index, double * x, double * q, double *v, double * cycle);
 extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double * cycle);
 extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
 			  int ksize, double alpha, double sigma, double cutoff, double * cycle);
 extern "C" void FMM_Cutoff(int n, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
 
 int main(int argc, char ** argv) {
-  const int Nmax = 1000000;
-  int Ni = 1000;
+  const int nimax = 1000000;
+  int ni = 1000;
   int stringLength = 20;
   int images = 3;
   int ksize = 11;
@@ -27,13 +27,14 @@ int main(int argc, char ** argv) {
   double alpha = 10 / cycle[0];
   double sigma = .25 / M_PI;
   double cutoff = cycle[0] / 2;
-  int * res_index = new int [Nmax];
-  double * x = new double [3*Nmax];
-  double * q = new double [Nmax];
-  double * p = new double [Nmax];
-  double * f = new double [3*Nmax];
-  double * p2 = new double [Nmax];
-  double * f2 = new double [3*Nmax];
+  int * res_index = new int [nimax];
+  double * x = new double [3*nimax];
+  double * q = new double [nimax];
+  double * v = new double [3*nimax];
+  double * p = new double [nimax];
+  double * f = new double [3*nimax];
+  double * p2 = new double [nimax];
+  double * f2 = new double [3*nimax];
 
   int mpisize, mpirank;
   MPI_Init(&argc, &argv);
@@ -42,31 +43,31 @@ int main(int argc, char ** argv) {
 
   srand48(mpirank);
   double average = 0;
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     x[3*i+0] = drand48() * cycle[0] - cycle[0] / 2;
     x[3*i+1] = drand48() * cycle[1] - cycle[1] / 2;
     x[3*i+2] = drand48() * cycle[2] - cycle[2] / 2;
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
-    res_index[i] = i + mpirank*Ni;
+    res_index[i] = i + mpirank*ni;
   }
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     q[i] = drand48() - .5;
     average += q[i];
   }
-  average /= Ni;
-  for (int i=0; i<Ni; i++) {
+  average /= ni;
+  for (int i=0; i<ni; i++) {
     q[i] -= average;
   }
 
   FMM_Init(images, threads, theta, cutoff, verbose);
-  Partition(Ni, res_index, x, q, cycle);
-  FMM(Ni, x, q, p, f, cycle);
-  for (int i=0; i<Ni; i++) {
+  FMM_Partition(ni, nimax, res_index, x, q, v, cycle);
+  FMM(ni, x, q, p, f, cycle);
+  for (int i=0; i<ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
-  FMM_Ewald(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
+  FMM_Ewald(ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
   double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     potSum  += p[i]  * q[i];
     potSum2 += p2[i] * q[i];
     accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
@@ -89,12 +90,12 @@ int main(int argc, char ** argv) {
 	      << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
   }
 #if 0
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
-  FMM_Cutoff(Ni, x, q, p2, f2, cutoff, cycle);
+  FMM_Cutoff(ni, x, q, p2, f2, cutoff, cycle);
   potSum = potSum2 = accDif = accNrm = 0;
-  for (int i=0; i<Ni; i++) {
+  for (int i=0; i<ni; i++) {
     potSum  += p[i]  * q[i];
     potSum2 += p2[i] * q[i];
     accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
@@ -120,6 +121,7 @@ int main(int argc, char ** argv) {
   delete[] res_index;
   delete[] x;
   delete[] q;
+  delete[] v;
   delete[] p;
   delete[] f;
   delete[] p2;

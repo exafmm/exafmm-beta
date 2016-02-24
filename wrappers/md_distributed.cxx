@@ -77,14 +77,14 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void Partition(int & n, int * res_index, double * x, double * q, double * cycle) {
+extern "C" void FMM_Partition(int & ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle) {
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   logger::printTitle("Partition Profiling");
   num_threads(args->threads);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
-  Bodies bodies(n);
+  Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0] = x[3*i+0] - cycles[0] / 2;
@@ -112,7 +112,7 @@ extern "C" void Partition(int & n, int * res_index, double * x, double * q, doub
     x[3*i+2] = B->X[2] + cycles[2] / 2;
     q[i]     = B->SRC;
   }
-  n = bodies.size();
+  ni = bodies.size();
 }
 
 extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double * cycle) {
