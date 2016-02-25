@@ -102,17 +102,19 @@ extern "C" void FMM_Partition(int & ni, int nimax, int * res_index, double * x, 
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
-    res_index[i] = B->ICELL;
-    int iwrap = unsigned(B->IBODY) >> shift;
-    unwrap(B->X, cycles, iwrap);
-    x[3*i+0] = B->X[0] + cycles[0] / 2;
-    x[3*i+1] = B->X[1] + cycles[1] / 2;
-    x[3*i+2] = B->X[2] + cycles[2] / 2;
-    q[i]     = B->SRC;
-  }
   ni = bodies.size();
+  if (ni < nimax) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      int i = B-bodies.begin();
+      res_index[i] = B->ICELL;
+      int iwrap = unsigned(B->IBODY) >> shift;
+      unwrap(B->X, cycles, iwrap);
+      x[3*i+0] = B->X[0] + cycles[0] / 2;
+      x[3*i+1] = B->X[1] + cycles[1] / 2;
+      x[3*i+2] = B->X[2] + cycles[2] / 2;
+      q[i]     = B->SRC;
+    }
+  }
 }
 
 extern "C" void FMM_FMM(int ni, int &nj, double * x, double * q, double * p, double * f, double * cycle) {
