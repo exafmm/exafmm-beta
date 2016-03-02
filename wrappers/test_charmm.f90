@@ -81,7 +81,7 @@ contains
     open(unit=1,file=infile,status='old')
     read(1,'(a100)')lin
     read(lin(9:100),*)sizex,sizey,sizez
-    size=sizex
+    size = sizex + sizey * 0 + sizez * 0
     do while (lin(1:1) == '*')
        read(1,'(a100)')lin
     enddo
@@ -844,13 +844,13 @@ program main
 
   call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
   if (mpirank == 0) then
-     print"(a)",'--- Coulomb FMM vs. Ewald -------'
-     print"(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
-     print"(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
-     print"(a,f12.4)",'Energy (FMM)         : ',enerf
-     print"(a,f12.4)",'Energy (Ewald)       : ',enere
-     print"(a,f12.4)",'GRMS (FMM)           : ',grmsf
-     print"(a,f12.4)",'GRMS (Ewald)         : ',grmse
+     print "(a)",'--- Coulomb FMM vs. Ewald -------'
+     print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
+     print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
+     print "(a,f12.4)",'Energy (FMM)         : ',enerf
+     print "(a,f12.4)",'Energy (Ewald)       : ',enere
+     print "(a,f12.4)",'GRMS (FMM)           : ',grmsf
+     print "(a,f12.4)",'GRMS (Ewald)         : ',grmse
   endif
 
   do i = 1,nglobal
@@ -874,13 +874,13 @@ program main
 
   call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
   if (mpirank == 0) then
-     print"(a)",'--- VdW FMM vs. Direct ----------'
-     print"(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
-     print"(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
-     print"(a,f12.4)",'Energy (FMM)         : ',enerf
-     print"(a,f12.4)",'Energy (Direct)      : ',enere
-     print"(a,f12.4)",'GRMS (FMM)           : ',grmsf
-     print"(a,f12.4)",'GRMS (Direct)        : ',grmse
+     print "(a)",'--- VdW FMM vs. Direct ----------'
+     print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
+     print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
+     print "(a,f12.4)",'Energy (FMM)         : ',enerf
+     print "(a,f12.4)",'Energy (Direct)      : ',enere
+     print "(a,f12.4)",'GRMS (FMM)           : ',grmsf
+     print "(a,f12.4)",'GRMS (Direct)        : ',grmse
   endif
 
   ! run dynamics if second command line argument specified
