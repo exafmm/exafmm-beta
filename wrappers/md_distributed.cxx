@@ -188,7 +188,7 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY;
+    int i = B - bodies.begin();
     p[i]     = B->TRG[0];
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
