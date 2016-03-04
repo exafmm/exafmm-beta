@@ -182,37 +182,37 @@ AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
-libcharmm_a_AR = $(AR) $(ARFLAGS)
-libcharmm_a_LIBADD =
-am__libcharmm_a_SOURCES_DIST = charmm.cxx \
+libcharmm2_exafmm_a_AR = $(AR) $(ARFLAGS)
+libcharmm2_exafmm_a_LIBADD =
+am__libcharmm2_exafmm_a_SOURCES_DIST = charmm2.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
 am__dirstamp = $(am__leading_dot)dirstamp
-@EXAFMM_HAVE_MPI_TRUE@am_libcharmm_a_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	libcharmm_a-charmm.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm_a-LaplaceSphericalCPU.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm_a-LaplaceP2PCPU.$(OBJEXT)
-libcharmm_a_OBJECTS = $(am_libcharmm_a_OBJECTS)
-libcharmm2_a_AR = $(AR) $(ARFLAGS)
-libcharmm2_a_LIBADD =
-am__libcharmm2_a_SOURCES_DIST = charmm2.cxx \
+@EXAFMM_HAVE_MPI_TRUE@am_libcharmm2_exafmm_a_OBJECTS =  \
+@EXAFMM_HAVE_MPI_TRUE@	libcharmm2_exafmm_a-charmm2.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.$(OBJEXT)
+libcharmm2_exafmm_a_OBJECTS = $(am_libcharmm2_exafmm_a_OBJECTS)
+libcharmm_exafmm_a_AR = $(AR) $(ARFLAGS)
+libcharmm_exafmm_a_LIBADD =
+am__libcharmm_exafmm_a_SOURCES_DIST = charmm.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@am_libcharmm2_a_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	libcharmm2_a-charmm2.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm2_a-LaplaceSphericalCPU.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm2_a-LaplaceP2PCPU.$(OBJEXT)
-libcharmm2_a_OBJECTS = $(am_libcharmm2_a_OBJECTS)
-libgromacs_a_AR = $(AR) $(ARFLAGS)
-libgromacs_a_LIBADD =
-am__libgromacs_a_SOURCES_DIST = gromacs.cxx \
+@EXAFMM_HAVE_MPI_TRUE@am_libcharmm_exafmm_a_OBJECTS =  \
+@EXAFMM_HAVE_MPI_TRUE@	libcharmm_exafmm_a-charmm.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.$(OBJEXT)
+libcharmm_exafmm_a_OBJECTS = $(am_libcharmm_exafmm_a_OBJECTS)
+libgromacs_exafmm_a_AR = $(AR) $(ARFLAGS)
+libgromacs_exafmm_a_LIBADD =
+am__libgromacs_exafmm_a_SOURCES_DIST = gromacs.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@am_libgromacs_a_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	libgromacs_a-gromacs.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libgromacs_a-LaplaceSphericalCPU.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libgromacs_a-LaplaceP2PCPU.$(OBJEXT)
-libgromacs_a_OBJECTS = $(am_libgromacs_a_OBJECTS)
+@EXAFMM_HAVE_MPI_TRUE@am_libgromacs_exafmm_a_OBJECTS =  \
+@EXAFMM_HAVE_MPI_TRUE@	libgromacs_exafmm_a-gromacs.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.$(OBJEXT)
+libgromacs_exafmm_a_OBJECTS = $(am_libgromacs_exafmm_a_OBJECTS)
 libmd_distributed_a_AR = $(AR) $(ARFLAGS)
 libmd_distributed_a_LIBADD =
 am__libmd_distributed_a_SOURCES_DIST = md_distributed.cxx \
@@ -222,46 +222,45 @@ am__libmd_distributed_a_SOURCES_DIST = md_distributed.cxx \
 @EXAFMM_HAVE_MPI_TRUE@	../kernels/libmd_distributed_a-LaplaceSphericalCPU.$(OBJEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	../kernels/libmd_distributed_a-LaplaceP2PCPU.$(OBJEXT)
 libmd_distributed_a_OBJECTS = $(am_libmd_distributed_a_OBJECTS)
-libpetiga_helmholtz_a_AR = $(AR) $(ARFLAGS)
-libpetiga_helmholtz_a_LIBADD =
-am__libpetiga_helmholtz_a_SOURCES_DIST = petiga.cxx \
+libpetiga_exafmm_helmholtz_a_AR = $(AR) $(ARFLAGS)
+libpetiga_exafmm_helmholtz_a_LIBADD =
+am__libpetiga_exafmm_helmholtz_a_SOURCES_DIST = petiga.cxx \
 	../kernels/HelmholtzSphericalCPU.cxx \
 	../kernels/HelmholtzP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@am_libpetiga_helmholtz_a_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	libpetiga_helmholtz_a-petiga.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.$(OBJEXT)
-libpetiga_helmholtz_a_OBJECTS = $(am_libpetiga_helmholtz_a_OBJECTS)
-libpetiga_laplace_a_AR = $(AR) $(ARFLAGS)
-libpetiga_laplace_a_LIBADD =
-am__libpetiga_laplace_a_SOURCES_DIST = petiga.cxx \
+@EXAFMM_HAVE_MPI_TRUE@am_libpetiga_exafmm_helmholtz_a_OBJECTS = libpetiga_exafmm_helmholtz_a-petiga.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.$(OBJEXT)
+libpetiga_exafmm_helmholtz_a_OBJECTS =  \
+	$(am_libpetiga_exafmm_helmholtz_a_OBJECTS)
+libpetiga_exafmm_laplace_a_AR = $(AR) $(ARFLAGS)
+libpetiga_exafmm_laplace_a_LIBADD =
+am__libpetiga_exafmm_laplace_a_SOURCES_DIST = petiga.cxx \
 	../kernels/LaplaceCartesianCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@am_libpetiga_laplace_a_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	libpetiga_laplace_a-petiga.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_laplace_a-LaplaceP2PCPU.$(OBJEXT)
-libpetiga_laplace_a_OBJECTS = $(am_libpetiga_laplace_a_OBJECTS)
+@EXAFMM_HAVE_MPI_TRUE@am_libpetiga_exafmm_laplace_a_OBJECTS = libpetiga_exafmm_laplace_a-petiga.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.$(OBJEXT)
+libpetiga_exafmm_laplace_a_OBJECTS =  \
+	$(am_libpetiga_exafmm_laplace_a_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
 am__charmm2_mpi_SOURCES_DIST = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@am_charmm2_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm2_mpi_OBJECTS = $(am_charmm2_mpi_OBJECTS)
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_DEPENDENCIES = libcharmm2.a
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2.a
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@	libcharmm2.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_DEPENDENCIES = libcharmm2_exafmm.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2_exafmm.a
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2_exafmm.a
 am__charmm_mpi_SOURCES_DIST = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@am_charmm_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm_mpi_OBJECTS = $(am_charmm_mpi_OBJECTS)
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_DEPENDENCIES = libcharmm.a
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_DEPENDENCIES = libcharmm.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_DEPENDENCIES = libcharmm_exafmm.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_DEPENDENCIES = libcharmm_exafmm.a
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@	libcharmm.a
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@	libcharmm_exafmm.a
 am__gromacs_mpi_SOURCES_DIST = test_gromacs.cxx
 @EXAFMM_HAVE_MPI_TRUE@am_gromacs_mpi_OBJECTS =  \
 @EXAFMM_HAVE_MPI_TRUE@	gromacs_mpi-test_gromacs.$(OBJEXT)
 gromacs_mpi_OBJECTS = $(am_gromacs_mpi_OBJECTS)
-@EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_DEPENDENCIES = libgromacs.a
+@EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_DEPENDENCIES = libgromacs_exafmm.a
 am__md_distributed_mpi_SOURCES_DIST = test_md_distributed.cxx
 @EXAFMM_HAVE_MPI_TRUE@am_md_distributed_mpi_OBJECTS = md_distributed_mpi-test_md_distributed.$(OBJEXT)
 md_distributed_mpi_OBJECTS = $(am_md_distributed_mpi_OBJECTS)
@@ -271,12 +270,12 @@ am__petiga_helmholtz_mpi_SOURCES_DIST = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@am_petiga_helmholtz_mpi_OBJECTS = petiga_helmholtz_mpi-test_petiga.$(OBJEXT)
 petiga_helmholtz_mpi_OBJECTS = $(am_petiga_helmholtz_mpi_OBJECTS)
 @EXAFMM_HAVE_MPI_TRUE@petiga_helmholtz_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_MPI_TRUE@	libpetiga_helmholtz.a
+@EXAFMM_HAVE_MPI_TRUE@	libpetiga_exafmm_helmholtz.a
 am__petiga_laplace_mpi_SOURCES_DIST = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@am_petiga_laplace_mpi_OBJECTS = petiga_laplace_mpi-test_petiga.$(OBJEXT)
 petiga_laplace_mpi_OBJECTS = $(am_petiga_laplace_mpi_OBJECTS)
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_MPI_TRUE@	libpetiga_laplace.a
+@EXAFMM_HAVE_MPI_TRUE@	libpetiga_exafmm_laplace.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -334,20 +333,20 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libcharmm_a_SOURCES) $(libcharmm2_a_SOURCES) \
-	$(libgromacs_a_SOURCES) $(libmd_distributed_a_SOURCES) \
-	$(libpetiga_helmholtz_a_SOURCES) \
-	$(libpetiga_laplace_a_SOURCES) $(charmm2_mpi_SOURCES) \
+SOURCES = $(libcharmm2_exafmm_a_SOURCES) $(libcharmm_exafmm_a_SOURCES) \
+	$(libgromacs_exafmm_a_SOURCES) $(libmd_distributed_a_SOURCES) \
+	$(libpetiga_exafmm_helmholtz_a_SOURCES) \
+	$(libpetiga_exafmm_laplace_a_SOURCES) $(charmm2_mpi_SOURCES) \
 	$(nodist_EXTRA_charmm2_mpi_SOURCES) $(charmm_mpi_SOURCES) \
 	$(nodist_EXTRA_charmm_mpi_SOURCES) $(gromacs_mpi_SOURCES) \
 	$(md_distributed_mpi_SOURCES) $(petiga_helmholtz_mpi_SOURCES) \
 	$(petiga_laplace_mpi_SOURCES)
-DIST_SOURCES = $(am__libcharmm_a_SOURCES_DIST) \
-	$(am__libcharmm2_a_SOURCES_DIST) \
-	$(am__libgromacs_a_SOURCES_DIST) \
+DIST_SOURCES = $(am__libcharmm2_exafmm_a_SOURCES_DIST) \
+	$(am__libcharmm_exafmm_a_SOURCES_DIST) \
+	$(am__libgromacs_exafmm_a_SOURCES_DIST) \
 	$(am__libmd_distributed_a_SOURCES_DIST) \
-	$(am__libpetiga_helmholtz_a_SOURCES_DIST) \
-	$(am__libpetiga_laplace_a_SOURCES_DIST) \
+	$(am__libpetiga_exafmm_helmholtz_a_SOURCES_DIST) \
+	$(am__libpetiga_exafmm_laplace_a_SOURCES_DIST) \
 	$(am__charmm2_mpi_SOURCES_DIST) $(am__charmm_mpi_SOURCES_DIST) \
 	$(am__gromacs_mpi_SOURCES_DIST) \
 	$(am__md_distributed_mpi_SOURCES_DIST) \
@@ -595,44 +594,44 @@ AM_CPPFLAGS = -I../include $(am__append_5) $(am__append_12) \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_2) $(am__append_4) \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_7)
 AM_MAKEFLAGS = -s
-@EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_laplace.a libpetiga_helmholtz.a libgromacs.a libcharmm.a libcharmm2.a libmd_distributed.a
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_laplace_a_SOURCES = petiga.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_helmholtz_a_SOURCES = petiga.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
-@EXAFMM_HAVE_MPI_TRUE@libgromacs_a_SOURCES = gromacs.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@libgromacs_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9 -DEXAFMM_NO_P2P
-@EXAFMM_HAVE_MPI_TRUE@libcharmm_a_SOURCES = charmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@libcharmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
-@EXAFMM_HAVE_MPI_TRUE@libcharmm2_a_SOURCES = charmm2.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@libcharmm2_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+@EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_exafmm_laplace.a libpetiga_exafmm_helmholtz.a libgromacs_exafmm.a libcharmm_exafmm.a libcharmm2_exafmm.a libmd_distributed.a
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_SOURCES = petiga.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
+@EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_SOURCES = gromacs.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9 -DEXAFMM_NO_P2P
+@EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_SOURCES = charmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+@EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_SOURCES = charmm2.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 @EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_SOURCES = md_distributed.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_SOURCES = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_CPPFLAGS = $(libpetiga_laplace_a_CPPFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_LDADD = libpetiga_laplace.a
+@EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_LDADD = libpetiga_exafmm_laplace.a
 @EXAFMM_HAVE_MPI_TRUE@petiga_helmholtz_mpi_SOURCES = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@petiga_helmholtz_mpi_CPPFLAGS = $(libpetiga_helmholtz_a_CPPFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@petiga_helmholtz_mpi_LDADD = libpetiga_helmholtz.a
+@EXAFMM_HAVE_MPI_TRUE@petiga_helmholtz_mpi_LDADD = libpetiga_exafmm_helmholtz.a
 @EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_SOURCES = test_gromacs.cxx
 @EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_CPPFLAGS = $(AM_CPPFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_LDADD = libgromacs.a
+@EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_LDADD = libgromacs_exafmm.a
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm_mpi_SOURCES = test_gromacs.cxx
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LINK = $(FCLINK) $(AM_FCFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LINK = $(CXXLINK) --linkfortran
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LDADD = libcharmm.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm_exafmm.a -lstdc++ -lgomp
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm_exafmm.a -lC++
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LDADD = libcharmm_exafmm.a
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm2_mpi_SOURCES = test_gromacs.cxx
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LINK = $(FCLINK) $(AM_FCFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LINK = $(CXXLINK) --linkfortran
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDADD = libcharmm2.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2_exafmm.a -lstdc++ -lgomp
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2_exafmm.a -lC++
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDADD = libcharmm2_exafmm.a
 @EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_SOURCES = test_md_distributed.cxx
 @EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_LDADD = libmd_distributed.a
@@ -708,39 +707,39 @@ clean-libLIBRARIES:
 ../kernels/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) ../kernels/$(DEPDIR)
 	@: > ../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/libcharmm_a-LaplaceSphericalCPU.$(OBJEXT):  \
+../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/libcharmm_a-LaplaceP2PCPU.$(OBJEXT):  \
-	../kernels/$(am__dirstamp) \
-	../kernels/$(DEPDIR)/$(am__dirstamp)
-
-libcharmm.a: $(libcharmm_a_OBJECTS) $(libcharmm_a_DEPENDENCIES) $(EXTRA_libcharmm_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libcharmm.a
-	$(AM_V_AR)$(libcharmm_a_AR) libcharmm.a $(libcharmm_a_OBJECTS) $(libcharmm_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libcharmm.a
-../kernels/libcharmm2_a-LaplaceSphericalCPU.$(OBJEXT):  \
-	../kernels/$(am__dirstamp) \
-	../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/libcharmm2_a-LaplaceP2PCPU.$(OBJEXT):  \
+../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
 
-libcharmm2.a: $(libcharmm2_a_OBJECTS) $(libcharmm2_a_DEPENDENCIES) $(EXTRA_libcharmm2_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libcharmm2.a
-	$(AM_V_AR)$(libcharmm2_a_AR) libcharmm2.a $(libcharmm2_a_OBJECTS) $(libcharmm2_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libcharmm2.a
-../kernels/libgromacs_a-LaplaceSphericalCPU.$(OBJEXT):  \
+libcharmm2_exafmm.a: $(libcharmm2_exafmm_a_OBJECTS) $(libcharmm2_exafmm_a_DEPENDENCIES) $(EXTRA_libcharmm2_exafmm_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libcharmm2_exafmm.a
+	$(AM_V_AR)$(libcharmm2_exafmm_a_AR) libcharmm2_exafmm.a $(libcharmm2_exafmm_a_OBJECTS) $(libcharmm2_exafmm_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libcharmm2_exafmm.a
+../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/libgromacs_a-LaplaceP2PCPU.$(OBJEXT):  \
+../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
 
-libgromacs.a: $(libgromacs_a_OBJECTS) $(libgromacs_a_DEPENDENCIES) $(EXTRA_libgromacs_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libgromacs.a
-	$(AM_V_AR)$(libgromacs_a_AR) libgromacs.a $(libgromacs_a_OBJECTS) $(libgromacs_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libgromacs.a
+libcharmm_exafmm.a: $(libcharmm_exafmm_a_OBJECTS) $(libcharmm_exafmm_a_DEPENDENCIES) $(EXTRA_libcharmm_exafmm_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libcharmm_exafmm.a
+	$(AM_V_AR)$(libcharmm_exafmm_a_AR) libcharmm_exafmm.a $(libcharmm_exafmm_a_OBJECTS) $(libcharmm_exafmm_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libcharmm_exafmm.a
+../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+libgromacs_exafmm.a: $(libgromacs_exafmm_a_OBJECTS) $(libgromacs_exafmm_a_DEPENDENCIES) $(EXTRA_libgromacs_exafmm_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libgromacs_exafmm.a
+	$(AM_V_AR)$(libgromacs_exafmm_a_AR) libgromacs_exafmm.a $(libgromacs_exafmm_a_OBJECTS) $(libgromacs_exafmm_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libgromacs_exafmm.a
 ../kernels/libmd_distributed_a-LaplaceSphericalCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
@@ -752,28 +751,28 @@ libmd_distributed.a: $(libmd_distributed_a_OBJECTS) $(libmd_distributed_a_DEPEND
 	$(AM_V_at)-rm -f libmd_distributed.a
 	$(AM_V_AR)$(libmd_distributed_a_AR) libmd_distributed.a $(libmd_distributed_a_OBJECTS) $(libmd_distributed_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libmd_distributed.a
-../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.$(OBJEXT):  \
+../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.$(OBJEXT):  \
-	../kernels/$(am__dirstamp) \
-	../kernels/$(DEPDIR)/$(am__dirstamp)
-
-libpetiga_helmholtz.a: $(libpetiga_helmholtz_a_OBJECTS) $(libpetiga_helmholtz_a_DEPENDENCIES) $(EXTRA_libpetiga_helmholtz_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libpetiga_helmholtz.a
-	$(AM_V_AR)$(libpetiga_helmholtz_a_AR) libpetiga_helmholtz.a $(libpetiga_helmholtz_a_OBJECTS) $(libpetiga_helmholtz_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libpetiga_helmholtz.a
-../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.$(OBJEXT):  \
-	../kernels/$(am__dirstamp) \
-	../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/libpetiga_laplace_a-LaplaceP2PCPU.$(OBJEXT):  \
+../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
 
-libpetiga_laplace.a: $(libpetiga_laplace_a_OBJECTS) $(libpetiga_laplace_a_DEPENDENCIES) $(EXTRA_libpetiga_laplace_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libpetiga_laplace.a
-	$(AM_V_AR)$(libpetiga_laplace_a_AR) libpetiga_laplace.a $(libpetiga_laplace_a_OBJECTS) $(libpetiga_laplace_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libpetiga_laplace.a
+libpetiga_exafmm_helmholtz.a: $(libpetiga_exafmm_helmholtz_a_OBJECTS) $(libpetiga_exafmm_helmholtz_a_DEPENDENCIES) $(EXTRA_libpetiga_exafmm_helmholtz_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libpetiga_exafmm_helmholtz.a
+	$(AM_V_AR)$(libpetiga_exafmm_helmholtz_a_AR) libpetiga_exafmm_helmholtz.a $(libpetiga_exafmm_helmholtz_a_OBJECTS) $(libpetiga_exafmm_helmholtz_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libpetiga_exafmm_helmholtz.a
+../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+libpetiga_exafmm_laplace.a: $(libpetiga_exafmm_laplace_a_OBJECTS) $(libpetiga_exafmm_laplace_a_DEPENDENCIES) $(EXTRA_libpetiga_exafmm_laplace_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libpetiga_exafmm_laplace.a
+	$(AM_V_AR)$(libpetiga_exafmm_laplace_a_AR) libpetiga_exafmm_laplace.a $(libpetiga_exafmm_laplace_a_OBJECTS) $(libpetiga_exafmm_laplace_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libpetiga_exafmm_laplace.a
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
@@ -848,27 +847,27 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm2_a-LaplaceP2PCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm2_a-LaplaceSphericalCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm_a-LaplaceP2PCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/charmm2_mpi-test_gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/charmm_mpi-test_gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gromacs_mpi-test_gromacs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm2_a-charmm2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm_a-charmm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgromacs_a-gromacs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm2_exafmm_a-charmm2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm_exafmm_a-charmm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgromacs_exafmm_a-gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmd_distributed_a-md_distributed.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpetiga_helmholtz_a-petiga.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpetiga_laplace_a-petiga.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpetiga_exafmm_helmholtz_a-petiga.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpetiga_exafmm_laplace_a-petiga.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md_distributed_mpi-test_md_distributed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/petiga_helmholtz_mpi-test_petiga.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/petiga_laplace_mpi-test_petiga.Po@am__quote@
@@ -889,131 +888,131 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-libcharmm_a-charmm.o: charmm.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm_a-charmm.o -MD -MP -MF $(DEPDIR)/libcharmm_a-charmm.Tpo -c -o libcharmm_a-charmm.o `test -f 'charmm.cxx' || echo '$(srcdir)/'`charmm.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm_a-charmm.Tpo $(DEPDIR)/libcharmm_a-charmm.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm.cxx' object='libcharmm_a-charmm.o' libtool=no @AMDEPBACKSLASH@
+libcharmm2_exafmm_a-charmm2.o: charmm2.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm2_exafmm_a-charmm2.o -MD -MP -MF $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo -c -o libcharmm2_exafmm_a-charmm2.o `test -f 'charmm2.cxx' || echo '$(srcdir)/'`charmm2.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm2.cxx' object='libcharmm2_exafmm_a-charmm2.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm_a-charmm.o `test -f 'charmm.cxx' || echo '$(srcdir)/'`charmm.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm2_exafmm_a-charmm2.o `test -f 'charmm2.cxx' || echo '$(srcdir)/'`charmm2.cxx
 
-libcharmm_a-charmm.obj: charmm.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm_a-charmm.obj -MD -MP -MF $(DEPDIR)/libcharmm_a-charmm.Tpo -c -o libcharmm_a-charmm.obj `if test -f 'charmm.cxx'; then $(CYGPATH_W) 'charmm.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm_a-charmm.Tpo $(DEPDIR)/libcharmm_a-charmm.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm.cxx' object='libcharmm_a-charmm.obj' libtool=no @AMDEPBACKSLASH@
+libcharmm2_exafmm_a-charmm2.obj: charmm2.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm2_exafmm_a-charmm2.obj -MD -MP -MF $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo -c -o libcharmm2_exafmm_a-charmm2.obj `if test -f 'charmm2.cxx'; then $(CYGPATH_W) 'charmm2.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm2.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm2.cxx' object='libcharmm2_exafmm_a-charmm2.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm_a-charmm.obj `if test -f 'charmm.cxx'; then $(CYGPATH_W) 'charmm.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm2_exafmm_a-charmm2.obj `if test -f 'charmm2.cxx'; then $(CYGPATH_W) 'charmm2.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm2.cxx'; fi`
 
-../kernels/libcharmm_a-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_a-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm_a-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
 
-../kernels/libcharmm_a-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_a-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm_a-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_exafmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
 
-../kernels/libcharmm_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
 
-../kernels/libcharmm_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_exafmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
-libcharmm2_a-charmm2.o: charmm2.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm2_a-charmm2.o -MD -MP -MF $(DEPDIR)/libcharmm2_a-charmm2.Tpo -c -o libcharmm2_a-charmm2.o `test -f 'charmm2.cxx' || echo '$(srcdir)/'`charmm2.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm2_a-charmm2.Tpo $(DEPDIR)/libcharmm2_a-charmm2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm2.cxx' object='libcharmm2_a-charmm2.o' libtool=no @AMDEPBACKSLASH@
+libcharmm_exafmm_a-charmm.o: charmm.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm_exafmm_a-charmm.o -MD -MP -MF $(DEPDIR)/libcharmm_exafmm_a-charmm.Tpo -c -o libcharmm_exafmm_a-charmm.o `test -f 'charmm.cxx' || echo '$(srcdir)/'`charmm.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm_exafmm_a-charmm.Tpo $(DEPDIR)/libcharmm_exafmm_a-charmm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm.cxx' object='libcharmm_exafmm_a-charmm.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm2_a-charmm2.o `test -f 'charmm2.cxx' || echo '$(srcdir)/'`charmm2.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm_exafmm_a-charmm.o `test -f 'charmm.cxx' || echo '$(srcdir)/'`charmm.cxx
 
-libcharmm2_a-charmm2.obj: charmm2.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm2_a-charmm2.obj -MD -MP -MF $(DEPDIR)/libcharmm2_a-charmm2.Tpo -c -o libcharmm2_a-charmm2.obj `if test -f 'charmm2.cxx'; then $(CYGPATH_W) 'charmm2.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm2.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm2_a-charmm2.Tpo $(DEPDIR)/libcharmm2_a-charmm2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm2.cxx' object='libcharmm2_a-charmm2.obj' libtool=no @AMDEPBACKSLASH@
+libcharmm_exafmm_a-charmm.obj: charmm.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm_exafmm_a-charmm.obj -MD -MP -MF $(DEPDIR)/libcharmm_exafmm_a-charmm.Tpo -c -o libcharmm_exafmm_a-charmm.obj `if test -f 'charmm.cxx'; then $(CYGPATH_W) 'charmm.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm_exafmm_a-charmm.Tpo $(DEPDIR)/libcharmm_exafmm_a-charmm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm.cxx' object='libcharmm_exafmm_a-charmm.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm2_a-charmm2.obj `if test -f 'charmm2.cxx'; then $(CYGPATH_W) 'charmm2.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm2.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm_exafmm_a-charmm.obj `if test -f 'charmm.cxx'; then $(CYGPATH_W) 'charmm.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm.cxx'; fi`
 
-../kernels/libcharmm2_a-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_a-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm2_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm2_a-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
 
-../kernels/libcharmm2_a-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_a-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm2_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm2_a-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_exafmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
 
-../kernels/libcharmm2_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm2_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm2_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
 
-../kernels/libcharmm2_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm2_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm2_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm2_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm2_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libcharmm_exafmm_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm2_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libcharmm_exafmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
-libgromacs_a-gromacs.o: gromacs.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libgromacs_a-gromacs.o -MD -MP -MF $(DEPDIR)/libgromacs_a-gromacs.Tpo -c -o libgromacs_a-gromacs.o `test -f 'gromacs.cxx' || echo '$(srcdir)/'`gromacs.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgromacs_a-gromacs.Tpo $(DEPDIR)/libgromacs_a-gromacs.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='gromacs.cxx' object='libgromacs_a-gromacs.o' libtool=no @AMDEPBACKSLASH@
+libgromacs_exafmm_a-gromacs.o: gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libgromacs_exafmm_a-gromacs.o -MD -MP -MF $(DEPDIR)/libgromacs_exafmm_a-gromacs.Tpo -c -o libgromacs_exafmm_a-gromacs.o `test -f 'gromacs.cxx' || echo '$(srcdir)/'`gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgromacs_exafmm_a-gromacs.Tpo $(DEPDIR)/libgromacs_exafmm_a-gromacs.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='gromacs.cxx' object='libgromacs_exafmm_a-gromacs.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgromacs_a-gromacs.o `test -f 'gromacs.cxx' || echo '$(srcdir)/'`gromacs.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgromacs_exafmm_a-gromacs.o `test -f 'gromacs.cxx' || echo '$(srcdir)/'`gromacs.cxx
 
-libgromacs_a-gromacs.obj: gromacs.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libgromacs_a-gromacs.obj -MD -MP -MF $(DEPDIR)/libgromacs_a-gromacs.Tpo -c -o libgromacs_a-gromacs.obj `if test -f 'gromacs.cxx'; then $(CYGPATH_W) 'gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/gromacs.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgromacs_a-gromacs.Tpo $(DEPDIR)/libgromacs_a-gromacs.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='gromacs.cxx' object='libgromacs_a-gromacs.obj' libtool=no @AMDEPBACKSLASH@
+libgromacs_exafmm_a-gromacs.obj: gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libgromacs_exafmm_a-gromacs.obj -MD -MP -MF $(DEPDIR)/libgromacs_exafmm_a-gromacs.Tpo -c -o libgromacs_exafmm_a-gromacs.obj `if test -f 'gromacs.cxx'; then $(CYGPATH_W) 'gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/gromacs.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libgromacs_exafmm_a-gromacs.Tpo $(DEPDIR)/libgromacs_exafmm_a-gromacs.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='gromacs.cxx' object='libgromacs_exafmm_a-gromacs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgromacs_a-gromacs.obj `if test -f 'gromacs.cxx'; then $(CYGPATH_W) 'gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/gromacs.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgromacs_exafmm_a-gromacs.obj `if test -f 'gromacs.cxx'; then $(CYGPATH_W) 'gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/gromacs.cxx'; fi`
 
-../kernels/libgromacs_a-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_a-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libgromacs_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libgromacs_a-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
 
-../kernels/libgromacs_a-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_a-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libgromacs_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libgromacs_a-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_exafmm_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
 
-../kernels/libgromacs_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libgromacs_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libgromacs_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
 
-../kernels/libgromacs_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libgromacs_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libgromacs_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libgromacs_exafmm_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_exafmm_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
 libmd_distributed_a-md_distributed.o: md_distributed.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libmd_distributed_a-md_distributed.o -MD -MP -MF $(DEPDIR)/libmd_distributed_a-md_distributed.Tpo -c -o libmd_distributed_a-md_distributed.o `test -f 'md_distributed.cxx' || echo '$(srcdir)/'`md_distributed.cxx
@@ -1057,89 +1056,89 @@ libmd_distributed_a-md_distributed.obj: md_distributed.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libmd_distributed_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
-libpetiga_helmholtz_a-petiga.o: petiga.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_helmholtz_a-petiga.o -MD -MP -MF $(DEPDIR)/libpetiga_helmholtz_a-petiga.Tpo -c -o libpetiga_helmholtz_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_helmholtz_a-petiga.Tpo $(DEPDIR)/libpetiga_helmholtz_a-petiga.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_helmholtz_a-petiga.o' libtool=no @AMDEPBACKSLASH@
+libpetiga_exafmm_helmholtz_a-petiga.o: petiga.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_exafmm_helmholtz_a-petiga.o -MD -MP -MF $(DEPDIR)/libpetiga_exafmm_helmholtz_a-petiga.Tpo -c -o libpetiga_exafmm_helmholtz_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_exafmm_helmholtz_a-petiga.Tpo $(DEPDIR)/libpetiga_exafmm_helmholtz_a-petiga.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_exafmm_helmholtz_a-petiga.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_helmholtz_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_exafmm_helmholtz_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
 
-libpetiga_helmholtz_a-petiga.obj: petiga.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_helmholtz_a-petiga.obj -MD -MP -MF $(DEPDIR)/libpetiga_helmholtz_a-petiga.Tpo -c -o libpetiga_helmholtz_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_helmholtz_a-petiga.Tpo $(DEPDIR)/libpetiga_helmholtz_a-petiga.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_helmholtz_a-petiga.obj' libtool=no @AMDEPBACKSLASH@
+libpetiga_exafmm_helmholtz_a-petiga.obj: petiga.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_exafmm_helmholtz_a-petiga.obj -MD -MP -MF $(DEPDIR)/libpetiga_exafmm_helmholtz_a-petiga.Tpo -c -o libpetiga_exafmm_helmholtz_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_exafmm_helmholtz_a-petiga.Tpo $(DEPDIR)/libpetiga_exafmm_helmholtz_a-petiga.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_exafmm_helmholtz_a-petiga.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_helmholtz_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_exafmm_helmholtz_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
 
-../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.o: ../kernels/HelmholtzSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Tpo -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.o `test -f '../kernels/HelmholtzSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzSphericalCPU.cxx' object='../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.o: ../kernels/HelmholtzSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.Tpo -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.o `test -f '../kernels/HelmholtzSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzSphericalCPU.cxx' object='../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.o `test -f '../kernels/HelmholtzSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzSphericalCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.o `test -f '../kernels/HelmholtzSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzSphericalCPU.cxx
 
-../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.obj: ../kernels/HelmholtzSphericalCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Tpo -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.obj `if test -f '../kernels/HelmholtzSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzSphericalCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzSphericalCPU.cxx' object='../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.obj: ../kernels/HelmholtzSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.Tpo -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.obj `if test -f '../kernels/HelmholtzSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzSphericalCPU.cxx' object='../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.obj `if test -f '../kernels/HelmholtzSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzSphericalCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzSphericalCPU.obj `if test -f '../kernels/HelmholtzSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzSphericalCPU.cxx'; fi`
 
-../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.o: ../kernels/HelmholtzP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Tpo -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.o: ../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
 
-../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.obj: ../kernels/HelmholtzP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Tpo -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.obj: ../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_helmholtz_a-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_helmholtz_a-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
 
-libpetiga_laplace_a-petiga.o: petiga.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_laplace_a-petiga.o -MD -MP -MF $(DEPDIR)/libpetiga_laplace_a-petiga.Tpo -c -o libpetiga_laplace_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_laplace_a-petiga.Tpo $(DEPDIR)/libpetiga_laplace_a-petiga.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_laplace_a-petiga.o' libtool=no @AMDEPBACKSLASH@
+libpetiga_exafmm_laplace_a-petiga.o: petiga.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_exafmm_laplace_a-petiga.o -MD -MP -MF $(DEPDIR)/libpetiga_exafmm_laplace_a-petiga.Tpo -c -o libpetiga_exafmm_laplace_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_exafmm_laplace_a-petiga.Tpo $(DEPDIR)/libpetiga_exafmm_laplace_a-petiga.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_exafmm_laplace_a-petiga.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_laplace_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_exafmm_laplace_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
 
-libpetiga_laplace_a-petiga.obj: petiga.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_laplace_a-petiga.obj -MD -MP -MF $(DEPDIR)/libpetiga_laplace_a-petiga.Tpo -c -o libpetiga_laplace_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_laplace_a-petiga.Tpo $(DEPDIR)/libpetiga_laplace_a-petiga.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_laplace_a-petiga.obj' libtool=no @AMDEPBACKSLASH@
+libpetiga_exafmm_laplace_a-petiga.obj: petiga.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_exafmm_laplace_a-petiga.obj -MD -MP -MF $(DEPDIR)/libpetiga_exafmm_laplace_a-petiga.Tpo -c -o libpetiga_exafmm_laplace_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_exafmm_laplace_a-petiga.Tpo $(DEPDIR)/libpetiga_exafmm_laplace_a-petiga.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_exafmm_laplace_a-petiga.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_laplace_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_exafmm_laplace_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
 
-../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.o: ../kernels/LaplaceCartesianCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Tpo -c -o ../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.o: ../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.Tpo -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
 
-../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.obj: ../kernels/LaplaceCartesianCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Tpo -c -o ../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.obj: ../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.Tpo -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_laplace_a-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
 
-../kernels/libpetiga_laplace_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_laplace_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libpetiga_laplace_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libpetiga_laplace_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_laplace_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
 
-../kernels/libpetiga_laplace_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_laplace_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libpetiga_laplace_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libpetiga_laplace_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_laplace_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_exafmm_laplace_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
 charmm2_mpi-test_gromacs.o: test_gromacs.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm2_mpi-test_gromacs.o -MD -MP -MF $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo -c -o charmm2_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
