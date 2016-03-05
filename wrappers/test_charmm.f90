@@ -747,12 +747,12 @@ program main
   images = 3
   theta = 0.3
   verbose = 0
-  ksize = nglobal ** 0.5
-  pcycle = 10 * pi
+  pcycle = 2 * nglobal ** (1. / 6)
+  cutoff = 3 * nglobal ** (1. / 6)
+  cuton = 0.95 * cutoff
+  alpha = 4 / cutoff
+  ksize = 4 / pi * alpha * pcycle
   sigma = .25 / pi
-  cuton = 0.95 * ksize
-  cutoff = ksize
-  alpha = cutoff / pcycle
   nat = 16
   time = 100. ! first 100ps was equilibration with standard CHARMM
   charmmio: if (command_argument_count() > 1) then
@@ -761,9 +761,13 @@ program main
      call charmm_cor_read(nglobal,x,q,pcycle,infile,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,nres,ires,time)
+     cutoff = 3 * nglobal ** (1. / 6)
+     cuton = 0.95 * cutoff
+     alpha = 4 / cutoff
+     ksize = 4 / pi * alpha * pcycle
+     sigma = .25 / pi
      allocate( p(nglobal),f(3*nglobal),icpumap(nglobal) )
      allocate( p2(nglobal),f2(3*nglobal) )
-     alpha = cutoff / pcycle
   else
      allocate( x(3*nglobal),q(nglobal),v(3*nglobal) )
      allocate( p(nglobal),p2(nglobal),f(3*nglobal),f2(3*nglobal) )
