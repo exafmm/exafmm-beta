@@ -408,20 +408,14 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       B->SRC = atype[i] - .5;
+      std::cout << i << " " << atype[i] << " " << cuton << " " << cutoff << std::endl;
       B->TRG = 0;
       int iwrap = wrap(B->X, cycles);
       B->IBODY = i | (iwrap << shift);
       B++;
     }
   }
-  for (int i=0; i<numTypes; i++) {
-    for (int j=0; j<numTypes; j++) {
-      real_t rs = rscale[i*numTypes+j];
-      real_t gs = gscale[i*numTypes+j];
-      std::cout << i << " " << j << " " << rs << " " << gs << std::endl;
-    }
-  }
-      
+
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
