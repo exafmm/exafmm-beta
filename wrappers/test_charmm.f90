@@ -831,7 +831,6 @@ program main
      f2(3*i-1) = 0
      f2(3*i-0) = 0
   enddo
-  cutoff = 20
   if (mpirank == 0) print*,'Ewald Coulomb'
   call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
 !  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)

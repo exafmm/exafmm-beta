@@ -408,7 +408,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       B->SRC = atype[i] - .5;
-      std::cout << i << " " << atype[i] << " " << cuton << " " << cutoff << std::endl;
+      std::cout << i << " " << atype[i] << std::endl;
       B->TRG = 0;
       int iwrap = wrap(B->X, cycles);
       B->IBODY = i | (iwrap << shift);
