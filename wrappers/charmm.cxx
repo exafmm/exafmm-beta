@@ -57,7 +57,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->useRopt = useRopt;
   args->nspawn = nspawn;
   args->theta = theta;
-  verbose = 1;
   args->verbose = verbose & (baseMPI->mpirank == 0);
   args->useRmax = useRmax;
   logger::verbose = args->verbose;
