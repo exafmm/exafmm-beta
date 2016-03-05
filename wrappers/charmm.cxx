@@ -151,7 +151,6 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      std::cout << i << " " << B->X << std::endl;
       B->SRC = q[i] == 0 ? EPS : q[i];
       B->TRG = 0;
       int iwrap = wrap(B->X, cycles);
@@ -196,6 +195,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
+    std::cout << i << " " << p[i] << std::endl;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
