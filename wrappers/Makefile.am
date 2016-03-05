@@ -58,9 +58,9 @@ md_distributed_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 md_distributed_mpi_LDADD = libmd_distributed.a
 
 run_charmm_mpi: charmm_mpi
-	./$< water_32.fmm water.out 0
+	$(MPIRUN) -n 2 ./$< water_32.fmm water.out 0
 run_charmm2_mpi: charmm2_mpi
-	./$< water_32.fmm water.out 0
+	$(MPIRUN) -n 2 ./$< water_32.fmm water.out 0
 run_gromacs_mpi: gromacs_mpi
 	$(MPIRUN) -n 2 ./$<
 run_petiga_laplace_mpi: petiga_laplace_mpi

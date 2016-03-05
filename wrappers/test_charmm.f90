@@ -747,12 +747,12 @@ program main
   images = 3
   theta = 0.3
   verbose = 0
-  ksize = 11
+  ksize = nglobal ** 0.5
   pcycle = 10 * pi
   sigma = .25 / pi
-  cuton = 9.5
-  cutoff = 10.0
-  alpha = 3 * cutoff / pcycle
+  cuton = 0.95 * ksize
+  cutoff = ksize
+  alpha = cutoff / pcycle
   nat = 16
   time = 100. ! first 100ps was equilibration with standard CHARMM
   charmmio: if (command_argument_count() > 1) then
@@ -763,8 +763,7 @@ program main
           aangle,cangle,mass,xc,v,nres,ires,time)
      allocate( p(nglobal),f(3*nglobal),icpumap(nglobal) )
      allocate( p2(nglobal),f2(3*nglobal) )
-     alpha = 3 * cutoff / pcycle
-
+     alpha = cutoff / pcycle
   else
      allocate( x(3*nglobal),q(nglobal),v(3*nglobal) )
      allocate( p(nglobal),p2(nglobal),f(3*nglobal),f2(3*nglobal) )
