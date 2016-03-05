@@ -752,7 +752,7 @@ program main
   sigma = .25 / pi
   cuton = 9.5
   cutoff = 10.0
-  alpha = 10 / pcycle
+  alpha = 3 * cutoff / pcycle
   nat = 16
   time = 100. ! first 100ps was equilibration with standard CHARMM
   charmmio: if (command_argument_count() > 1) then
@@ -763,7 +763,7 @@ program main
           aangle,cangle,mass,xc,v,nres,ires,time)
      allocate( p(nglobal),f(3*nglobal),icpumap(nglobal) )
      allocate( p2(nglobal),f2(3*nglobal) )
-     alpha = 10 / pcycle
+     alpha = 3 * cutoff / pcycle
 
   else
      allocate( x(3*nglobal),q(nglobal),v(3*nglobal) )

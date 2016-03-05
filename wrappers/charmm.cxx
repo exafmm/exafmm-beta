@@ -33,7 +33,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const bool useRmax = true;
-  const bool useRopt = true;
+  const bool useRopt = false;
   kernel::eps2 = 0.0;
   kernel::setup();
 

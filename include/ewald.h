@@ -122,7 +122,7 @@ namespace exafmm {
 	wrap(dX, ewald->cycle);                                 //  Wrap around periodic domain
 	vec3 Xperiodic = Ci->X - Cj->X - dX;                    //  Coordinate offset for periodic B.C.
 	real_t R = std::sqrt(norm(dX));                         //  Scalar distance
-	if (R < 3 * ewald->cutoff) {                            //  If cells are close
+	if (R - Ci->R - Cj->R < sqrtf(3) * ewald->cutoff) {     //  If cells are close
 	  if(Cj->NCHILD == 0) ewald->P2P(Ci,Cj,Xperiodic);      //   Ewald real part
 	  for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
 	    Neighbor neighbor(ewald, Ci, CC, C0);               //    Instantiate recursive functor
