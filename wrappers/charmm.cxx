@@ -148,7 +148,6 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
   for (int i=0; i<nglobal; i++) {
-    std::cout << i << " " << cycle << " " << icpumap[i] << std::endl;
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
@@ -435,6 +434,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0];
+    std::cout << i << " " << p[i] << " " << B->TRG[0] << " " << B->X << " " << B->SRC << std::endl;
     f[3*i+0] += B->TRG[1];
     f[3*i+1] += B->TRG[2];
     f[3*i+2] += B->TRG[3];
