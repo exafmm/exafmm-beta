@@ -414,13 +414,11 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B++;
     }
   }
-  for (int i=0; i<nglobal; i++) {
-    int atypei = atype[i]-1;
-    for (int j=0; j<nglobal; j++) {
-      int atypej = atype[j]-1;
-      real_t rs = rscale[atypei*numTypes+atypej];
-      real_t gs = gscale[atypei*numTypes+atypej];
-      std::cout << i << " " << atypei << " " << j << " " << atypej << " " << rs << " " << gs << std::endl;
+  for (int i=0; i<numTypes; i++) {
+    for (int j=0; j<numTypes; j++) {
+      real_t rs = rscale[i*numTypes+j];
+      real_t gs = gscale[i*numTypes+j];
+      std::cout << i << " " << j << " " << rs << " " << gs << std::endl;
     }
   }
       
