@@ -814,10 +814,8 @@ program main
   endif charmmio
   if (mpirank == 0) print*,'I/O done'
   ista = 1
-  iend = nglobal / 3
+  iend = nglobal
   call split_range(ista,iend,mpirank,mpisize)
-  ista = (ista - 1) * 3 + 1
-  iend = iend * 3
   do i = ista,iend
      icpumap(i) = 1
   enddo
