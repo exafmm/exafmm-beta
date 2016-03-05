@@ -414,6 +414,16 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B++;
     }
   }
+  for (int i=0; i<nglobal; i++) {
+    int atypei = atype[i]-1;
+    for (int j=0; j<nglobal; j++) {
+      int atypej = atype[j]-1;
+      real_t rs = rscale[atypei*numTypes+atypej];
+      real_t gs = gscale[atypei*numTypes+atypej];
+      std::cout << i << " " << atypei << " " << j << " " << atypej << " " << rs << " " << gs << std::endl;
+    }
+  }
+      
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
@@ -434,7 +444,6 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0];
-    std::cout << i << " " << p[i] << " " << B->TRG[0] << " " << B->X << " " << B->SRC << std::endl;
     f[3*i+0] += B->TRG[1];
     f[3*i+1] += B->TRG[2];
     f[3*i+2] += B->TRG[3];
