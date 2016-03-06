@@ -847,10 +847,10 @@ program main
      print "(a)",'--- Coulomb FMM vs. Ewald -------'
      print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
      print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
-     print "(a,f12.4)",'Energy (FMM)         : ',enerf
-     print "(a,f12.4)",'Energy (Ewald)       : ',enere
-     print "(a,f12.4)",'GRMS (FMM)           : ',grmsf
-     print "(a,f12.4)",'GRMS (Ewald)         : ',grmse
+     print "(a,f15.4)",'Energy (FMM)         : ',enerf
+     print "(a,f15.4)",'Energy (Ewald)       : ',enere
+     print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
+     print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
   endif
 
   do i = 1,nglobal
@@ -877,10 +877,10 @@ program main
      print "(a)",'--- VdW FMM vs. Direct ----------'
      print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
      print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
-     print "(a,f12.4)",'Energy (FMM)         : ',enerf
-     print "(a,f12.4)",'Energy (Direct)      : ',enere
-     print "(a,f12.4)",'GRMS (FMM)           : ',grmsf
-     print "(a,f12.4)",'GRMS (Direct)        : ',grmse
+     print "(a,f15.4)",'Energy (FMM)         : ',enerf
+     print "(a,f15.4)",'Energy (Direct)      : ',enere
+     print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
+     print "(a,f15.4)",'GRMS (Direct)        : ',grmse
   endif
 
   ! run dynamics if second command line argument specified
