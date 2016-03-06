@@ -30,7 +30,7 @@ Bounds localBounds;
 Bounds globalBounds;
 
 extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
-  const int ncrit = 32;
+  const int ncrit = 16;
   const int nspawn = 1000;
   const bool useRmax = true;
   const bool useRopt = false;
