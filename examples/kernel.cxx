@@ -11,7 +11,7 @@ int main() {
 
   Cells cells(4);
   Verify verify;
-  jbodies[0].X = 0;
+  jbodies[0].X = 2;
 #if EXAFMM_BIOTSAVART
   jbodies[0].SRC[0] = drand48();
   jbodies[0].SRC[1] = drand48();
@@ -21,7 +21,8 @@ int main() {
   jbodies[0].SRC = 1;
 #endif
   C_iter Cj = cells.begin();
-  Cj->X = 3. / 16;
+  Cj->X = 1;
+  Cj->X[0] = 3;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M = 0;
@@ -31,12 +32,14 @@ int main() {
   C_iter CJ = cells.begin()+1;
   CJ->ICHILD = Cj-cells.begin();
   CJ->NCHILD = 1;
-  CJ->X = 3. / 8;
+  CJ->X = 0;
+  CJ->X[0] = 4;
   CJ->M = 0;
   kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
-  CI->X = 21. / 8;
+  CI->X = 0;
+  CI->X[0] = -4;
   CI->M = 1;
   CI->L = 0;
 #if EXAFMM_MASS
@@ -45,14 +48,16 @@ int main() {
   kernel::M2L(CI, CJ, false);
 
   C_iter Ci = cells.begin()+3;
-  Ci->X = 45. / 16;
+  Ci->X = 1;
+  Ci->X[0] = -3;
   Ci->IPARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
   kernel::L2L(Ci, cells.begin());
 #else
   C_iter Ci = cells.begin()+3;
-  Ci->X = 45. / 16;
+  Ci->X = 1;
+  Ci->X[0] = -3;
   Ci->M = 1;
   Ci->L = 0;
 #if EXAFMM_MASS
@@ -61,7 +66,8 @@ int main() {
   kernel::M2L(Ci, Cj, false);
 #endif
 
-  bodies[0].X = 3;
+  bodies[0].X = 2;
+  bodies[0].X[0] = -2;
   bodies[0].SRC = 1;
   bodies[0].TRG = 0;
   Ci->BODY = bodies.begin();
@@ -79,7 +85,6 @@ int main() {
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }
-  std::cout << bodies[0].TRG[0] << " " << bodies2[0].TRG[0] << std::endl;
 
   std::fstream file;
   file.open("kernel.dat", std::ios::out | std::ios::app);

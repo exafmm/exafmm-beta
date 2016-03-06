@@ -11,7 +11,11 @@ bottomup: construct.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(SERIALRUN)
 
-kernel: kernel.cxx $(SOURCE)
+kernel: kernel2.cxx $(SOURCE)
+	$(CXX) $? $(LFLAGS)
+	$(SERIALRUN)
+
+convergence: kernel.cxx $(SOURCE)
 	for P in 3 4 5 6 7 8 9 10 11 12 13 14 15; do echo P = $$P compiling && \
         $(CXX) $? $(LFLAGS) -DEXPANSION=$$P && \
         echo P = $$P executing && $(SERIALRUN); done
