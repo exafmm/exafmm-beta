@@ -3,7 +3,6 @@
 #include <ostream>
 #define EXAFMM_VEC_NEWTON 1
 #define EXAFMM_VEC_VERBOSE 0
-#if EXAFMM_USE_VECTORCLASS
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Using Agner's vectorclass for operator overloading SIMD intrinsics.")
 #endif
@@ -11,7 +10,6 @@
 #include "../vectorclass/vectormath_common.h"
 #include "../vectorclass/vectormath_exp.h"
 #include "../vectorclass/vectormath_trig.h"
-#endif
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
 
 namespace exafmm {

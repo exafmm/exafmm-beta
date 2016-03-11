@@ -16,11 +16,6 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 #define __attribute__(x)
 #endif
 
-// Use Agner's vectormath for x86 SIMD
-#if __MIC__ | __AVX__ | __SSE__
-#define EXAFMM_USE_VECTORCLASS 1
-#endif
-
 // Bluegene/Q and K computer don't have single precision arithmetic
 #if __bgq__ | __sparc_v9__
 #ifdef EXAFMM_SINGLE
