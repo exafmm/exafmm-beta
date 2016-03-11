@@ -166,6 +166,22 @@ namespace exafmm {
       return key;
     }
 #endif
+
+    // Key from vector
+    uint64_t getKey(ivec3 iX, int level) {
+      uint64_t index = interleave(iX[0], iX[1], iX[2]);
+      return index + ((1 << 3 * level) - 1) / 7;
+    }
+
+    //! Get level from Morton key
+    int getLevel(uint64_t key) {
+      int level = -1;
+      while( int(key) >= 0 ) {
+	level++;
+	key -= 1 << 3*level;
+      }
+      return level;
+    }
   }
 }
 #endif
