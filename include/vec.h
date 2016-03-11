@@ -6,11 +6,12 @@
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Using Agner's vectorclass for operator overloading SIMD intrinsics.")
 #endif
+#ifndef __sparc_v9__
 #include "../vectorclass/vectorclass.h"
 #include "../vectorclass/vectormath_common.h"
 #include "../vectorclass/vectormath_exp.h"
 #include "../vectorclass/vectormath_trig.h"
-//! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
+#endif
 
 namespace exafmm {
 #ifndef __CUDACC__
