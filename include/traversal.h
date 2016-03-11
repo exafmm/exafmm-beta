@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "logger.h"
 #include "thread.h"
+#include "morton_key.h"
 
 #if EXAFMM_COUNT_KERNEL
 #define countKernel(N) N++
@@ -48,36 +49,6 @@ namespace exafmm {
 #else
     void countWeight(C_iter, C_iter, bool, real_t) {}
 #endif
-
-    //! Get level from key
-    int getLevel(uint64_t key) {
-      int level = -1;                                           // Initialize level
-      while( int(key) >= 0 ) {                                  // While key has level offsets to subtract
-	level++;                                                //  Increment level
-	key -= 1 << 3*level;                                    //  Subtract level offset
-      }                                                         // End while loop for level offsets
-      return level;                                             // Return level
-    }
-
-    //! Get 3-D index from key
-    ivec3 getIndex(uint64_t key) {
-      int level = -1;                                           // Initialize level
-      while( int(key) >= 0 ) {                                  // While key has level offsets to subtract
-	level++;                                                //  Increment level
-	key -= 1 << 3*level;                                    //  Subtract level offset
-      }                                                         // End while loop for level offsets
-      key += 1 << 3*level;                                      // Compensate for over-subtraction
-      level = 0;                                                // Initialize level
-      ivec3 iX = 0;                                             // Initialize 3-D index
-      int d = 0;                                                // Initialize dimension
-      while( key > 0 ) {                                        // While key has bits to shift
-	iX[d] += (key % 2) * (1 << level);                      //  Deinterleave key bits to 3-D bits
-	key >>= 1;                                              //  Shift bits in key
-	d = (d+1) % 3;                                          //  Increment dimension
-	if( d == 0 ) level++;                                   //  Increment level
-      }                                                         // End while loop for key bits to shift
-      return iX;                                                // Return 3-D index
-    }
 
     //! Get 3-D index from periodic key
     ivec3 getPeriodicIndex(int key) {
@@ -135,7 +106,7 @@ namespace exafmm {
 	int iparent = Ci->IPARENT;                              //  Index of parent target cell
 	int numNeighbors;                                       //  Number of neighbor parents
 	getList(2, iparent, neighbors, neighborKeys, numNeighbors);//  Get list of neighbors
-	ivec3 iX = getIndex(Ci->ICELL);                         //  Get 3-D index from key
+	ivec3 iX = morton::getIndex(Ci->ICELL);                 //  Get 3-D index from key
 	int nchilds = 0;                                        //  Initialize number of parents' neighbors' children
 	for (int i=0; i<numNeighbors; i++) {                    //  Loop over parents' neighbors
 	  int jparent = neighbors[i];                           //   Index of parent source cell
@@ -152,9 +123,9 @@ namespace exafmm {
 	  int jcell = childs[i];                                //   Index of source cell
 	  int periodicKey = childKeys[i];                       //   Periodic key of source cell
 	  C_iter Cj = Cj0 + jcell;                              //   Iterator of source cell
-	  ivec3 jX = getIndex(Cj->ICELL);                       //   3-D index of source cell
+	  ivec3 jX = morton::getIndex(Cj->ICELL);               //   3-D index of source cell
 	  ivec3 pX = getPeriodicIndex(periodicKey);             //   3-D periodic index of source cell
-	  int level = getLevel(Cj->ICELL);                      //   Level of source cell
+	  int level = morton::getLevel(Cj->ICELL);              //   Level of source cell
 	  jX += pX * (1 << level);                              //   Periodic image shift
 	  if (iX[0]-1 <= jX[0] && jX[0] <= iX[0]+1 &&           //   If neighbor in x dimension and
 	      iX[1]-1 <= jX[1] && jX[1] <= iX[1]+1 &&           //               in y dimension and
