@@ -22,6 +22,7 @@ namespace exafmm {
     {"mutual",       no_argument,       0, 'm'},
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
+    {"PP",           required_argument, 0, 'P'},
     {"repeat",       required_argument, 0, 'r'},
     {"nspawn",       required_argument, 0, 's'},
     {"theta",        required_argument, 0, 't'},
@@ -45,6 +46,7 @@ namespace exafmm {
     int mutual;
     int numBodies;
     int useRopt;
+    int PP;
     int repeat;
     int nspawn;
     double theta;
@@ -69,6 +71,7 @@ namespace exafmm {
 	      " --mutual (-m)                 : Use mutual interaction (%d)\n"
 	      " --numBodies (-n)              : Number of bodies (%d)\n"
 	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
+	      " --P (-P)                      : Order of expansion (%d)\n"
 	      " --repeat (-r)                 : Number of iteration loops (%d)\n"
 	      " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
 	      " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
@@ -87,6 +90,7 @@ namespace exafmm {
 	      mutual,
 	      numBodies,
 	      useRopt,
+	      PP,
 	      repeat,
 	      nspawn,
 	      theta,
@@ -127,6 +131,7 @@ namespace exafmm {
       mutual(0),
       numBodies(1000000),
       useRopt(0),
+      PP(4),
       repeat(1),
       nspawn(5000),
       theta(.4),
@@ -137,10 +142,10 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx");
+	int c = getopt(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
@@ -176,6 +181,9 @@ namespace exafmm {
 	  break;
 	case 'o':
 	  useRopt = 1;
+	  break;
+	case 'P':
+	  PP = atoi(optarg);
 	  break;
 	case 'r':
 	  repeat = atoi(optarg);
