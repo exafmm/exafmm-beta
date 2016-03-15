@@ -88,9 +88,9 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
   Bodies bodies(*ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycles[0] / 2;
-    B->X[1] = x[3*i+1] - cycles[1] / 2;
-    B->X[2] = x[3*i+2] - cycles[2] / 2;
+    B->X[0] = x[3*i+0];
+    B->X[1] = x[3*i+1];
+    B->X[2] = x[3*i+2];
     B->SRC = q[i];
     B->TRG[0] = v[3*i+0];
     B->TRG[1] = v[3*i+1];
@@ -113,9 +113,9 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
       res_index[i] = B->ICELL;
       int iwrap = unsigned(B->IBODY) >> shift;
       unwrap(B->X, cycles, iwrap);
-      x[3*i+0] = B->X[0] + cycles[0] / 2;
-      x[3*i+1] = B->X[1] + cycles[1] / 2;
-      x[3*i+2] = B->X[2] + cycles[2] / 2;
+      x[3*i+0] = B->X[0];
+      x[3*i+1] = B->X[1];
+      x[3*i+2] = B->X[2];
       q[i]     = B->SRC;
       v[3*i+0] = B->TRG[0];
       v[3*i+1] = B->TRG[1];
@@ -140,9 +140,9 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycles[0] / 2;
-    B->X[1] = x[3*i+1] - cycles[1] / 2;
-    B->X[2] = x[3*i+2] - cycles[2] / 2;
+    B->X[0] = x[3*i+0];
+    B->X[1] = x[3*i+1];
+    B->X[2] = x[3*i+2];
     wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
@@ -340,11 +340,7 @@ extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * 
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   const int Nmax = 1000000;
   const double cutoff2 = cutoff * cutoff;
-  int images = args->images;
-  int prange = 0;
-  for (int i=0; i<images; i++) {
-    prange += int(std::pow(3.,i));
-  }
+  int prange = int(cutoff/min(cycles)*0.999999) + 1;
   double * x2 = new double [3*Nmax];
   double * q2 = new double [Nmax];
   for (int i=0; i<ni; i++) {
