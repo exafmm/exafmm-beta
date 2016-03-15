@@ -12,6 +12,7 @@ namespace exafmm {
 #ifndef _SX
   static struct option long_options[] = {
     {"ncrit",        required_argument, 0, 'c'},
+    {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
     {"dual",         no_argument,       0, 'D'},
     {"graft",        no_argument,       0, 'g'},
@@ -37,6 +38,7 @@ namespace exafmm {
   class Args {
   public:
     int ncrit;
+    double cutoff;
     const char * distribution;
     int dual;
     int graft;
@@ -61,6 +63,7 @@ namespace exafmm {
 	      "Usage: %s [options]\n"
 	      "Long option (short option)     : Description (Default value)\n"
 	      " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
+	      " --cutoff (-C)                 : Cutoff distance of interaction (%f)\n"
 	      " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
 	      " --dual (-D)                   : Use dual tree traversal (%d)\n"
 	      " --graft (-g)                  : Graft remote trees to global tree (%d)\n"
@@ -81,6 +84,7 @@ namespace exafmm {
 	      " --useRmax (-x)                : Use maximum distance for MAC (%d)\n",
 	      name,
 	      ncrit,
+	      cutoff,
 	      distribution,
 	      dual,
 	      graft,
@@ -122,6 +126,7 @@ namespace exafmm {
   public:
     Args(int argc=0, char ** argv=NULL) :
       ncrit(64),
+      cutoff(.0),
       distribution("cube"),
       dual(0),
       graft(0),
@@ -151,6 +156,9 @@ namespace exafmm {
 	switch (c) {
 	case 'c':
 	  ncrit = atoi(optarg);
+	  break;
+	case 'C':
+	  cutoff = atof(optarg);
 	  break;
 	case 'd':
 	  distribution = parse(optarg);
@@ -217,6 +225,8 @@ namespace exafmm {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
 		  << "ncrit" << " : " << ncrit << std::endl
+		  << std::setw(stringLength)
+		  << "cutoff" << " : " << cutoff << std::endl
 		  << std::setw(stringLength)
 		  << "distribution" << " : " << distribution << std::endl
 		  << std::setw(stringLength)

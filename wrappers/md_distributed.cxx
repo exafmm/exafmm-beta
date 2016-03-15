@@ -47,6 +47,7 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, b
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
   args->ncrit = ncrit;
+  args->cutoff = cutoff;
   args->distribution = "external";
   args->dual = 1;
   args->graft = 1;
@@ -125,6 +126,7 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
 
 extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * q, double * p, double * f, double * cycle) {
   num_threads(args->threads);
+  double cutoff = args->cutoff;
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   const int shift = 29;
@@ -194,15 +196,40 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
     f[3*i+1] = B->TRG[2];
     f[3*i+2] = B->TRG[3];
   }
-  bodies = treeMPI->getRecvBodies();
+  Bodies jbodies = treeMPI->getRecvBodies();
+  jbodies.insert(jbodies.begin(), bodies.begin(), bodies.end());
+  bodies.clear();
+  ivec3 iX;
+  for (iX[0]=-1; iX[0]<=1; iX[0]++) {
+    for (iX[1]=-1; iX[1]<=1; iX[1]++) {
+      for (iX[2]=-1; iX[2]<=1; iX[2]++) {
+        if (norm(iX) != 0) {
+          vec3 Xmin = - cycles * 0.5;
+          vec3 Xmax =   cycles * 0.5;
+          for (int d=0; d<3; d++) {
+            if (iX[d] ==  1) Xmax[d] = -cycles[d] * 0.5 + cutoff;
+            if (iX[d] == -1) Xmin[d] =  cycles[d] * 0.5 - cutoff;
+          }
+	  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+	    if (Xmin[0] < B->X[0] && B->X[0] < Xmax[0] &&
+		Xmin[1] < B->X[1] && B->X[1] < Xmax[1] &&
+		Xmin[2] < B->X[2] && B->X[2] < Xmax[2]) {
+	      bodies.push_back(*B);
+	      for (int d=0; d<3; d++) {
+		bodies.back().X[d] += iX[d] * cycles[d];
+	      }
+	    }
+	  }
+        }
+      }
+    }
+  }
   int njmax = *nj;
   *nj = ni + bodies.size();
   if (*nj < njmax) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       int i = B - bodies.begin() + ni;
       res_index[i] = B->ICELL;
-      int iwrap = unsigned(B->IBODY) >> shift;
-      unwrap(B->X, cycles, iwrap);
       x[3*i+0] = B->X[0];
       x[3*i+1] = B->X[1];
       x[3*i+2] = B->X[2];
@@ -284,6 +311,30 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
+extern "C" void Dipole_Correction(int ni, double * x, double * q, double * p, double * f, double * cycle) {
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
+  float localDipole[3] = {0, 0, 0};
+  for (int i=0; i<ni; i++) {
+    for (int d=0; d<3; d++) localDipole[d] += x[3*i+d] * q[i];
+  }
+  int N;
+  MPI_Allreduce(&ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  float globalDipole[3];
+  MPI_Allreduce(localDipole, globalDipole, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+  double norm = 0;
+  for (int d=0; d<3; d++) {
+    norm += globalDipole[d] * globalDipole[d];
+  }
+  float coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]);
+  for (int i=0; i<ni; i++) {
+    p[i] -= coef * norm / N / q[i];
+    f[3*i+0] -= coef * globalDipole[0];
+    f[3*i+1] -= coef * globalDipole[1];
+    f[3*i+2] -= coef * globalDipole[2];
+  }
+}
+
 extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle) {
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
@@ -340,25 +391,6 @@ extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * 
       f[3*i+1] -= fy;
       f[3*i+2] -= fz;
     }
-  }
-  float localDipole[3] = {0, 0, 0};
-  for (int i=0; i<ni; i++) {
-    for (int d=0; d<3; d++) localDipole[d] += x[3*i+d] * q[i];
-  }
-  int N;
-  MPI_Allreduce(&ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  float globalDipole[3];
-  MPI_Allreduce(localDipole, globalDipole, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-  double norm = 0;
-  for (int d=0; d<3; d++) {
-    norm += globalDipole[d] * globalDipole[d];
-  }
-  float coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]);
-  for (int i=0; i<ni; i++) {
-    p[i] -= coef * norm / N / q[i];
-    f[3*i+0] -= coef * globalDipole[0];
-    f[3*i+1] -= coef * globalDipole[1];
-    f[3*i+2] -= coef * globalDipole[2];
   }
   delete[] x2;
   delete[] q2;
