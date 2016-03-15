@@ -199,29 +199,35 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   Bodies jbodies = treeMPI->getRecvBodies();
   jbodies.insert(jbodies.begin(), bodies.begin(), bodies.end());
   bodies.clear();
+  vec3 Xmin = localBounds.Xmin - cutoff;
+  vec3 Xmax = localBounds.Xmax + cutoff;
   ivec3 iX;
+  real_t X[3];
   for (iX[0]=-1; iX[0]<=1; iX[0]++) {
     for (iX[1]=-1; iX[1]<=1; iX[1]++) {
       for (iX[2]=-1; iX[2]<=1; iX[2]++) {
-        if (norm(iX) != 0) {
-          vec3 Xmin = - cycles * 0.5;
-          vec3 Xmax =   cycles * 0.5;
-          for (int d=0; d<3; d++) {
-            if (iX[d] ==  1) Xmax[d] = -cycles[d] * 0.5 + cutoff;
-            if (iX[d] == -1) Xmin[d] =  cycles[d] * 0.5 - cutoff;
-          }
+	if (norm(iX) != 0) {
 	  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-	    if (Xmin[0] < B->X[0] && B->X[0] < Xmax[0] &&
-		Xmin[1] < B->X[1] && B->X[1] < Xmax[1] &&
-		Xmin[2] < B->X[2] && B->X[2] < Xmax[2]) {
+	    for (int d=0; d<3; d++) X[d] = B->X[d] + iX[d] * cycles[d];
+	    if (Xmin[0] < X[0] && X[0] < Xmax[0] &&
+		Xmin[1] < X[1] && X[1] < Xmax[1] &&
+		Xmin[2] < X[2] && X[2] < Xmax[2]) {
 	      bodies.push_back(*B);
 	      for (int d=0; d<3; d++) {
-		bodies.back().X[d] += iX[d] * cycles[d];
+		bodies.back().X[d] = X[d];
 	      }
 	    }
 	  }
         }
       }
+    }
+  }
+  jbodies = treeMPI->getRecvBodies();
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    if (Xmin[0] < B->X[0] && B->X[0] < Xmax[0] &&
+	Xmin[1] < B->X[1] && B->X[1] < Xmax[1] &&
+	Xmin[2] < B->X[2] && B->X[2] < Xmax[2]) {
+      bodies.push_back(*B);
     }
   }
   int njmax = *nj;
