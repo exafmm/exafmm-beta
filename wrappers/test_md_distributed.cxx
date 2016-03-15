@@ -45,12 +45,20 @@ int main(int argc, char ** argv) {
 
   srand48(mpirank);
   double average = 0;
+  int ic = 0, id = 0;
   for (int i=0; i<ni; i++) {
     x[3*i+0] = drand48() * cycle[0] - cycle[0] / 2;
     x[3*i+1] = drand48() * cycle[1] - cycle[1] / 2;
     x[3*i+2] = drand48() * cycle[2] - cycle[2] / 2;
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
-    res_index[i] = i + mpirank*ni;
+    if (drand48() > 0.5 && ic > 2 || ic > 5) ic = 0; 
+    if (ic == 0) {
+      res_index[i] = id;
+      id++;
+    } else {
+      res_index[i] = -ic;
+    }
+    ic++;
   }
   for (int i=0; i<ni; i++) {
     q[i] = drand48() - .5;
@@ -100,11 +108,9 @@ int main(int argc, char ** argv) {
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
-  std::cout << ni << " " << nj << std::endl;
   double cutoff2 = cutoff * cutoff;
   for (int i=0; i<ni; i++) {
     double pp = 0, fx = 0, fy = 0, fz = 0;
-#if 1
     for (int j=0; j<nj; j++) {
       double dx = x[3*i+0] - x[3*j+0];
       double dy = x[3*i+1] - x[3*j+1];
@@ -120,29 +126,6 @@ int main(int argc, char ** argv) {
 	fz += dz * invR3;
       }
     }
-#else
-    for (int ix=-1; ix<=1; ix++) {
-      for (int iy=-1; iy<=1; iy++) {
-	for (int iz=-1; iz<=1; iz++) {
-	  for (int j=0; j<ni; j++) {
-	    double dx = x[3*i+0] - x[3*j+0] - ix * cycle[0];
-	    double dy = x[3*i+1] - x[3*j+1] - iy * cycle[1];
-	    double dz = x[3*i+2] - x[3*j+2] - iz * cycle[2];
-	    double R2 = dx * dx + dy * dy + dz * dz;
-	    if (R2 < cutoff2) {
-	      double invR = 1 / std::sqrt(R2);
-	      if (R2 == 0) invR = 0;
-	      double invR3 = q[j] * invR * invR * invR;
-	      pp += q[j] * invR;
-	      fx += dx * invR3;
-	      fy += dy * invR3;
-	      fz += dz * invR3;
-	    }
-	  }
-	}
-      }
-    }
-#endif
     p[i] += pp;
     f[3*i+0] -= fx;
     f[3*i+1] -= fy;
