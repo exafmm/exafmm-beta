@@ -9,6 +9,8 @@
 #include "macros.h"
 #include <stdint.h>
 #include <vector>
+#include <map>
+#include <algorithm>
 #include "vec.h"
 
 namespace exafmm {
@@ -125,5 +127,11 @@ namespace exafmm {
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef Cells::iterator   C_iter;                             //!< Iterator of cell vector
+	
+	typedef uint64_t hilbert_t;                                   //!< Type of Hilbert orders
+	typedef std::vector<hilbert_t>	VHilbert;										  //!< Type of Hilbert key vectors
+	typedef std::pair<hilbert_t,hilbert_t> KeyPair;   				    //!< Type of Hilbert Key Pair  
+  typedef std::map<hilbert_t, size_t> TreeLevelMap;   					//!< Tree Level type
+	typedef std::map<size_t,TreeLevelMap> TreeType;     					//!< Level Indexer
 }
 #endif
