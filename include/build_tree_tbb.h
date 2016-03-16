@@ -57,6 +57,8 @@ namespace exafmm {
 	  binNode->LEFT = binNode->RIGHT = NULL;                //   Initialize pointers to left and right child node
 	  for (int i=begin; i<end; i++) {                       //   Loop over bodies in node
 	    vec3 x = bodies[i].X;                               //    Coordinates of body
+	    if (bodies[i].ICELL < 0)                            //    If using residual index
+	      x = bodies[i+bodies[i].ICELL].X;                  //     Use coordinates of first body in residual group
 	    int octant = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);// Which octant body belongs to
 	    binNode->NBODY[octant]++;                           //    Increment body count in octant
 	  }                                                     //   End loop over bodies in node
@@ -99,6 +101,8 @@ namespace exafmm {
 	if (binNode->LEFT == NULL) {                            //  If there are no more child nodes
 	  for (int i=begin; i<end; i++) {                       //   Loop over bodies
 	    vec3 x = bodies[i].X;                               //    Coordinates of body
+	    if (bodies[i].ICELL < 0)                            //    If using residual index
+	      x = bodies[i+bodies[i].ICELL].X;                  //     Use coordinates of first body in residual group
 	    int octant = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);// Which octant body belongs to`
 	    buffer[octantOffset[octant]] = bodies[i];           //    Permute bodies out-of-place according to octant
 	    octantOffset[octant]++;                             //    Increment body count in octant

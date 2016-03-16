@@ -183,6 +183,7 @@ namespace exafmm {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
 	B->TRG = 0;                                             //  Clear target values
 	B->IBODY = B-bodies.begin();                            //  Initial body numbering
+	B->ICELL = 0;                                           //  Initial cell index
 	B->WEIGHT = 1;                                          //  Initial weight
       }                                                         // End loop over bodies
     }
