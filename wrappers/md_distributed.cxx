@@ -47,6 +47,7 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, b
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
   args->ncrit = ncrit;
+  args->cutoff = cutoff;
   args->distribution = "external";
   args->dual = 1;
   args->graft = 1;
@@ -77,6 +78,61 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
+extern "C" void Set_Index(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle) {
+  num_threads(args->threads);
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
+  Bodies bodies(*ni);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B-bodies.begin();
+    B->X[0] = x[3*i+0];
+    B->X[1] = x[3*i+1];
+    B->X[2] = x[3*i+2];
+    B->SRC = q[i];
+    B->TRG[0] = v[3*i+0];
+    B->TRG[1] = v[3*i+1];
+    B->TRG[2] = v[3*i+2];
+    int iwrap = wrap(B->X, cycles);
+    B->IBODY = i | (iwrap << shift);
+    B->ICELL = res_index[i];
+  }
+  localBounds = boundBox->getBounds(bodies);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
+  upDownPass->upwardPass(cells);
+  int id = 0;
+  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
+    int ic = 0;
+    for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
+      if (drand48() > 0.5 && ic > 2 || ic > 5) ic = 0;
+      if (ic == 0) {
+	B->ICELL = id;
+	id++;
+      } else {
+	B->ICELL = -ic;
+      }
+      ic++;
+    }
+  }
+  *ni = bodies.size();
+  if (*ni < nimax) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      int i = B-bodies.begin();
+      res_index[i] = B->ICELL;
+      int iwrap = unsigned(B->IBODY) >> shift;
+      unwrap(B->X, cycles, iwrap);
+      x[3*i+0] = B->X[0];
+      x[3*i+1] = B->X[1];
+      x[3*i+2] = B->X[2];
+      q[i]     = B->SRC;
+      v[3*i+0] = B->TRG[0];
+      v[3*i+1] = B->TRG[1];
+      v[3*i+2] = B->TRG[2];
+    }
+  }
+}
+
 extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle) {
   num_threads(args->threads);
   vec3 cycles;
@@ -87,9 +143,9 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
   Bodies bodies(*ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycles[0] / 2;
-    B->X[1] = x[3*i+1] - cycles[1] / 2;
-    B->X[2] = x[3*i+2] - cycles[2] / 2;
+    B->X[0] = x[3*i+0];
+    B->X[1] = x[3*i+1];
+    B->X[2] = x[3*i+2];
     B->SRC = q[i];
     B->TRG[0] = v[3*i+0];
     B->TRG[1] = v[3*i+1];
@@ -112,9 +168,9 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
       res_index[i] = B->ICELL;
       int iwrap = unsigned(B->IBODY) >> shift;
       unwrap(B->X, cycles, iwrap);
-      x[3*i+0] = B->X[0] + cycles[0] / 2;
-      x[3*i+1] = B->X[1] + cycles[1] / 2;
-      x[3*i+2] = B->X[2] + cycles[2] / 2;
+      x[3*i+0] = B->X[0];
+      x[3*i+1] = B->X[1];
+      x[3*i+2] = B->X[2];
       q[i]     = B->SRC;
       v[3*i+0] = B->TRG[0];
       v[3*i+1] = B->TRG[1];
@@ -125,6 +181,7 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
 
 extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * q, double * p, double * f, double * cycle) {
   num_threads(args->threads);
+  double cutoff = args->cutoff;
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   const int shift = 29;
@@ -138,9 +195,9 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0] - cycles[0] / 2;
-    B->X[1] = x[3*i+1] - cycles[1] / 2;
-    B->X[2] = x[3*i+2] - cycles[2] / 2;
+    B->X[0] = x[3*i+0];
+    B->X[1] = x[3*i+1];
+    B->X[2] = x[3*i+2];
     wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
@@ -194,15 +251,46 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
     f[3*i+1] = B->TRG[2];
     f[3*i+2] = B->TRG[3];
   }
-  bodies = treeMPI->getRecvBodies();
+  Bodies jbodies = treeMPI->getRecvBodies();
+  jbodies.insert(jbodies.begin(), bodies.begin(), bodies.end());
+  bodies.clear();
+  vec3 Xmin = localBounds.Xmin - cutoff;
+  vec3 Xmax = localBounds.Xmax + cutoff;
+  ivec3 iX;
+  real_t X[3];
+  for (iX[0]=-1; iX[0]<=1; iX[0]++) {
+    for (iX[1]=-1; iX[1]<=1; iX[1]++) {
+      for (iX[2]=-1; iX[2]<=1; iX[2]++) {
+	if (norm(iX) != 0) {
+	  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+	    for (int d=0; d<3; d++) X[d] = B->X[d] + iX[d] * cycles[d];
+	    if (Xmin[0] < X[0] && X[0] < Xmax[0] &&
+		Xmin[1] < X[1] && X[1] < Xmax[1] &&
+		Xmin[2] < X[2] && X[2] < Xmax[2]) {
+	      bodies.push_back(*B);
+	      for (int d=0; d<3; d++) {
+		bodies.back().X[d] = X[d];
+	      }
+	    }
+	  }
+        }
+      }
+    }
+  }
+  jbodies = treeMPI->getRecvBodies();
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    if (Xmin[0] < B->X[0] && B->X[0] < Xmax[0] &&
+	Xmin[1] < B->X[1] && B->X[1] < Xmax[1] &&
+	Xmin[2] < B->X[2] && B->X[2] < Xmax[2]) {
+      bodies.push_back(*B);
+    }
+  }
   int njmax = *nj;
   *nj = ni + bodies.size();
   if (*nj < njmax) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       int i = B - bodies.begin() + ni;
       res_index[i] = B->ICELL;
-      int iwrap = unsigned(B->IBODY) >> shift;
-      unwrap(B->X, cycles, iwrap);
       x[3*i+0] = B->X[0];
       x[3*i+1] = B->X[1];
       x[3*i+2] = B->X[2];
@@ -284,16 +372,36 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
+extern "C" void Dipole_Correction(int ni, double * x, double * q, double * p, double * f, double * cycle) {
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
+  float localDipole[3] = {0, 0, 0};
+  for (int i=0; i<ni; i++) {
+    for (int d=0; d<3; d++) localDipole[d] += x[3*i+d] * q[i];
+  }
+  int N;
+  MPI_Allreduce(&ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  float globalDipole[3];
+  MPI_Allreduce(localDipole, globalDipole, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+  double norm = 0;
+  for (int d=0; d<3; d++) {
+    norm += globalDipole[d] * globalDipole[d];
+  }
+  float coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]);
+  for (int i=0; i<ni; i++) {
+    p[i] -= coef * norm / N / q[i];
+    f[3*i+0] -= coef * globalDipole[0];
+    f[3*i+1] -= coef * globalDipole[1];
+    f[3*i+2] -= coef * globalDipole[2];
+  }
+}
+
 extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle) {
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   const int Nmax = 1000000;
   const double cutoff2 = cutoff * cutoff;
-  int images = args->images;
-  int prange = 0;
-  for (int i=0; i<images; i++) {
-    prange += int(std::pow(3.,i));
-  }
+  int prange = int(cutoff/min(cycles)*0.999999) + 1;
   double * x2 = new double [3*Nmax];
   double * q2 = new double [Nmax];
   for (int i=0; i<ni; i++) {
@@ -340,25 +448,6 @@ extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * 
       f[3*i+1] -= fy;
       f[3*i+2] -= fz;
     }
-  }
-  float localDipole[3] = {0, 0, 0};
-  for (int i=0; i<ni; i++) {
-    for (int d=0; d<3; d++) localDipole[d] += x[3*i+d] * q[i];
-  }
-  int N;
-  MPI_Allreduce(&ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  float globalDipole[3];
-  MPI_Allreduce(localDipole, globalDipole, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-  double norm = 0;
-  for (int d=0; d<3; d++) {
-    norm += globalDipole[d] * globalDipole[d];
-  }
-  float coef = 4 * M_PI / (3 * cycles[0] * cycles[1] * cycles[2]);
-  for (int i=0; i<ni; i++) {
-    p[i] -= coef * norm / N / q[i];
-    f[3*i+0] -= coef * globalDipole[0];
-    f[3*i+1] -= coef * globalDipole[1];
-    f[3*i+2] -= coef * globalDipole[2];
   }
   delete[] x2;
   delete[] q2;

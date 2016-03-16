@@ -12,6 +12,7 @@ namespace exafmm {
 #ifndef _SX
   static struct option long_options[] = {
     {"ncrit",        required_argument, 0, 'c'},
+    {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
     {"dual",         no_argument,       0, 'D'},
     {"graft",        no_argument,       0, 'g'},
@@ -22,6 +23,7 @@ namespace exafmm {
     {"mutual",       no_argument,       0, 'm'},
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
+    {"PP",           required_argument, 0, 'P'},
     {"repeat",       required_argument, 0, 'r'},
     {"nspawn",       required_argument, 0, 's'},
     {"theta",        required_argument, 0, 't'},
@@ -36,6 +38,7 @@ namespace exafmm {
   class Args {
   public:
     int ncrit;
+    double cutoff;
     const char * distribution;
     int dual;
     int graft;
@@ -45,6 +48,7 @@ namespace exafmm {
     int mutual;
     int numBodies;
     int useRopt;
+    int PP;
     int repeat;
     int nspawn;
     double theta;
@@ -59,6 +63,7 @@ namespace exafmm {
 	      "Usage: %s [options]\n"
 	      "Long option (short option)     : Description (Default value)\n"
 	      " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
+	      " --cutoff (-C)                 : Cutoff distance of interaction (%f)\n"
 	      " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
 	      " --dual (-D)                   : Use dual tree traversal (%d)\n"
 	      " --graft (-g)                  : Graft remote trees to global tree (%d)\n"
@@ -69,6 +74,7 @@ namespace exafmm {
 	      " --mutual (-m)                 : Use mutual interaction (%d)\n"
 	      " --numBodies (-n)              : Number of bodies (%d)\n"
 	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
+	      " --P (-P) not working          : Order of expansion (%d)\n"
 	      " --repeat (-r)                 : Number of iteration loops (%d)\n"
 	      " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
 	      " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
@@ -78,6 +84,7 @@ namespace exafmm {
 	      " --useRmax (-x)                : Use maximum distance for MAC (%d)\n",
 	      name,
 	      ncrit,
+	      cutoff,
 	      distribution,
 	      dual,
 	      graft,
@@ -87,6 +94,7 @@ namespace exafmm {
 	      mutual,
 	      numBodies,
 	      useRopt,
+	      PP,
 	      repeat,
 	      nspawn,
 	      theta,
@@ -118,6 +126,7 @@ namespace exafmm {
   public:
     Args(int argc=0, char ** argv=NULL) :
       ncrit(64),
+      cutoff(.0),
       distribution("cube"),
       dual(0),
       graft(0),
@@ -127,6 +136,7 @@ namespace exafmm {
       mutual(0),
       numBodies(1000000),
       useRopt(0),
+      PP(4),
       repeat(1),
       nspawn(5000),
       theta(.4),
@@ -137,15 +147,18 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx");
+	int c = getopt(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
 	case 'c':
 	  ncrit = atoi(optarg);
+	  break;
+	case 'C':
+	  cutoff = atof(optarg);
 	  break;
 	case 'd':
 	  distribution = parse(optarg);
@@ -176,6 +189,9 @@ namespace exafmm {
 	  break;
 	case 'o':
 	  useRopt = 1;
+	  break;
+	case 'P':
+	  PP = atoi(optarg);
 	  break;
 	case 'r':
 	  repeat = atoi(optarg);
@@ -209,6 +225,8 @@ namespace exafmm {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
 		  << "ncrit" << " : " << ncrit << std::endl
+		  << std::setw(stringLength)
+		  << "cutoff" << " : " << cutoff << std::endl
 		  << std::setw(stringLength)
 		  << "distribution" << " : " << distribution << std::endl
 		  << std::setw(stringLength)
