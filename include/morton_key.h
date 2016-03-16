@@ -1,5 +1,5 @@
-#ifndef morton_h
-#define morton_h
+#ifndef morton_key_h
+#define morton_key_h
 #include "types.h"
 
 namespace exafmm {
