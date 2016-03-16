@@ -8,6 +8,7 @@
 
 extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, int verbose);
 extern "C" void FMM_Finalize();
+extern "C" void Set_Index(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle);
 extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle);
 extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * q, double * p, double * f, double * cycle);
 extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f,
@@ -51,14 +52,7 @@ int main(int argc, char ** argv) {
     x[3*i+1] = drand48() * cycle[1] - cycle[1] / 2;
     x[3*i+2] = drand48() * cycle[2] - cycle[2] / 2;
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
-    if (drand48() > 0.5 && ic > 2 || ic > 5) ic = 0; 
-    if (ic == 0) {
-      res_index[i] = id;
-      id++;
-    } else {
-      res_index[i] = -ic;
-    }
-    ic++;
+    res_index[i] = 0;
   }
   for (int i=0; i<ni; i++) {
     q[i] = drand48() - .5;
@@ -70,6 +64,10 @@ int main(int argc, char ** argv) {
   }
 
   FMM_Init(images, threads, theta, cutoff, verbose);
+  Set_Index(&ni, nimax, res_index, x, q, v, cycle);
+  for (int i=0; i<ni; i++) {
+    std::cout << i << " "<< res_index[i] << std::endl;
+  }
   FMM_Partition(&ni, nimax, res_index, x, q, v, cycle);
   FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
   for (int i=0; i<ni; i++) {
