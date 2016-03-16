@@ -3,9 +3,9 @@
 #include "logger.h"
 #include "sort.h"
 
-#define cast_uint32(V)               static_cast<uint32_t>(V)
-#define DIM 3
-#define ACCURACY 10000							  							// multiplier to maintain accuracy 		
+#define cast_uint32(V) static_cast<uint32_t>(V)								//!< Safe cast to unsigned int32
+#define DIM 3 																								//!< Domain's dimensions 
+#define ACCURACY 10000							  												//!< Multiplier to maintain accuracy 		
 
 namespace exafmm {
 //! Handles all the partitioning of domains
@@ -110,15 +110,14 @@ private:
 		uint32_t N = 2 << (b - 1), P, Q, t;
 		int i;
 		// Gray decode by H ^ (H/2)
-		t = X[n - 1] >> 1;
-		for ( i = n - 1; i > 0; i-- )
-			X[i] ^= X[i - 1];
+		t = X[n-1]>>1;
+		for(i=n-1; i> 0; i--) X[i] ^= X[i - 1];
 		X[0] ^= t;
 		// Undo excess work
-		for ( Q = 2; Q != N; Q <<= 1 ) {
+		for (Q=2; Q!=N; Q<<=1){
 			P = Q - 1;
-			for ( i = n - 1; i >= 0 ; i-- )
-				if ( X[i] & Q )
+			for (i=n-1; i>=0 ;i--)
+				if (X[i] & Q)
 					X[0] ^= P; // invert
 				else {
 					t = (X[0] ^ X[i]) & P;
@@ -132,10 +131,10 @@ private:
 	void AxestoTranspose(uint32_t X[], int order, int dim) {  // position, #bits, dimension	
 		uint32_t M = 1 << (order - 1), P, Q, t;
 		// Inverse undo
-		for ( Q = M; Q > 1; Q >>= 1 ) {
-			P = Q - 1;
-			for (int i = 0; i < dim; i++ )
-				if ( X[i] & Q )
+		for (Q=M; Q>1; Q>>=1) {
+			P = Q-1;
+			for (int i=0; i<dim; i++)
+				if (X[i] & Q)
 					X[0] ^= P; 																				// invert
 				else { 																					  	// exchange
 					t = (X[0] ^ X[i]) & P;
@@ -144,15 +143,13 @@ private:
 				}
 		}
 		// Gray encode
-		for (int i = 1; i < dim; i++ )
-			X[i] ^= X[i - 1];
+		for (int i=1; i<dim; i++) X[i] ^= X[i-1];
 		t = 0;
-		for ( Q = M; Q > 1; Q >>= 1 )
-			if ( X[dim - 1] & Q )
-				t ^= Q - 1;
-
-		for (int i = 0; i < dim; i++ )
-			X[i] ^= t;
+		for (Q=M; Q>1; Q>>=1) {
+			if (X[dim-1] & Q) 
+				t ^= Q-1;
+		}
+		for (int i=0; i<dim; i++) X[i] ^= t;
 	}
 
 	//! applies partition sort algorithm to sort through particles based on Hilbert index
