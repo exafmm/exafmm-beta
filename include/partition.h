@@ -220,8 +220,10 @@ namespace exafmm {
 	local.Xmax[d] = global.Xmin[d] + (iX[d] + 1) * Xpartition[d];// Xmax of local domain at current rank
       }                                                         // End loop over dimensions
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
+	int ic = 0;                                             //  Residual index
+	if (B->ICELL < 0) ic = B->ICELL;                        //  Use first body in group
 	for (d=0; d<3; d++) {                                   //  Loop over dimensions
-	  iX[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
+	  iX[d] = int(((B+ic)->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
 	}                                                       //  End loop over dimensions
 	B->IRANK = iX[0] + Npartition[0] * (iX[1] + iX[2] * Npartition[1]);//  Set send rank
 	assert(0 <= B->IRANK && B->IRANK < mpisize);

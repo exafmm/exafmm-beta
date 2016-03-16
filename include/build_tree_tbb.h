@@ -64,6 +64,7 @@ namespace exafmm {
 	  }                                                     //   End loop over bodies in node
 	} else {                                                //  Else if number of bodies is larger than threshold
 	  int mid = (begin + end) / 2;                          //   Split range of bodies in half
+	  while (bodies[mid].ICELL < 0) mid++;                  //   Don't split residual groups
 	  int numLeftNode = getNumBinNode(mid - begin);         //   Number of binary tree nodes on left branch
 	  int numRightNode = getNumBinNode(end - mid);          //   Number of binary tree nodes on right branch
 	  assert(numLeftNode + numRightNode <= binNode->END - binNode->BEGIN);// Bounds checking for node count
@@ -109,6 +110,7 @@ namespace exafmm {
 	  }                                                     //   End loop over bodies
 	} else {                                                //  Else if there are child nodes
 	  int mid = (begin + end) / 2;                          //   Split range of bodies in half
+	  while (bodies[mid].ICELL < 0) mid++;                  //   Don't split residual groups
 	  mk_task_group;                                        //   Initialize tasks
 	  MoveBodies leftBranch(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X);// Recursion for left branch
 	  create_taskc(leftBranch);                             //   Create new task for left branch
