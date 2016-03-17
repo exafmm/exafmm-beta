@@ -2,10 +2,7 @@
 #define partition_h
 #include "logger.h"
 #include "sort.h"
-
-#define cast_uint32(V) static_cast<uint32_t>(V)								//!< Safe cast to unsigned int32
-#define DIM 3 																								//!< Domain's dimensions 
-#define ACCURACY 10000							  												//!< Multiplier to maintain accuracy 		
+#include "hilbert_key.h"
 
 namespace exafmm {
 //! Handles all the partitioning of domains
@@ -31,48 +28,32 @@ private:
 	VHilbert range;																							//!< Key ranges for ranks
 	VHilbert::iterator rangeBegin;			    							 			//!< begin iterator of range
 	VHilbert::iterator rangeEnd;					  		 				 				//!< end iterator of range
-	KeyPair globalBounds;																				//!< Global key bounds	
+	KeyPair globalBounds;																				//!< Global key bounds
 
 private:
-	//! Output one 64-bit Hilbert order from the 3D transposed key	
-	inline hilbert_t flattenTransposedKey(uint32_t X[], int order) {
-		hilbert_t key = 0;
-		int shifts = order - 1;
-		for (int i = shifts; i >= 0; --i) { 		  									// flatten transposed key
-			for (int j = 0; j < DIM; ++j) {
-				if (X[j] >> i & 1)										  								// check x-bit
-					key |= 1ull << ((DIM * i) + (DIM - j - 1));				   	// place x-bit in position
-			}
-		}
-		return key;
-	}
-
-	//! Generate Hilbert order from given the particles structure
-	//! This function also maps the floating point numbers to unsigned integers
-	//! in order to fit in the space filling curve semantics
-	//! and returns min/max orders
-	KeyPair generateHilbertKey(Bodies& bodies, Bounds const& bounds, uint32_t& order) {
+	//! Generate Space-filling order (Hilbert) from given the particles structure	and returns min/max orders
+	KeyPair assignSFCtoBodies(Bodies& bodies, Bounds const& bounds, uint32_t& order) {
 		logger::startTimer("Hkey Generation");													// start Hilbert generation timer
 		real_t const& _min = min(bounds.Xmin);													// get min of all dimensions
 		real_t const& _max = max(bounds.Xmax);													// get max of all dimensions
 		hilbert_t min_h = 0ull;																					// initialize min Hilbert order
 		hilbert_t max_h = 0ull;																					// initialize max Hilbert order
-		order = cast_uint32(ceil(log(ACCURACY)/log(2))); 						    // get needed bits to represent Hilbert order in each dimension
-		real_t diameter = _max - _min;
+		order = cast_coord(ceil(log(ACCURACY) / log(2))); 						  // get needed bits to represent Hilbert order in each dimension
+		real_t diameter = _max - _min;																	// set domain's diameter
 		assert(order <= 21);															  						// maximum key is 63 bits
-		B_iter begin = bodies.begin();
-		#pragma omp parallel shared(max_h, min_h)
+		B_iter begin = bodies.begin();																	// bodies begin iterator
+		#pragma omp parallel shared(max_h, min_h)												
 		{
 			#pragma omp for reduction (max: max_h), reduction(min: min_h)
-			for (int i=0; i<bodies.size();++i) {	   											// loop over bodies	
-			  B_iter B = begin + i;																				// Capture body iterator			
-				uint32_t position[3] = { 	    				 								  		// initialize shifted position	
-					cast_uint32((B->X[0] - _min) / diameter * ACCURACY),
-					cast_uint32((B->X[1] - _min) / diameter * ACCURACY),
-					cast_uint32((B->X[2] - _min) / diameter * ACCURACY)
-				};				
-				AxestoTranspose(position, order, DIM);											// get transposed Hilbert order
-				B->ICELL = flattenTransposedKey(position, order);		      	// generate 1 flat Hilbert order (useful for efficient sorting)
+			for (int i = 0; i < bodies.size(); ++i) {	   											// loop over bodies
+				B_iter B = begin + i;																				// Capture body iterator
+				coord_t position[3] = { 	    				 								  		// initialize shifted position
+					cast_coord((B->X[0] - _min) / diameter * ACCURACY),
+					cast_coord((B->X[1] - _min) / diameter * ACCURACY),
+					cast_coord((B->X[2] - _min) / diameter * ACCURACY)
+				};
+				axesToTranspose(position, order, DIM);											// get transposed Hilbert order
+				B->ICELL = flattenTransposedKey(position, order);		      	// generate 1 flat Hilbert order (useful for efficient sorting) 								
 				if (min_h != 0ull) {
 					if (B->ICELL > max_h)	  														  		// update min/max hilbert orders
 						max_h = B->ICELL;
@@ -97,6 +78,7 @@ private:
 		}
 		return 0;
 	}
+
 	//! updates range parameters
 	void updateRangeParameters(VHilbert const& rg) {
 		range = rg;
@@ -105,58 +87,12 @@ private:
 		globalBounds.first = range[0];
 		globalBounds.second = range[mpisize];
 	}
-		//! Transform in-place between Hilbert transpose and geometrical axes	
-	void TransposetoAxes(uint32_t X[], int b, int n) { // position, #bits, dimension		
-		uint32_t N = 2 << (b - 1), P, Q, t;
-		int i;
-		// Gray decode by H ^ (H/2)
-		t = X[n-1]>>1;
-		for(i=n-1; i> 0; i--) X[i] ^= X[i - 1];
-		X[0] ^= t;
-		// Undo excess work
-		for (Q=2; Q!=N; Q<<=1){
-			P = Q - 1;
-			for (i=n-1; i>=0 ;i--)
-				if (X[i] & Q)
-					X[0] ^= P; // invert
-				else {
-					t = (X[0] ^ X[i]) & P;
-					X[0] ^= t;
-					X[i] ^= t;
-				} // exchange
-		}
-	}
-
-	//! Transform in-place between geometrical axes and Hilbert transpose	
-	void AxestoTranspose(uint32_t X[], int order, int dim) {  // position, #bits, dimension	
-		uint32_t M = 1 << (order - 1), P, Q, t;
-		// Inverse undo
-		for (Q=M; Q>1; Q>>=1) {
-			P = Q-1;
-			for (int i=0; i<dim; i++)
-				if (X[i] & Q)
-					X[0] ^= P; 																				// invert
-				else { 																					  	// exchange
-					t = (X[0] ^ X[i]) & P;
-					X[0] ^= t;
-					X[i] ^= t;
-				}
-		}
-		// Gray encode
-		for (int i=1; i<dim; i++) X[i] ^= X[i-1];
-		t = 0;
-		for (Q=M; Q>1; Q>>=1) {
-			if (X[dim-1] & Q) 
-				t ^= Q-1;
-		}
-		for (int i=0; i<dim; i++) X[i] ^= t;
-	}
 
 	//! applies partition sort algorithm to sort through particles based on Hilbert index
 	void hilbertPartitionSort(VHilbert& keys, hilbert_t lbound, hilbert_t rbound, VHilbert&rq, hilbert_t pivot = 0, size_t depth = 0) {
 		VHilbert right;
 		VHilbert left;
-		for (int i=0; i<keys.size(); ++i) {
+		for (int i = 0; i < keys.size(); ++i) {
 			if (keys[i] >= pivot)
 				right.push_back(keys[i]);
 			else left.push_back(keys[i]);
@@ -184,7 +120,7 @@ private:
 			}
 			right.clear();
 			left.clear();
-			for (int i=0; i<keys.size(); ++i) {
+			for (int i = 0; i < keys.size(); ++i) {
 				if (keys[i] >= pivot)
 					right.push_back(keys[i]);
 				else left.push_back(keys[i]);
@@ -416,13 +352,13 @@ public:
 		if (mpisize == 1) return;
 		logger::startTimer("Partition");                          // Start timer
 		uint32_t depth;
-		KeyPair localHilbertBounds = generateHilbertKey(bodies,bounds,depth);		
-		logger::startTimer("Hilbert bounds");		
+		KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);
+		logger::startTimer("Hilbert bounds");
 		hilbert_t min, max;
 		MPI_Allreduce(&localHilbertBounds.first,  &min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
-    MPI_Allreduce(&localHilbertBounds.second, &max, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-    globalBounds = std::make_pair(min,max);
-    logger::stopTimer("Hilbert bounds");
+		MPI_Allreduce(&localHilbertBounds.second, &max, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
+		globalBounds = std::make_pair(min, max);
+		logger::stopTimer("Hilbert bounds");
 		hilbert_t lbound = globalBounds.first;
 		hilbert_t rbound = globalBounds.second;
 		VHilbert rq;
