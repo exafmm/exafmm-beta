@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
+#include "morton_key.h"
 
 namespace exafmm {
   class BuildTree {
@@ -40,28 +41,6 @@ namespace exafmm {
       for (int i=0; i<n; i++) {                                 // Loop over bodies
 	permutation[i] = iwork[i];                              //  Copy back permutation array
       }                                                         // End loop over bodies
-    }
-
-    //! Get Morton key
-    uint64_t getKey(ivec3 iX, int level) {
-      uint64_t index = ((1 << 3 * level) - 1) / 7;              // Level offset
-      for (int l=0; l<level; l++) {                             // Loop over levels
-	for (int d=0; d<3; d++) {                               //  Loop over dimensions
-	  index += (iX[d] & 1) << (3 * l + d);                  //   Interleave bits for each dimension
-	  iX[d] >>= 1;                                          //   Shift bits for each dimension
-	}                                                       //  End loop over dimensions
-      }                                                         // End loop over levels
-      return index;                                             // Return Morton key
-    }
-
-    //! Get level from Morton key
-    int getLevel(uint64_t key) {
-      int level = -1;                                           // Initialize level
-      while( int(key) >= 0 ) {                                  // Loop while key has level offsets to subtract
-	level++;                                                //  Increment level
-	key -= 1 << 3*level;                                    //  Subtract level offset from key
-      }                                                         // End while loop for level offsets to subtract
-      return level;                                             // Return level
     }
 
     //! Transform Xmin & Xmax to X (center) & R (radius)
@@ -155,7 +134,7 @@ namespace exafmm {
 	iX[0]      = nodes[i][1];                               //  3-D index x component
 	iX[1]      = nodes[i][2];                               //  3-D index y component
 	iX[2]      = nodes[i][3];                               //  3-D index z component
-	C->ICELL   = getKey(iX, level);                         //  Copy Morton key as icell
+	C->ICELL   = morton::getKey(iX, level);                 //  Copy Morton key as icell
 	C->IPARENT = nodes[i][4];                               //  Copy iparent
 	C->ICHILD  = nodes[i][5];                               //  Copy ichild
 	C->NCHILD  = nodes[i][6];                               //  Copy nchild
