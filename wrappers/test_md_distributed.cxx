@@ -65,15 +65,8 @@ int main(int argc, char ** argv) {
 
   FMM_Init(images, threads, theta, cutoff, verbose);
   Set_Index(&ni, nimax, res_index, x, q, v, cycle);
-  x[3] -= 1;
-  for (int i=0; i<ni; i++) {
-    if(mpirank==0&&i<10) std::cout << i << " " << res_index[i] << " " << x[3*i] << std::endl;
-  }
   FMM_Partition(&ni, nimax, res_index, x, q, v, cycle);
   FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
-  for (int i=0; i<ni; i++) {
-    if(mpirank==0&&i<10) std::cout << i << " " << res_index[i] << " " << x[3*i] << std::endl;
-  }
   for (int i=0; i<ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
