@@ -66,8 +66,8 @@ inline void axesToTranspose(coord_t X[], int order, int dim) {  // position, #bi
 }
 
 //! Output one 64-bit Hilbert order from the 3D transposed key
-inline uint64_t flattenTransposedKey(coord_t X[], int order) {
-	uint64_t key = 0;
+inline int64_t flattenTransposedKey(coord_t X[], int order) {
+	int64_t key = 0;
 	int shifts = order - 1;
 	for (int i = shifts; i >= 0; --i) { 		  									// flatten transposed key
 		for (int j = 0; j < DIM; ++j) {

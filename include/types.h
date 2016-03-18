@@ -89,7 +89,7 @@ namespace exafmm {
   struct Body : public Source {
     int      IBODY;                                             //!< Initial body numbering for sorting back
     int      IRANK;                                             //!< Initial rank numbering for partitioning back
-    uint64_t ICELL;                                             //!< Cell index   
+    int64_t ICELL;                                              //!< Cell index   
     real_t   WEIGHT;                                            //!< Weight for partitioning
 #if EXAFMM_LAPLACE | EXAFMM_BIOTSAVART
     kvec4    TRG;                                               //!< Scalar+vector3 target values
@@ -117,21 +117,21 @@ namespace exafmm {
     int      numM2L;                                            //!< Size of M2L interaction list per cell
 #endif
     B_iter   BODY;                                              //!< Iterator of first body
-    uint64_t ICELL;                                             //!< Cell index
+    int64_t  ICELL;                                             //!< Cell index
     real_t   WEIGHT;                                            //!< Weight for partitioning
     real_t   SCALE;                                             //!< Scale for Helmholtz kernel
     vec3     X;                                                 //!< Cell center
     real_t   R;                                                 //!< Cell radius
     vecP     M;                                                 //!< Multipole coefficients
     vecP     L;                                                 //!< Local coefficients
+    uint16_t LEVEL;                                             //!< Level at which cell is located
   };
+  
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef Cells::iterator   C_iter;                             //!< Iterator of cell vector
 	
-	typedef uint64_t hilbert_t;                                   //!< Type of Hilbert orders
+	typedef int64_t hilbert_t;                                    //!< Type of Hilbert orders
 	typedef std::vector<hilbert_t>	VHilbert;										  //!< Type of Hilbert key vectors
 	typedef std::pair<hilbert_t,hilbert_t> KeyPair;   				    //!< Type of Hilbert Key Pair  
-  typedef std::map<hilbert_t, size_t> TreeLevelMap;   					//!< Tree Level type
-	typedef std::map<size_t,TreeLevelMap> TreeType;     					//!< Level Indexer
 }
 #endif
