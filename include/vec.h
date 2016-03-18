@@ -7,10 +7,12 @@
 #pragma message("Using Agner's vectorclass for operator overloading SIMD intrinsics.")
 #endif
 #ifndef __sparc_v9__
+#ifndef _SX
 #include "../vectorclass/vectorclass.h"
 #include "../vectorclass/vectormath_common.h"
 #include "../vectorclass/vectormath_exp.h"
 #include "../vectorclass/vectormath_trig.h"
+#endif
 #endif
 
 namespace exafmm {

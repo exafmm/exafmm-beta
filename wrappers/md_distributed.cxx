@@ -78,6 +78,61 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
+extern "C" void Set_Index(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle) {
+  num_threads(args->threads);
+  vec3 cycles;
+  for (int d=0; d<3; d++) cycles[d] = cycle[d];
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
+  Bodies bodies(*ni);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B-bodies.begin();
+    B->X[0] = x[3*i+0];
+    B->X[1] = x[3*i+1];
+    B->X[2] = x[3*i+2];
+    B->SRC = q[i];
+    B->TRG[0] = v[3*i+0];
+    B->TRG[1] = v[3*i+1];
+    B->TRG[2] = v[3*i+2];
+    int iwrap = wrap(B->X, cycles);
+    B->IBODY = i | (iwrap << shift);
+    B->ICELL = res_index[i];
+  }
+  localBounds = boundBox->getBounds(bodies);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
+  upDownPass->upwardPass(cells);
+  int id = 0;
+  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
+    int ic = 0;
+    for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
+      if (drand48() > 0.5 && ic > 2 || ic > 5) ic = 0;
+      if (ic == 0) {
+	B->ICELL = id;
+	id++;
+      } else {
+	B->ICELL = -ic;
+      }
+      ic++;
+    }
+  }
+  *ni = bodies.size();
+  if (*ni < nimax) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      int i = B-bodies.begin();
+      res_index[i] = B->ICELL;
+      int iwrap = unsigned(B->IBODY) >> shift;
+      unwrap(B->X, cycles, iwrap);
+      x[3*i+0] = B->X[0];
+      x[3*i+1] = B->X[1];
+      x[3*i+2] = B->X[2];
+      q[i]     = B->SRC;
+      v[3*i+0] = B->TRG[0];
+      v[3*i+1] = B->TRG[1];
+      v[3*i+2] = B->TRG[2];
+    }
+  }
+}
+
 extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle) {
   num_threads(args->threads);
   vec3 cycles;

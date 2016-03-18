@@ -89,7 +89,7 @@ namespace exafmm {
   struct Body : public Source {
     int      IBODY;                                             //!< Initial body numbering for sorting back
     int      IRANK;                                             //!< Initial rank numbering for partitioning back
-    int64_t ICELL;                                              //!< Cell index   
+    int64_t  ICELL;                                             //!< Cell index   
     real_t   WEIGHT;                                            //!< Weight for partitioning
 #if EXAFMM_LAPLACE | EXAFMM_BIOTSAVART
     kvec4    TRG;                                               //!< Scalar+vector3 target values

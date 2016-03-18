@@ -4,7 +4,7 @@
 #include "logger.h"
 #include "thread.h"
 #include "tree_mpi.h"
-//#include "cell_dispatcher.h"
+#include "morton_key.h"
 
 #if EXAFMM_COUNT_KERNEL
 #define countKernel(N) N++
@@ -54,45 +54,15 @@ private:
 	void countWeight(C_iter, C_iter, bool, real_t) {}
 #endif
 
-	//! Get level from key
-	int getLevel(uint64_t key) {
-		int level = -1;                                           // Initialize level
-		while ( int(key) >= 0 ) {                                 // While key has level offsets to subtract
-			level++;                                                //  Increment level
-			key -= 1 << 3 * level;                                  //  Subtract level offset
-		}                                                         // End while loop for level offsets
-		return level;                                             // Return level
-	}
-
-	//! Get 3-D index from key
-	ivec3 getIndex(uint64_t key) {
-		int level = -1;                                           // Initialize level
-		while ( int(key) >= 0 ) {                                 // While key has level offsets to subtract
-			level++;                                                //  Increment level
-			key -= 1 << 3 * level;                                  //  Subtract level offset
-		}                                                         // End while loop for level offsets
-		key += 1 << 3 * level;                                    // Compensate for over-subtraction
-		level = 0;                                                // Initialize level
-		ivec3 iX = 0;                                             // Initialize 3-D index
-		int d = 0;                                                // Initialize dimension
-		while ( key > 0 ) {                                       // While key has bits to shift
-			iX[d] += (key % 2) * (1 << level);                      //  Deinterleave key bits to 3-D bits
-			key >>= 1;                                              //  Shift bits in key
-			d = (d + 1) % 3;                                        //  Increment dimension
-			if ( d == 0 ) level++;                                  //  Increment level
-		}                                                         // End while loop for key bits to shift
-		return iX;                                                // Return 3-D index
-	}
-
-	//! Get 3-D index from periodic key
-	ivec3 getPeriodicIndex(int key) {
-		ivec3 iX;                                                 // Initialize 3-D periodic index
-		iX[0] = key % 3;                                          // x periodic index
-		iX[1] = (key / 3) % 3;                                    // y periodic index
-		iX[2] = key / 9;                                          // z periodic index
-		iX -= 1;                                                  // {0,1,2} -> {-1,0,1}
-		return iX;                                                // Return 3-D periodic index
-	}
+    //! Get 3-D index from periodic key
+    ivec3 getPeriodicIndex(int key) {
+      ivec3 iX;                                                 // Initialize 3-D periodic index
+      iX[0] = key % 3;                                          // x periodic index
+      iX[1] = (key / 3) % 3;                                    // y periodic index
+      iX[2] = key / 9;                                          // z periodic index
+      iX -= 1;                                                  // {0,1,2} -> {-1,0,1}
+      return iX;                                                // Return 3-D periodic index
+    }
 
 	//! Get interaction list
 	void getList(int itype, int icell, int * list, int * periodicKey, int & numList) {
@@ -115,76 +85,6 @@ private:
 		lists[numLists][2] = periodicKey;                         // Store periodicKey
 		listOffset[icell][itype] = numLists;                      // Store list size
 		numLists++;                                               // Increment list size
-	}
-
-	//! Set all interaction lists
-	void setLists(Cells & icells) {
-		int numCells = icells.size();                             // Number of cells
-		int childs[216], neighbors[27];                           // Array of parents' neighbors' children and neighbors
-		int childKeys[216], neighborKeys[27];                     // Periodic keys
-		for (int i = 0; i < numCells; i++) {                      // Loop over number of cells
-			for (int j = 0; j < 3; j++) {                           //  Loop over list types
-				listOffset[i][j] = -1;                                //   Set initial value to -1
-			}                                                       //  End loop over list types
-		}                                                         // End loop over number of cells
-		int numLists = 0;                                         // Initialize number of lists
-		if (images == 0) {                                        // If non-periodic boundary condition
-			setList(2, 0, 0, 13, numLists);                         //  Push root cell into list
-		} else {                                                  // If periodic boundary condition
-			for (int i = 0; i < 27; i++) {                          //  Loop over periodic images
-				setList(2, 0, 0, i, numLists);                        //   Push root cell into list
-			}                                                       //  End loop over periodic images
-		}                                                         // End if for periodic boundary condition
-		for (int icell = 1; icell < numCells; icell++) {          // Loop over target cells
-			C_iter Ci = Ci0 + icell;                                //  Iterator of current target cell
-			int iparent = Ci->IPARENT;                              //  Index of parent target cell
-			int numNeighbors;                                       //  Number of neighbor parents
-			getList(2, iparent, neighbors, neighborKeys, numNeighbors);//  Get list of neighbors
-			ivec3 iX = getIndex(Ci->ICELL);                         //  Get 3-D index from key
-			int nchilds = 0;                                        //  Initialize number of parents' neighbors' children
-			for (int i = 0; i < numNeighbors; i++) {                //  Loop over parents' neighbors
-				int jparent = neighbors[i];                           //   Index of parent source cell
-				int parentKey = neighborKeys[i];                      //   Periodic key of parent source cell
-				C_iter Cj = Cj0 + jparent;                            //   Iterator of parent source cell
-				for (int j = 0; j < Cj->NCHILD; j++) {                //   Loop over children of parents' neighbors
-					int jcell = Cj->ICHILD + j;                         //    Index of source cell
-					childs[nchilds] = jcell;                            //    Store index of source cell
-					childKeys[nchilds] = parentKey;                     //    Store periodic key of source cell
-					nchilds++;                                          //    Increment number of parents' neighbors' children
-				}                                                     //   End loop over children of parents' neighbors
-			}                                                       //  End loop over parents' neighbors
-			for (int i = 0; i < nchilds; i++) {                     //  Loop over children of parents' neighbors
-				int jcell = childs[i];                                //   Index of source cell
-				int periodicKey = childKeys[i];                       //   Periodic key of source cell
-				C_iter Cj = Cj0 + jcell;                              //   Iterator of source cell
-				ivec3 jX = getIndex(Cj->ICELL);                       //   3-D index of source cell
-				ivec3 pX = getPeriodicIndex(periodicKey);             //   3-D periodic index of source cell
-				int level = getLevel(Cj->ICELL);                      //   Level of source cell
-				jX += pX * (1 << level);                              //   Periodic image shift
-				if (iX[0] - 1 <= jX[0] && jX[0] <= iX[0] + 1 &&       //   If neighbor in x dimension and
-				    iX[1] - 1 <= jX[1] && jX[1] <= iX[1] + 1 &&       //               in y dimension and
-				    iX[2] - 1 <= jX[2] && jX[2] <= iX[2] + 1) {       //               in z dimension
-					setList(2, icell, jcell, periodicKey, numLists);    //    Store neighbor list (not P2P unless leaf)
-				} else {                                              //   If non-neighbor
-					setList(1, icell, jcell, periodicKey, numLists);    //    Store M2L list
-				}                                                     //   End if for non-neighbor
-			}                                                       //  End loop over children of parents' neighbors
-		}                                                         // End loop over target cells
-		for (int icell = 0; icell < numCells; icell++) {          // Loop over target cells
-			C_iter Ci = Ci0 + icell;                                //  Iterator of target cell
-			if (Ci->NCHILD == 0) {                                  //  If taget cell is leaf
-				int numNeighbors;                                     //   Number of neighbors
-				getList(2, icell, neighbors, neighborKeys, numNeighbors);//   Get list of neighbor cells
-				for (int j = 0; j < numNeighbors; j++) {              //   Loop over neighbor cells
-					int jcell = neighbors[j];                           //    Index of source cell
-					int periodicKey = neighborKeys[j];                  //    Periodic key of source cell
-					C_iter Cj = Cj0 + jcell;                            //    Iterator of source cell
-					if (Cj->NCHILD == 0) {                              //    If source cell is leaf
-						setList(0, icell, jcell, periodicKey, numLists);  //     Store P2P list
-					}                                                   //    End if for source cell leaf
-				}                                                     //   End loop over neighbor cells
-			}                                                       //  End if for target cell leaf
-		}                                                         // End loop over target cells
 	}
 
 	//! Split cell and call traverse() recursively for child
@@ -227,6 +127,76 @@ private:
 			}                                                         //  End loop over Cj's children
 		}                                                           // End if for leafs and Ci Cj size
 	}
+
+    //! Set all interaction lists
+    void setLists(Cells & icells) {
+      int numCells = icells.size();                             // Number of cells
+      int childs[216], neighbors[27];                           // Array of parents' neighbors' children and neighbors
+      int childKeys[216], neighborKeys[27];                     // Periodic keys
+      for (int i=0; i<numCells; i++) {                          // Loop over number of cells
+	for (int j=0; j<3; j++) {                               //  Loop over list types
+	  listOffset[i][j] = -1;                                //   Set initial value to -1
+	}                                                       //  End loop over list types
+      }                                                         // End loop over number of cells
+      int numLists = 0;                                         // Initialize number of lists
+      if (images == 0) {                                        // If non-periodic boundary condition
+	setList(2, 0, 0, 13, numLists);                         //  Push root cell into list
+      } else {                                                  // If periodic boundary condition
+	for (int i=0; i<27; i++) {                              //  Loop over periodic images
+	  setList(2, 0, 0, i, numLists);                        //   Push root cell into list
+	}                                                       //  End loop over periodic images
+      }                                                         // End if for periodic boundary condition
+      for (int icell=1; icell<numCells; icell++) {              // Loop over target cells
+	C_iter Ci = Ci0 + icell;                                //  Iterator of current target cell
+	int iparent = Ci->IPARENT;                              //  Index of parent target cell
+	int numNeighbors;                                       //  Number of neighbor parents
+	getList(2, iparent, neighbors, neighborKeys, numNeighbors);//  Get list of neighbors
+	ivec3 iX = morton::getIndex(Ci->ICELL);                 //  Get 3-D index from key
+	int nchilds = 0;                                        //  Initialize number of parents' neighbors' children
+	for (int i=0; i<numNeighbors; i++) {                    //  Loop over parents' neighbors
+	  int jparent = neighbors[i];                           //   Index of parent source cell
+	  int parentKey = neighborKeys[i];                      //   Periodic key of parent source cell
+	  C_iter Cj = Cj0 + jparent;                            //   Iterator of parent source cell
+	  for (int j=0; j<Cj->NCHILD; j++) {                    //   Loop over children of parents' neighbors
+	    int jcell = Cj->ICHILD+j;                           //    Index of source cell
+	    childs[nchilds] = jcell;                            //    Store index of source cell
+	    childKeys[nchilds] = parentKey;                     //    Store periodic key of source cell
+	    nchilds++;                                          //    Increment number of parents' neighbors' children
+	  }                                                     //   End loop over children of parents' neighbors
+	}                                                       //  End loop over parents' neighbors
+	for (int i=0; i<nchilds; i++) {                         //  Loop over children of parents' neighbors
+	  int jcell = childs[i];                                //   Index of source cell
+	  int periodicKey = childKeys[i];                       //   Periodic key of source cell
+	  C_iter Cj = Cj0 + jcell;                              //   Iterator of source cell
+	  ivec3 jX = morton::getIndex(Cj->ICELL);               //   3-D index of source cell
+	  ivec3 pX = getPeriodicIndex(periodicKey);             //   3-D periodic index of source cell
+	  int level = morton::getLevel(Cj->ICELL);              //   Level of source cell
+	  jX += pX * (1 << level);                              //   Periodic image shift
+	  if (iX[0]-1 <= jX[0] && jX[0] <= iX[0]+1 &&           //   If neighbor in x dimension and
+	      iX[1]-1 <= jX[1] && jX[1] <= iX[1]+1 &&           //               in y dimension and
+	      iX[2]-1 <= jX[2] && jX[2] <= iX[2]+1) {           //               in z dimension
+	    setList(2, icell, jcell, periodicKey, numLists);    //    Store neighbor list (not P2P unless leaf)
+	  } else {                                              //   If non-neighbor
+	    setList(1, icell, jcell, periodicKey, numLists);    //    Store M2L list
+	  }                                                     //   End if for non-neighbor
+	}                                                       //  End loop over children of parents' neighbors
+      }                                                         // End loop over target cells
+      for (int icell=0; icell<numCells; icell++) {              // Loop over target cells
+	C_iter Ci = Ci0 + icell;                                //  Iterator of target cell
+	if (Ci->NCHILD == 0) {                                  //  If taget cell is leaf
+	  int numNeighbors;                                     //   Number of neighbors
+	  getList(2, icell, neighbors, neighborKeys, numNeighbors);//   Get list of neighbor cells
+	  for (int j=0; j<numNeighbors; j++) {                  //   Loop over neighbor cells
+	    int jcell = neighbors[j];                           //    Index of source cell
+	    int periodicKey = neighborKeys[j];                  //    Periodic key of source cell
+	    C_iter Cj = Cj0 + jcell;                            //    Iterator of source cell
+	    if (Cj->NCHILD == 0) {                              //    If source cell is leaf
+	      setList(0, icell, jcell, periodicKey, numLists);  //     Store P2P list
+	    }                                                   //    End if for source cell leaf
+	  }                                                     //   End loop over neighbor cells
+	}                                                       //  End if for target cell leaf
+      }                                                         // End loop over target cells
+    }
 
 	//! Split cell and call traverse() recursively for child
     void splitCell(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {

@@ -1,1 +1,6 @@
+[gromacs]
+calcualte energy + virial
+parallel
+
+[md_distributed]
 res_index based partitioning
