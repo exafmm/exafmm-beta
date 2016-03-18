@@ -263,13 +263,15 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
       for (iX[2]=-1; iX[2]<=1; iX[2]++) {
 	if (norm(iX) != 0) {
 	  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-	    for (int d=0; d<3; d++) X[d] = B->X[d] + iX[d] * cycles[d];
+	    int ic = 0;
+	    if (B->ICELL < 0) ic = B->ICELL;
+	    for (int d=0; d<3; d++) X[d] = (B+ic)->X[d] + iX[d] * cycles[d];
 	    if (Xmin[0] < X[0] && X[0] < Xmax[0] &&
 		Xmin[1] < X[1] && X[1] < Xmax[1] &&
 		Xmin[2] < X[2] && X[2] < Xmax[2]) {
 	      bodies.push_back(*B);
 	      for (int d=0; d<3; d++) {
-		bodies.back().X[d] = X[d];
+		bodies.back().X[d] += iX[d] * cycles[d];
 	      }
 	    }
 	  }
@@ -279,9 +281,12 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   }
   jbodies = treeMPI->getRecvBodies();
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    if (Xmin[0] < B->X[0] && B->X[0] < Xmax[0] &&
-	Xmin[1] < B->X[1] && B->X[1] < Xmax[1] &&
-	Xmin[2] < B->X[2] && B->X[2] < Xmax[2]) {
+    int ic = 0;
+    if (B->ICELL < 0) ic = B->ICELL;
+    for (int d=0; d<3; d++) X[d] = (B+ic)->X[d];
+    if (Xmin[0] < X[0] && X[0] < Xmax[0] &&
+	Xmin[1] < X[1] && X[1] < Xmax[1] &&
+	Xmin[2] < X[2] && X[2] < Xmax[2]) {
       bodies.push_back(*B);
     }
   }
@@ -291,6 +296,8 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       int i = B - bodies.begin() + ni;
       res_index[i] = B->ICELL;
+      int iwrap = unsigned(B->IBODY) >> shift;
+      unwrap(B->X, cycles, iwrap);
       x[3*i+0] = B->X[0];
       x[3*i+1] = B->X[1];
       x[3*i+2] = B->X[2];
