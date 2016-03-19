@@ -16,11 +16,12 @@ namespace exafmm {
     {"distribution", required_argument, 0, 'd'},
     {"dual",         no_argument,       0, 'D'},
     {"graft",        no_argument,       0, 'g'},
-    {"getMatrix",    no_argument,       0, 'G'},
+    {"granularity",  required_argument, 0, 'G'},
     {"help",         no_argument,       0, 'h'},
     {"images",       required_argument, 0, 'i'},
     {"IneJ",         no_argument,       0, 'j'},
     {"mutual",       no_argument,       0, 'm'},
+    {"getMatrix",    no_argument,       0, 'M'},
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
     {"PP",           required_argument, 0, 'P'},
@@ -42,10 +43,11 @@ namespace exafmm {
     const char * distribution;
     int dual;
     int graft;
-    int getMatrix;
+    int granularity;
     int images;
     int IneJ;
     int mutual;
+    int getMatrix;
     int numBodies;
     int useRopt;
     int PP;
@@ -67,11 +69,12 @@ namespace exafmm {
 	      " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
 	      " --dual (-D)                   : Use dual tree traversal (%d)\n"
 	      " --graft (-g)                  : Graft remote trees to global tree (%d)\n"
-	      " --getMatrix (-G)              : Write G matrix to file (%d)\n"
+	      " --granularity (-G)            : Granularity of the communication (%d)\n"
 	      " --help (-h)                   : Show this help document\n"
 	      " --images (-i)                 : Number of periodic image levels (%d)\n"
 	      " --IneJ (-j)                   : Use different sources & targets (%d)\n"
 	      " --mutual (-m)                 : Use mutual interaction (%d)\n"
+	      " --getMatrix (-M)              : Write G matrix to file (%d)\n"
 	      " --numBodies (-n)              : Number of bodies (%d)\n"
 	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
 	      " --P (-P) not working          : Order of expansion (%d)\n"
@@ -88,10 +91,11 @@ namespace exafmm {
 	      distribution,
 	      dual,
 	      graft,
-	      getMatrix,
+	      granularity,
 	      images,
 	      IneJ,
 	      mutual,
+	      getMatrix,
 	      numBodies,
 	      useRopt,
 	      PP,
@@ -130,10 +134,11 @@ namespace exafmm {
       distribution("cube"),
       dual(0),
       graft(0),
-      getMatrix(0),
+      granularity(1),
       images(0),
       IneJ(0),
       mutual(0),
+      getMatrix(0),
       numBodies(1000000),
       useRopt(0),
       PP(4),
@@ -147,10 +152,10 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "c:d:DgG:hi:jmMn:oP:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "c:d:DgG:hi:jmMn:oP:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
@@ -170,7 +175,7 @@ namespace exafmm {
 	  graft = 1;
 	  break;
 	case 'G':
-	  getMatrix = 1;
+	  granularity = atoi(optarg);
 	  break;
 	case 'h':
 	  usage(argv[0]);
@@ -183,6 +188,9 @@ namespace exafmm {
 	  break;
 	case 'm':
 	  mutual = 1;
+	  break;
+	case 'M':
+	  getMatrix = 1;
 	  break;
 	case 'n':
 	  numBodies = atoi(optarg);
@@ -234,13 +242,15 @@ namespace exafmm {
 		  << std::setw(stringLength)
 		  << "graft" << " : " << graft << std::endl
 		  << std::setw(stringLength)
-		  << "getMatrix" << " : " << getMatrix << std::endl
+		  << "granularity" << " : " << granularity << std::endl
 		  << std::setw(stringLength)
 		  << "images" << " : " << images << std::endl
 		  << std::setw(stringLength)
 		  << "IneJ" << " : " << IneJ << std::endl
 		  << std::setw(stringLength)
 		  << "mutual" << " : " << mutual << std::endl
+		  << std::setw(stringLength)
+		  << "getMatrix" << " : " << getMatrix << std::endl
 		  << std::setw(stringLength)
 		  << "numBodies" << " : " << numBodies << std::endl
 		  << std::setw(stringLength)
