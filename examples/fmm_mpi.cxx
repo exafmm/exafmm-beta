@@ -25,7 +25,7 @@ int main(int argc, char ** argv) {
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  Traversal traversal(args.nspawn, args.images,&treeMPI);  
+  Traversal traversal(args.nspawn, args.images);  
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
@@ -87,7 +87,7 @@ int main(int argc, char ** argv) {
     traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
     jbodies = bodies;
   }
-  traversal.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize);        
+  treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn);        
 #elif 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
     treeMPI.allgatherBounds(localBounds);
     if (args.IneJ) {

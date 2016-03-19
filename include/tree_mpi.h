@@ -33,10 +33,13 @@ namespace exafmm {
     vector<BodiesMap> bodyMap;   				 							  				//!< mapper to keep track of received bodies
    	Cells* LETCells;																						//!< Pointer to cells
  		Bodies* LETBodies;																					//!< Pointer to bodies
+ 		C_iter Ci0;                                                 //!< Iterator of first target cell
+		C_iter Cj0;                                                 //!< Iterator of first source cell
+ 		int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
  		int terminated;																							//!< Number of terminated requests
  		size_t hitCount; 																						//!< Number of remote requests
  		int sendIndex;																							//!< LET Send cursor
- 
+
   private:
     //! Exchange send count for bodies
     void alltoall(Bodies & bodies) {
@@ -225,6 +228,122 @@ namespace exafmm {
       }                                                         // End loop over dimensions
       return norm(dX);                                          // Return distance squared
     }
+
+        //! Dual tree traversal for a single pair of cells
+	void traverseRemote(C_iter Ci, C_iter Cj, bool mutual, real_t remote, size_t rank) {
+		vec3 dX = Ci->X - Cj->X - kernel::Xperiodic;                // Distance vector from source to target
+		real_t R2 = norm(dX);                                       // Scalar distance squared
+		if (R2 > (Ci->R + Cj->R) * (Ci->R + Cj->R) * (1 - 1e-3)) {  // Distance is far enough
+			kernel::M2L(Ci, Cj,false);          					                  //  M2L kernel
+		} else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
+			double commtime;
+			Bodies bodies = getBodies(Cj->IBODY,Cj->NBODY, Cj->LEVEL, rank, BODYTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			if (bodies.size() > 0) {
+				Cj->BODY = bodies.begin();
+				kernel::P2P(Ci, Cj, false);   								          //    P2P kernel for pair of cells
+#if 0
+				countWeight(Ci, remoteWeight);                          //   Increment P2P weight
+#endif
+			} else {
+				kernel::M2L(Ci, Cj,false);                   						//   M2L kernel
+				//countWeight(Ci, remote,remoteWeight*0.25);            //   Increment M2L weight
+			}
+		} else {                                                    // Else if cells are close but not bodies
+			splitCellRemote(Ci, Cj, mutual, remote, rank);						//  Split cell and call function recursively for child
+		}                                                           // End if for multipole acceptance
+	}
+
+	//! Split cell and call traverse() recursively for child
+	void splitCellRemote(C_iter Ci, C_iter Cj, bool mutual, real_t remote, size_t rank) {
+		double commtime;
+		if (Cj->NCHILD == 0) {                                      // If Cj is leaf
+			assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
+			for (C_iter ci = Ci0 + Ci->ICHILD; ci != Ci0 + Ci->ICHILD + Ci->NCHILD; ci++) { // Loop over Ci's children
+				traverseRemote(ci, Cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}                                                         //  End loop over Ci's children
+		} else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
+			assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
+			Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			for (C_iter cj = cells.begin(); cj != cells.end(); ++cj) {// Loop over Cj's children
+				traverseRemote(Ci, cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}
+		} else if (Ci->NBODY + Cj->NBODY >= nspawn) {// Else if cells are still large
+			Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			TraverseRemoteRange traverseRange(this, Ci0 + Ci->ICHILD, Ci0 + Ci->ICHILD + Ci->NCHILD, // Instantiate recursive functor
+			    cells.begin(), cells.end(), mutual, remote, rank);
+			traverseRange();
+		} else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
+			for (C_iter ci = Ci0 + Ci->ICHILD; ci != Ci0 + Ci->ICHILD + Ci->NCHILD; ci++) { // Loop over Ci's children
+				traverseRemote(ci, Cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}                                                         //  End loop over Ci's children
+		} else {                                                    // Else if Cj is larger than Ci
+			Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			for (C_iter cj = cells.begin(); cj != cells.end(); ++cj) {// Loop over Cj's children
+				traverseRemote(Ci, cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}                                                         //  End loop over Cj's children
+		}                                                           // End if for leafs and Ci Cj size
+	}
+
+	//! Recursive functor for dual tree traversal of a range of Ci and Cj
+	struct TraverseRemoteRange {
+		TreeMPI * treeMPI;                                      //!< TreeMPI object
+		C_iter CiBegin;                                             //!< Begin iterator of target cells
+		C_iter CiEnd;                                               //!< End iterator of target cells
+		C_iter CjBegin;                                             //!< Begin Iterator of source cells
+		C_iter CjEnd;                                               //!< End iterator of source cells		
+		bool mutual;                                                //!< Flag for mutual interaction
+		real_t remote;                                              //!< Weight for remote work load
+		size_t rank;
+		TraverseRemoteRange(TreeMPI * _treeMPI, C_iter _CiBegin, C_iter _CiEnd,// Constructor
+		                    C_iter _CjBegin, C_iter _CjEnd,
+		                    bool _mutual, real_t _remote, size_t _rank) :
+			treeMPI(_treeMPI), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
+			CjBegin(_CjBegin), CjEnd(_CjEnd),
+			mutual(_mutual), remote(_remote), rank(_rank) {}
+		void operator() () {                                        // Overload operator()
+			Tracer tracer;                                            //  Instantiate tracer
+			logger::startTracer(tracer);                              //  Start tracer
+			if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {       //  If only one cell in range
+				for (C_iter Ci = CiBegin; Ci != CiEnd; Ci++) {        //    Loop over all Ci cells
+					for (C_iter Cj = CjBegin; Cj != CjEnd; Cj++) {      //     Loop over all Cj cells
+						treeMPI->traverseRemote(Ci, Cj, mutual, remote, rank); // Call traverse for single pair
+					}                                                   //     End loop over all Cj cells
+				}                                                       //   End if for Ci == Cj
+			} else {                                                  //  If many cells are in the range
+				C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Split range of Ci cells in half
+				C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;         //   Split range of Cj cells in half
+				{
+					TraverseRemoteRange leftBranch(treeMPI, CiBegin, CiMid,   //    Instantiate recursive functor
+					    CjBegin, CjMid, mutual, remote, rank);
+					leftBranch();
+					TraverseRemoteRange rightBranch(treeMPI, CiMid, CiEnd,    //    Instantiate recursive functor
+					    CjMid, CjEnd, mutual, remote, rank);;
+					rightBranch();                                        //    Ci:latter Cj:latter
+				}
+				{
+					TraverseRemoteRange leftBranch(treeMPI, CiBegin, CiMid,   //    Instantiate recursive functor
+					    CjMid, CjEnd, mutual, remote, rank);;
+					leftBranch();
+					TraverseRemoteRange rightBranch(treeMPI, CiMid, CiEnd,  //    Instantiate recursive functor
+					    CjBegin, CjMid, mutual, remote, rank);;
+					rightBranch();                                            //    Ci:latter Cj:former
+				}
+			}                                                         //  End if for many cells in range
+			logger::stopTracer(tracer);                               //  Stop tracer
+		}                                                           // End overload operator()
+	};
 
     //! Add cells to send buffer
     void addSendCell(C_iter C, int & irank, int & icell, int & iparent, bool copyData) {
@@ -631,6 +750,37 @@ namespace exafmm {
       }
       //logger::logFixed("hit count", hitCount, std::cout);      
     }
+
+    //! Evaluate P2P and M2L using dual tree traversal
+	void dualTreeTraversalRemote(Cells & icells, Bodies& ibodies, int mpirank, int mpisize, int spwan, real_t remote = 1) {
+		if (icells.empty()) return;                                 // Quit if either of the cell vectors are empty
+		nspawn = spwan;
+		logger::startTimer("Traverse Remote");                      // Start timer
+		kernel::Xperiodic = 0;
+		logger::initTracer();                                       // Initialize tracer
+		Ci0 = icells.begin();                                       // Set iterator of target root cell	
+		setSendLET(&icells,&ibodies);
+//#pragma omp parallel 
+{ 
+//		#pragma omp for	
+		for (int i = 0; i < mpisize; ++i) {
+			if (i != mpirank) {
+				double commtime;
+				Cells cells = getCell(0, 1, 0, i, LEVELTAG, commtime);
+				assert(cells.size() > 0);
+				traverseRemote(Ci0, cells.begin(), false, remote, i);
+				logger::startTimer("Clear cache");                             // Start timer
+				clearCellCache(i);
+				logger::stopTimer("Clear cache", 0);                            // Start timer
+			}
+		}
+}
+		logger::printTime("Clear cache");
+		logger::stopTimer("Traverse Remote");                              // Stop timer
+		sendFlushRequest();
+		recvAll();
+		logger::writeTracer();                                      // Write tracer to file
+	}
 
     //! Get bodies underlying a key and a level
     Bodies getBodies(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
