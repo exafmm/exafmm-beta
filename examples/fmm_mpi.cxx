@@ -1,7 +1,7 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#include "build_tree_tbb.h"
 #include "dataset.h"
 #include "logger.h"
 #include "partition.h"
@@ -10,6 +10,7 @@
 #include "up_down_pass.h"
 #include "verify.h"
 using namespace exafmm;
+#define REMOTE_TRAVERSE 1
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
@@ -23,8 +24,8 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  Traversal traversal(args.nspawn, args.images,&treeMPI);  
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
@@ -34,7 +35,7 @@ int main(int argc, char ** argv) {
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
   kernel::setup();
-  //args.numBodies /= baseMPI.mpisize;
+  args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
@@ -61,10 +62,10 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies, localBounds);
     }
     globalBounds = baseMPI.allreduceBounds(localBounds);
-    partition.bisection(bodies, globalBounds);
+    partition.partitionHilbert(bodies, globalBounds);    
     bodies = treeMPI.commBodies(bodies);
     if (args.IneJ) {
-      partition.bisection(jbodies, globalBounds);
+    	partition.partitionHilbert(bodies, globalBounds);      
       jbodies = treeMPI.commBodies(jbodies);
     }
     localBounds = boundBox.getBounds(bodies);
@@ -77,8 +78,17 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
-
-#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
+#if REMOTE_TRAVERSE
+  traversal.initListCount(cells);
+  traversal.initWeight(cells);
+  if (args.IneJ) {
+    traversal.traverse(cells, jcells, cycle, args.dual, false);
+  } else {
+    traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+    jbodies = bodies;
+  }
+  traversal.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize);        
+#elif 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
     treeMPI.allgatherBounds(localBounds);
     if (args.IneJ) {
       treeMPI.setLET(jcells, cycle);

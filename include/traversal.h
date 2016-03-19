@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "logger.h"
 #include "thread.h"
+#include "tree_mpi.h"
 #include "morton_key.h"
 
 #if EXAFMM_COUNT_KERNEL
@@ -12,42 +13,45 @@
 #endif
 
 namespace exafmm {
-  class Traversal {
-  private:
-    const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
-    const int images;                                           //!< Number of periodic image sublevels
-    int (* listOffset)[3];                                      //!< Offset in interaction lists
-    int (* lists)[3];                                           //!< Interaction lists
+class Traversal {
+private:
+	const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
+	const int images;                                           //!< Number of periodic image sublevels
+	int (* listOffset)[3];                                      //!< Offset in interaction lists
+	int (* lists)[3];                                           //!< Interaction lists
 #if EXAFMM_COUNT_KERNEL
-    real_t numP2P;                                              //!< Number of P2P kernel calls
-    real_t numM2L;                                              //!< Number of M2L kernel calls
+	real_t numP2P;                                              //!< Number of P2P kernel calls
+	real_t numM2L;                                              //!< Number of M2L kernel calls
+	real_t remoteNumP2P;                                        //!< Number of remote P2P kernel calls
+	real_t remoteNumM2L;                                        //!< Number of remote M2L kernel calls
 #endif
-    C_iter Ci0;                                                 //!< Iterator of first target cell
-    C_iter Cj0;                                                 //!< Iterator of first source cell
+	C_iter Ci0;                                                 //!< Iterator of first target cell
+	C_iter Cj0;                                                 //!< Iterator of first source cell
+	TreeMPI* communicator;                                      //!< The MPI communication class
 
-  private:
+private:
 #if EXAFMM_COUNT_LIST
-    //! Accumulate interaction list size of cells
-    void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P) {
-      if (isP2P) Ci->numP2P++;                                  // If P2P, increment P2P counter of target cell
-      else Ci->numM2L++;                                        // Else, increment M2L counter of target cell
-      if (mutual) {                                             // If mutual interaction in on
-	if (isP2P) Cj->numP2P++;                                //  If P2P, increment P2P counter of source cell
-	else Cj->numM2L++;                                      //  Else, increment M2L counter of source cell
-      }                                                         // End if for mutual interaction
-    }
+	//! Accumulate interaction list size of cells
+	void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P) {
+		if (isP2P) Ci->numP2P++;                                  // If P2P, increment P2P counter of target cell
+		else Ci->numM2L++;                                        // Else, increment M2L counter of target cell
+		if (mutual) {                                             // If mutual interaction in on
+			if (isP2P) Cj->numP2P++;                                //  If P2P, increment P2P counter of source cell
+			else Cj->numM2L++;                                      //  Else, increment M2L counter of source cell
+		}                                                         // End if for mutual interaction
+	}
 #else
-    void countList(C_iter, C_iter, bool, bool) {}
+	void countList(C_iter, C_iter, bool, bool) {}
 #endif
 
 #if EXAFMM_USE_WEIGHT
-    //! Accumulate interaction weights of cells
-    void countWeight(C_iter Ci, C_iter Cj, bool mutual, real_t weight) {
-      Ci->WEIGHT += weight;                                     // Increment weight of target cell
-      if (mutual) Cj->WEIGHT += weight;                         // Increment weight of source cell
-    }
+	//! Accumulate interaction weights of cells
+	void countWeight(C_iter Ci, C_iter Cj, bool mutual, real_t weight) {
+		Ci->WEIGHT += weight;                                     // Increment weight of target cell
+		if (mutual) Cj->WEIGHT += weight;                         // Increment weight of source cell
+	}
 #else
-    void countWeight(C_iter, C_iter, bool, real_t) {}
+	void countWeight(C_iter, C_iter, bool, real_t) {}
 #endif
 
     //! Get 3-D index from periodic key
@@ -60,28 +64,69 @@ namespace exafmm {
       return iX;                                                // Return 3-D periodic index
     }
 
-    //! Get interaction list
-    void getList(int itype, int icell, int * list, int * periodicKey, int & numList) {
-      int ilast = listOffset[icell][itype];                     // Initialize list pointer
-      numList = 0;                                              // Initialize list size
-      while (ilast >= 0) {                                      // While pointer exists
-	if (lists[ilast][1] >= 0) {                             //  If pointer is valid
-	  list[numList] = lists[ilast][1];                      //   Load interaction list
-	  periodicKey[numList] = lists[ilast][2];               //   Load periodic key
-	  numList++;                                            //   Increment list size
-	}                                                       //  End if for valid pointer
-	ilast = lists[ilast][0];                                //  Increment pointer
-      }                                                         // End while loop for pointer existence
-    }
+	//! Get interaction list
+	void getList(int itype, int icell, int * list, int * periodicKey, int & numList) {
+		int ilast = listOffset[icell][itype];                     // Initialize list pointer
+		numList = 0;                                              // Initialize list size
+		while (ilast >= 0) {                                      // While pointer exists
+			if (lists[ilast][1] >= 0) {                             //  If pointer is valid
+				list[numList] = lists[ilast][1];                      //   Load interaction list
+				periodicKey[numList] = lists[ilast][2];               //   Load periodic key
+				numList++;                                            //   Increment list size
+			}                                                       //  End if for valid pointer
+			ilast = lists[ilast][0];                                //  Increment pointer
+		}                                                         // End while loop for pointer existence
+	}
 
-    //! Set one interaction list
-    void setList(int itype, int icell, int list, int periodicKey, int & numLists) {
-      lists[numLists][0] = listOffset[icell][itype];            // Store list pointer
-      lists[numLists][1] = list;                                // Store list
-      lists[numLists][2] = periodicKey;                         // Store periodicKey
-      listOffset[icell][itype] = numLists;                      // Store list size
-      numLists++;                                               // Increment list size
-    }
+	//! Set one interaction list
+	void setList(int itype, int icell, int list, int periodicKey, int & numLists) {
+		lists[numLists][0] = listOffset[icell][itype];            // Store list pointer
+		lists[numLists][1] = list;                                // Store list
+		lists[numLists][2] = periodicKey;                         // Store periodicKey
+		listOffset[icell][itype] = numLists;                      // Store list size
+		numLists++;                                               // Increment list size
+	}
+
+	//! Split cell and call traverse() recursively for child
+	template <typename I_iter, typename J_iter>
+	void splitCellRemote(I_iter Ci, J_iter Cj, bool mutual, real_t remote, size_t rank) {
+		double commtime;
+		if (Cj->NCHILD == 0) {                                      // If Cj is leaf
+			assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
+			for (I_iter ci = Ci0 + Ci->ICHILD; ci != Ci0 + Ci->ICHILD + Ci->NCHILD; ci++) { // Loop over Ci's children
+				traverseRemote(ci, Cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}                                                         //  End loop over Ci's children
+		} else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
+			assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
+			Cells cells = communicator->getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			for (C_iter cj = cells.begin(); cj != cells.end(); ++cj) {// Loop over Cj's children
+				traverseRemote(Ci, cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}
+		} else if (Ci->NBODY + Cj->NBODY >= nspawn) {// Else if cells are still large
+			Cells cells = communicator->getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			TraverseRemoteRange traverseRange(this, Ci0 + Ci->ICHILD, Ci0 + Ci->ICHILD + Ci->NCHILD, // Instantiate recursive functor
+			    cells.begin(), cells.end(), mutual, remote, rank);
+			traverseRange();
+		} else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
+			for (I_iter ci = Ci0 + Ci->ICHILD; ci != Ci0 + Ci->ICHILD + Ci->NCHILD; ci++) { // Loop over Ci's children
+				traverseRemote(ci, Cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}                                                         //  End loop over Ci's children
+		} else {                                                    // Else if Cj is larger than Ci
+			Cells cells = communicator->getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			for (C_iter cj = cells.begin(); cj != cells.end(); ++cj) {// Loop over Cj's children
+				traverseRemote(Ci, cj, mutual, remote, rank);            //   Traverse a single pair of cells
+			}                                                         //  End loop over Cj's children
+		}                                                           // End if for leafs and Ci Cj size
+	}
 
     //! Set all interaction lists
     void setLists(Cells & icells) {
@@ -153,7 +198,7 @@ namespace exafmm {
       }                                                         // End loop over target cells
     }
 
-    //! Split cell and call traverse() recursively for child
+	//! Split cell and call traverse() recursively for child
     void splitCell(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
       if (Cj->NCHILD == 0) {                                    // If Cj is leaf
 	assert(Ci->NCHILD > 0);                                 //  Make sure Ci is not leaf
@@ -181,6 +226,38 @@ namespace exafmm {
     }
 
     //! Dual tree traversal for a single pair of cells
+	template <typename I_iter, typename J_iter>
+	void traverseRemote(I_iter Ci, J_iter Cj, bool mutual, real_t remote, size_t rank) {
+		vec3 dX = Ci->X - Cj->X - kernel::Xperiodic;                // Distance vector from source to target
+		real_t R2 = norm(dX);                                       // Scalar distance squared
+		if (R2 > (Ci->R + Cj->R) * (Ci->R + Cj->R) * (1 - 1e-3)) {  // Distance is far enough
+			kernel::M2L(Ci, Cj,false);          					                  //  M2L kernel
+			countKernel(remoteNumM2L);                                //  Increment remote M2L counter
+			//countWeight(Ci, remote,remoteWeight*0.25);              //   Increment P2P weight
+		} else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
+			double commtime;
+			Bodies bodies = communicator->getBodies(Cj->IBODY,Cj->NBODY, Cj->LEVEL, rank, BODYTAG, commtime);
+#if WEIGH_COM
+			Ci->WEIGHT += commtime;
+#endif
+			if (bodies.size() > 0) {
+				Cj->BODY = bodies.begin();
+				kernel::P2P(Ci, Cj, false);   								          //    P2P kernel for pair of cells
+				countKernel(remoteNumP2P);                              //  Increment remote M2L counter
+#if 0
+				countWeight(Ci, remoteWeight);                          //   Increment P2P weight
+#endif
+			} else {
+				kernel::M2L(Ci, Cj,false);                   						//   M2L kernel
+				countKernel(remoteNumM2L);                              //  Increment remote M2L counter
+				//countWeight(Ci, remote,remoteWeight*0.25);            //   Increment M2L weight
+			}
+		} else {                                                    // Else if cells are close but not bodies
+			splitCellRemote(Ci, Cj, mutual, remote, rank);						//  Split cell and call function recursively for child
+		}                                                           // End if for multipole acceptance
+	}
+
+	//! Dual tree traversal for a single pair of cells
     void dualTreeTraversal(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
       vec3 dX = Ci->X - Cj->X - kernel::Xperiodic;              // Distance vector from source to target
       real_t R2 = norm(dX);                                     // Scalar distance squared
@@ -247,64 +324,113 @@ namespace exafmm {
       }                                                         // End if for multipole acceptance
     }
 
-    //! Recursive functor for dual tree traversal of a range of Ci and Cj
-    struct TraverseRange {
-      Traversal * traversal;                                    //!< Traversal object
-      C_iter CiBegin;                                           //!< Begin iterator of target cells
-      C_iter CiEnd;                                             //!< End iterator of target cells
-      C_iter CjBegin;                                           //!< Begin Iterator of source cells
-      C_iter CjEnd;                                             //!< End iterator of source cells
-      bool mutual;                                              //!< Flag for mutual interaction
-      real_t remote;                                            //!< Weight for remote work load
-      TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
-		    C_iter _CjBegin, C_iter _CjEnd,
-		    bool _mutual, real_t _remote) :
-	traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),// Initialize variables
-	CjBegin(_CjBegin), CjEnd(_CjEnd), mutual(_mutual), remote(_remote) {}
-      void operator() () {                                      // Overload operator()
-	Tracer tracer;                                          //  Instantiate tracer
-	logger::startTracer(tracer);                            //  Start tracer
-	if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {     //  If only one cell in range
-	  if (CiBegin == CjBegin) {                             //   If Ci == Cj
-	    assert(CiEnd == CjEnd);                             //    Check if mutual & self interaction
-	    traversal->dualTreeTraversal(CiBegin, CjBegin, mutual, remote);//   Call traverse for single pair
-	  } else {                                              //   If Ci != Cj
-	    for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {          //    Loop over all Ci cells
-	      for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {        //     Loop over all Cj cells
-		traversal->dualTreeTraversal(Ci, Cj, mutual, remote);//   Call traverse for single pair
-	      }                                                 //     End loop over all Cj cells
-	    }                                                   //    End loop over all Ci cells
-	  }                                                     //   End if for Ci == Cj
-	} else {                                                //  If many cells are in the range
-	  C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;       //   Split range of Ci cells in half
-	  C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;       //   Split range of Cj cells in half
-	  mk_task_group;                                        //   Initialize task group
-	  {
-	    TraverseRange leftBranch(traversal, CiBegin, CiMid, //    Instantiate recursive functor
-				     CjBegin, CjMid, mutual, remote);
-	    create_taskc(leftBranch);                           //    Ci:former Cj:former
-	    TraverseRange rightBranch(traversal, CiMid, CiEnd,  //    Instantiate recursive functor
-				      CjMid, CjEnd, mutual, remote);
-	    rightBranch();                                      //    Ci:latter Cj:latter
-	    wait_tasks;                                         //    Synchronize task group
-	  }
-	  {
-	    TraverseRange leftBranch(traversal, CiBegin, CiMid, //    Instantiate recursive functor
-				     CjMid, CjEnd, mutual, remote);
-	    create_taskc(leftBranch);                           //    Ci:former Cj:latter
-	    if (!mutual || CiBegin != CjBegin) {                //    Exclude mutual & self interaction
-	      TraverseRange rightBranch(traversal, CiMid, CiEnd,//    Instantiate recursive functor
-					CjBegin, CjMid, mutual, remote);
-	      rightBranch();                                    //    Ci:latter Cj:former
-	    } else {                                            //    If mutual or self interaction
-	      assert(CiEnd == CjEnd);                           //     Check if mutual & self interaction
-	    }                                                   //    End if for mutual & self interaction
-	    wait_tasks;                                         //    Synchronize task group
-	  }
-	}                                                       //  End if for many cells in range
-	logger::stopTracer(tracer);                             //  Stop tracer
-      }                                                         // End overload operator()
-    };
+    	//! Recursive functor for dual tree traversal of a range of Ci and Cj
+	struct TraverseRange {
+		Traversal * traversal;                                    //!< Traversal object
+		C_iter CiBegin;                                           //!< Begin iterator of target cells
+		C_iter CiEnd;                                             //!< End iterator of target cells
+		C_iter CjBegin;                                           //!< Begin Iterator of source cells
+		C_iter CjEnd;                                             //!< End iterator of source cells
+		bool mutual;                                              //!< Flag for mutual interaction
+		real_t remote;                                            //!< Weight for remote work load
+		TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
+		              C_iter _CjBegin, C_iter _CjEnd,
+		              bool _mutual, real_t _remote) :
+			traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),// Initialize variables
+			CjBegin(_CjBegin), CjEnd(_CjEnd), mutual(_mutual), remote(_remote) {}
+		void operator() () {                                      // Overload operator()
+			Tracer tracer;                                          //  Instantiate tracer
+			logger::startTracer(tracer);                            //  Start tracer
+			if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {     //  If only one cell in range
+				if (CiBegin == CjBegin) {                             //   If Ci == Cj
+					assert(CiEnd == CjEnd);                             //    Check if mutual & self interaction
+					traversal->dualTreeTraversal(CiBegin, CjBegin, mutual, remote);//   Call traverse for single pair
+				} else {                                              //   If Ci != Cj
+					for (C_iter Ci = CiBegin; Ci != CiEnd; Ci++) {      //    Loop over all Ci cells
+						for (C_iter Cj = CjBegin; Cj != CjEnd; Cj++) {    //     Loop over all Cj cells
+							traversal->dualTreeTraversal(Ci, Cj, mutual, remote);//   Call traverse for single pair
+						}                                                 //     End loop over all Cj cells
+					}                                                   //    End loop over all Ci cells
+				}                                                     //   End if for Ci == Cj
+			} else {                                                //  If many cells are in the range
+				C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;       //   Split range of Ci cells in half
+				C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;       //   Split range of Cj cells in half
+				mk_task_group;                                        //   Initialize task group
+				{
+					TraverseRange leftBranch(traversal, CiBegin, CiMid, //    Instantiate recursive functor
+					                         CjBegin, CjMid, mutual, remote);
+					create_taskc(leftBranch);                           //    Ci:former Cj:former
+					TraverseRange rightBranch(traversal, CiMid, CiEnd,  //    Instantiate recursive functor
+					                          CjMid, CjEnd, mutual, remote);
+					rightBranch();                                      //    Ci:latter Cj:latter
+					wait_tasks;                                         //    Synchronize task group
+				}
+				{
+					TraverseRange leftBranch(traversal, CiBegin, CiMid, //    Instantiate recursive functor
+					                         CjMid, CjEnd, mutual, remote);
+					create_taskc(leftBranch);                           //    Ci:former Cj:latter
+					if (!mutual || CiBegin != CjBegin) {                //    Exclude mutual & self interaction
+						TraverseRange rightBranch(traversal, CiMid, CiEnd,//    Instantiate recursive functor
+						                          CjBegin, CjMid, mutual, remote);
+						rightBranch();                                    //    Ci:latter Cj:former
+					} else {                                            //    If mutual or self interaction
+						assert(CiEnd == CjEnd);                           //     Check if mutual & self interaction
+					}                                                   //    End if for mutual & self interaction
+					wait_tasks;                                         //    Synchronize task group
+				}
+			}                                                       //  End if for many cells in range
+			logger::stopTracer(tracer);                             //  Stop tracer
+		}                                                         // End overload operator()
+	};
+
+		//! Recursive functor for dual tree traversal of a range of Ci and Cj
+	struct TraverseRemoteRange {
+		Traversal * traversal;                                      //!< Traversal object
+		C_iter CiBegin;                                             //!< Begin iterator of target cells
+		C_iter CiEnd;                                               //!< End iterator of target cells
+		C_iter CjBegin;                                             //!< Begin Iterator of source cells
+		C_iter CjEnd;                                               //!< End iterator of source cells		
+		bool mutual;                                                //!< Flag for mutual interaction
+		real_t remote;                                              //!< Weight for remote work load
+		size_t rank;
+		TraverseRemoteRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
+		                    C_iter _CjBegin, C_iter _CjEnd,
+		                    bool _mutual, real_t _remote, size_t _rank) :
+			traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
+			CjBegin(_CjBegin), CjEnd(_CjEnd),
+			mutual(_mutual), remote(_remote), rank(_rank) {}
+		void operator() () {                                        // Overload operator()
+			Tracer tracer;                                            //  Instantiate tracer
+			logger::startTracer(tracer);                              //  Start tracer
+			if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {       //  If only one cell in range
+				for (C_iter Ci = CiBegin; Ci != CiEnd; Ci++) {        //    Loop over all Ci cells
+					for (C_iter Cj = CjBegin; Cj != CjEnd; Cj++) {      //     Loop over all Cj cells
+						traversal->traverseRemote(Ci, Cj, mutual, remote, rank); // Call traverse for single pair
+					}                                                   //     End loop over all Cj cells
+				}                                                       //   End if for Ci == Cj
+			} else {                                                  //  If many cells are in the range
+				C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Split range of Ci cells in half
+				C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;         //   Split range of Cj cells in half
+				{
+					TraverseRemoteRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
+					    CjBegin, CjMid, mutual, remote, rank);
+					leftBranch();
+					TraverseRemoteRange rightBranch(traversal, CiMid, CiEnd,    //    Instantiate recursive functor
+					    CjMid, CjEnd, mutual, remote, rank);;
+					rightBranch();                                        //    Ci:latter Cj:latter
+				}
+				{
+					TraverseRemoteRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
+					    CjMid, CjEnd, mutual, remote, rank);;
+					leftBranch();
+					TraverseRemoteRange rightBranch(traversal, CiMid, CiEnd,  //    Instantiate recursive functor
+					    CjBegin, CjMid, mutual, remote, rank);;
+					rightBranch();                                            //    Ci:latter Cj:former
+				}
+			}                                                         //  End if for many cells in range
+			logger::stopTracer(tracer);                               //  Stop tracer
+		}                                                           // End overload operator()
+	};
 
     //! List based traversal
     void listBasedTraversal(int numCells, vec3 cycle, bool mutual, real_t remote) {
@@ -420,8 +546,8 @@ namespace exafmm {
 
   public:
     //! Constructor
-    Traversal(int _nspawn, int _images) :                       // Constructor
-      nspawn(_nspawn), images(_images)                          // Initialize variables
+    Traversal(int _nspawn, int _images, TreeMPI* _communicator) : // Constructor
+      nspawn(_nspawn), images(_images),communicator(_communicator)// Initialize variables
 #if EXAFMM_COUNT_KERNEL
       , numP2P(0), numM2L(0)
 #endif
@@ -453,6 +579,36 @@ namespace exafmm {
 #else
     void initWeight(Cells) {}
 #endif
+
+	//! Evaluate P2P and M2L using dual tree traversal
+	void dualTreeTraversalRemote(Cells & icells, Bodies& ibodies, int mpirank, int mpisize, real_t remote = 1) {
+		if (icells.empty()) return;                                 // Quit if either of the cell vectors are empty
+		logger::startTimer("Traverse Remote");                      // Start timer
+		kernel::Xperiodic = 0;
+		logger::initTracer();                                       // Initialize tracer
+		Ci0 = icells.begin();                                       // Set iterator of target root cell	
+		communicator->setSendLET(&icells,&ibodies);
+//#pragma omp parallel 
+{ 
+//		#pragma omp for	
+		for (int i = 0; i < mpisize; ++i) {
+			if (i != mpirank) {
+				double commtime;
+				Cells cells = communicator->getCell(0, 1, 0, i, LEVELTAG, commtime);
+				assert(cells.size() > 0);
+				traverseRemote(Ci0, cells.begin(), false, remote, i);
+				logger::startTimer("Clear cache");                             // Start timer
+				communicator->clearCellCache(i);
+				logger::stopTimer("Clear cache", 0);                            // Start timer
+			}
+		}
+}
+		logger::printTime("Clear cache");
+		logger::stopTimer("Traverse Remote");                              // Stop timer
+		communicator->sendFlushRequest();
+		communicator->recvAll();
+		logger::writeTracer();                                      // Write tracer to file
+	}
 
     //! Evaluate P2P and M2L using list based traversal
     void traverse(Cells & icells, Cells & jcells, vec3 cycle, bool dual, bool mutual, real_t remote=1) {
