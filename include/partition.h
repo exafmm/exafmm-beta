@@ -47,7 +47,7 @@ namespace exafmm {
       B_iter begin = bodies.begin();                            // bodies begin iterator
       for (int i = 0; i < bodies.size(); ++i) {                 // loop over bodies
 	B_iter B = begin + i;                                   // Capture body iterator
-	coord_t position[3] = {                                 // initialize shifted position
+	int position[3] = {                                     // initialize shifted position
 	  cast_coord((B->X[0] - _min) / diameter * accuracy),
 	  cast_coord((B->X[1] - _min) / diameter * accuracy),
 	  cast_coord((B->X[2] - _min) / diameter * accuracy)

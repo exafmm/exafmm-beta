@@ -13,19 +13,18 @@
 // Axes are stored conventially as b-bit integers.
 // Author: John Skilling 20 Apr 2001 to 11 Oct 2003
 //-----------------------------------------------------------------------------
-typedef uint32_t coord_t;                                       //!< char,short,int for up to 8,16,32 bits per word
-#define cast_coord(V) static_cast<coord_t>(V)                   //!< Safe cast to coordinate type
+#define cast_coord(V) static_cast<int>(V)
 
 //! Transform in-place between geometrical axes and Hilbert transpose
-inline void axesToTranspose(coord_t X[], int order) {           // position, #bits
-  coord_t M = 1 << (order - 1), P, Q, t;
+inline void axesToTranspose(int X[], int order) {
+  int M = 1 << (order - 1), P, Q, t;
   // Inverse undo
   for (Q = M; Q > 1; Q >>= 1) {
     P = Q - 1;
     for (int i = 0; i < 3; i++)
       if (X[i] & Q)
-        X[0] ^= P;                                              // invert
-      else {                                                    // exchange
+        X[0] ^= P;
+      else {
         t = (X[0] ^ X[i]) & P;
         X[0] ^= t;
         X[i] ^= t;
@@ -42,13 +41,13 @@ inline void axesToTranspose(coord_t X[], int order) {           // position, #bi
 }
 
 //! Output one 64-bit Hilbert order from the 3D transposed key
-inline int64_t flattenTransposedKey(coord_t X[], int order) {
+inline int64_t flattenTransposedKey(int X[], int order) {
   int64_t key = 0;
   int shifts = order - 1;
-  for (int i = shifts; i >= 0; --i) {                           // flatten transposed key
+  for (int i = shifts; i >= 0; --i) {
     for (int j = 0; j < 3; ++j) {
-      if (X[j] >> i & 1)                                        // check x-bit
-        key |= 1ull << ((3 * i) + (3 - j - 1));                 // place x-bit in position
+      if (X[j] >> i & 1)
+        key |= 1ull << ((3 * i) + (3 - j - 1));
     }
   }
   return key;
@@ -61,7 +60,7 @@ void swap(int & a, int & b) {
 
 //! get linear Hilbert address given the x,y,z coordinates
 //! migrated from grouptargets.h, but not tested yet
-uint64_t getHilbert(uint32_t iX[3], int nbits) {
+uint64_t getHilbert(int iX[3], int nbits) {
   const int octantMap[8] = {0, 1, 7, 6, 3, 2, 4, 5};
   int mask = 1 << (nbits - 1);
   uint64_t key = 0;
