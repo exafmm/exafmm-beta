@@ -5,9 +5,6 @@
 #define NULLTAG 1
 #define CELLTAG 2
 #define CHILDCELLTAG 3
-#define TIMEOUT 4
-#define MULTIPOLETAG 5
-#define PARTICLETAG 6
 #define LEVELTAG 7
 #define BODYTAG 8
 #define FLUSHTAG 9
@@ -20,14 +17,7 @@
 #define REQUESTMASK 0xF
 #define DIRECTIONMASK 0x1
 #define GRAINMASK 0xFFFF
-#define IDMASK 0x2F
 #define RAWPTR(vec) &vec[0]
-#define NEWTRIGGER new int()
-#define TRIGGER(task) *task = 1;
-#define FINALIZE(task) *task = 2;
-#define UNTRIGGER(task) *task = 0; 
-#define GETTRIG(task) *task
-#define DELTRIGGER(task) delete task;
 #define TOGGLEDIRECTION(tag) tag ^= DIRECTIONMASK;
 
 namespace exafmm {
