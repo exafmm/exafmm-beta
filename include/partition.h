@@ -36,8 +36,8 @@ namespace exafmm {
       logger::startTimer("Hkey Generation");                    // start Hilbert generation timer
       real_t const& _min = min(bounds.Xmin);                    // get min of all dimensions
       real_t const& _max = max(bounds.Xmax);                    // get max of all dimensions
-      hilbert_t min_h = 0ull;                                   // initialize min Hilbert order
-      hilbert_t max_h = 0ull;                                   // initialize max Hilbert order
+      int64_t min_h = 0ull;                                     // initialize min Hilbert order
+      int64_t max_h = 0ull;                                     // initialize max Hilbert order
       order = cast_coord(ceil(log(ACCURACY) / log(2)));         // get needed bits to represent Hilbert order in each dimension
       real_t diameter = _max - _min;                            // set domain's diameter
       assert(order <= 21);                                      // maximum key is 63 bits
@@ -68,7 +68,7 @@ namespace exafmm {
     }
 
     //! Gets the rank based on the key given the range
-    inline int getPartitionNumber(hilbert_t const& key) {
+    inline int getPartitionNumber(int64_t const& key) {
       VHilbert::iterator low = std::lower_bound(rangeBegin, rangeEnd, key);//!< get iterator of first element that is >= input key
       if (low > rangeBegin) {
 	return (low - rangeBegin) - 1;
@@ -86,7 +86,7 @@ namespace exafmm {
     }
 
     //! applies partition sort algorithm to sort through particles based on Hilbert index
-    void hilbertPartitionSort(VHilbert& keys, hilbert_t lbound, hilbert_t rbound, VHilbert&rq, hilbert_t pivot = 0, size_t depth = 0) {
+    void hilbertPartitionSort(VHilbert& keys, int64_t lbound, int64_t rbound, VHilbert&rq, int64_t pivot = 0, size_t depth = 0) {
       VHilbert right;
       VHilbert left;
       for (int i = 0; i < keys.size(); ++i) {
@@ -353,17 +353,17 @@ namespace exafmm {
       uint32_t depth;
       KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);
       logger::startTimer("Hilbert bounds");
-      hilbert_t min, max;
+      int64_t min, max;
       MPI_Allreduce(&localHilbertBounds.first,  &min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
       MPI_Allreduce(&localHilbertBounds.second, &max, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
       globalBounds = std::make_pair(min, max);
       logger::stopTimer("Hilbert bounds");
-      hilbert_t lbound = globalBounds.first;
-      hilbert_t rbound = globalBounds.second;
+      int64_t lbound = globalBounds.first;
+      int64_t rbound = globalBounds.second;
       VHilbert rq;
       rq.reserve(mpisize + 1);
       rq.push_back(lbound); rq.push_back(rbound);
-      hilbert_t startPivot = lbound + ((rbound - lbound) >> 1);
+      int64_t startPivot = lbound + ((rbound - lbound) >> 1);
       VHilbert keys(bodies.size());
       int index = 0;
       for (B_iter B = bodies.begin(); B != bodies.end(); ++B)

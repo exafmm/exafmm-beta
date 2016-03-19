@@ -131,8 +131,7 @@ namespace exafmm {
   typedef Cells::iterator   C_iter;                             //!< Iterator of cell vector
   
   
-  typedef int64_t hilbert_t;                                    //!< Type of Hilbert orders
-  typedef std::vector<hilbert_t> VHilbert;                      //!< Type of Hilbert key vectors
-  typedef std::pair<hilbert_t,hilbert_t> KeyPair;               //!< Type of Hilbert Key Pair    
+  typedef std::vector<int64_t> VHilbert;                        //!< Type of Hilbert key vectors
+  typedef std::pair<int64_t,int64_t> KeyPair;                   //!< Type of Hilbert Key Pair    
 }
 #endif
