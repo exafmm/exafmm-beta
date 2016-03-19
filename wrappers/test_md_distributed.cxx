@@ -54,6 +54,8 @@ int main(int argc, char ** argv) {
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     res_index[i] = 0;
   }
+  x[0] = M_PI - 0.001;
+  x[1] = M_PI + 0.01;
   for (int i=0; i<ni; i++) {
     q[i] = drand48() - .5;
     average += q[i];
