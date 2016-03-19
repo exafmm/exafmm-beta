@@ -10,7 +10,6 @@
 #include "up_down_pass.h"
 #include "verify.h"
 using namespace exafmm;
-#define REMOTE_TRAVERSE 1
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
@@ -78,7 +77,7 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
-#if REMOTE_TRAVERSE
+#if 1
   traversal.initListCount(cells);
   traversal.initWeight(cells);
   if (args.IneJ) {
