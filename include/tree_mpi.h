@@ -2,7 +2,6 @@
 #define tree_mpi_h
 #include "kernel.h"
 #include "logger.h"
-#include "msg_pack.h"
 namespace exafmm {
   //! Handles all the communication of local essential trees
   class TreeMPI {
@@ -13,6 +12,22 @@ namespace exafmm {
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int images;                                           //!< Number of periodic image sublevels
+    const uint32_t nulltag;
+    const uint32_t celltag;
+    const uint32_t childcelltag;
+    const uint32_t leveltag;
+    const uint32_t bodytag;
+    const uint32_t flushtag;
+    const uint32_t maxtag;
+    const uint32_t levelshift;
+    const uint32_t requestshift;
+    const uint32_t directionshift;
+    const uint32_t levelmask;
+    const uint32_t requestmask;
+    const uint32_t directionmask;
+    const uint32_t grainmask;
+    const uint32_t sendbit;
+    const uint32_t receivebit;
     float (* allBoundsXmin)[3];                                 //!< Array for local Xmin for all ranks
     float (* allBoundsXmax)[3];                                 //!< Array for local Xmax for all ranks
     Bodies sendBodies;                                          //!< Send buffer for bodies
@@ -38,6 +53,8 @@ namespace exafmm {
     int terminated;                                             //!< Number of terminated requests
     size_t hitCount;                                            //!< Number of remote requests
     int sendIndex;                                              //!< LET Send cursor
+    int cellWordSize;
+    int bodyWordSize;
 
   private:
     //! Exchange send count for bodies
@@ -169,18 +186,18 @@ namespace exafmm {
     }
 
     inline bool processIncomingMessage(int tag, int source) {
-      if((tag & DIRECTIONMASK) == RECEIVEBIT)
+      if((tag & directionmask) == receivebit)
         return false; 
       hitCount++;
       uint8_t msgType = getMessageType(tag);
-      int nullTag = encryptMessage(1,NULLTAG,0,RECEIVEBIT);     
+      int nullTag = encryptMessage(1,nulltag,0,receivebit);     
       MPI_Request request;
       char null; 
-      if (msgType==CHILDCELLTAG) { 
+      if (msgType==childcelltag) { 
         int childID;
         int level = getMessageLevel(tag);
         MPI_Recv(&childID,1,MPI_INT, source, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);  
-        TOGGLEDIRECTION(tag)
+        toggleDirection(tag);
         Cells& C = *LETCells;
         Cell& cell = C[childID];
         Cell& pcell = C[cell.IPARENT];
@@ -188,27 +205,27 @@ namespace exafmm {
           uint16_t grainSize = getGrainSize(tag);
           size_t sendingSize = 0;
           packSubtree(sendCells,LETCells->begin(), pcell,grainSize,sendingSize);            
-          MPI_Isend((int*)&sendCells[sendIndex],  CELLWORD*sendingSize,MPI_INT,source,tag,MPI_COMM_WORLD,&request);
+          MPI_Isend((int*)&sendCells[sendIndex],  cellWordSize*sendingSize,MPI_INT,source,tag,MPI_COMM_WORLD,&request);
           sendIndex += sendingSize;            
           return true;
         }
         else return false;
        }
-      else if (msgType == BODYTAG) {
+      else if (msgType == bodytag) {
         int recvBuff[2];
         MPI_Recv(recvBuff,2,MPI_INT, source, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-        TOGGLEDIRECTION(tag)
-        MPI_Isend((int*)&LETBodies->operator[](recvBuff[0]), BODYWORD*recvBuff[1],MPI_INT,source,tag,MPI_COMM_WORLD,&request);
+        toggleDirection(tag);
+        MPI_Isend((int*)&LETBodies->operator[](recvBuff[0]), bodyWordSize*recvBuff[1],MPI_INT,source,tag,MPI_COMM_WORLD,&request);
       }
-      else if(msgType == LEVELTAG) {
-        int level = (tag >> DIRECTIONSHIFT) & LEVELMASK;
+      else if(msgType == leveltag) {
+        int level = (tag >> directionshift) & levelmask;
         int recvBuff;
         MPI_Recv(&recvBuff,1,MPI_INT, source, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-        TOGGLEDIRECTION(tag)
-        MPI_Isend((int*)&LETCells->operator[](0),CELLWORD,MPI_INT,source,tag,MPI_COMM_WORLD,&request);
+        toggleDirection(tag);
+        MPI_Isend((int*)&LETCells->operator[](0),cellWordSize,MPI_INT,source,tag,MPI_COMM_WORLD,&request);
         return true;                     
       }
-      else if(msgType == FLUSHTAG) {
+      else if(msgType == flushtag) {
         MPI_Recv(&null,1,MPI_CHAR, source, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
         terminated++;
       }
@@ -240,7 +257,7 @@ namespace exafmm {
       kernel::M2L(Ci, Cj,false);                                      //  M2L kernel
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       double commtime;
-      Bodies bodies = getBodies(Cj->IBODY,Cj->NBODY, Cj->LEVEL, rank, BODYTAG, commtime);
+      Bodies bodies = getBodies(Cj->IBODY,Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
@@ -269,7 +286,7 @@ namespace exafmm {
       }                                                         //  End loop over Ci's children
     } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
       assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
@@ -277,7 +294,7 @@ namespace exafmm {
         traverseRemote(Ci, cj, mutual, remote, rank);            //   Traverse a single pair of cells
       }
     } else if (Ci->NBODY + Cj->NBODY >= nspawn) {// Else if cells are still large
-      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
@@ -289,7 +306,7 @@ namespace exafmm {
         traverseRemote(ci, Cj, mutual, remote, rank);            //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children
     } else {                                                    // Else if Cj is larger than Ci
-      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, CHILDCELLTAG, commtime);
+      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
@@ -377,6 +394,78 @@ namespace exafmm {
       ibody += C->NBODY;                                        // Increment body counter
     }
 
+  inline int encryptMessage(uint16_t grainSize, uint8_t requestType, uint8_t level, uint8_t direction) {
+    int tag = int(grainSize);
+    tag<<=requestshift; tag|=requestType;        
+    tag<<=levelshift; tag|=level;
+    tag<<=directionshift; tag|= direction;
+    return tag;  
+  }
+
+  inline void decryptMessage(int tag, uint16_t& grainSize, uint8_t& requestType, uint8_t& level, uint8_t& direction) {
+    direction = tag & directionmask;
+    tag >>= directionshift;
+    level = tag & levelmask;
+    tag >>= levelshift;
+    requestType = tag & requestmask;  
+    tag >>= requestshift;
+    grainSize = tag & grainmask;
+  }
+
+  inline uint16_t getGrainSize(int const& tag) {
+    return ((tag >> (requestshift + directionshift + levelshift)) & grainmask);
+  }
+
+  inline uint8_t getMessageType(int const& tag) {
+    return ((tag >> (directionshift + levelshift)) & requestmask);
+  }
+
+  inline uint8_t getMessageLevel(int const& tag) {
+    return ((tag >> directionshift) & levelmask);
+  }
+
+  inline uint8_t getMessageDirection(int const& tag) {
+    return (tag & directionmask);
+  }
+
+  inline void toggleDirection(int& tag) {
+    tag ^= directionmask;
+  }
+
+
+#if DFS
+  inline void packSubtree(Cells& cells, C_iter const& C0, Cell const& C, uint16_t const& grainSize, size_t& index) {
+    C_iter begin = C0 + C.ICHILD;
+    C_iter end   = C0 + C.ICHILD + C.NCHILD;
+    cells.insert(cells.end(),begin,end);
+    index+=C.NCHILD;
+    for(C_iter cc = begin; cc<end; ++cc) 
+      if(index < grainSize) packSubtree(cells,C0,*cc,grainSize,index);        
+  }
+#else
+  inline void packSubtree(Cells& cells, C_iter const& C0, Cell const& root, uint16_t const& grainSize, size_t& index) {   
+    std::queue<Cell> cell_queue;
+    C_iter begin = C0 + root.ICHILD;  
+    int size = root.NCHILD;
+    for (int i = 0; i < size; ++i) 
+      cell_queue.push(*(begin + i));  
+    while(cell_queue.size() > 0) {
+      Cell C = cell_queue.front();    
+      begin = C0 + C.ICHILD;    
+      size = C.NCHILD;    
+      C.ICELL = index;
+      cells.push_back(C);
+      cell_queue.pop();
+      index++;
+      if(index < grainSize) 
+        for (int i = 0; i < size; ++i) {                             
+          cell_queue.push(*(begin + i));  
+          cell_queue.back().IPARENT = index - 1;  
+        }     
+    } 
+  }
+  #endif
+
     //! Determine which cells to send
     void traverseLET(C_iter C, C_iter C0, Bounds bounds, vec3 cycle,
          int & irank, int & ibody, int & icell, int iparent, bool copyData) {
@@ -452,14 +541,18 @@ namespace exafmm {
     }
   }
 #endif
-
   public:
     //! Constructor
     TreeMPI(int _mpirank, int _mpisize, int _images) :
       mpirank(_mpirank), mpisize(_mpisize), images(_images), 
       terminated(0), hitCount(0), sendIndex(0),
       cellsMap(_mpisize),childrenMap(_mpisize),
-      bodyMap(_mpisize) {                                       // Initialize variables
+      bodyMap(_mpisize), nulltag(1), celltag(2),
+      childcelltag(3),leveltag(7), bodytag(8), 
+      flushtag(9), maxtag(15), levelshift(5),
+      requestshift(4),directionshift(1), levelmask(0x1F),
+      requestmask(0xF),directionmask(0x1),grainmask(0xFFFF)
+      ,sendbit(1), receivebit(0){                               // Initialize variables
       allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
       allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
       sendBodyCount = new int [mpisize];                        // Allocate send count
@@ -730,11 +823,13 @@ namespace exafmm {
     void setSendLET(Cells* cells, Bodies* bodies) {
       LETCells = cells;
       LETBodies = bodies;
+      cellWordSize = sizeof((*cells)[0])/4;
+      bodyWordSize = sizeof((*bodies)[0])/4;
     }
 
     void sendFlushRequest() {
       MPI_Request request;    
-      int tag = encryptMessage(1,FLUSHTAG,0,SENDBIT);                
+      int tag = encryptMessage(1,flushtag,0,sendbit);                
       char null;   
       for(int i=0; i < mpisize; ++i)
         if(i!=mpirank)
@@ -769,7 +864,7 @@ namespace exafmm {
     for (int i = 0; i < mpisize; ++i) {
       if (i != mpirank) {
         double commtime;
-        Cells cells = getCell(0, 1, 0, i, LEVELTAG, commtime);
+        Cells cells = getCell(0, 1, 0, i, leveltag, commtime);
         assert(cells.size() > 0);
         traverseRemote(Ci0, cells.begin(), false, remote, i);
         logger::startTimer("Clear cache");                             // Start timer
@@ -792,9 +887,9 @@ namespace exafmm {
       int grainSize = 1;
       Bodies recvData;
       BodiesMap& bodyRankMap = bodyMap[rank];
-      if(requestType == BODYTAG && bodyRankMap.find(key) ==  bodyRankMap.end()) { 
+      if(requestType == bodytag && bodyRankMap.find(key) ==  bodyRankMap.end()) { 
         MPI_Request request;
-        int tag = encryptMessage(1,requestType,level,SENDBIT);
+        int tag = encryptMessage(1,requestType,level,sendbit);
   #if CALC_COM_COMP      
         logger::startTimer("Communication");
   #endif    
@@ -803,7 +898,7 @@ namespace exafmm {
         MPI_Status status;         
         int recvRank = rank;
         int receivedTag;      
-        TOGGLEDIRECTION(tag)
+        toggleDirection(tag);
         int ready = 0;
         while(!ready) {
           MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&ready,&status); 
@@ -817,12 +912,12 @@ namespace exafmm {
         receivedTag = status.MPI_TAG;  
         int responseType = getMessageType(receivedTag);
         int recvCount = 0;
-        assert(responseType == BODYTAG || responseType == NULLTAG);
-        if(responseType == BODYTAG) { 
+        assert(responseType == bodytag || responseType == nulltag);
+        if(responseType == bodytag) { 
           MPI_Get_count(&status, MPI_INT, &recvCount);
-          int bodyCount = recvCount/BODYWORD;
+          int bodyCount = recvCount/bodyWordSize;
           recvData.resize(bodyCount);
-          MPI_Recv(RAWPTR(recvData), recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+          MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   #if CALC_COM_COMP      
           commtime = logger::stopTimer("Communication",0);
   #endif    
@@ -836,7 +931,7 @@ namespace exafmm {
   #endif    
         }
       }
-      else if(requestType == BODYTAG) {
+      else if(requestType == bodytag) {
         recvData = bodyRankMap[key];
       }
       return recvData;
@@ -850,12 +945,12 @@ namespace exafmm {
     Cells recvData;
     CellMap& cellRankMap = cellsMap[rank];
     ChildCellsMap& childRankMap = childrenMap[rank];    
-    if((requestType == CHILDCELLTAG && childRankMap.find(key) == childRankMap.end()) ||
-       (requestType == CELLTAG      &&  cellRankMap.find(key) ==  cellRankMap.end()) || 
-        requestType ==LEVELTAG) { 
+    if((requestType == childcelltag && childRankMap.find(key) == childRankMap.end()) ||
+       (requestType == celltag      &&  cellRankMap.find(key) ==  cellRankMap.end()) || 
+        requestType ==leveltag) { 
       MPI_Request request;      
-      assert(requestType <= MAXTAG);      
-      int tag = encryptMessage(grainSize,requestType,level,SENDBIT);
+      assert(requestType <= maxtag);      
+      int tag = encryptMessage(grainSize,requestType,level,sendbit);
 #if CALC_COM_COMP      
         logger::startTimer("Communication");
 #endif 
@@ -863,7 +958,7 @@ namespace exafmm {
       MPI_Status status;          
       int recvRank = rank;
       int receivedTag;       
-      TOGGLEDIRECTION(tag)   
+      toggleDirection(tag);   
       int ready = 0;
       while(!ready) {
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&ready,&status); 
@@ -877,17 +972,17 @@ namespace exafmm {
       receivedTag = status.MPI_TAG;                
       int responseType = getMessageType(receivedTag);
       int recvCount = 0;
-      assert(responseType != BODYTAG);
-      if(responseType == CHILDCELLTAG || responseType == CELLTAG || responseType == LEVELTAG) { 
+      assert(responseType != bodytag);
+      if(responseType == childcelltag || responseType == celltag || responseType == leveltag) { 
         MPI_Get_count(&status, MPI_INT, &recvCount);
-        int cellCount = recvCount/CELLWORD;
+        int cellCount = recvCount/cellWordSize;
         recvData.resize(cellCount);
-        MPI_Recv(RAWPTR(recvData), recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 #if CALC_COM_COMP      
         commtime = logger::stopTimer("Communication",0);
 #endif          
-        if(responseType == CELLTAG) cellRankMap[key] = recvData[0];
-        else if(responseType == CHILDCELLTAG)  { 
+        if(responseType == celltag) cellRankMap[key] = recvData[0];
+        else if(responseType == childcelltag)  { 
           if(grainSize > 1) {
 #if DFS            
             childRankMap[key] = Cells(recvData.begin(), recvData.begin()+nchild);  
@@ -901,7 +996,7 @@ namespace exafmm {
           }
           else childRankMap[key] = recvData;
         }
-      } else if(responseType == NULLTAG) {
+      } else if(responseType == nulltag) {
           char null;
           MPI_Recv(&null, 1, MPI_CHAR, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);  
 #if CALC_COM_COMP      
@@ -909,10 +1004,10 @@ namespace exafmm {
 #endif                      
       }
     }
-    else if(requestType == CELLTAG) {
+    else if(requestType == celltag) {
       recvData.push_back(cellRankMap[key]);
     }
-    else if(requestType == CHILDCELLTAG) {
+    else if(requestType == childcelltag) {
       recvData = childRankMap[key];
     }
     return recvData;
