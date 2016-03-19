@@ -15,38 +15,14 @@
 //-----------------------------------------------------------------------------
 typedef uint32_t coord_t;                                       //!< char,short,int for up to 8,16,32 bits per word
 #define cast_coord(V) static_cast<coord_t>(V)                   //!< Safe cast to coordinate type
-#define DIM 3                                                   //!< Domain's dimensions 
-#define ACCURACY 10000                                          //!< Multiplier to maintain accuracy     
-#define NBITS 21
-//! Transform in-place between Hilbert transpose and geometrical axes
-inline void transposeToAxes(coord_t X[], int b, int n) {        // position, #bits, dimension
-  coord_t N = 2 << (b - 1), P, Q, t;
-  int i;
-  // Gray decode by H ^ (H/2)
-  t = X[n - 1] >> 1;
-  for (i = n - 1; i > 0; i--) X[i] ^= X[i - 1];
-  X[0] ^= t;
-  // Undo excess work
-  for (Q = 2; Q != N; Q <<= 1) {
-    P = Q - 1;
-    for (i = n - 1; i >= 0 ; i--)
-      if (X[i] & Q)
-        X[0] ^= P; // invert
-      else {
-        t = (X[0] ^ X[i]) & P;
-        X[0] ^= t;
-        X[i] ^= t;
-      } // exchange
-  }
-}
 
 //! Transform in-place between geometrical axes and Hilbert transpose
-inline void axesToTranspose(coord_t X[], int order, int dim) {  // position, #bits, dimension
+inline void axesToTranspose(coord_t X[], int order) {           // position, #bits
   coord_t M = 1 << (order - 1), P, Q, t;
   // Inverse undo
   for (Q = M; Q > 1; Q >>= 1) {
     P = Q - 1;
-    for (int i = 0; i < dim; i++)
+    for (int i = 0; i < 3; i++)
       if (X[i] & Q)
         X[0] ^= P;                                              // invert
       else {                                                    // exchange
@@ -56,13 +32,13 @@ inline void axesToTranspose(coord_t X[], int order, int dim) {  // position, #bi
       }
   }
   // Gray encode
-  for (int i = 1; i < dim; i++) X[i] ^= X[i - 1];
+  for (int i = 1; i < 3; i++) X[i] ^= X[i - 1];
   t = 0;
   for (Q = M; Q > 1; Q >>= 1) {
-    if (X[dim - 1] & Q)
+    if (X[2] & Q)
       t ^= Q - 1;
   }
-  for (int i = 0; i < dim; i++) X[i] ^= t;
+  for (int i = 0; i < 3; i++) X[i] ^= t;
 }
 
 //! Output one 64-bit Hilbert order from the 3D transposed key
@@ -70,9 +46,9 @@ inline int64_t flattenTransposedKey(coord_t X[], int order) {
   int64_t key = 0;
   int shifts = order - 1;
   for (int i = shifts; i >= 0; --i) {                           // flatten transposed key
-    for (int j = 0; j < DIM; ++j) {
+    for (int j = 0; j < 3; ++j) {
       if (X[j] >> i & 1)                                        // check x-bit
-        key |= 1ull << ((DIM * i) + (DIM - j - 1));             // place x-bit in position
+        key |= 1ull << ((3 * i) + (3 - j - 1));                 // place x-bit in position
     }
   }
   return key;
@@ -85,12 +61,12 @@ void swap(int & a, int & b) {
 
 //! get linear Hilbert address given the x,y,z coordinates
 //! migrated from grouptargets.h, but not tested yet
-uint64_t getHilbert(int iX[3]) {
+uint64_t getHilbert(uint32_t iX[3], int nbits) {
   const int octantMap[8] = {0, 1, 7, 6, 3, 2, 4, 5};
-  int mask = 1 << (NBITS - 1);
+  int mask = 1 << (nbits - 1);
   uint64_t key = 0;
 #pragma unroll
-  for (int i = 0; i < NBITS; i++) {
+  for (int i = 0; i < nbits; i++) {
     const int ix = (iX[0] & mask) ? 1 : 0;
     const int iy = (iX[1] & mask) ? 1 : 0;
     const int iz = (iX[2] & mask) ? 1 : 0;

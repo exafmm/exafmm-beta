@@ -35,24 +35,29 @@ namespace exafmm {
   private:
     //! Generate Space-filling order (Hilbert) from given the particles structure  and returns min/max orders
     KeyPair assignSFCtoBodies(Bodies& bodies, Bounds const& bounds, uint32_t& order) {
+      const int accuracy = 10000;
       logger::startTimer("Hkey Generation");                    // start Hilbert generation timer
       real_t const& _min = min(bounds.Xmin);                    // get min of all dimensions
       real_t const& _max = max(bounds.Xmax);                    // get max of all dimensions
       int64_t min_h = 0ull;                                     // initialize min Hilbert order
       int64_t max_h = 0ull;                                     // initialize max Hilbert order
-      order = cast_coord(ceil(log(ACCURACY) / log(2)));         // get needed bits to represent Hilbert order in each dimension
+      order = cast_coord(ceil(log(accuracy) / log(2)));         // get needed bits to represent Hilbert order in each dimension
       real_t diameter = _max - _min;                            // set domain's diameter
       assert(order <= 21);                                      // maximum key is 63 bits
       B_iter begin = bodies.begin();                            // bodies begin iterator
       for (int i = 0; i < bodies.size(); ++i) {                 // loop over bodies
 	B_iter B = begin + i;                                   // Capture body iterator
 	coord_t position[3] = {                                 // initialize shifted position
-	  cast_coord((B->X[0] - _min) / diameter * ACCURACY),
-	  cast_coord((B->X[1] - _min) / diameter * ACCURACY),
-	  cast_coord((B->X[2] - _min) / diameter * ACCURACY)
+	  cast_coord((B->X[0] - _min) / diameter * accuracy),
+	  cast_coord((B->X[1] - _min) / diameter * accuracy),
+	  cast_coord((B->X[2] - _min) / diameter * accuracy)
 	};
-	axesToTranspose(position, order, DIM);                  // get transposed Hilbert order
-	B->ICELL = flattenTransposedKey(position, order);       // generate 1 flat Hilbert order (useful for efficient sorting)                 
+#if 1
+	axesToTranspose(position, order);                       // get transposed Hilbert order
+	B->ICELL = flattenTransposedKey(position, order);       // generate 1 flat Hilbert order (useful for efficient sorting)
+#else
+	B->ICELL = getHilbert(position, order);
+#endif
 	if (min_h != 0ull) {
 	  if (B->ICELL > max_h)                                 // update min/max hilbert orders
 	    max_h = B->ICELL;
