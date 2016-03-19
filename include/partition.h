@@ -7,6 +7,8 @@
 namespace exafmm {
   //! Handles all the partitioning of domains
   class Partition {
+    typedef std::vector<int64_t> VHilbert;                        //!< Type of Hilbert key vectors
+    typedef std::pair<int64_t,int64_t> KeyPair;                   //!< Type of Hilbert Key Pair    
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
