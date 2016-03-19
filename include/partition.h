@@ -42,32 +42,29 @@ private:
 		real_t diameter = _max - _min;																	// set domain's diameter
 		assert(order <= 21);															  						// maximum key is 63 bits
 		B_iter begin = bodies.begin();																	// bodies begin iterator
-		#pragma omp parallel shared(max_h, min_h)												
-		{
-			#pragma omp for reduction (max: max_h), reduction(min: min_h)
-			for (int i = 0; i < bodies.size(); ++i) {	   									// loop over bodies
-				B_iter B = begin + i;																				// Capture body iterator
-				coord_t position[3] = { 	    				 								  		// initialize shifted position
-					cast_coord((B->X[0] - _min) / diameter * ACCURACY),
-					cast_coord((B->X[1] - _min) / diameter * ACCURACY),
-					cast_coord((B->X[2] - _min) / diameter * ACCURACY)
-				};
-				axesToTranspose(position, order, DIM);											// get transposed Hilbert order
-				B->ICELL = flattenTransposedKey(position, order);		      	// generate 1 flat Hilbert order (useful for efficient sorting) 								
-				if (min_h != 0ull) {
-					if (B->ICELL > max_h)	  														  		// update min/max hilbert orders
-						max_h = B->ICELL;
-					else if (B->ICELL < min_h)
-						min_h = B->ICELL;
-				}
-				else {
-					min_h = max_h = B->ICELL;
-					assert(min_h != 0ull);
-				}
+		for (int i = 0; i < bodies.size(); ++i) {	   								  	// loop over bodies
+			B_iter B = begin + i;																				  // Capture body iterator
+			coord_t position[3] = { 	    				 								  	  	// initialize shifted position
+				cast_coord((B->X[0] - _min) / diameter * ACCURACY),
+				cast_coord((B->X[1] - _min) / diameter * ACCURACY),
+				cast_coord((B->X[2] - _min) / diameter * ACCURACY)
+			};
+			axesToTranspose(position, order, DIM);											// get transposed Hilbert order
+			B->ICELL = flattenTransposedKey(position, order);		      	// generate 1 flat Hilbert order (useful for efficient sorting) 								
+			if (min_h != 0ull) {
+				if (B->ICELL > max_h)	  														  		// update min/max hilbert orders
+					max_h = B->ICELL;
+				else if (B->ICELL < min_h)
+					min_h = B->ICELL;
 			}
-		}																																// end loop
+			else {
+				min_h = max_h = B->ICELL;
+				assert(min_h != 0ull);
+			}
+		}																															  // end loop
+																																		
 		logger::stopTimer("Hkey Generation");														// stop Hilbert generation timer
-		return std::make_pair(min_h, max_h);														 // return min/max tuple
+		return std::make_pair(min_h, max_h);														// return min/max tuple
 	}
 
 	//! Gets the rank based on the key given the range

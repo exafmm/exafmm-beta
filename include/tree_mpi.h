@@ -3,14 +3,13 @@
 #include "kernel.h"
 #include "logger.h"
 #include "msg_pack.h"
-using namespace std;
 namespace exafmm {
   //! Handles all the communication of local essential trees
   class TreeMPI {
   protected:			  	  	 	  	 	  	 
-  	typedef map<int,Cell>	  CellMap;														//!< Type of cell hash map
-  	typedef map<int,Cells>	ChildCellsMap;										  //!< Type of child cells hash map
-  	typedef map<int,Bodies>	BodiesMap;													//!< Type of bodies hash map
+  	typedef std::map<int,Cell>	  CellMap;											//!< Type of cell hash map
+  	typedef std::map<int,Cells>	ChildCellsMap;			 					  //!< Type of child cells hash map
+  	typedef std::map<int,Bodies>	BodiesMap;						 			  //!< Type of bodies hash map
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int images;                                           //!< Number of periodic image sublevels
@@ -28,9 +27,9 @@ namespace exafmm {
     int * sendCellDispl;                                        //!< Send displacement
     int * recvCellCount;                                        //!< Receive count
     int * recvCellDispl;                                        //!< Receive displacement   
- 		vector<CellMap> cellsMap; 	 				  											//!< mapper to keep track of received individual cells
-    vector<ChildCellsMap> childrenMap; 									    		//!< mapper to keep track of received child cells 
-    vector<BodiesMap> bodyMap;   				 							  				//!< mapper to keep track of received bodies
+ 		std::vector<CellMap> cellsMap; 	 				  			  					//!< mapper to keep track of received individual cells
+    std::vector<ChildCellsMap> childrenMap; 				  	    		//!< mapper to keep track of received child cells 
+    std::vector<BodiesMap> bodyMap;   				 				  				//!< mapper to keep track of received bodies
    	Cells* LETCells;																						//!< Pointer to cells
  		Bodies* LETBodies;																					//!< Pointer to bodies
  		C_iter Ci0;                                                 //!< Iterator of first target cell
@@ -99,10 +98,10 @@ namespace exafmm {
 	    int* recvBuff = (int*)&recvBodies[0];											
 	    size_t sendSize = 0;
 	    size_t recvSize = 0;
-	    MPI_Request rreq[mpisize-1];                                
-	    MPI_Request sreq[mpisize-1];                                
-	    MPI_Status rstatus[mpisize-1];															
-	    MPI_Status sstatus[mpisize-1];															
+	    MPI_Request* rreq 	= new MPI_Request[mpisize-1];                                
+	    MPI_Request* sreq 	= new MPI_Request[mpisize-1];                                
+	    MPI_Status* rstatus = new MPI_Status[mpisize-1];															
+	    MPI_Status* sstatus = new MPI_Status[mpisize-1];														
 
 			for (int irank=0; irank<mpisize; ++irank) {                 
 		    if(irank != mpirank) {
@@ -131,7 +130,11 @@ namespace exafmm {
 	    B_iter localBuffer = bodies.begin() + sendBodyDispl[mpirank];
 	    std::copy(localBuffer, localBuffer + sendBodyCount[mpirank],recvBodies.begin() + recvBodyDispl[mpirank]);		
 	    MPI_Waitall(sendSize,&sreq[0], &sstatus[0]);
-			MPI_Waitall(recvSize,&rreq[0], &rstatus[0]);	    
+			MPI_Waitall(recvSize,&rreq[0], &rstatus[0]);	 
+			delete[] rreq;
+			delete[] sreq;
+			delete[] rstatus;
+			delete[] sstatus;   
 		}
 
     //! Exchange send count for cells
