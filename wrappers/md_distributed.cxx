@@ -254,8 +254,8 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   Bodies jbodies = treeMPI->getRecvBodies();
   jbodies.insert(jbodies.begin(), bodies.begin(), bodies.end());
   bodies.clear();
-  vec3 Xmin = localBounds.Xmin - cutoff;
-  vec3 Xmax = localBounds.Xmax + cutoff;
+  vec3 Xmin = localBounds.Xmin - cutoff * 1.1;
+  vec3 Xmax = localBounds.Xmax + cutoff * 1.1;
   ivec3 iX;
   real_t X[3];
   for (iX[0]=-1; iX[0]<=1; iX[0]++) {
