@@ -15,7 +15,6 @@ namespace exafmm {
     const uint32_t nulltag;
     const uint32_t celltag;
     const uint32_t childcelltag;
-    const uint32_t leveltag;
     const uint32_t bodytag;
     const uint32_t flushtag;
     const uint32_t maxtag;
@@ -217,13 +216,11 @@ namespace exafmm {
         toggleDirection(tag);
         MPI_Isend((int*)&LETBodies->operator[](recvBuff[0]), bodyWordSize*recvBuff[1],MPI_INT,source,tag,MPI_COMM_WORLD,&request);
       }
-      else if(msgType == leveltag) {
-        int level = (tag >> directionshift) & levelmask;
-        int recvBuff;
-        MPI_Recv(&recvBuff,1,MPI_INT, source, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+      else if (msgType == celltag) {
+        int cellID;
+        MPI_Recv(&cellID,1,MPI_INT, source, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
         toggleDirection(tag);
-        MPI_Isend((int*)&LETCells->operator[](0),cellWordSize,MPI_INT,source,tag,MPI_COMM_WORLD,&request);
-        return true;                     
+        MPI_Isend((int*)&LETCells->operator[](cellID), cellWordSize,MPI_INT,source,tag,MPI_COMM_WORLD,&request);
       }
       else if(msgType == flushtag) {
         MPI_Recv(&null,1,MPI_CHAR, source, tag, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
@@ -548,7 +545,7 @@ namespace exafmm {
       terminated(0), hitCount(0), sendIndex(0),
       cellsMap(_mpisize),childrenMap(_mpisize),
       bodyMap(_mpisize), nulltag(1), celltag(2),
-      childcelltag(3),leveltag(7), bodytag(8), 
+      childcelltag(3), bodytag(8), 
       flushtag(9), maxtag(15), levelshift(5),
       requestshift(4),directionshift(1), levelmask(0x1F),
       requestmask(0xF),directionmask(0x1),grainmask(0xFFFF)
@@ -864,7 +861,7 @@ namespace exafmm {
     for (int i = 0; i < mpisize; ++i) {
       if (i != mpirank) {
         double commtime;
-        Cells cells = getCell(0, 1, 0, i, leveltag, commtime);
+        Cells cells = getCell(0, 1, 0, i, celltag, commtime);
         assert(cells.size() > 0);
         traverseRemote(Ci0, cells.begin(), false, remote, i);
         logger::startTimer("Clear cache");                             // Start timer
@@ -946,8 +943,7 @@ namespace exafmm {
     CellMap& cellRankMap = cellsMap[rank];
     ChildCellsMap& childRankMap = childrenMap[rank];    
     if((requestType == childcelltag && childRankMap.find(key) == childRankMap.end()) ||
-       (requestType == celltag      &&  cellRankMap.find(key) ==  cellRankMap.end()) || 
-        requestType ==leveltag) { 
+       (requestType == celltag      &&  cellRankMap.find(key) ==  cellRankMap.end())) { 
       MPI_Request request;      
       assert(requestType <= maxtag);      
       int tag = encryptMessage(grainSize,requestType,level,sendbit);
@@ -973,7 +969,7 @@ namespace exafmm {
       int responseType = getMessageType(receivedTag);
       int recvCount = 0;
       assert(responseType != bodytag);
-      if(responseType == childcelltag || responseType == celltag || responseType == leveltag) { 
+      if(responseType == childcelltag || responseType == celltag) { 
         MPI_Get_count(&status, MPI_INT, &recvCount);
         int cellCount = recvCount/cellWordSize;
         recvData.resize(cellCount);
