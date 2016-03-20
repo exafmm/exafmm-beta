@@ -12,21 +12,21 @@ namespace exafmm {
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int images;                                           //!< Number of periodic image sublevels
-    const uint32_t nulltag;
-    const uint32_t celltag;
-    const uint32_t childcelltag;
-    const uint32_t bodytag;
-    const uint32_t flushtag;
-    const uint32_t maxtag;
-    const uint32_t levelshift;
-    const uint32_t requestshift;
-    const uint32_t directionshift;
-    const uint32_t levelmask;
-    const uint32_t requestmask;
-    const uint32_t directionmask;
-    const uint32_t grainmask;
-    const uint32_t sendbit;
-    const uint32_t receivebit;
+    const uint32_t nulltag;                                     //!< Tag of null message type 
+    const uint32_t celltag;                                     //!< Tag of cell message type 
+    const uint32_t childcelltag;                                //!< Tag of child cell message type 
+    const uint32_t bodytag;                                     //!< Tag of body message type 
+    const uint32_t flushtag;                                    //!< Tag of flush message type 
+    const uint32_t maxtag;                                      //!< Max value of tag 
+    const uint32_t levelshift;                                  //!< Number of level bit shifts
+    const uint32_t requestshift;                                //!< Number of request bit shifts
+    const uint32_t directionshift;                              //!< Number of directions bit shifts
+    const uint32_t levelmask;                                   //!< Mask value of level msg
+    const uint32_t requestmask;                                 //!< Mask value of request msg
+    const uint32_t directionmask;                               //!< Mask value of direction msg
+    const uint32_t grainmask;                                   //!< Mask value of grain msg
+    const char sendbit;                                         //!< Send bit value
+    const char receivebit;                                      //!< Recv bit value
     float (* allBoundsXmin)[3];                                 //!< Array for local Xmin for all ranks
     float (* allBoundsXmax)[3];                                 //!< Array for local Xmax for all ranks
     Bodies sendBodies;                                          //!< Send buffer for bodies
@@ -391,7 +391,7 @@ namespace exafmm {
       ibody += C->NBODY;                                        // Increment body counter
     }
 
-  inline int encryptMessage(uint16_t grainSize, uint8_t requestType, uint8_t level, uint8_t direction) {
+  inline int encryptMessage(uint16_t grainSize, uint8_t requestType, uint8_t level, char direction) {
     int tag = int(grainSize);
     tag<<=requestshift; tag|=requestType;        
     tag<<=levelshift; tag|=level;
@@ -399,7 +399,7 @@ namespace exafmm {
     return tag;  
   }
 
-  inline void decryptMessage(int tag, uint16_t& grainSize, uint8_t& requestType, uint8_t& level, uint8_t& direction) {
+  inline void decryptMessage(int tag, uint16_t& grainSize, uint8_t& requestType, uint8_t& level, char& direction) {
     direction = tag & directionmask;
     tag >>= directionshift;
     level = tag & levelmask;
@@ -421,7 +421,7 @@ namespace exafmm {
     return ((tag >> directionshift) & levelmask);
   }
 
-  inline uint8_t getMessageDirection(int const& tag) {
+  inline char getMessageDirection(int const& tag) {
     return (tag & directionmask);
   }
 
