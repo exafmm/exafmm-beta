@@ -7,7 +7,7 @@ namespace exafmm {
   class TreeMPI {
   protected:                           
     typedef std::map<int,Cell>    CellMap;                      //!< Type of cell hash map
-    typedef std::map<int,Cells> ChildCellsMap;                  //!< Type of child cells hash map
+    typedef std::map<int,Cells>   ChildCellsMap;                //!< Type of child cells hash map
     typedef std::map<int,Bodies>  BodiesMap;                    //!< Type of bodies hash map
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
@@ -52,8 +52,8 @@ namespace exafmm {
     int terminated;                                             //!< Number of terminated requests
     size_t hitCount;                                            //!< Number of remote requests
     int sendIndex;                                              //!< LET Send cursor
-    int cellWordSize;
-    int bodyWordSize;
+    int cellWordSize;                                           //!< Number of words in cell struct
+    int bodyWordSize;                                           //!< Number of words in body struct
 
   private:
     //! Exchange send count for bodies
@@ -538,6 +538,14 @@ namespace exafmm {
     }
   }
 #endif
+    void sendFlushRequest() {
+      MPI_Request request;    
+      int tag = encryptMessage(1,flushtag,0,sendbit);                
+      char null;   
+      for(int i=0; i < mpisize; ++i)
+        if(i!=mpirank)
+          MPI_Isend(&null, 1, MPI_CHAR,i,tag,MPI_COMM_WORLD,&request);
+    }
   public:
     //! Constructor
     TreeMPI(int _mpirank, int _mpisize, int _images) :
@@ -823,18 +831,10 @@ namespace exafmm {
       bodyWordSize = sizeof((*bodies)[0])/4;
     }
 
-    void sendFlushRequest() {
-      MPI_Request request;    
-      int tag = encryptMessage(1,flushtag,0,sendbit);                
-      char null;   
-      for(int i=0; i < mpisize; ++i)
-        if(i!=mpirank)
-          MPI_Isend(&null, 1, MPI_CHAR,i,tag,MPI_COMM_WORLD,&request);
-    }
-
-    void recvAll() {     
+    void flushAllRequests() {     
+      sendFlushRequest();    
       int ready; 
-      MPI_Status status;      
+      MPI_Status status;  
       while(terminated < (mpisize-1)) { 
         ready = 0;
         MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&ready,&status); 
@@ -842,7 +842,6 @@ namespace exafmm {
           processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);          
         }
       }
-      //logger::logFixed("hit count", hitCount, std::cout);      
     }
 
     //! Evaluate P2P and M2L using dual tree traversal
@@ -871,8 +870,6 @@ namespace exafmm {
 }
     logger::printTime("Clear cache");
     logger::stopTimer("Traverse Remote");                              // Stop timer
-    sendFlushRequest();
-    recvAll();
     logger::writeTracer();                                      // Write tracer to file
   }
 
