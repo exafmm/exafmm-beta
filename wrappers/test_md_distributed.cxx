@@ -25,7 +25,7 @@ int main(int argc, char ** argv) {
   int ksize = 11;
   int threads = 16;
   int verbose = 1;
-  double theta = 0.5;
+  double theta = 0.4;
   double cycle[3] = {2*M_PI, 2*M_PI, 2*M_PI};
   double alpha = 10 / cycle[0];
   double sigma = .25 / M_PI;
@@ -54,8 +54,6 @@ int main(int argc, char ** argv) {
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     res_index[i] = 0;
   }
-  x[0] = M_PI - 0.001;
-  x[1] = M_PI + 0.01;
   for (int i=0; i<ni; i++) {
     q[i] = drand48() - .5;
     average += q[i];
@@ -67,6 +65,7 @@ int main(int argc, char ** argv) {
 
   FMM_Init(images, threads, theta, cutoff, verbose);
   Set_Index(&ni, nimax, res_index, x, q, v, cycle);
+  x[3*181] += 0.01;;
   FMM_Partition(&ni, nimax, res_index, x, q, v, cycle);
   FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
   for (int i=0; i<ni; i++) {
