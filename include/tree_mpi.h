@@ -41,9 +41,9 @@ namespace exafmm {
     int * sendCellDispl;                                        //!< Send displacement
     int * recvCellCount;                                        //!< Receive count
     int * recvCellDispl;                                        //!< Receive displacement   
-    std::vector<CellMap> cellsMap;                              //!< mapper to keep track of received individual cells
-    std::vector<ChildCellsMap> childrenMap;                     //!< mapper to keep track of received child cells 
-    std::vector<BodiesMap> bodyMap;                             //!< mapper to keep track of received bodies
+    CellMap cellsMap;                                           //!< mapper to keep track of received individual cells
+    ChildCellsMap childrenMap;                                  //!< mapper to keep track of received child cells 
+    BodiesMap bodyMap;                                          //!< mapper to keep track of received bodies
     Cells* LETCells;                                            //!< Pointer to cells
     Bodies* LETBodies;                                          //!< Pointer to bodies
     C_iter Ci0;                                                 //!< Iterator of first target cell
@@ -543,8 +543,7 @@ namespace exafmm {
     TreeMPI(int _mpirank, int _mpisize, int _images) :
       mpirank(_mpirank), mpisize(_mpisize), images(_images), 
       terminated(0), hitCount(0), sendIndex(0),
-      cellsMap(_mpisize),childrenMap(_mpisize),
-      bodyMap(_mpisize), nulltag(1), celltag(2),
+      nulltag(1), celltag(2),
       childcelltag(3), bodytag(8), 
       flushtag(9), maxtag(15), levelshift(5),
       requestshift(4),directionshift(1), levelmask(0x1F),
@@ -883,8 +882,7 @@ namespace exafmm {
       commtime = 0.0;
       int grainSize = 1;
       Bodies recvData;
-      BodiesMap& bodyRankMap = bodyMap[rank];
-      if(requestType == bodytag && bodyRankMap.find(key) ==  bodyRankMap.end()) { 
+      if(requestType == bodytag && bodyMap.find(key) ==  bodyMap.end()) { 
         MPI_Request request;
         int tag = encryptMessage(1,requestType,level,sendbit);
   #if CALC_COM_COMP      
@@ -918,7 +916,7 @@ namespace exafmm {
   #if CALC_COM_COMP      
           commtime = logger::stopTimer("Communication",0);
   #endif    
-          bodyRankMap[key] = recvData;
+          bodyMap[key] = recvData;
         } else {
             std::cout << "bodies not found for cell "<<key << std::endl;
             char null;
@@ -929,7 +927,7 @@ namespace exafmm {
         }
       }
       else if(requestType == bodytag) {
-        recvData = bodyRankMap[key];
+        recvData = bodyMap[key];
       }
       return recvData;
   }
@@ -940,10 +938,8 @@ namespace exafmm {
     commtime = 0.0;
     int grainSize = 1;
     Cells recvData;
-    CellMap& cellRankMap = cellsMap[rank];
-    ChildCellsMap& childRankMap = childrenMap[rank];    
-    if((requestType == childcelltag && childRankMap.find(key) == childRankMap.end()) ||
-       (requestType == celltag      &&  cellRankMap.find(key) ==  cellRankMap.end())) { 
+    if((requestType == childcelltag && childrenMap.find(key) == childrenMap.end()) ||
+       (requestType == celltag      &&  cellsMap.find(key) ==  cellsMap.end())) { 
       MPI_Request request;      
       assert(requestType <= maxtag);      
       int tag = encryptMessage(grainSize,requestType,level,sendbit);
@@ -977,20 +973,20 @@ namespace exafmm {
 #if CALC_COM_COMP      
         commtime = logger::stopTimer("Communication",0);
 #endif          
-        if(responseType == celltag) cellRankMap[key] = recvData[0];
+        if(responseType == celltag) cellsMap[key] = recvData[0];
         else if(responseType == childcelltag)  { 
           if(grainSize > 1) {
 #if DFS            
-            childRankMap[key] = Cells(recvData.begin(), recvData.begin()+nchild);  
+            childrenMap[key] = Cells(recvData.begin(), recvData.begin()+nchild);  
             int index = nchild;
-            for (int i = 0; i < nchild; ++i) appendDataToCellMapper(childrenMap[rank],recvData,index,i);  
-            recvData = childRankMap[key];  
+            for (int i = 0; i < nchild; ++i) appendDataToCellMapper(childrenMap,recvData,index,i);  
+            recvData = childrenMap[key];  
 #else
-            appendDataToCellMapper(childrenMap[rank],recvData, level,nchild, key);        
-            recvData = childRankMap[key];  
+            appendDataToCellMapper(childrenMap,recvData, level,nchild, key);        
+            recvData = childrenMap[key];  
 #endif            
           }
-          else childRankMap[key] = recvData;
+          else childrenMap[key] = recvData;
         }
       } else if(responseType == nulltag) {
           char null;
@@ -1001,18 +997,18 @@ namespace exafmm {
       }
     }
     else if(requestType == celltag) {
-      recvData.push_back(cellRankMap[key]);
+      recvData.push_back(cellsMap[key]);
     }
     else if(requestType == childcelltag) {
-      recvData = childRankMap[key];
+      recvData = childrenMap[key];
     }
     return recvData;
   }
 
   void clearCellCache(int rank) {
-    cellsMap[rank].clear();
-    bodyMap[rank].clear();  
-    childrenMap[rank].clear();  
+    cellsMap.clear();
+    bodyMap.clear();  
+    childrenMap.clear();  
   }
   };
 }
