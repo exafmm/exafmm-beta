@@ -2,6 +2,7 @@
 #define tree_mpi_h
 #include "kernel.h"
 #include "logger.h"
+
 namespace exafmm {
   //! Handles all the communication of local essential trees
   class TreeMPI {
@@ -54,6 +55,7 @@ namespace exafmm {
     int sendIndex;                                              //!< LET Send cursor
     int cellWordSize;                                           //!< Number of words in cell struct
     int bodyWordSize;                                           //!< Number of words in body struct
+    int granularity;                                            //!< The granularity of communication
 
   private:
     //! Exchange send count for bodies
@@ -430,7 +432,6 @@ namespace exafmm {
   }
 
 
-#if DFS
   inline void packSubtree(Cells& cells, C_iter const& C0, Cell const& C, uint16_t const& grainSize, size_t& index) {
     C_iter begin = C0 + C.ICHILD;
     C_iter end   = C0 + C.ICHILD + C.NCHILD;
@@ -439,29 +440,6 @@ namespace exafmm {
     for(C_iter cc = begin; cc<end; ++cc) 
       if(index < grainSize) packSubtree(cells,C0,*cc,grainSize,index);        
   }
-#else
-  inline void packSubtree(Cells& cells, C_iter const& C0, Cell const& root, uint16_t const& grainSize, size_t& index) {   
-    std::queue<Cell> cell_queue;
-    C_iter begin = C0 + root.ICHILD;  
-    int size = root.NCHILD;
-    for (int i = 0; i < size; ++i) 
-      cell_queue.push(*(begin + i));  
-    while(cell_queue.size() > 0) {
-      Cell C = cell_queue.front();    
-      begin = C0 + C.ICHILD;    
-      size = C.NCHILD;    
-      C.ICELL = index;
-      cells.push_back(C);
-      cell_queue.pop();
-      index++;
-      if(index < grainSize) 
-        for (int i = 0; i < size; ++i) {                             
-          cell_queue.push(*(begin + i));  
-          cell_queue.back().IPARENT = index - 1;  
-        }     
-    } 
-  }
-  #endif
 
     //! Determine which cells to send
     void traverseLET(C_iter C, C_iter C0, Bounds bounds, vec3 cycle,
@@ -506,38 +484,20 @@ namespace exafmm {
       }                                                         // End loop over child cells
     }
 
- #if DFS
-  template <typename MapperType>
-  void appendDataToCellMapper(MapperType& map, Cells const& cells, int& index, int id) {    
-    Cell parent = cells[id];
-    if(index < cells.size()) {    
-      id = index;
-      if(parent.NCHILD > 0) {        
-        map[parent.ICHILD] = Cells(cells.begin()+index,cells.begin()+index+parent.NCHILD);        
-        index += parent.NCHILD;        
-        for(size_t i = 0; i < parent.NCHILD; ++i) {
-          appendDataToCellMapper(map, cells,index, id++);
+    template <typename MapperType>
+    void appendDataToCellMapper(MapperType& map, Cells const& cells, int& index, int id) {    
+      Cell parent = cells[id];
+      if(index < cells.size()) {    
+        id = index;
+        if(parent.NCHILD > 0) {        
+          map[parent.ICHILD] = Cells(cells.begin()+index,cells.begin()+index+parent.NCHILD);        
+          index += parent.NCHILD;        
+          for(size_t i = 0; i < parent.NCHILD; ++i) {
+            appendDataToCellMapper(map, cells,index, id++);
+          }
         }
-      }
-    }    
-  }
-#else 
-  template <typename MapperType>
-  void appendDataToCellMapper(MapperType& map, Cells const& cells, int rootLevel, int nchild, uint64_t rootID) {            
-    map[rootID] = Cells(cells.begin(),cells.begin()+nchild);                        
-    for(int i = nchild; i < cells.size(); ++i) {
-      Cell currentCell = cells[i];
-      Cell parentCell = cells[currentCell.IPARENT];      
-      uint16_t parentLevel = parentCell.LEVEL;
-      int childID = parentCell.ICELL;
-      if(map.find(childID) == map.end()) {
-        map[childID] = Cells(); 
-        map[childID].reserve(parentCell.NCHILD); 
-      }
-      map[childID].push_back(currentCell);  
+      }    
     }
-  }
-#endif
     void sendFlushRequest() {
       MPI_Request request;    
       int tag = encryptMessage(1,flushtag,0,sendbit);                
@@ -819,11 +779,6 @@ namespace exafmm {
       return recvBodies;                                        // Return bodies
     }
 
-    template <typename HOT>
-    void initDispatcher(Cells const& cells, HOT const& indexer) {
-      //dispatcher = new Dispatcher(mpirank, mpisize, cells, indexer);      
-    }
-
     void setSendLET(Cells* cells, Bodies* bodies) {
       LETCells = cells;
       LETBodies = bodies;
@@ -845,17 +800,15 @@ namespace exafmm {
     }
 
     //! Evaluate P2P and M2L using dual tree traversal
-  void dualTreeTraversalRemote(Cells & icells, Bodies& ibodies, int mpirank, int mpisize, int spwan, real_t remote = 1) {
+  void dualTreeTraversalRemote(Cells & icells, Bodies& ibodies, int mpirank, int mpisize, int spwan, int commgrain, real_t remote = 1) {
     if (icells.empty()) return;                                 // Quit if either of the cell vectors are empty
     nspawn = spwan;
+    granularity = commgrain;
     logger::startTimer("Traverse Remote");                      // Start timer
     kernel::Xperiodic = 0;
     logger::initTracer();                                       // Initialize tracer
     Ci0 = icells.begin();                                       // Set iterator of target root cell 
     setSendLET(&icells,&ibodies);
-//#pragma omp parallel 
-{ 
-//    #pragma omp for 
     for (int i = 0; i < mpisize; ++i) {
       if (i != mpirank) {
         double commtime;
@@ -867,7 +820,6 @@ namespace exafmm {
         logger::stopTimer("Clear cache", 0);                            // Start timer
       }
     }
-}
     logger::printTime("Clear cache");
     logger::stopTimer("Traverse Remote");                              // Stop timer
     logger::writeTracer();                                      // Write tracer to file
@@ -877,7 +829,6 @@ namespace exafmm {
     Bodies getBodies(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
       assert(rank!=mpirank);     
       commtime = 0.0;
-      int grainSize = 1;
       Bodies recvData;
       if(requestType == bodytag && bodyMap.find(key) ==  bodyMap.end()) { 
         MPI_Request request;
@@ -933,13 +884,12 @@ namespace exafmm {
   Cells getCell(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
     assert(rank!=mpirank);    
     commtime = 0.0;
-    int grainSize = 1;
     Cells recvData;
     if((requestType == childcelltag && childrenMap.find(key) == childrenMap.end()) ||
        (requestType == celltag      &&  cellsMap.find(key) ==  cellsMap.end())) { 
       MPI_Request request;      
       assert(requestType <= maxtag);      
-      int tag = encryptMessage(grainSize,requestType,level,sendbit);
+      int tag = encryptMessage(granularity,requestType,level,sendbit);
 #if CALC_COM_COMP      
         logger::startTimer("Communication");
 #endif 
@@ -972,16 +922,11 @@ namespace exafmm {
 #endif          
         if(responseType == celltag) cellsMap[key] = recvData[0];
         else if(responseType == childcelltag)  { 
-          if(grainSize > 1) {
-#if DFS            
+          if(granularity > 1) {
             childrenMap[key] = Cells(recvData.begin(), recvData.begin()+nchild);  
             int index = nchild;
             for (int i = 0; i < nchild; ++i) appendDataToCellMapper(childrenMap,recvData,index,i);  
             recvData = childrenMap[key];  
-#else
-            appendDataToCellMapper(childrenMap,recvData, level,nchild, key);        
-            recvData = childrenMap[key];  
-#endif            
           }
           else childrenMap[key] = recvData;
         }

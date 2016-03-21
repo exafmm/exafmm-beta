@@ -86,7 +86,7 @@ int main(int argc, char ** argv) {
     traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
     jbodies = bodies;
   }
-  treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn);
+  treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn, args.granularity);
   #pragma omp parallel sections
     {
 #pragma omp section
