@@ -77,7 +77,13 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
-#if 1
+#if 1 
+  treeMPI.allgatherBounds(localBounds);
+  if (args.IneJ) {  
+    treeMPI.setSendLET(jcells, bodies);
+  } else {
+    treeMPI.setSendLET(cells, bodies);
+  }
   traversal.initListCount(cells);
   traversal.initWeight(cells);
   if (args.IneJ) {
