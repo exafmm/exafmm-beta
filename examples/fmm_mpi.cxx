@@ -64,7 +64,7 @@ int main(int argc, char ** argv) {
     partition.partitionHilbert(bodies, globalBounds);    
     bodies = treeMPI.commBodies(bodies);
     if (args.IneJ) {
-    	partition.partitionHilbert(bodies, globalBounds);      
+      partition.partitionHilbert(bodies, globalBounds);      
       jbodies = treeMPI.commBodies(jbodies);
     }
     localBounds = boundBox.getBounds(bodies);
