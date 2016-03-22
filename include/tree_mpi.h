@@ -54,9 +54,8 @@ protected:
   int cellWordSize;                                           //!< Number of words in cell struct
   int bodyWordSize;                                           //!< Number of words in body struct
   int granularity;                                            //!< The granularity of communication
-  std::vector<MPI_Request*> pendingRequests;
-  std::vector<Cells*> sendBuffers;
-  std::vector<Bounds> allBounds;
+  std::vector<MPI_Request*> pendingRequests;                  //!< Buffer for non-blocking requests
+  std::vector<Cells*> sendBuffers;                            //!< Buffer for non-blocking cell sends
 
 private:
   //! Exchange send count for bodies
@@ -292,13 +291,11 @@ protected:
     vec3 dX = Ci->X - Cj->X - kernel::Xperiodic;                // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->R + Cj->R) * (Ci->R + Cj->R) * (1 - 1e-3)) {  // Distance is far enough
-      kernel::M2L(Ci, Cj, false);                               //  M2L kernel
+      kernel::M2L(Ci, Cj, false);                               //  M2L kernel            
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {
-        kernel::M2L(Ci, Cj, false);                             //   M2L kernel
-        //std::cout<<"bodies not available"<<std::endl;
-      }
-      else {
+        kernel::M2L(Ci, Cj, false);                             //   M2L kernel             
+      } else {
         double commtime;
         Bodies bodies = getBodies(Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
 #if WEIGH_COM
@@ -315,7 +312,6 @@ protected:
           //countWeight(Ci, remote,remoteWeight*0.25);            //   Increment M2L weight
         }
       }
-
     } else {                                                    // Else if cells are close but not bodies
       splitCellRemote(Ci, Cj, mutual, remote, rank);            //  Split cell and call function recursively for child
     }                                                           // End if for multipole acceptance
@@ -491,7 +487,7 @@ protected:
           setLETSubset(cells, C0, *cc, grainSize, index, rank);
         } else {
           (*cells)[icell].NCHILD = 0;
-          (*cells)[icell].NBODY = 0;
+          (*cells)[icell].NBODY = 0;          
         }
       }
   }
@@ -545,8 +541,8 @@ protected:
     if (index < cells.size()) {
       id = index;
       if (parent.NCHILD > 0) {
-        assert((index + parent.NCHILD) <= cells.size());
-        assert(map.find(parent.ICHILD) == map.end());
+        // assert((index + parent.NCHILD) <= cells.size());
+        // assert(map.find(parent.ICHILD) == map.end());
         map[parent.ICHILD] = Cells(cells.begin() + index, cells.begin() + index + parent.NCHILD);
         index += parent.NCHILD;
         for (size_t i = 0; i < parent.NCHILD; ++i) {
@@ -856,6 +852,8 @@ public:
         processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
       }
     }
+    //std::cout<<"rank: "<< mpirank << ". hitCount: " << hitCount <<std::endl;
+    deallocateCompletedRequests();
   }
 
   //! Evaluate P2P and M2L using dual tree traversal
