@@ -33,7 +33,7 @@ namespace exafmm {
     Bodies sendBodies;                                          //!< Send buffer for bodies
     Bodies recvBodies;                                          //!< Receive buffer for bodies
     Cells sendCells;                                            //!< Send buffer for cells
-    Cells recvCells;                                            //!< Receive buffer for cells
+    Cells recvCells;                                            //!< Receive buffer for cells    
     int * sendBodyCount;                                        //!< Send count
     int * sendBodyDispl;                                        //!< Send displacement
     int * recvBodyCount;                                        //!< Receive count
@@ -44,9 +44,7 @@ namespace exafmm {
     int * recvCellDispl;                                        //!< Receive displacement
     CellMap cellsMap;                                           //!< mapper to keep track of received individual cells
     ChildCellsMap childrenMap;                                  //!< mapper to keep track of received child cells
-    BodiesMap bodyMap;                                          //!< mapper to keep track of received bodies
-    Cells LETCells;                                             //!< LET cells
-    Bodies LETBodies;                                           //!< LET bodies
+    BodiesMap bodyMap;                                          //!< mapper to keep track of received bodies    
     C_iter Ci0;                                                 //!< Iterator of first target cell
     C_iter Cj0;                                                 //!< Iterator of first source cell
     int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
@@ -58,6 +56,7 @@ namespace exafmm {
     int granularity;                                            //!< The granularity of communication
     std::vector<MPI_Request*> pendingRequests;
     std::vector<Cells*> sendBuffers;
+    std::vector<Bounds> allBounds;
 
   private:
     //! Exchange send count for bodies
@@ -187,7 +186,7 @@ namespace exafmm {
 	recvCellDispl[irank] /= word;                           //  Divide receive displacement by word size of data
       }                                                         // End loop over ranks
     }
-        
+
     inline bool processIncomingMessage(int tag, int source) {
       if ((tag & directionmask) == receivebit)
 	return false;
@@ -202,13 +201,13 @@ namespace exafmm {
 	int level = getMessageLevel(tag);
 	MPI_Recv(&childID, 1, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	toggleDirection(tag);
-	Cell& cell = LETCells[childID];
-	Cell& pcell = LETCells[cell.IPARENT];
+	Cell& cell = sendCells[childID];
+	Cell& pcell = sendCells[cell.IPARENT];
 	if (pcell.NCHILD > 0) {
 	  uint16_t grainSize = getGrainSize(tag);
 	  size_t sendingSize = 0;
 	  Cells* sendBuffer = new Cells();
-	  packSubtree(sendBuffer, LETCells.begin(), pcell, grainSize, sendingSize, source);
+	  setLETSubset(sendBuffer, sendCells.begin(), pcell, grainSize, sendingSize, source);
 	  MPI_Isend((int*)&(*sendBuffer)[0],  cellWordSize * sendingSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
 	  sendBuffers.push_back(sendBuffer);
 	  pendingRequests.push_back(request);        
@@ -219,16 +218,17 @@ namespace exafmm {
       }
       else if (msgType == bodytag) {
 	int recvBuff[2];
-	MPI_Recv(recvBuff, 2, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	toggleDirection(tag);
-	MPI_Isend((int*)&LETBodies[recvBuff[0]], bodyWordSize * recvBuff[1], MPI_INT, source, tag, MPI_COMM_WORLD, request);
+	MPI_Recv(recvBuff, 2, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);	
+     toggleDirection(tag);
+      MPI_Isend((int*)&sendBodies[recvBuff[0]], bodyWordSize * recvBuff[1], MPI_INT, source, tag, MPI_COMM_WORLD, request);
+      dataReady = true;
 	dataReady = true;
       }
       else if (msgType == celltag) {
 	int cellID;
 	MPI_Recv(&cellID, 1, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	toggleDirection(tag);
-	MPI_Isend((int*)&LETCells[cellID], cellWordSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+	MPI_Isend((int*)&sendCells[cellID], cellWordSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
 	dataReady = true;
       }
       else if (msgType == flushtag) {
@@ -278,7 +278,7 @@ namespace exafmm {
     }
 
     //! Get distance to other domain
-    real_t getRankDistance(C_iter C, vec3 Xperiodic, int rank) {
+    inline real_t getRankDistance(C_iter C, vec3 Xperiodic, int rank) {
       vec3 dX;                                                  // Distance vector
       for (int d = 0; d < 3; d++) {                             // Loop over dimensions
 	dX[d] = (C->X[d] + Xperiodic[d] > allBoundsXmax[rank][d]) * //  Calculate the distance between cell C and
@@ -294,25 +294,32 @@ namespace exafmm {
       vec3 dX = Ci->X - Cj->X - kernel::Xperiodic;                // Distance vector from source to target
       real_t R2 = norm(dX);                                       // Scalar distance squared
       if (R2 > (Ci->R + Cj->R) * (Ci->R + Cj->R) * (1 - 1e-3)) {  // Distance is far enough
-	kernel::M2L(Ci, Cj, false);                               //  M2L kernel
+        kernel::M2L(Ci, Cj, false);                               //  M2L kernel
       } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
-	double commtime;
-	Bodies bodies = getBodies(Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
+        if(Cj->NBODY == 0){
+          kernel::M2L(Ci, Cj, false);                             //   M2L kernel
+          //std::cout<<"bodies not available"<<std::endl;
+        }
+        else {
+          double commtime;
+          Bodies bodies = getBodies(Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
 #if WEIGH_COM
-	Ci->WEIGHT += commtime;
+          Ci->WEIGHT += commtime;
 #endif
-	if (bodies.size() > 0) {
-	  Cj->BODY = bodies.begin();
-	  kernel::P2P(Ci, Cj, false);                             //    P2P kernel for pair of cells
+          if (bodies.size() > 0) {
+            Cj->BODY = bodies.begin();
+            kernel::P2P(Ci, Cj, false);                             //    P2P kernel for pair of cells
 #if 0
-	  countWeight(Ci, remoteWeight);                          //   Increment P2P weight
+            countWeight(Ci, remoteWeight);                          //   Increment P2P weight
 #endif
-	} else {
-	  kernel::M2L(Ci, Cj, false);                             //   M2L kernel
-	  //countWeight(Ci, remote,remoteWeight*0.25);            //   Increment M2L weight
-	}
+          } else {
+            kernel::M2L(Ci, Cj, false);                             //   M2L kernel
+            //countWeight(Ci, remote,remoteWeight*0.25);            //   Increment M2L weight
+          }
+        }
+
       } else {                                                    // Else if cells are close but not bodies
-	splitCellRemote(Ci, Cj, mutual, remote, rank);            //  Split cell and call function recursively for child
+        splitCellRemote(Ci, Cj, mutual, remote, rank);            //  Split cell and call function recursively for child
       }                                                           // End if for multipole acceptance
     }
 
@@ -472,14 +479,23 @@ namespace exafmm {
       tag ^= directionmask;
     }
 
-    inline void packSubtree(Cells* cells, C_iter const& C0, Cell const& C, uint16_t const& grainSize, size_t& index, int rank) {
+    inline void setLETSubset(Cells* cells, C_iter const& C0, Cell const& C, uint16_t const& grainSize, size_t& index, int rank) {
       C_iter begin = C0 + C.ICHILD;
       C_iter end   = C0 + C.ICHILD + C.NCHILD;
+      int icell = index;
       cells->insert(cells->end(), begin, end);      
       index += C.NCHILD;    
-      for (C_iter cc = begin; cc < end; ++cc)
-        if(index < grainSize)             
-          packSubtree(cells, C0, *cc, grainSize, index, rank);    
+      real_t R2;
+      for (C_iter cc = begin; cc < end; ++cc, ++icell)
+        if(index < grainSize) { 
+          R2 = getRankDistance(cc, kernel::Xperiodic, rank);    //       Get distance to other domain
+          if(4 * cc->R * cc->R > R2) {                          //       Divide if cell seems too close
+            setLETSubset(cells, C0, *cc, grainSize, index, rank);      
+          } else {            
+            (*cells)[icell].NCHILD = 0;
+            (*cells)[icell].NBODY = 0;
+          }          
+        }
     }
 
     //! Determine which cells to send
@@ -561,7 +577,7 @@ namespace exafmm {
       flushtag(9), maxtag(15), levelshift(5),
       requestshift(4), directionshift(1), levelmask(0x1F),
       requestmask(0xF), directionmask(0x1), grainmask(0xFFFF)
-      , sendbit(1), receivebit(0) {                             // Initialize variables
+      , sendbit(1), receivebit(0){                             // Initialize variables
       allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
       allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
       sendBodyCount = new int [mpisize];                        // Allocate send count
@@ -825,8 +841,8 @@ namespace exafmm {
     }
 
     void setSendLET(Cells& cells, Bodies& bodies) {
-      LETCells = cells;
-      LETBodies = bodies;    
+      sendCells = cells;
+      sendBodies = bodies;    
       cellWordSize = sizeof(cells[0]) / 4;
       bodyWordSize = sizeof(bodies[0]) / 4;
     }
