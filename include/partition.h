@@ -8,7 +8,7 @@ namespace exafmm {
   //! Handles all the partitioning of domains
   class Partition {
     typedef std::vector<int64_t> VHilbert;                        //!< Type of Hilbert key vectors
-    typedef std::pair<int64_t,int64_t> KeyPair;                   //!< Type of Hilbert Key Pair    
+    typedef std::pair<int64_t, int64_t> KeyPair;                  //!< Type of Hilbert Key Pair
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
@@ -69,7 +69,7 @@ namespace exafmm {
 	  assert(min_h != 0ull);
 	}
       }                                                         // end loop
-                                                                    
+
       logger::stopTimer("Hkey Generation");                     // stop Hilbert generation timer
       return std::make_pair(min_h, max_h);                      // return min/max tuple
     }
@@ -321,11 +321,11 @@ namespace exafmm {
       int d = 0;                                                // Initialize dimension counter
       while (size != 1) {                                       // Divide domain while counter is not one
 	Npartition[d] <<= 1;                                    //  Divide this dimension
-	d = (d+1) % 3;                                          //  Increment dimension
+	d = (d + 1) % 3;                                        //  Increment dimension
 	size >>= 1;                                             //  Right shift the bits of counter
       }                                                         // End while loop for domain subdivision
       real_t Xpartition[3];                                     // Size of partitions in each direction
-      for (d=0; d<3; d++) {                                     // Loop over dimensions
+      for (d = 0; d < 3; d++) {                                 // Loop over dimensions
 	Xpartition[d] = (global.Xmax[d] - global.Xmin[d]) / Npartition[d];//  Size of partition in each direction
       }                                                         // End loop over dimensions
       int iX[3];                                                // Index vector
@@ -333,15 +333,15 @@ namespace exafmm {
       iX[1] = mpirank / Npartition[0] % Npartition[1];          // y index
       iX[2] = mpirank / Npartition[0] / Npartition[1];          // z index
       Bounds local;                                             // Local bounds
-      for (d=0; d<3; d++) {                                     // Loop over dimensions
+      for (d = 0; d < 3; d++) {                                 // Loop over dimensions
 	local.Xmin[d] = global.Xmin[d] + iX[d] * Xpartition[d]; // Xmin of local domain at current rank
 	local.Xmax[d] = global.Xmin[d] + (iX[d] + 1) * Xpartition[d];// Xmax of local domain at current rank
       }                                                         // End loop over dimensions
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
+      for (B_iter B = bodies.begin(); B != bodies.end(); B++) { // Loop over bodies
 	int ic = 0;                                             //  Residual index
 	if (B->ICELL < 0) ic = B->ICELL;                        //  Use first body in group
-	for (d=0; d<3; d++) {                                   //  Loop over dimensions
-	  iX[d] = int(((B+ic)->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
+	for (d = 0; d < 3; d++) {                               //  Loop over dimensions
+	  iX[d] = int(((B + ic)->X[d] - global.Xmin[d]) / Xpartition[d]); //   Index vector of partition
 	}                                                       //  End loop over dimensions
 	B->IRANK = iX[0] + Npartition[0] * (iX[1] + iX[2] * Npartition[1]);//  Set send rank
 	assert(0 <= B->IRANK && B->IRANK < mpisize);
@@ -355,12 +355,7 @@ namespace exafmm {
     }
 
     void partitionHilbert(Bodies& bodies, Bounds const& bounds) {
-      if (mpisize == 1) {
-	for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {   // Loop over bodies
-	  B->IRANK = 0;                                         //  Assign current rank
-	}                                                       // End loop over bodies
-	return;
-      }
+      if (mpisize == 1) return;
       logger::startTimer("Partition");                          // Start timer
       uint32_t depth;
       KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);
