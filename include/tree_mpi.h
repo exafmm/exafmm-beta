@@ -477,8 +477,9 @@ protected:
     C_iter end   = C0 + C.ICHILD + C.NCHILD;
     cells->insert(cells->end(), begin, end);      
     index += C.NCHILD;    
-    for (C_iter cc = begin; cc < end; ++cc)             
-      packSubtree(cells, C0, *cc, grainSize, index, rank);    
+    for (C_iter cc = begin; cc < end; ++cc)
+      if(index < grainSize)             
+        packSubtree(cells, C0, *cc, grainSize, index, rank);    
   }
 
   //! Determine which cells to send
