@@ -187,7 +187,7 @@ namespace exafmm {
 	recvCellDispl[irank] /= word;                           //  Divide receive displacement by word size of data
       }                                                         // End loop over ranks
     }
-
+        
     inline bool processIncomingMessage(int tag, int source) {
       if ((tag & directionmask) == receivebit)
 	return false;
@@ -477,8 +477,9 @@ namespace exafmm {
       C_iter end   = C0 + C.ICHILD + C.NCHILD;
       cells->insert(cells->end(), begin, end);      
       index += C.NCHILD;    
-      for (C_iter cc = begin; cc < end; ++cc)             
-	packSubtree(cells, C0, *cc, grainSize, index, rank);    
+      for (C_iter cc = begin; cc < end; ++cc)
+        if(index < grainSize)             
+          packSubtree(cells, C0, *cc, grainSize, index, rank);    
     }
 
     //! Determine which cells to send
