@@ -77,7 +77,13 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
-#if 1
+#if 1 
+  treeMPI.allgatherBounds(localBounds);
+  if (args.IneJ) {  
+    treeMPI.setSendLET(jcells, bodies);
+  } else {
+    treeMPI.setSendLET(cells, bodies);
+  }
   traversal.initListCount(cells);
   traversal.initWeight(cells);
   if (args.IneJ) {
@@ -86,8 +92,22 @@ int main(int argc, char ** argv) {
     traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
     jbodies = bodies;
   }
-  treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn);        
-#elif 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
+  treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn, args.granularity);
+  #pragma omp parallel sections
+    {
+#pragma omp section
+      {
+    treeMPI.flushAllRequests();
+      }
+#pragma omp section
+      {
+    upDownPass.downwardPass(cells);
+    logger::stopPAPI();
+    logger::stopTimer("Total FMM", 0);
+      }
+    }        
+#else
+#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
     treeMPI.allgatherBounds(localBounds);
     if (args.IneJ) {
       treeMPI.setLET(jcells, cycle);
@@ -139,9 +159,9 @@ int main(int argc, char ** argv) {
     }
 #endif
     upDownPass.downwardPass(cells);
-
     logger::stopPAPI();
     logger::stopTimer("Total FMM", 0);
+#endif
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
