@@ -355,7 +355,12 @@ namespace exafmm {
     }
 
     void partitionHilbert(Bodies& bodies, Bounds const& bounds) {
-      if (mpisize == 1) return;
+      if (mpisize == 1) {
+	for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {   // Loop over bodies
+	  B->IRANK = 0;                                         //  Assign current rank
+	}                                                       // End loop over bodies
+	return;
+      }
       logger::startTimer("Partition");                          // Start timer
       uint32_t depth;
       KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);
