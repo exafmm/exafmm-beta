@@ -21,8 +21,6 @@ private:
 #if EXAFMM_COUNT_KERNEL
   real_t numP2P;                                              //!< Number of P2P kernel calls
   real_t numM2L;                                              //!< Number of M2L kernel calls
-  real_t remoteNumP2P;                                        //!< Number of remote P2P kernel calls
-  real_t remoteNumM2L;                                        //!< Number of remote M2L kernel calls
 #endif
   C_iter Ci0;                                                 //!< Iterator of first target cell
   C_iter Cj0;                                                 //!< Iterator of first source cell
@@ -584,6 +582,19 @@ public:
                 << std::setprecision(0) << std::fixed         //  Set format
                 << numM2L << std::endl;                       //  Print number of M2L calls
     }                                                         // End if for verbose flag
+#endif
+  }
+  void writeTraversalData(int mpirank){
+#if EXAFMM_COUNT_KERNEL    
+    std::stringstream name;                                   // File name
+    name << "num" << std::setfill('0') << std::setw(6)        // Set format
+         << mpirank << ".dat";                                // Create file name for list
+    std::ofstream listFile(name.str().c_str());               // Open list log file
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "P2P calls" << " " << numP2P << std::endl;           //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "M2L calls" << " " << numM2L << std::endl;           //  Print event and timer
+
 #endif
   }
 #if EXAFMM_COUNT_LIST

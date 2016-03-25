@@ -3,6 +3,12 @@
 #include "kernel.h"
 #include "logger.h"
 
+#if EXAFMM_COUNT_KERNEL
+#define countKernel(N) N++
+#else
+#define countKernel(N)
+#endif
+
 namespace exafmm {
 //! Handles all the communication of local essential trees
 class TreeMPI {
@@ -56,7 +62,10 @@ protected:
   int granularity;                                            //!< The granularity of communication
   std::vector<MPI_Request*> pendingRequests;                  //!< Buffer for non-blocking requests
   std::vector<Cells*> sendBuffers;                            //!< Buffer for non-blocking cell sends
-
+#if EXAFMM_COUNT_KERNEL
+  real_t numP2P;                                              //!< Number of P2P kernel calls
+  real_t numM2L;                                              //!< Number of M2L kernel calls
+#endif
 private:
   //! Exchange send count for bodies
   void alltoall(Bodies & bodies) {
@@ -292,9 +301,11 @@ protected:
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->R + Cj->R) * (Ci->R + Cj->R) * (1 - 1e-3)) {  // Distance is far enough
       kernel::M2L(Ci, Cj, false);                               //  M2L kernel            
+      countKernel(numM2L);
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {
-        kernel::M2L(Ci, Cj, false);                             //   M2L kernel             
+        kernel::M2L(Ci, Cj, false);                             //   M2L kernel 
+        countKernel(numM2L);            
       } else {
         double commtime;
         Bodies bodies = getBodies(Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
@@ -304,11 +315,11 @@ protected:
         if (bodies.size() > 0) {
           Cj->BODY = bodies.begin();
           kernel::P2P(Ci, Cj, false);                             //    P2P kernel for pair of cells
-#if 0
-          countWeight(Ci, remoteWeight);                          //   Increment P2P weight
-#endif
+          countKernel(numP2P);
+          //countWeight(Ci, remoteWeight);                          //   Increment P2P weight
         } else {
           kernel::M2L(Ci, Cj, false);                             //   M2L kernel
+          countKernel(numM2L); 
           //countWeight(Ci, remote,remoteWeight*0.25);            //   Increment M2L weight
         }
       }
@@ -571,7 +582,11 @@ public:
     flushtag(9), maxtag(15), levelshift(5),
     requestshift(4), directionshift(1), levelmask(0x1F),
     requestmask(0xF), directionmask(0x1), grainmask(0xFFFF)
-    , sendbit(1), receivebit(0) {                            // Initialize variables
+    , sendbit(1), receivebit(0) 
+#if EXAFMM_COUNT_KERNEL
+    ,numP2P(0),numM2L(0)
+#endif
+     {                            // Initialize variables
     allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
     allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
     sendBodyCount = new int [mpisize];                        // Allocate send count
@@ -1008,6 +1023,19 @@ public:
     cellsMap.clear();
     bodyMap.clear();
     childrenMap.clear();
+  }
+
+  void writeRemoteTraversalData(int mpirank){
+#if EXAFMM_COUNT_KERNEL    
+    std::stringstream name;                                   // File name
+    name << "num" << std::setfill('0') << std::setw(6)        // Set format
+         << mpirank << ".dat";                                // Create file name for list
+    std::ofstream listFile(name.str().c_str(),std::ios::app); // Open list log file
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote P2P calls" << " " << numP2P << std::endl;    //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote M2L calls" << " " << numM2L << std::endl;    //  Print event and timer
+#endif
   }
 };
 }

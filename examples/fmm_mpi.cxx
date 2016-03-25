@@ -61,10 +61,10 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies, localBounds);
     }
     globalBounds = baseMPI.allreduceBounds(localBounds);
-    partition.partitionHilbert(bodies, globalBounds);    
+    partition.octsection(bodies, globalBounds);    
     bodies = treeMPI.commBodies(bodies);
     if (args.IneJ) {
-      partition.partitionHilbert(bodies, globalBounds);      
+      partition.octsection(bodies, globalBounds);      
       jbodies = treeMPI.commBodies(jbodies);
     }
     localBounds = boundBox.getBounds(bodies);
@@ -163,7 +163,7 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Total FMM", 0);
 #endif
     logger::printTitle("MPI direct sum");
-    const int numTargets = 100;
+    const int numTargets = 1;
     buffer = bodies;
     data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
@@ -196,9 +196,11 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
-    logger::resetTimer("Total FMM");
+    logger::resetTimer("Total FMM"); 
     if (args.write) {
       logger::writeTime(baseMPI.mpirank);
+      traversal.writeTraversalData(baseMPI.mpirank);
+      treeMPI.writeRemoteTraversalData(baseMPI.mpirank);
     }
     traversal.writeList(cells, baseMPI.mpirank);
   }
