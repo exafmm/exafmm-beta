@@ -61,10 +61,10 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies, localBounds);
     }
     globalBounds = baseMPI.allreduceBounds(localBounds);
-    partition.octsection(bodies, globalBounds);    
+    partition.partitionHilbert(bodies, globalBounds);    
     bodies = treeMPI.commBodies(bodies);
     if (args.IneJ) {
-      partition.octsection(bodies, globalBounds);      
+      partition.partitionHilbert(bodies, globalBounds);      
       jbodies = treeMPI.commBodies(jbodies);
     }
     localBounds = boundBox.getBounds(bodies);
@@ -77,91 +77,91 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
-#if 1 
-  treeMPI.allgatherBounds(localBounds);
-  if (args.IneJ) {  
-    treeMPI.setSendLET(jcells, bodies);
-  } else {
-    treeMPI.setSendLET(cells, bodies);
-  }
-  traversal.initListCount(cells);
-  traversal.initWeight(cells);
-  if (args.IneJ) {
-    traversal.traverse(cells, jcells, cycle, args.dual, false);
-  } else {
-    traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
-    jbodies = bodies;
-  }
-  treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn, args.granularity);
-  #pragma omp parallel sections
-    {
-#pragma omp section
-      {
-    treeMPI.flushAllRequests();
-      }
-#pragma omp section
-      {
-    upDownPass.downwardPass(cells);
-    logger::stopPAPI();
-    logger::stopTimer("Total FMM", 0);
-      }
-    }        
-#else
-#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
-    treeMPI.allgatherBounds(localBounds);
-    if (args.IneJ) {
-      treeMPI.setLET(jcells, cycle);
-    } else {
-      treeMPI.setLET(cells, cycle);
-    }
-#pragma omp parallel sections
-    {
-#pragma omp section
-      {
-	treeMPI.commBodies();
-	treeMPI.commCells();
-      }
-#pragma omp section
-      {
-	traversal.initListCount(cells);
-	traversal.initWeight(cells);
-	if (args.IneJ) {
-	  traversal.traverse(cells, jcells, cycle, args.dual, false);
-	} else {
-	  traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
-	  jbodies = bodies;
-	}
-      }
-    }
-    if (baseMPI.mpisize > 1) {
-      if (args.graft) {
-	treeMPI.linkLET();
-	gbodies = treeMPI.root2body();
-	jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
-	treeMPI.attachRoot(jcells);
-	traversal.traverse(cells, jcells, cycle, args.dual, false);
+    if(args.granularity > 0) { 
+      treeMPI.allgatherBounds(localBounds);
+      if (args.IneJ) {  
+        treeMPI.setSendLET(jcells, bodies);
       } else {
-	for (int irank=0; irank<baseMPI.mpisize; irank++) {
-	  treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
-	  traversal.traverse(cells, jcells, cycle, args.dual, false);
-	}
+        treeMPI.setSendLET(cells, bodies);
       }
-    }
+      traversal.initListCount(cells);
+      traversal.initWeight(cells);
+      if (args.IneJ) {
+        traversal.traverse(cells, jcells, cycle, args.dual, false);
+      } else {
+        traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+        jbodies = bodies;
+      }
+      treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn, args.granularity);
+#pragma omp parallel sections
+        {
+#pragma omp section
+          {
+        treeMPI.flushAllRequests();
+          }
+#pragma omp section
+          {
+        upDownPass.downwardPass(cells);
+        logger::stopPAPI();
+        logger::stopTimer("Total FMM", 0);
+          }
+        }        
+    } else {
+#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
+        treeMPI.allgatherBounds(localBounds);
+        if (args.IneJ) {
+          treeMPI.setLET(jcells, cycle);
+        } else {
+          treeMPI.setLET(cells, cycle);
+        }
+#pragma omp parallel sections
+        {
+#pragma omp section
+          {
+    	treeMPI.commBodies();
+    	treeMPI.commCells();
+          }
+#pragma omp section
+          {
+    	traversal.initListCount(cells);
+    	traversal.initWeight(cells);
+    	if (args.IneJ) {
+    	  traversal.traverse(cells, jcells, cycle, args.dual, false);
+    	} else {
+    	  traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+    	  jbodies = bodies;
+    	}
+          }
+        }
+        if (baseMPI.mpisize > 1) {
+          if (args.graft) {
+    	treeMPI.linkLET();
+    	gbodies = treeMPI.root2body();
+    	jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
+    	treeMPI.attachRoot(jcells);
+    	traversal.traverse(cells, jcells, cycle, args.dual, false);
+          } else {
+    	for (int irank=0; irank<baseMPI.mpisize; irank++) {
+    	  treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
+    	  traversal.traverse(cells, jcells, cycle, args.dual, false);
+    	}
+          }
+        }
 #else
-    jbodies = bodies;
-    for (int irank=0; irank<baseMPI.mpisize; irank++) {
-      treeMPI.shiftBodies(jbodies);
-      jcells.clear();
-      localBounds = boundBox.getBounds(jbodies);
-      jcells = localTree.buildTree(jbodies, buffer, localBounds);
-      upDownPass.upwardPass(jcells);
-      traversal.traverse(cells, jcells, cycle, args.dual, args.mutual);
+        jbodies = bodies;
+        for (int irank=0; irank<baseMPI.mpisize; irank++) {
+          treeMPI.shiftBodies(jbodies);
+          jcells.clear();
+          localBounds = boundBox.getBounds(jbodies);
+          jcells = localTree.buildTree(jbodies, buffer, localBounds);
+          upDownPass.upwardPass(jcells);
+          traversal.traverse(cells, jcells, cycle, args.dual, args.mutual);
+        }
+#endif
+        upDownPass.downwardPass(cells);
+        logger::stopPAPI();
+        logger::stopTimer("Total FMM", 0);
     }
-#endif
-    upDownPass.downwardPass(cells);
-    logger::stopPAPI();
-    logger::stopTimer("Total FMM", 0);
-#endif
     logger::printTitle("MPI direct sum");
     const int numTargets = 1;
     buffer = bodies;
@@ -196,7 +196,8 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
-    logger::resetTimer("Total FMM"); 
+    logger::resetTimer("Total FMM");
+    logger::resetTimer("Comm partition"); 
     if (args.write) {
       logger::writeTime(baseMPI.mpirank);
       traversal.writeTraversalData(baseMPI.mpirank);
