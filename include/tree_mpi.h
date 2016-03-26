@@ -856,6 +856,20 @@ public:
     bodyWordSize = sizeof(bodies[0]) / 4;
   }
 
+  inline void startCommTimer() {
+#if EXAFMM_TIME_COMM
+      logger::stopTimer("Traverse Remote",0);                       
+      logger::startTimer("Communication");
+#endif
+  }
+
+  inline void stopCommTimer(double& commtime) {
+#if EXAFMM_TIME_COMM
+      commtime = logger::stopTimer("Communication", 0);
+      logger::startTimer("Traverse Remote");      
+#endif
+  }
+
   void flushAllRequests() {
     sendFlushRequest();
     int ready;
@@ -892,7 +906,10 @@ public:
         logger::stopTimer("Clear cache", 0);                    // Start timer
       }
     }
-    logger::printTime("Clear cache");
+#if EXAFMM_TIME_COMM
+    logger::printTime("Communication");      
+#endif
+    logger::printTime("Clear cache");    
     logger::stopTimer("Traverse Remote");                       // Stop timer
     logger::writeTracer();                                      // Write tracer to file
   }
@@ -905,9 +922,7 @@ public:
     if (requestType == bodytag && bodyMap.find(key) ==  bodyMap.end()) {
       MPI_Request request;
       int tag = encryptMessage(1, requestType, level, sendbit);
-#if CALC_COM_COMP
-      logger::startTimer("Communication");
-#endif
+      startCommTimer();
       int sendBuffer[2] = {key, nchild};
       MPI_Isend(sendBuffer, 2, MPI_INT, rank, tag, MPI_COMM_WORLD, &request);
       MPI_Status status;
@@ -933,17 +948,13 @@ public:
         int bodyCount = recvCount / bodyWordSize;
         recvData.resize(bodyCount);
         MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-#if CALC_COM_COMP
-        commtime = logger::stopTimer("Communication", 0);
-#endif
+        stopCommTimer(commtime);
         bodyMap[key] = recvData;
       } else {
         std::cout << "bodies not found for cell " << key << std::endl;
         char null;
         MPI_Recv(&null, 1, MPI_CHAR, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-#if CALC_COM_COMP
-        commtime = logger::stopTimer("Communication", 0);
-#endif
+        stopCommTimer(commtime);
       }
     }
     else if (requestType == bodytag) {
@@ -962,9 +973,7 @@ public:
       MPI_Request request;
       assert(requestType <= maxtag);
       int tag = encryptMessage(granularity, requestType, level, sendbit);
-#if CALC_COM_COMP
-      logger::startTimer("Communication");
-#endif
+      startCommTimer();
       MPI_Isend(&key, 1, MPI_INT, rank, tag, MPI_COMM_WORLD, &request);
       MPI_Status status;
       int recvRank = rank;
@@ -989,9 +998,7 @@ public:
         int cellCount = recvCount / cellWordSize;
         recvData.resize(cellCount);
         MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-#if CALC_COM_COMP
-        commtime = logger::stopTimer("Communication", 0);
-#endif
+        stopCommTimer(commtime);
         if (responseType == celltag) cellsMap[key] = recvData[0];
         else if (responseType == childcelltag)  {
           if (granularity > 1) {
@@ -1005,9 +1012,7 @@ public:
       } else if (responseType == nulltag) {
         char null;
         MPI_Recv(&null, 1, MPI_CHAR, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-#if CALC_COM_COMP
-        commtime = logger::stopTimer("Communication", 0);
-#endif
+        stopCommTimer(commtime);
       }
     }
     else if (requestType == celltag) {
