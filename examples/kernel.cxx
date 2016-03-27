@@ -9,7 +9,7 @@ int main() {
   kernel::eps2 = 0.0;
   kernel::Xperiodic = 0;
 #if EXAFMM_HELMHOLTZ
-  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  kernel::wavek = complex_t(1.,.1) / real_t(4);
 #endif
   kernel::setup();
   logger::verbose = true;
