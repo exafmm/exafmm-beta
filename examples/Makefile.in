@@ -591,7 +591,7 @@ laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL 
 helmholtz_spherical_SOURCES = fmm.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 helmholtz_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 helmholtz_grad_spherical_SOURCES = fmm.cxx ../kernels/HelmholtzGradSphericalCPU.cxx ../kernels/HelmholtzGradP2PCPU.cxx
-helmholtz_grad_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
+helmholtz_grad_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=40
 biotsavart_spherical_SOURCES = fmm.cxx ../kernels/BiotSavartSphericalCPU.cxx ../kernels/BiotSavartP2PCPU.cxx
 biotsavart_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_BIOTSAVART -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 tree_SOURCES = tree.cxx
@@ -1856,7 +1856,7 @@ run_laplace_spherical: laplace_spherical
 run_helmholtz_spherical: helmholtz_spherical
 	./$< -Dgv -n 40000
 run_helmholtz_grad_spherical: helmholtz_grad_spherical
-	./$< -Dgv -n 40000
+	./$< -Dgv -n 40000 -c 500
 run_biotsavart_spherical: biotsavart_spherical
 	./$< -Dgv -n 40000
 run_tree: tree
