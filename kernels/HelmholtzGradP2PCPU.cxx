@@ -10,6 +10,7 @@ namespace exafmm {
     const complex_t I(0.,1.);
 
     void P2P(C_iter Ci, C_iter Cj, bool mutual) {
+      complex_t one(1.0,0.0);
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
       B_iter Bi = Ci->BODY;
@@ -115,7 +116,7 @@ namespace exafmm {
 	    complex_t src2 = mi * mj;
 	    complex_t expikr = std::exp(I * wavek * R) / R;
 	    complex_t coef1 = src2 * expikr;
-	    complex_t coef2 = (1 - I * wavek * R) / R2 * coef1;
+	    complex_t coef2 = (one - I * wavek * R) / R2 * coef1;
 	    pot += coef1;
 	    ax += coef2 * dX[0];
 	    ay += coef2 * dX[1];
