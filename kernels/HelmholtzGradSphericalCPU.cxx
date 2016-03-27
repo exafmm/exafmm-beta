@@ -177,11 +177,18 @@ namespace exafmm {
     void get_Ynm(int nterms, real_t x, real_t Ynm[P*(P+1)/2]) {
       real_t y = -sqrt((1 - x) * (1 + x));
       Ynm[0] = 1;
-      for (int m=0; m<nterms; m++) {
+      Ynm[1] = x * Ynm[0] * Anm1[1];
+      for (int n=2; n<nterms; n++) {
+	int ns = n * (n + 1) / 2;
+	int nm1 = n * (n - 1) / 2;
+	int nm2 = (n - 1) * (n - 2) / 2;
+	Ynm[ns] = Anm1[ns] * x * Ynm[nm1] - Anm2[ns] * Ynm[nm2];
+      }
+      for (int m=1; m<nterms; m++) {
 	int ms = m * (m + 1) / 2 + m;
 	int mms = m * (m - 1) / 2 + m - 1;
 	int mps = (m + 1) * (m + 2) / 2 + m;
-	if (m > 0) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
+	Ynm[ms] = Ynm[mms] * y * Anm1[ms];
 	if (m < nterms-1) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
 	for (int n=m+2; n<nterms; n++) {
 	  int nms = n * (n + 1) / 2 + m;
@@ -348,7 +355,7 @@ namespace exafmm {
     }
 
     void P2M(C_iter C) {
-      real_t Ynm[P*(P+1)/2];
+      real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       vecP Mnm = complex_t(0,0);
       real_t kscale = C->SCALE * abs(wavek);
@@ -726,13 +733,13 @@ namespace exafmm {
 	  ephi[n] = ephi[n-1] * ephi[1];
 	}
 	real_t rx = stheta * cphi;
-	real_t thetax = ctheta * cphi /r;
-	real_t phix = -sphi /stheta;
+	real_t thetax = ctheta * cphi / r;
+	real_t phix = -sphi / stheta;
 	real_t ry = stheta * sphi;
-	real_t thetay = ctheta * sphi /r;
-	real_t phiy = cphi/stheta;
+	real_t thetay = ctheta * sphi / r;
+	real_t phiy = cphi / stheta;
 	real_t rz = ctheta;
-	real_t thetaz = -stheta /r;
+	real_t thetaz = -stheta / r;
 	real_t phiz = 0;
 	get_Ynmd(P, ctheta, Ynm, Ynmd);
 	complex_t z = wavek * r;
@@ -749,9 +756,7 @@ namespace exafmm {
 	  int nms = n * (n + 1) / 2;
 	  TRG[0] += Lj[nm] * jn[n] * Ynm[nms];
 	  ur += jnd[n] * Ynm[nms] * Lj[nm];
-	  complex_t jnuse = jn[n+1] * kscale + jn[n-1] / kscale;
-	  jnuse = wavek * jnuse / real_t(2 * n + 1.0);
-	  utheta -= Lj[nm] * jnuse * Ynmd[nms] * stheta * r;
+	  utheta -= Lj[nm] * jn[n] * Ynmd[nms] * stheta;
 	  for (int m=1; m<=n; m++) {
 	    int npm = n * n + n + m;
 	    int nmm = n * n + n - m;
@@ -761,10 +766,10 @@ namespace exafmm {
 	    complex_t ztmp3 = Lj[nmm] * conj(ephi[m]);
 	    complex_t ztmpsum = ztmp2 + ztmp3;
 	    TRG[0] += ztmp1 * ztmpsum;
-	    ur += jnd[n] * Ynm[nms] * stheta * ztmpsum;
-	    utheta -= ztmpsum * jnuse * Ynmd[nms] * r;
-	    ztmpsum = real_t(m) * I * (ztmp2 - ztmp3);
-	    uphi += jnuse * Ynm[nms] * ztmpsum * stheta;
+	    ur += jnd[n] * Ynm[nms] * ztmpsum * stheta;
+	    utheta -= ztmpsum * jn[n] * Ynmd[nms];
+	    ztmpsum = real_t(m) * I * (ztmp2 - ztmp3) * stheta;
+	    uphi += jn[n] * Ynm[nms] * ztmpsum / r;
 	  }
 	}
 	complex_t ux = ur * rx + utheta * thetax + uphi * phix;
