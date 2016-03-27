@@ -69,15 +69,15 @@ namespace exafmm {
           ax += coef2 * dX[0];
           ay += coef2 * dX[1];
           az += coef2 * dX[2];
-          B[i].TRG[0] += coef1;
-          B[i].TRG[1] += coef2 * dX[0];
-          B[i].TRG[2] += coef2 * dX[1];
-          B[i].TRG[3] += coef2 * dX[2];
+          B[j].TRG[0] += coef1;
+          B[j].TRG[1] += coef2 * dX[0];
+          B[j].TRG[2] += coef2 * dX[1];
+          B[j].TRG[3] += coef2 * dX[2];
         }
         B[i].TRG[0] += pot;
-        B[i].TRG[1] += ax;
-        B[i].TRG[2] += ay;
-        B[i].TRG[3] += az;
+        B[i].TRG[1] -= ax;
+        B[i].TRG[2] -= ay;
+        B[i].TRG[3] -= az;
       }
     }
   }

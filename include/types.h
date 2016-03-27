@@ -54,7 +54,7 @@ namespace exafmm {
 #if EXAFMM_LAPLACE
   const int NTERM = P*(P+1)/2;                                  //!< Number of terms for Laplace
 #elif EXAFMM_HELMHOLTZ
-  const int NTERM = 3*P*P;                                      //!< Number of terms for Helmholtz
+  const int NTERM = 4*P*P;                                      //!< Number of terms for Helmholtz
 #elif EXAFMM_BIOTSAVART
   const int NTERM = 3*P*(P+1)/2;                                //!< Number of terms for Biot-Savart
 #endif
