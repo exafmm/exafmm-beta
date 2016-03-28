@@ -213,35 +213,34 @@ namespace exafmm {
       Ynm[1] = x * Ynm[0] * Anm1[1];
       Ynmd[1] = (x * Ynmd[0] + Ynm[0]) * Anm1[1];
       for (int n=2; n<nterms; n++) {
-	int ns = n * (n + 1) / 2;
-	int nm1 = n * (n - 1) / 2;
-	int nm2 = (n - 1) * (n - 2) / 2;
-	Ynm[ns] = Anm1[ns] * x * Ynm[nm1] - Anm2[ns] * Ynm[nm2];
-	Ynmd[ns] = Anm1[ns] * (x * Ynmd[nm1] + Ynm[nm1]) - Anm2[ns] * Ynmd[nm2];
+        int ns = n * (n + 1) / 2;
+        int nm1 = n * (n - 1) / 2;
+        int nm2 = (n - 1) * (n - 2) / 2;
+        Ynm[ns] = Anm1[ns] * x * Ynm[nm1] - Anm2[ns] * Ynm[nm2];
+        Ynmd[ns] = Anm1[ns] * (x * Ynmd[nm1] + Ynm[nm1]) - Anm2[ns] * Ynmd[nm2];
       }
       for (int m=1; m<nterms; m++) {
-	int ms = m * (m + 1) / 2 + m;
-	int mms = m * (m - 1) / 2 + m - 1;
-	int mps = (m + 1) * (m + 2) / 2 + m;
-	if (m == 1) Ynm[ms] = -Ynm[mms] * Anm1[ms];
-	if (m > 1) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
-	if (m > 0) Ynmd[ms] = -Ynm[ms] * m * x;
-	if (m < nterms-1) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
-	if (m < nterms-1) Ynmd[mps] = (x * Ynmd[ms] + y2 * Ynm[ms]) * Anm1[mps];
-	for (int n=m+2; n<nterms; n++) {
-	  int nms = n * (n + 1) / 2 + m;
-	  int nm1 = n * (n - 1) / 2 + m;
-	  int nm2 = (n - 1) * (n - 2) / 2 + m;
-	  Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
-	  Ynmd[nms] = Anm1[nms] * (x * Ynmd[nm1] + y2 * Ynm[nm1]) - Anm2[nms] * Ynmd[nm2];
-	}
+        int ms = m * (m + 1) / 2 + m;
+        int mms = m * (m - 1) / 2 + m - 1;
+        int mps = (m + 1) * (m + 2) / 2 + m;
+        Ynm[ms] = Ynm[mms] * y * Anm1[ms];
+        Ynmd[ms] = -Ynm[ms] * m * x;
+        if (m < nterms-1) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
+        if (m < nterms-1) Ynmd[mps] = (x * Ynmd[ms] + y2 * Ynm[ms]) * Anm1[mps];
+        for (int n=m+2; n<nterms; n++) {
+          int nms = n * (n + 1) / 2 + m;
+          int nm1 = n * (n - 1) / 2 + m;
+          int nm2 = (n - 1) * (n - 2) / 2 + m;
+          Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
+          Ynmd[nms] = Anm1[nms] * (x * Ynmd[nm1] + y2 * Ynm[nm1]) - Anm2[nms] * Ynmd[nm2];
+        }
       }
       for (int n=0; n<nterms; n++) {
-	for (int m=0; m<=n; m++) {
-	  int nms = n * (n + 1) / 2 + m;
-	  Ynm[nms] *= sqrt(2 * n + 1.0);
-	  Ynmd[nms] *= sqrt(2 * n + 1.0);
-	}
+        for (int m=0; m<=n; m++) {
+          int nms = n * (n + 1) / 2 + m;
+          Ynm[nms] *= sqrt(2 * n + 1.0);
+          Ynmd[nms] *= sqrt(2 * n + 1.0);
+        }
       }
     }
 
@@ -364,11 +363,12 @@ namespace exafmm {
 	real_t r, theta, phi;
 	cart2sph(dX, r, theta, phi);
 	real_t ctheta = std::cos(theta);
+      real_t stheta = std::sin(theta);
 	ephi[1] = exp(I * phi);
 	for (int n=2; n<P; n++) {
 	  ephi[n] = ephi[n-1] * ephi[1];
 	}
-	get_Ynm(P, ctheta, Ynm);
+	get_Ynmd(P, ctheta, Ynm, Ynmd);
 	complex_t z = wavek * r;
 	get_jn(P, z, kscale, jn, 0, jnd);
 	for (int n=0; n<P; n++) {
@@ -525,12 +525,6 @@ namespace exafmm {
 	for (int n=0; n<Popt; n++) {
 	  hnd[n] *= wavek;
 	}
-	for (int n=1; n<Popt; n++) {
-	  for (int m=1; m<=n; m++) {
-	    int nms = n * (n + 1) / 2 + m;
-	    Ynm[nms] *= sthetaj;
-	  }
-	}
 	for (int m=-Popt+1; m<Popt; m++) {
 	  phitemp[Popt+m] = 0;
 	  phitempn[Popt+m] = 0;
@@ -552,7 +546,7 @@ namespace exafmm {
 	    z = hn[n] * Ynm[nms];
 	    phitemp[Popt+m] += Mrot[npm] * z;
 	    phitemp[Popt-m] += Mrot[nmm] * z;
-	    ut3 = ut1 * Ynm[nms] - ut2 * Ynmd[nms];
+	    ut3 = ut1 * Ynm[nms] - ut2 * Ynmd[nms] / sthetaj;
 	    phitempn[Popt+m] += ut3 * Mrot[npm];
 	    phitempn[Popt-m] += ut3 * Mrot[nmm];
 	  }
@@ -643,12 +637,6 @@ namespace exafmm {
 	for (int n=0; n<P; n++) {
 	  jnd[n] *= wavek;
 	}
-	for (int n=1; n<P; n++) {
-	  for (int m=1; m<=n; m++) {
-	    int nms = n * (n + 1) / 2 + m;
-	    Ynm[nms] *= sthetaj;
-	  }
-	}
 	for (int m=-P+1; m<P; m++) {
 	  phitemp[P+m] = 0;
 	  phitempn[P+m] = 0;
@@ -670,7 +658,7 @@ namespace exafmm {
 	    z = jn[n] * Ynm[nms];
 	    phitemp[P+m] += Lrot[npm] * z;
 	    phitemp[P-m] += Lrot[nmm] * z;
-	    ut3 = ut1 * Ynm[nms] - ut2 * Ynmd[nms];
+	    ut3 = ut1 * Ynm[nms] - ut2 * Ynmd[nms] / sthetaj;
 	    phitempn[P+m] += ut3 * Lrot[npm];
 	    phitempn[P-m] += ut3 * Lrot[nmm];
 	  }
@@ -761,15 +749,17 @@ namespace exafmm {
 	    int npm = n * n + n + m;
 	    int nmm = n * n + n - m;
 	    int nms = n * (n + 1) / 2 + m;
-	    complex_t ztmp1 = jn[n] * Ynm[nms] * stheta;
+//        Ynm[nms] /= stheta;
+//        Ynmd[nms] /= stheta;			
+	    complex_t ztmp1 = jn[n] * Ynm[nms];
 	    complex_t ztmp2 = Lj[npm] * ephi[m];
 	    complex_t ztmp3 = Lj[nmm] * conj(ephi[m]);
 	    complex_t ztmpsum = ztmp2 + ztmp3;
 	    TRG[0] += ztmp1 * ztmpsum;
-	    ur += jnd[n] * Ynm[nms] * ztmpsum * stheta;
-	    utheta -= ztmpsum * jn[n] * Ynmd[nms];
+	    ur += jnd[n] * Ynm[nms] * ztmpsum;
+	    utheta -= ztmpsum * jn[n] * Ynmd[nms] / stheta;
 	    ztmpsum = real_t(m) * I * (ztmp2 - ztmp3) * stheta;
-	    uphi += jn[n] * Ynm[nms] * ztmpsum / r;
+	    uphi += jn[n] * Ynm[nms] * ztmpsum / r / stheta;
 	  }
 	}
 	complex_t ux = ur * rx + utheta * thetax + uphi * phix;
