@@ -49,8 +49,7 @@ protected:
   C_iter Cj0;                                                 //!< Iterator of first source cell
   int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
   int terminated;                                             //!< Number of terminated requests
-  size_t hitCount;                                            //!< Number of remote requests
-  int sendIndex;                                              //!< LET Send cursor
+  size_t hitCount;                                            //!< Number of remote requests  
   int cellWordSize;                                           //!< Number of words in cell struct
   int bodyWordSize;                                           //!< Number of words in body struct
   int granularity;                                            //!< The granularity of communication
@@ -195,8 +194,7 @@ private:
 
   inline bool processIncomingMessage(int tag, int source) {
     if ((tag & directionmask) == receivebit)
-      return false;
-    hitCount++;
+      return false;    
     uint8_t msgType = getMessageType(tag);
     int nullTag = encryptMessage(1, nulltag, 0, receivebit);
     MPI_Request* request = new MPI_Request();
@@ -206,22 +204,26 @@ private:
       int childID;
       int level = getMessageLevel(tag);
       MPI_Recv(&childID, 1, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      toggleDirection(tag);
-      Cell& cell = sendCells[childID];
-      Cell& pcell = sendCells[cell.IPARENT];
+      toggleDirection(tag);      
+      Cell& pcell = sendCells[sendCells[childID].IPARENT];
       if (pcell.NCHILD > 0) {
         uint16_t grainSize = getGrainSize(tag);
-        size_t sendingSize = 0;
-        Cells* sendBuffer = new Cells();
-        setLETSubset(sendBuffer, sendCells.begin(), pcell, grainSize, sendingSize, source);
-        MPI_Isend((int*) & (*sendBuffer)[0],  cellWordSize * sendingSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
-        sendBuffers.push_back(sendBuffer);
-        pendingRequests.push_back(request);
-        sendIndex += sendingSize;
-        dataReady = true;
+        if(grainSize > 1) {
+          size_t sendingSize = 0;
+          Cells* sendBuffer = new Cells();
+          setLETSubset(sendBuffer, sendCells.begin(), pcell, grainSize, sendingSize, source);
+          MPI_Isend((int*) & (*sendBuffer)[0],  cellWordSize * sendingSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+          sendBuffers.push_back(sendBuffer);
+          pendingRequests.push_back(request);          
+          dataReady = true;
+        } else {
+          MPI_Isend((int*)&sendCells[pcell.ICHILD],  cellWordSize * pcell.NCHILD, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+          dataReady = true;
+        }
       }
       dataReady = false;
     } else if (msgType == bodytag) {
+      hitCount++;      
       int recvBuff[2];
       MPI_Recv(recvBuff, 2, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       toggleDirection(tag);
@@ -231,9 +233,22 @@ private:
     else if (msgType == celltag) {
       int cellID;
       MPI_Recv(&cellID, 1, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      toggleDirection(tag);
-      MPI_Isend((int*)&sendCells[cellID], cellWordSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
-      dataReady = true;
+      toggleDirection(tag); 
+      Cell& pcell = sendCells[cellID];           
+      uint16_t grainSize = getGrainSize(tag);
+      if(grainSize > 1 && pcell.NCHILD > 0) {        
+        size_t sendingSize = 1;
+        Cells* sendBuffer = new Cells();
+        sendBuffer->push_back(pcell);        
+        setLETSubset(sendBuffer, sendCells.begin(), pcell, grainSize, sendingSize, source);
+        MPI_Isend((int*) & (*sendBuffer)[0],  cellWordSize * sendingSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+        sendBuffers.push_back(sendBuffer);
+        pendingRequests.push_back(request);          
+        dataReady = true;
+      } else {
+        MPI_Isend((int*)&sendCells[cellID], cellWordSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+        dataReady = true;
+      }
     }
     else if (msgType == flushtag) {
       MPI_Recv(&null, 1, MPI_CHAR, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -565,8 +580,7 @@ public:
   //! Constructor
   TreeMPI(int _mpirank, int _mpisize, int _images) :
     mpirank(_mpirank), mpisize(_mpisize), images(_images),
-    terminated(0), hitCount(0), sendIndex(0),
-    nulltag(1), celltag(2),
+    terminated(0), hitCount(0), nulltag(1), celltag(2),
     childcelltag(3), bodytag(8),
     flushtag(9), maxtag(15), levelshift(5),
     requestshift(4), directionshift(1), levelmask(0x1F),
@@ -916,15 +930,7 @@ public:
 
   void flushAllRequests() {
     sendFlushRequest();    
-    MPI_Status status;
-    //int ready;
-    // while (terminated < (mpisize - 1)) {
-    //   ready = 0;
-    //   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
-    //   if (ready) {
-    //     processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
-    //   }
-    // }
+    MPI_Status status;    
     while (terminated < (mpisize - 1)) {      
       MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
       processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);      
@@ -975,17 +981,7 @@ public:
       MPI_Status status;
       int recvRank = rank;
       int receivedTag;
-      toggleDirection(tag);
-      int ready = 0;
-      // while (!ready) {
-      //   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
-      //   if (ready) {
-      //     if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
-      //       processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
-      //       ready = 0;
-      //     }
-      //   }
-      // }
+      toggleDirection(tag);      
       int recv = 0;
       while (!recv) {
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);        
@@ -1028,17 +1024,7 @@ public:
       MPI_Status status;
       int recvRank = rank;
       int receivedTag;
-      toggleDirection(tag);
-      // int ready = 0;
-      // while (!ready) {
-      //   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
-      //   if (ready) {
-      //     if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
-      //       processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
-      //       ready = 0;
-      //     }
-      //   }
-      // }
+      toggleDirection(tag);      
       int recv = 0;
       while (!recv) {
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);        
@@ -1059,6 +1045,10 @@ public:
         if (responseType == celltag) {          
           recvCells[key] = recvData[0];
           cellReferenceCount[key]++;
+          if(granularity > 1) {
+            int index = 1;
+            appendLET(recvData, index, 0);
+          }
         }
         else if (responseType == childcelltag)  {
           assert(key + nchild <= recvCells.size());
