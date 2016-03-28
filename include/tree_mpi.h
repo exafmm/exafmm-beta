@@ -12,10 +12,7 @@
 namespace exafmm {
 //! Handles all the communication of local essential trees
 class TreeMPI {
-protected:
-  typedef std::map<int, Cell>    CellMap;                     //!< Type of cell hash map
-  typedef std::map<int, Cells>   ChildCellsMap;               //!< Type of child cells hash map
-  typedef std::map<int, Bodies>  BodiesMap;                   //!< Type of bodies hash map
+protected:  
   const int mpirank;                                          //!< Rank of MPI communicator
   const int mpisize;                                          //!< Size of MPI communicator
   const int images;                                           //!< Number of periodic image sublevels
@@ -47,10 +44,7 @@ protected:
   int * sendCellCount;                                        //!< Send count
   int * sendCellDispl;                                        //!< Send displacement
   int * recvCellCount;                                        //!< Receive count
-  int * recvCellDispl;                                        //!< Receive displacement
-  CellMap cellsMap;                                           //!< mapper to keep track of received individual cells
-  ChildCellsMap childrenMap;                                  //!< mapper to keep track of received child cells
-  BodiesMap bodyMap;                                          //!< mapper to keep track of received bodies
+  int * recvCellDispl;                                        //!< Receive displacement  
   C_iter Ci0;                                                 //!< Iterator of first target cell
   C_iter Cj0;                                                 //!< Iterator of first source cell
   int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
@@ -62,6 +56,10 @@ protected:
   int granularity;                                            //!< The granularity of communication
   std::vector<MPI_Request*> pendingRequests;                  //!< Buffer for non-blocking requests
   std::vector<Cells*> sendBuffers;                            //!< Buffer for non-blocking cell sends
+  std::vector<int> bodyReferenceCount;                        //!< Reference count for received LET bodies
+  std::vector<int> cellReferenceCount;                        //!< Reference count for received LET cells
+  std::vector<int> childCellsReferenceCount;                  //!< Reference count for received LET child cells
+
 #if EXAFMM_COUNT_KERNEL
   real_t numP2P;                                              //!< Number of P2P kernel calls
   real_t numM2L;                                              //!< Number of M2L kernel calls
@@ -263,6 +261,7 @@ private:
           count--;
         }
       } else {
+        delete sendBuffers[i];
         pendingRequests.erase(pendingRequests.begin() + i);
         sendBuffers.erase(sendBuffers.begin() + i);
         count--;
@@ -308,20 +307,12 @@ protected:
         countKernel(numM2L);            
       } else {
         double commtime;
-        Bodies bodies = getBodies(Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
+        Cj->BODY = getBody(Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
 #if WEIGH_COM
         Ci->WEIGHT += commtime;
-#endif
-        if (bodies.size() > 0) {
-          Cj->BODY = bodies.begin();
-          kernel::P2P(Ci, Cj, false);                             //    P2P kernel for pair of cells
-          countKernel(numP2P);
-          //countWeight(Ci, remoteWeight);                          //   Increment P2P weight
-        } else {
-          kernel::M2L(Ci, Cj, false);                             //   M2L kernel
-          countKernel(numM2L); 
-          //countWeight(Ci, remote,remoteWeight*0.25);            //   Increment M2L weight
-        }
+#endif        
+        kernel::P2P(Ci, Cj, false);                             //    P2P kernel for pair of cells
+        countKernel(numP2P);      
       }
     } else {                                                    // Else if cells are close but not bodies
       splitCellRemote(Ci, Cj, mutual, remote, rank);            //  Split cell and call function recursively for child
@@ -338,31 +329,31 @@ protected:
       }                                                         //  End loop over Ci's children
     } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
       assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
+      C_iter cj0 = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
-      for (C_iter cj = cells.begin(); cj != cells.end(); ++cj) {// Loop over Cj's children
+      for (C_iter cj=cj0; cj != cj0 + Cj->NCHILD; ++cj) {       // Loop over Cj's children
         traverseRemote(Ci, cj, mutual, remote, rank);           //   Traverse a single pair of cells
       }
     } else if (Ci->NBODY + Cj->NBODY >= nspawn) {               // Else if cells are still large
-      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
+      C_iter cj  = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
       TraverseRemoteRange traverseRange(this, Ci0 + Ci->ICHILD, Ci0 + Ci->ICHILD + Ci->NCHILD, // Instantiate recursive functor
-                                        cells.begin(), cells.end(), mutual, remote, rank);
+                                        cj, cj + Cj->NCHILD, mutual, remote, rank);
       traverseRange();
     } else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
       for (C_iter ci = Ci0 + Ci->ICHILD; ci != Ci0 + Ci->ICHILD + Ci->NCHILD; ci++) { // Loop over Ci's children
         traverseRemote(ci, Cj, mutual, remote, rank);           //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children
     } else {                                                    // Else if Cj is larger than Ci
-      Cells cells = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
+      C_iter cj0 = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
-      for (C_iter cj = cells.begin(); cj != cells.end(); ++cj) {// Loop over Cj's children
+      for (C_iter cj=cj0; cj != cj0 + Cj->NCHILD; ++cj) {       // Loop over Cj's children
         traverseRemote(Ci, cj, mutual, remote, rank);           //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     }                                                           // End if for leafs and Ci Cj size
@@ -545,19 +536,17 @@ protected:
       }                                                       //  End if for cell division
     }                                                         // End loop over child cells
   }
-
-  template <typename MapperType>
-  void appendDataToCellMapper(MapperType& map, Cells const& cells, int& index, int id) {
+  
+  void appendLET(Cells const& cells, int& index, int id) {
     Cell parent = cells[id];
     if (index < cells.size()) {
       id = index;
       if (parent.NCHILD > 0) {
-        // assert((index + parent.NCHILD) <= cells.size());
-        // assert(map.find(parent.ICHILD) == map.end());
-        map[parent.ICHILD] = Cells(cells.begin() + index, cells.begin() + index + parent.NCHILD);
+        std::copy(cells.begin() + index,cells.begin() + index + parent.NCHILD, recvCells.begin() + parent.ICHILD);
+        childCellsReferenceCount[parent.ICHILD]++;
         index += parent.NCHILD;
         for (size_t i = 0; i < parent.NCHILD; ++i) {
-          appendDataToCellMapper(map, cells, index, id++);
+          appendLET(cells, index, id++);
         }
       }
     }
@@ -709,6 +698,34 @@ public:
     logger::stopTimer("Link LET");                            // End timer
   }
 
+  //! Sets local essential tree size
+  void setLETSize(Cells & cells, vec3 cycle) {
+    C_iter C0 = cells.begin();                                // Set cells begin iterator
+    Bounds bounds;                                            // Bounds of local subdomain
+    sendBodyDispl[0] = 0;                                     // Initialize body displacement vector
+    sendCellDispl[0] = 0;                                     // Initialize cell displacement vector
+    for (int irank = 0; irank < mpisize; irank++) {           // Loop over ranks
+      if (irank != 0) sendBodyDispl[irank] = sendBodyDispl[irank - 1] + sendBodyCount[irank - 1]; // Update body displacement
+      if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank - 1] + sendCellCount[irank - 1]; // Update cell displacement
+      sendBodyCount[irank] = 0;                               //  Initialize send body count for current rank
+      sendCellCount[irank] = 0;                               //  Initialize send cell count for current rank
+      if (irank != mpirank && !cells.empty()) {               //  If not current rank and cell vector is not empty
+        int ibody = 0;                                        //   Initialize send body's offset
+        int icell = 1;                                        //   Initialize send cell's offset
+        for (int d = 0; d < 3; d++) {                         //   Loop over dimensions
+          bounds.Xmin[d] = allBoundsXmin[irank][d];           //    Local Xmin for irank
+          bounds.Xmax[d] = allBoundsXmax[irank][d];           //    Local Xmax for irank
+        }                                                     //   End loop over dimensions
+        if (C0->NCHILD == 0) {                                //   If root cell is leaf
+          addSendBody(C0, irank, ibody, icell - 1, false);    //    Add bodies to send
+        }                                                     //   End if for root cell leaf
+        traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, 0, false); // Traverse tree to set LET
+        sendBodyCount[irank] = ibody;                         //   Send body count for current rank
+        sendCellCount[irank] = icell;                         //   Send cell count for current rank
+      }                                                       //  Endif for current rank
+    }                                                         // End loop over ranks
+  }
+
   //! Copy remote root cells to body structs (for building global tree)
   Bodies root2body() {
     logger::startTimer("Root to body");                       // Start timer
@@ -850,10 +867,37 @@ public:
   }
 
   void setSendLET(Cells& cells, Bodies& bodies) {
+    logger::startTimer("Set LET");
     sendCells = cells;
     sendBodies = bodies;
     cellWordSize = sizeof(cells[0]) / 4;
     bodyWordSize = sizeof(bodies[0]) / 4;
+    int bodyCount = sendBodies.size();
+    int cellCount = sendCells.size();
+    for (int i = 0; i < mpisize; i++) {                       // Loop over ranks
+      sendBodyCount[i] = bodyCount;                           //  Initialize send counts
+      sendCellCount[i] = cellCount;
+    }                                                         // End loop over ranks
+    MPI_Alltoall(sendBodyCount, 1, MPI_INT,                   // Communicate send count to get receive count
+                 recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
+    int max = recvBodyCount[0];
+    for (int i = 1; i < mpisize; i++) {                       // Loop over ranks
+      if(recvBodyCount[i] > max)                              //  Initialize send counts
+        max = recvBodyCount[i];                               // End loop over ranks
+    }                              
+    recvBodies.resize(max);
+    bodyReferenceCount.resize(max);
+    MPI_Alltoall(sendCellCount, 1, MPI_INT,                   // Communicate send count to get receive count
+                 recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
+    max = recvCellCount[0];
+    for (int i = 1; i < mpisize; i++) {                       // Loop over ranks
+      if(recvCellCount[i] > max)                              //  Initialize send counts
+        max = recvCellCount[i];                               // End loop over ranks
+    }                              
+    recvCells.resize(max);
+    cellReferenceCount.resize(max);    
+    childCellsReferenceCount.resize(max);
+    logger::stopTimer("Set LET");
   }
 
   inline void startCommTimer(const char*  event) {
@@ -871,15 +915,19 @@ public:
   }
 
   void flushAllRequests() {
-    sendFlushRequest();
-    int ready;
+    sendFlushRequest();    
     MPI_Status status;
-    while (terminated < (mpisize - 1)) {
-      ready = 0;
-      MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
-      if (ready) {
-        processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
-      }
+    //int ready;
+    // while (terminated < (mpisize - 1)) {
+    //   ready = 0;
+    //   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
+    //   if (ready) {
+    //     processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
+    //   }
+    // }
+    while (terminated < (mpisize - 1)) {      
+      MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+      processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);      
     }
     //std::cout<<"rank: "<< mpirank << ". hitCount: " << hitCount <<std::endl;
     deallocateCompletedRequests();
@@ -892,36 +940,34 @@ public:
     granularity = commgrain;
     logger::startTimer("Traverse Remote");                      // Start timer
     kernel::Xperiodic = 0;
-    logger::initTracer();                                       // Initialize tracer
+    logger::initTracer();                                       // Initialize tracer    
     ///setSendLET(icells, ibodies);
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     for (int i = 0; i < mpisize; ++i) {
       if (i != mpirank) {
         double commtime;
-        Cells cells = getCell(0, 1, 0, i, celltag, commtime);
-        assert(cells.size() > 0);
-        traverseRemote(Ci0, cells.begin(), false, remote, i);
-        logger::startTimer("Clear cache");                      // Start timer
-        clearCellCache(i);
-        logger::stopTimer("Clear cache", 0);                    // Start timer
+        bodyReferenceCount.assign(bodyReferenceCount.size(),0);
+        cellReferenceCount.assign(cellReferenceCount.size(),0);
+        childCellsReferenceCount.assign(childCellsReferenceCount.size(),0);
+        Cj0 = getCell(0, 1, 0, i, celltag, commtime);
+        traverseRemote(Ci0, Cj0, false, remote, i);        
       }
     }
 #if EXAFMM_TIME_COMM
     logger::printTime("Comm LET bodies");      
     logger::printTime("Comm LET cells");      
-#endif
-    logger::printTime("Clear cache");    
+#endif    
     logger::stopTimer("Traverse Remote");                       // Stop timer
     logger::writeTracer();                                      // Write tracer to file
   }
 
   //! Get bodies underlying a key and a level
-  Bodies getBodies(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
+  B_iter getBody(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
     assert(rank != mpirank);
     commtime = 0.0;
-    Bodies recvData;
-    if (requestType == bodytag && bodyMap.find(key) ==  bodyMap.end()) {
+    if (requestType == bodytag && bodyReferenceCount[key] == 0) {
       MPI_Request request;
+      bodyReferenceCount[key]++;
       int tag = encryptMessage(1, requestType, level, sendbit);
       startCommTimer("Comm LET bodies");
       int sendBuffer[2] = {key, nchild};
@@ -931,14 +977,21 @@ public:
       int receivedTag;
       toggleDirection(tag);
       int ready = 0;
-      while (!ready) {
-        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
-        if (ready) {
-          if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
-            processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
-            ready = 0;
-          }
-        }
+      // while (!ready) {
+      //   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
+      //   if (ready) {
+      //     if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
+      //       processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
+      //       ready = 0;
+      //     }
+      //   }
+      // }
+      int recv = 0;
+      while (!recv) {
+        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);        
+        if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
+          processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);          
+        } else { recv = 1;}
       }
       receivedTag = status.MPI_TAG;
       int responseType = getMessageType(receivedTag);
@@ -947,10 +1000,9 @@ public:
       if (responseType == bodytag) {
         MPI_Get_count(&status, MPI_INT, &recvCount);
         int bodyCount = recvCount / bodyWordSize;
-        recvData.resize(bodyCount);
-        MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        assert(recvBodies.size()>= bodyCount + key);
+        MPI_Recv((int*)&recvBodies[key], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         stopCommTimer("Comm LET bodies",commtime);
-        bodyMap[key] = recvData;
       } else {
         std::cout << "bodies not found for cell " << key << std::endl;
         char null;
@@ -958,19 +1010,16 @@ public:
         stopCommTimer("Comm LET bodies",commtime);
       }
     }
-    else if (requestType == bodytag) {
-      recvData = bodyMap[key];
-    }
-    return recvData;
+    return (recvBodies.begin() + key);
   }
 
   //! Get cells underlying a key and a level
-  Cells getCell(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
+  C_iter getCell(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
     assert(rank != mpirank);
     commtime = 0.0;
-    Cells recvData;
-    if ((requestType == childcelltag && childrenMap.find(key) == childrenMap.end()) ||
-        (requestType == celltag      &&  cellsMap.find(key) ==  cellsMap.end())) {
+    Cells recvData;    
+    if ((requestType == childcelltag && childCellsReferenceCount[key] == 0) ||
+        (requestType == celltag      && cellReferenceCount[key] == 0)) {
       MPI_Request request;
       assert(requestType <= maxtag);
       int tag = encryptMessage(granularity, requestType, level, sendbit);
@@ -980,15 +1029,22 @@ public:
       int recvRank = rank;
       int receivedTag;
       toggleDirection(tag);
-      int ready = 0;
-      while (!ready) {
-        MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
-        if (ready) {
-          if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
-            processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
-            ready = 0;
-          }
-        }
+      // int ready = 0;
+      // while (!ready) {
+      //   MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
+      //   if (ready) {
+      //     if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
+      //       processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);
+      //       ready = 0;
+      //     }
+      //   }
+      // }
+      int recv = 0;
+      while (!recv) {
+        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);        
+        if (tag != status.MPI_TAG || rank != status.MPI_SOURCE) {
+          processIncomingMessage(status.MPI_TAG, status.MPI_SOURCE);          
+        } else { recv = 1;}
       }
       receivedTag = status.MPI_TAG;
       int responseType = getMessageType(receivedTag);
@@ -1000,15 +1056,18 @@ public:
         recvData.resize(cellCount);
         MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         stopCommTimer("Comm LET cells", commtime);
-        if (responseType == celltag) cellsMap[key] = recvData[0];
+        if (responseType == celltag) {          
+          recvCells[key] = recvData[0];
+          cellReferenceCount[key]++;
+        }
         else if (responseType == childcelltag)  {
+          assert(key + nchild <= recvCells.size());
+          std::copy(recvData.begin(),recvData.begin() + nchild, recvCells.begin()+ key);          
+          childCellsReferenceCount[key]++;
           if (granularity > 1) {
-            childrenMap[key] = Cells(recvData.begin(), recvData.begin() + nchild);
             int index = nchild;
-            for (int i = 0; i < nchild; ++i) appendDataToCellMapper(childrenMap, recvData, index, i);
-            recvData = childrenMap[key];
-          }
-          else childrenMap[key] = recvData;
+            for (int i = 0; i < nchild; ++i) appendLET(recvData, index, i);            
+          }          
         }
       } else if (responseType == nulltag) {
         char null;
@@ -1016,19 +1075,7 @@ public:
         stopCommTimer("Comm LET cells",commtime);
       }
     }
-    else if (requestType == celltag) {
-      recvData.push_back(cellsMap[key]);
-    }
-    else if (requestType == childcelltag) {
-      recvData = childrenMap[key];
-    }
-    return recvData;
-  }
-
-  void clearCellCache(int rank) {
-    cellsMap.clear();
-    bodyMap.clear();
-    childrenMap.clear();
+    return (recvCells.begin() + key);      
   }
 
   void writeRemoteTraversalData(int mpirank){
