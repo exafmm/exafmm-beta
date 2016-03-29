@@ -424,64 +424,65 @@ namespace exafmm {
           ephi[P+n] = ephi[P+n-1] * ephi[P+1];
           ephi[P-n] = conj(ephi[P+n]);
         }
-        for (int n=0; n<P; n++) {
-          for (int m=-n; m<=n; m++) {
-            int nm = n * n + n + m;
-            Mnm[nm] = Cj->M[nm] * ephi[P+m];
-          }
-        }
-        rotate(theta, P, Mnm, Mrot);
-        for (int n=0; n<P; n++) {
-          for (int m=-n; m<=n; m++) {
-            int nm = n * n + n + m;
-            Mnm[nm] = 0;
-          }
-        }
-        for (int l=0; l<nquad2; l++) {
-          real_t ctheta = xquad2[l];
-          real_t stheta = sqrt(1 - ctheta * ctheta);
-          real_t rj = (r + radius * ctheta) * (r + radius * ctheta) + (radius * stheta) * (radius * stheta);
-          rj = sqrt(rj);
-          real_t cthetaj = (r + radius * ctheta) / rj;
-          complex_t z = wavek * rj;
-          get_Ynm(P, cthetaj, Ynm);
-          get_hn(P, z, kscalej, hn);
-          for (int m=-P+1; m<P; m++) {
-            int mabs = abs(m);
-            phitemp[P+m] = 0;
-            for (int n=mabs; n<P; n++) {
+        for(int i=0; i<4; i++) {
+          for (int n=0; n<P; n++) {
+            for (int m=-n; m<=n; m++) {
               int nm = n * n + n + m;
-              int nms = n * (n + 1) / 2 + mabs;
-              phitemp[P+m] += Mrot[nm] * hn[n] * Ynm[nms];
+              Mnm[nm] = Cj->M[nm+i*P*P] * ephi[P+m];
+              }
+            }
+            rotate(theta, P, Mnm, Mrot);
+            for (int n=0; n<P; n++) {
+              for (int m=-n; m<=n; m++) {
+                int nm = n * n + n + m;
+                Mnm[nm] = 0;
+              }
+            }
+          for (int l=0; l<nquad2; l++) {
+            real_t ctheta = xquad2[l];
+            real_t stheta = sqrt(1 - ctheta * ctheta);
+            real_t rj = (r + radius * ctheta) * (r + radius * ctheta) + (radius * stheta) * (radius * stheta);
+            rj = sqrt(rj);
+            real_t cthetaj = (r + radius * ctheta) / rj;
+            complex_t z = wavek * rj;
+            get_Ynm(P, cthetaj, Ynm);
+            get_hn(P, z, kscalej, hn);
+            for (int m=-P+1; m<P; m++) {
+              int mabs = abs(m);
+              phitemp[P+m] = 0;
+              for (int n=mabs; n<P; n++) {
+                int nm = n * n + n + m;
+                int nms = n * (n + 1) / 2 + mabs;
+                phitemp[P+m] += Mrot[nm] * hn[n] * Ynm[nms];
+              }
+            }
+            get_Ynm(P, xquad2[l], Ynm);
+            for (int m=-P+1; m<P; m++) {
+              int mabs = abs(m);
+              complex_t z = phitemp[P+m] * wquad2[l] * real_t(.5);
+              for (int n=mabs; n<P; n++) {
+                int nm = n * n + n + m;
+                int nms = n * (n + 1) / 2 + mabs;
+                Mnm[nm] += z * Ynm[nms];
+              }
             }
           }
-          get_Ynm(P, xquad2[l], Ynm);
-          for (int m=-P+1; m<P; m++) {
-            int mabs = abs(m);
-            complex_t z = phitemp[P+m] * wquad2[l] * real_t(.5);
-            for (int n=mabs; n<P; n++) {
+          complex_t z = wavek * radius;
+          get_hn(P, z, kscalei, hn);
+          for (int n=0; n<P; n++) {
+            for (int m=-n; m<=n; m++) {
               int nm = n * n + n + m;
-              int nms = n * (n + 1) / 2 + mabs;
-              Mnm[nm] += z * Ynm[nms];
+              Mnm[nm] /= hn[n];
+            }
+          }
+          rotate(-theta, P, Mnm, Mrot);
+          for (int n=0; n<P; n++) {
+            for (int m=-n; m<=n; m++) {
+              int nm = n * n + n + m;
+              Ci->M[nm+i*P*P] += ephi[P-m] * Mrot[nm];
             }
           }
         }
-        complex_t z = wavek * radius;
-        get_hn(P, z, kscalei, hn);
-        for (int n=0; n<P; n++) {
-          for (int m=-n; m<=n; m++) {
-            int nm = n * n + n + m;
-            Mnm[nm] /= hn[n];
-          }
-        }
-        rotate(-theta, P, Mnm, Mrot);
-        for (int n=0; n<P; n++) {
-          for (int m=-n; m<=n; m++) {
-            int nm = n * n + n + m;
-            Mnm[nm] = ephi[P-m] * Mrot[nm];
-          }
-        }
-        Ci->M += Mnm;
       }
     }
 
