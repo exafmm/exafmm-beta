@@ -755,15 +755,14 @@ namespace exafmm {
             int npm = n * n + n + m;
             int nmm = n * n + n - m;
             int nms = n * (n + 1) / 2 + m;
-            complex_t ztmp1 = jn[n] * Ynm[nms];
-            complex_t ztmp2 = Lj[npm] * ephi[m];
-            complex_t ztmp3 = Lj[nmm] * conj(ephi[m]);
-            complex_t ztmpsum = ztmp2 + ztmp3;
-            TRG[0] += ztmp1 * ztmpsum;
-            ur += jnd[n] * Ynm[nms] * ztmpsum;
-            utheta -= ztmpsum * jn[n] * Ynmd[nms];
-            ztmpsum = real_t(m) * I * (ztmp2 - ztmp3);
-            uphi += jn[n] * Ynm[nms] * ztmpsum / r;
+            TRG[0] += Lj[npm] * jn[n] * Ynm[nms] * ephi[m];
+            TRG[0] += Lj[nmm] * jn[n] * Ynm[nms] * conj(ephi[m]);
+            ur += Lj[npm] * jnd[n] * Ynm[nms] * ephi[m];
+            ur += Lj[nmm] * jnd[n] * Ynm[nms] * conj(ephi[m]);
+            utheta -= Lj[npm] * jn[n] * Ynmd[nms] * ephi[m];
+            utheta -= Lj[nmm] * jn[n] * Ynmd[nms] * conj(ephi[m]);
+            uphi += Lj[npm] * jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
+            uphi -= Lj[nmm] * jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
           }
         }
         complex_t ux = ur * rx + utheta * thetax + uphi * phix;
