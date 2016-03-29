@@ -782,20 +782,21 @@ namespace exafmm {
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
           TRG[0] += Lj[nm] * jn[n] * Ynm[nms];
-          ur += jnd[n] * Ynm[nms] * Lj[nm];
-          utheta -= Lj[nm] * jn[n] * Ynmd[nms];
+          ur += Lj[nm+P*P] * jn[n] * Ynm[nms];
+          utheta += Lj[nm+2*P*P] * jn[n] * Ynm[nms];
+          uphi += Lj[nm+3*P*P] * jn[n] * Ynm[nms];
           for (int m=1; m<=n; m++) {
             int npm = n * n + n + m;
             int nmm = n * n + n - m;
             int nms = n * (n + 1) / 2 + m;
             TRG[0] += Lj[npm] * jn[n] * Ynm[nms] * ephi[m];
             TRG[0] += Lj[nmm] * jn[n] * Ynm[nms] * conj(ephi[m]);
-            ur += Lj[npm] * jnd[n] * Ynm[nms] * ephi[m];
-            ur += Lj[nmm] * jnd[n] * Ynm[nms] * conj(ephi[m]);
-            utheta -= Lj[npm] * jn[n] * Ynmd[nms] * ephi[m];
-            utheta -= Lj[nmm] * jn[n] * Ynmd[nms] * conj(ephi[m]);
-            uphi += Lj[npm] * jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
-            uphi -= Lj[nmm] * jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
+            ur += Lj[npm+P*P] * jn[n] * Ynm[nms] * ephi[m];
+            ur += Lj[nmm+P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
+            utheta += Lj[npm+2*P*P] * jn[n] * Ynm[nms] * ephi[m];
+            utheta += Lj[nmm+2*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
+            uphi += Lj[npm+3*P*P] * jn[n] * Ynm[nms] * ephi[m];
+            uphi -= Lj[nmm+3*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
           }
         }
 #endif
