@@ -35,13 +35,13 @@ namespace exafmm {
   private:
     //! Generate Space-filling order (Hilbert) from given the particles structure  and returns min/max orders
     KeyPair assignSFCtoBodies(Bodies& bodies, Bounds const& bounds, uint32_t& order) {
-      const int accuracy = 10000;
-      logger::startTimer("Hkey Generation");                    // start Hilbert generation timer
+      const int accuracy = 10000;      
       real_t const& _min = min(bounds.Xmin);                    // get min of all dimensions
       real_t const& _max = max(bounds.Xmax);                    // get max of all dimensions
       int64_t min_h = 0ull;                                     // initialize min Hilbert order
       int64_t max_h = 0ull;                                     // initialize max Hilbert order
-      order = cast_coord(ceil(log(accuracy) / log(2)));         // get needed bits to represent Hilbert order in each dimension
+      //order = cast_coord(ceil(log(accuracy) / log(2)));         // get needed bits to represent Hilbert order in each dimension
+      order = 21;
       real_t diameter = _max - _min;                            // set domain's diameter
       assert(order <= 21);                                      // maximum key is 63 bits
       B_iter begin = bodies.begin();                            // bodies begin iterator
@@ -68,9 +68,7 @@ namespace exafmm {
 	  min_h = max_h = B->ICELL;
 	  assert(min_h != 0ull);
 	}
-      }                                                         // end loop
-
-      logger::stopTimer("Hkey Generation");                     // stop Hilbert generation timer
+      }                                                         // end loop      
       return std::make_pair(min_h, max_h);                      // return min/max tuple
     }
 
@@ -358,13 +356,11 @@ namespace exafmm {
       if (mpisize == 1) return;
       logger::startTimer("Partition");                          // Start timer
       uint32_t depth;
-      KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);
-      logger::startTimer("Hilbert bounds");
+      KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);      
       int64_t min, max;
       MPI_Allreduce(&localHilbertBounds.first,  &min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
       MPI_Allreduce(&localHilbertBounds.second, &max, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-      globalBounds = std::make_pair(min, max);
-      logger::stopTimer("Hilbert bounds");
+      globalBounds = std::make_pair(min, max);      
       int64_t lbound = globalBounds.first;
       int64_t rbound = globalBounds.second;
       VHilbert rq;
