@@ -384,6 +384,8 @@ namespace exafmm {
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
           Mnm[nm] += Ynm[nms] * jn[n];
+          Mnm[nm+P*P] += jnd[n] * Ynm[nms];
+          Mnm[nm+2*P*P] -= jn[n] * Ynmd[nms];
           for (int m=1; m<=n; m++) {
             nms = n * (n + 1) / 2 + m;
             int npm = n * n + n + m;
@@ -391,6 +393,12 @@ namespace exafmm {
             complex_t Ynmjn = Ynm[nms] * jn[n];
             Mnm[npm] += Ynmjn * conj(ephi[m]);
             Mnm[nmm] += Ynmjn * ephi[m];
+            Mnm[npm+P*P] += jnd[n] * Ynm[nms] * ephi[m];
+            Mnm[nmm+P*P] += jnd[n] * Ynm[nms] * conj(ephi[m]);
+            Mnm[npm+2*P*P] -= jn[n] * Ynmd[nms] * ephi[m];
+            Mnm[nmm+2*P*P] -= jn[n] * Ynmd[nms] * conj(ephi[m]);
+            Mnm[npm+3*P*P] += jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
+            Mnm[nmm+3*P*P] -= jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
           }
         }
       }
