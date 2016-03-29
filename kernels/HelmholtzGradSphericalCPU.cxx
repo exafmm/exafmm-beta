@@ -373,7 +373,7 @@ namespace exafmm {
         }
         get_Ynmd(P, ctheta, Ynm, Ynmd);
         complex_t z = wavek * r;
-        get_jn(P, z, kscale, jn, 0, jnd);
+        get_jn(P, z, kscale, jn, 1, jnd);
         for (int n=0; n<P; n++) {
           jn[n] *= B->SRC;
         }
