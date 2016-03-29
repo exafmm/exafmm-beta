@@ -15,6 +15,7 @@
 #include <tbb/task_scheduler_init.h>
 using namespace mtbb;
 #else  /* TBB without DAG Recorder; original TBB */
+#define __TBB_ALLOW_MUTABLE_FUNCTORS 1
 #include <tbb/task_group.h>
 #include <tbb/task_scheduler_init.h>
 using namespace tbb;
