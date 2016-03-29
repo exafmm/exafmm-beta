@@ -16,7 +16,8 @@ int main() {
 
   Cells cells(4);
   Verify verify;
-  jbodies[0].X = 2;
+  jbodies[0].X = 1.5;
+  jbodies[0].X[0] = 2.5;
 #if EXAFMM_BIOTSAVART
   jbodies[0].SRC[0] = drand48();
   jbodies[0].SRC[1] = drand48();
