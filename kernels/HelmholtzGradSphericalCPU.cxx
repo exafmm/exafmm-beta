@@ -378,7 +378,7 @@ namespace exafmm {
           jn[n] *= B->SRC;
         }
         for (int n=0; n<P; n++) {
-          jnd[n] *= wavek;
+          jnd[n] *= wavek * B->SRC;
         }
         for (int n=0; n<P; n++) {
           int nm = n * n + n;
@@ -393,12 +393,12 @@ namespace exafmm {
             complex_t Ynmjn = Ynm[nms] * jn[n];
             Mnm[npm] += Ynmjn * conj(ephi[m]);
             Mnm[nmm] += Ynmjn * ephi[m];
-            Mnm[npm+P*P] += jnd[n] * Ynm[nms] * ephi[m];
-            Mnm[nmm+P*P] += jnd[n] * Ynm[nms] * conj(ephi[m]);
-            Mnm[npm+2*P*P] -= jn[n] * Ynmd[nms] * ephi[m];
-            Mnm[nmm+2*P*P] -= jn[n] * Ynmd[nms] * conj(ephi[m]);
-            Mnm[npm+3*P*P] += jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
-            Mnm[nmm+3*P*P] -= jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
+            Mnm[npm+P*P] += jnd[n] * Ynm[nms] * conj(ephi[m]);
+            Mnm[nmm+P*P] += jnd[n] * Ynm[nms] * ephi[m];
+            Mnm[npm+2*P*P] -= jn[n] * Ynmd[nms] * conj(ephi[m]);
+            Mnm[nmm+2*P*P] -= jn[n] * Ynmd[nms] * ephi[m];
+            Mnm[npm+3*P*P] += jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
+            Mnm[nmm+3*P*P] -= jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
           }
         }
       }
@@ -429,15 +429,15 @@ namespace exafmm {
             for (int m=-n; m<=n; m++) {
               int nm = n * n + n + m;
               Mnm[nm] = Cj->M[nm+i*P*P] * ephi[P+m];
-              }
             }
-            rotate(theta, P, Mnm, Mrot);
-            for (int n=0; n<P; n++) {
-              for (int m=-n; m<=n; m++) {
-                int nm = n * n + n + m;
-                Mnm[nm] = 0;
-              }
+          }
+          rotate(theta, P, Mnm, Mrot);
+          for (int n=0; n<P; n++) {
+            for (int m=-n; m<=n; m++) {
+              int nm = n * n + n + m;
+              Mnm[nm] = 0;
             }
+          }
           for (int l=0; l<nquad2; l++) {
             real_t ctheta = xquad2[l];
             real_t stheta = sqrt(1 - ctheta * ctheta);
@@ -491,8 +491,6 @@ namespace exafmm {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
-      vecP Lnm = complex_t(0,0);
-      vecP Lnmd = complex_t(0,0);
       vecP Mnm, Mrot, Lrot;
       real_t kscalej = Cj->SCALE * abs(wavek);
       real_t kscalei = Ci->SCALE * abs(wavek);
@@ -519,6 +517,8 @@ namespace exafmm {
         ephi[P-n] = conj(ephi[P+n]);
       }
       for (int i=0; i<4; i++) {
+        vecP Lnm = complex_t(0,0);
+        vecP Lnmd = complex_t(0,0);
         for (int n=0; n<Popt; n++) {
           for (int m=-n; m<=n; m++) {
             int nm = n * n + n + m;
@@ -574,7 +574,7 @@ namespace exafmm {
             for (int n=mabs; n<Popt; n++) {
               int nm = n * n + n + m;
               int nms = n * (n + 1) / 2 + mabs;
-             Lnm[nm] += z * Ynm[nms];
+              Lnm[nm] += z * Ynm[nms];
             }
             z = phitempn[Popt+m] * wquad[l] * real_t(.5);
             for (int n=mabs; n<Popt; n++) {
@@ -749,14 +749,14 @@ namespace exafmm {
         get_Ynmd(P, ctheta, Ynm, Ynmd);
         complex_t z = wavek * r;
         get_jn(P, z, kscale, jn, 1, jnd);
-        TRG[0] += Lj[0] * jn[0];
         for (int n=0; n<P; n++) {
           jnd[n] *= wavek;
         }
+#if 0
+        TRG[0] += Lj[0] * jn[0];
         complex_t ur = Lj[0] * jnd[0];
         complex_t utheta = 0;
         complex_t uphi = 0;
-#if 0
         for (int n=1; n<P; n++) {
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
@@ -778,7 +778,10 @@ namespace exafmm {
           }
         }
 #else
-        for (int n=1; n<P; n++) {
+        complex_t ur = 0;
+        complex_t utheta = 0;
+        complex_t uphi = 0;
+        for (int n=0; n<P; n++) {
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
           TRG[0] += Lj[nm] * jn[n] * Ynm[nms];
@@ -796,7 +799,7 @@ namespace exafmm {
             utheta += Lj[npm+2*P*P] * jn[n] * Ynm[nms] * ephi[m];
             utheta += Lj[nmm+2*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
             uphi += Lj[npm+3*P*P] * jn[n] * Ynm[nms] * ephi[m];
-            uphi -= Lj[nmm+3*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
+            uphi += Lj[nmm+3*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
           }
         }
 #endif
