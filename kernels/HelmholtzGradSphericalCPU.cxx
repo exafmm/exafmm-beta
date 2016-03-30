@@ -82,10 +82,25 @@ namespace exafmm {
       phi = atan2(dX[1], dX[0]);
     }
 
-    void sph2cart(real_t r, real_t theta, real_t phi, real_t & x, real_t & y, real_t & z) {
-      x = r*std::sin(phi)*std::cos(theta);
-      y = r*std::sin(phi)*std::sin(theta);
-      z = r*std::cos(phi);
+    void sph2cart(vec3 dX, complex_t ur, complex_t utheta, complex_t uphi, complex_t & ux, complex_t & uy, complex_t & uz) {
+      real_t r, theta, phi;
+      cart2sph(dX, r, theta, phi);
+      real_t ctheta = std::cos(theta);
+      real_t stheta = std::sin(theta);
+      real_t cphi = std::cos(phi);
+      real_t sphi = std::sin(phi);
+      real_t rx = stheta * cphi;
+      real_t thetax = ctheta * cphi / r;
+      real_t phix = -sphi / stheta;
+      real_t ry = stheta * sphi;
+      real_t thetay = ctheta * sphi / r;
+      real_t phiy = cphi / stheta;
+      real_t rz = ctheta;
+      real_t thetaz = -stheta / r;
+      real_t phiz = 0;
+      ux = ur * rx + utheta * thetax + uphi * phix;
+      uy = ur * ry + utheta * thetay + uphi * phiy;
+      uz = ur * rz + utheta * thetaz + uphi * phiz;
     }
 
     void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
@@ -784,6 +799,7 @@ namespace exafmm {
           }
         }
         std::cout << ur << " " << utheta << " " << uphi << std::endl;
+#if 0
         TRG[0] = 0;
         ur = 0;
         utheta = 0;
@@ -809,10 +825,12 @@ namespace exafmm {
             uphi += Lj[nmm+3*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
           }
         }
+
+#endif
         std::cout << ur << " " << utheta << " " << uphi << std::endl;
-        complex_t ux = ur * rx + utheta * thetax + uphi * phix;
-        complex_t uy = ur * ry + utheta * thetay + uphi * phiy;
-        complex_t uz = ur * rz + utheta * thetaz + uphi * phiz;
+        complex_t ux, uy, uz;
+        sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
+        std::cout << ux << " " << uy << " " << uz << std::endl;
         TRG[1] -= ux;
         TRG[2] -= uy;
         TRG[3] -= uz;
