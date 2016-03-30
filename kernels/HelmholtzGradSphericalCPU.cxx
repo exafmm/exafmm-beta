@@ -82,6 +82,12 @@ namespace exafmm {
       phi = atan2(dX[1], dX[0]);
     }
 
+    void sph2cart(real_t r, real_t theta, real_t phi, real_t & x, real_t & y, real_t & z) {
+      x = r*std::sin(phi)*std::cos(theta);
+      y = r*std::sin(phi)*std::sin(theta);
+      z = r*std::cos(phi);
+    }
+
     void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
                 complex_t Mrot[P*P]) {
       real_t Rnm1[P][2*P];
