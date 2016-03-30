@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "logger.h"
 #include "sort.h"
+#include <numeric>
 
 #if EXAFMM_COUNT_KERNEL
 #define countKernel(N) N++
@@ -14,6 +15,7 @@ namespace exafmm {
 //! Handles all the communication of local essential trees
 class TreeMPI {
 protected:  
+  typedef std::vector<std::vector<int> > inter_list;          //!< Remote interaction list type  
   const int mpirank;                                          //!< Rank of MPI communicator
   const int mpisize;                                          //!< Size of MPI communicator
   const int images;                                           //!< Number of periodic image sublevels
@@ -59,7 +61,7 @@ protected:
   std::vector<int> bodyReferenceCount;                        //!< Reference count for received LET bodies
   std::vector<int> cellReferenceCount;                        //!< Reference count for received LET cells
   std::vector<int> childCellsReferenceCount;                  //!< Reference count for received LET child cells
-  std::vector<std::vector<int> > remoteInteractionList;       //!< A vector indicating the remote interaction for each leaf cell
+  inter_list remoteInteractionList;                           //!< Remote interaction for each leaf cell
   double remoteCommunicationTime;                             //!< Time spent doing remote traversal 
 
 #if EXAFMM_COUNT_KERNEL
@@ -333,7 +335,7 @@ protected:
         Ci->WEIGHT += commtime;
 #endif        
         kernel::P2P(Ci, Cj, false);                             //    P2P kernel for pair of cells
-        countKernel(numP2P);      
+        //countKernel(numP2P);      
       }
     } else {                                                    // Else if cells are close but not bodies
       splitCellRemote(Ci, Cj, mutual, remote, rank);            //  Split cell and call function recursively for child
@@ -841,6 +843,23 @@ public:
     return recvBodies;                                        // Return recvBodies
   }
 
+#if EXAFMM_COUNT_LIST
+  inter_list& getRemoteInteractionList() {
+    return remoteInteractionList;
+  }
+#endif
+
+#if EXAFMM_COUNT_KERNEL
+  real_t& getRemoteP2PCount() {
+    return numP2P;
+  }
+
+  real_t& getRemoteM2LCount() {
+    return numM2L;
+  }
+#endif
+
+
   //! Send bodies to next rank (round robin)
   void shiftBodies(Bodies & bodies) {
     int newSize;                                              // New number of bodies
@@ -946,10 +965,10 @@ public:
     deallocateCompletedRequests();
   }
 
-#if EXAFMM_COUNT_LIST && EXAFMM_TIME_COMM
-  inline void updateInteractionList(int const& cellId, int const& numP2P, int const& rank) {
+#if EXAFMM_COUNT_LIST 
+  inline void updateInteractionList(int const& cellId, int const& localNumP2P, int const& rank) {
     std::vector<int>& interaction = remoteInteractionList[cellId];    
-    interaction[mpirank] = numP2P;
+    interaction[mpirank] = localNumP2P;
     interaction[rank]++;      
   }
 #else
@@ -958,6 +977,10 @@ public:
 
   //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversalRemote(Cells & icells, Bodies& ibodies, int mpirank, int mpisize, int spwan, int commgrain, real_t remote = 1) {
+#if EXAFMM_COUNT_KERNEL
+   numP2P = 0;                                                  //!< Number of P2P kernel calls
+   numM2L = 0;                                                  //!< Number of M2L kernel calls
+#endif
     if (icells.empty()) return;                                 // Quit if either of the cell vectors are empty
     nspawn = spwan;
     terminated = 0;
@@ -985,77 +1008,13 @@ public:
     logger::writeTracer();                                      // Write tracer to file
   }
 
-  void rebalance(Cells const& cells, Bodies& bodies) {
-    logger::startTimer("Partition");                           // Start timer
-    std::vector<double> commTimes(mpisize);
-    MPI_Allgather(&remoteCommunicationTime, 1, MPI_DOUBLE, (double*)&commTimes[0], 1, MPI_DOUBLE, MPI_COMM_WORLD);// Gather all domain bounds
-    double avgTime = 0;
-    for (int irank = 1; irank < mpisize; ++irank)       
-      avgTime += commTimes[irank];    
-    avgTime/=mpisize;   
-    double upperImbBound = avgTime + avgTime * 0.25;
-    double lowerImbBound = avgTime - avgTime * 0.25;        
-    if(commTimes[mpirank] > lowerImbBound) return;    
-    std::vector<bool> imbalancedRanks(mpisize,false);    
-    bool imbalanceExists = false;
-    for (int irank = 1; irank < mpisize; ++irank) {      
-      if(commTimes[irank] > upperImbBound) {
-        imbalancedRanks[irank] = true;        
-        imbalanceExists = true;
-      }
-    }
-    if(imbalanceExists) {
-      int cellCount = remoteInteractionList.size();
-      std::vector<int> imbalancedNeighbors;
-      int leeway = mpisize/2;
-      int dd = mpirank - leeway;
-      if(dd < 0) leeway += -dd;      
-      for (int i = mpirank + 1; i <= leeway && i < mpisize; ++i) {
-        if(imbalancedRanks[i])
-          imbalancedNeighbors.push_back(i);
-      }
-      for (int i = mpirank - 1; i >= mpirank-1-leeway && i >= 0; --i) {
-        if(imbalancedRanks[i])
-          imbalancedNeighbors.push_back(i); 
-      }
-      int sizeImbalanced = imbalancedNeighbors.size();
-      if(sizeImbalanced > 0) {
-        for (int cc = 0; cc < cellCount; ++cc) {
-          std::vector<int> const& cellInteraction = remoteInteractionList[cc];        
-          int maxDiff = 0;
-          int index = 0; 
-          for (int i = 0; i < sizeImbalanced; ++i) {                      
-            if(cellInteraction[imbalancedNeighbors[i]] > cellInteraction[mpirank]) {              
-              int diff = cellInteraction[imbalancedNeighbors[i]] - cellInteraction[mpirank];
-              if(diff > maxDiff) {
-                maxDiff = diff;
-                index = i;
-              }                            
-            }
-          }
-          if(maxDiff > 0) {
-            B_iter body = cells[cc].BODY;
-            int nbody= cells[cc].NBODY;
-            for(B_iter bb = body; bb != body + nbody; ++bb) {
-              bb->IRANK = imbalancedNeighbors[index];
-            }
-          }   
-        }
-        logger::stopTimer("Partition");                           // Start timer
-        logger::startTimer("Sort");                               // Start timer
-        Sort sort;                                                // Instantiate sort class
-        bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
-        logger::stopTimer("Sort");                                // Stop timer
-      }
-    }
-  }
-
   //! Get bodies underlying a key and a level
-  B_iter getBody(int iparent, int numP2P, int key, int nchild, size_t level, int rank, int requestType) {
+  B_iter getBody(int iparent, int localNumP2P, int key, int nchild, size_t level, int rank, int requestType) {
     assert(rank != mpirank);
-    //commtime = 0.0;
-    updateInteractionList(sendCells[iparent].ICHILD, numP2P,rank); 
+    //commtime = 0.0;    
     if (requestType == bodytag && bodyReferenceCount[key] == 0) {
+      updateInteractionList(sendCells[iparent].ICHILD, localNumP2P,rank); 
+      countKernel(numP2P);
       MPI_Request request;
       bodyReferenceCount[key]++;
       int tag = encryptMessage(1, requestType, level, sendbit);
@@ -1157,7 +1116,7 @@ public:
     std::stringstream name;                                   // File name
     name << "num" << std::setfill('0') << std::setw(6)        // Set format
          << mpirank << ".dat";                                // Create file name for list
-    std::ofstream listFile(name.str().c_str(),std::ios::app); // Open list log file
+    std::ofstream listFile(name.str().c_str(), std::ios::app);// Open list log file
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "Remote P2P calls" << " " << numP2P << std::endl;    //  Print event and timer
     listFile << std::setw(logger::stringLength) << std::left  //  Set format

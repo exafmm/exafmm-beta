@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
       B->X[0] *= 0.5;
     }
   }
-  for (int t=0; t<args.repeat; t++) {
+  for (int t=0; t<args.repeat; t++) {    
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
@@ -61,26 +61,25 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies, localBounds);
     }
     globalBounds = baseMPI.allreduceBounds(localBounds);
-#if EXAFMM_COUNT_LIST && EXAFMM_TIME_COMM
-    if(t > 0){
-      treeMPI.rebalance(cells,bodies);
+#if EXAFMM_COUNT_LIST && EXAFMM_COUNT_KERNEL
+    if(t > 0) {
+      partition.rebalance(cells,bodies, treeMPI.getRemoteP2PCount(), treeMPI.getRemoteInteractionList());
       bodies = treeMPI.commBodies(bodies);
     } else{
-      partition.partitionHilbert(bodies, globalBounds);
+      partition.bisection(bodies, globalBounds);
       bodies = treeMPI.commBodies(bodies);
       if (args.IneJ) {
-        partition.partitionHilbert(jbodies, globalBounds);      
+        partition.bisection(jbodies, globalBounds);      
         jbodies = treeMPI.commBodies(jbodies);
       }
     }
-#else
-      partition.partitionHilbert(bodies, globalBounds);
-      bodies = treeMPI.commBodies(bodies);
-      if (args.IneJ) {
-        partition.partitionHilbert(jbodies, globalBounds);      
-        jbodies = treeMPI.commBodies(jbodies);
-      }
-
+#else    
+    partition.bisection(bodies, globalBounds);
+    bodies = treeMPI.commBodies(bodies);
+    if (args.IneJ) {
+      partition.bisection(jbodies, globalBounds);      
+      jbodies = treeMPI.commBodies(jbodies);
+    }
 #endif
     localBounds = boundBox.getBounds(bodies);
     cells = localTree.buildTree(bodies, buffer, localBounds);
@@ -177,6 +176,7 @@ int main(int argc, char ** argv) {
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
     }
+#if 1    
     logger::printTitle("MPI direct sum");
     const int numTargets = 1;
     buffer = bodies;
@@ -209,7 +209,10 @@ int main(int argc, char ** argv) {
     localTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();
-    bodies = buffer;
+    bodies = buffer;  
+#else          
+    logger::printTime("Total FMM");
+#endif
     data.initTarget(bodies);
     logger::resetTimer("Total FMM");
     logger::resetTimer("Comm partition"); 
@@ -218,7 +221,6 @@ int main(int argc, char ** argv) {
       traversal.writeTraversalData(baseMPI.mpirank);
       treeMPI.writeRemoteTraversalData(baseMPI.mpirank);
     }
-    traversal.writeList(cells, baseMPI.mpirank);
   }
   return 0;
 }
