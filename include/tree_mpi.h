@@ -2,6 +2,7 @@
 #define tree_mpi_h
 #include "kernel.h"
 #include "logger.h"
+#include "sort.h"
 
 #if EXAFMM_COUNT_KERNEL
 #define countKernel(N) N++
@@ -58,6 +59,8 @@ protected:
   std::vector<int> bodyReferenceCount;                        //!< Reference count for received LET bodies
   std::vector<int> cellReferenceCount;                        //!< Reference count for received LET cells
   std::vector<int> childCellsReferenceCount;                  //!< Reference count for received LET child cells
+  std::vector<std::vector<int> > remoteInteractionList;       //!< A vector indicating the remote interaction for each leaf cell
+  double remoteCommunicationTime;                             //!< Time spent doing remote traversal 
 
 #if EXAFMM_COUNT_KERNEL
   real_t numP2P;                                              //!< Number of P2P kernel calls
@@ -72,7 +75,7 @@ private:
     for (B_iter B = bodies.begin(); B != bodies.end(); B++) { // Loop over bodies
       assert(0 <= B->IRANK && B->IRANK < mpisize);            //  Check bounds for process ID
       sendBodyCount[B->IRANK]++;                              //  Fill send count bucket
-      B->IRANK = mpirank;                                     //  Tag for sending back to original rank
+      //B->IRANK = mpirank;                                     //  Tag for sending back to original rank
     }                                                         // End loop over bodies
     MPI_Alltoall(sendBodyCount, 1, MPI_INT,                   // Communicate send count to get receive count
                  recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
@@ -320,9 +323,12 @@ protected:
       if (Cj->NBODY == 0) {
         kernel::M2L(Ci, Cj, false);                             //   M2L kernel 
         countKernel(numM2L);            
-      } else {
-        double commtime;
-        Cj->BODY = getBody(Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag, commtime);
+      } else {     
+#if EXAFMM_COUNT_LIST           
+        Cj->BODY = getBody(Ci->IPARENT, Ci->numP2P, Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag);
+#else 
+        Cj->BODY = getBody(Ci->IPARENT, 0 , Cj->IBODY, Cj->NBODY, Cj->LEVEL, rank, bodytag);
+#endif        
 #if WEIGH_COM
         Ci->WEIGHT += commtime;
 #endif        
@@ -335,8 +341,7 @@ protected:
   }
 
   //! Split cell and call traverse() recursively for child
-  void splitCellRemote(C_iter Ci, C_iter Cj, bool mutual, real_t remote, size_t rank) {
-    double commtime;
+  void splitCellRemote(C_iter Ci, C_iter Cj, bool mutual, real_t remote, size_t rank) {    
     if (Cj->NCHILD == 0) {                                      // If Cj is leaf
       assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
       for (C_iter ci = Ci0 + Ci->ICHILD; ci != Ci0 + Ci->ICHILD + Ci->NCHILD; ci++) { // Loop over Ci's children
@@ -344,7 +349,7 @@ protected:
       }                                                         //  End loop over Ci's children
     } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
       assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      C_iter cj0 = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
+      C_iter cj0 = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
@@ -352,7 +357,7 @@ protected:
         traverseRemote(Ci, cj, mutual, remote, rank);           //   Traverse a single pair of cells
       }
     } else if (Ci->NBODY + Cj->NBODY >= nspawn) {               // Else if cells are still large
-      C_iter cj  = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
+      C_iter cj  = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
@@ -364,7 +369,7 @@ protected:
         traverseRemote(ci, Cj, mutual, remote, rank);           //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children
     } else {                                                    // Else if Cj is larger than Ci
-      C_iter cj0 = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag, commtime);
+      C_iter cj0 = getCell(Cj->ICHILD, Cj->NCHILD, Cj->LEVEL, rank, childcelltag);
 #if WEIGH_COM
       Ci->WEIGHT += commtime;
 #endif
@@ -910,7 +915,9 @@ public:
     }                              
     recvCells.resize(max);
     cellReferenceCount.resize(max);    
-    childCellsReferenceCount.resize(max);
+    childCellsReferenceCount.resize(max);    
+    remoteInteractionList.resize(cellCount);
+    remoteInteractionList.assign(cellCount,std::vector<int>(mpisize));
     logger::stopTimer("Set LET");
   }
 
@@ -921,9 +928,9 @@ public:
 #endif
   }
 
-  inline void stopCommTimer(const char* event, double& commtime) {
+  inline void stopCommTimer(const char* event) {
 #if EXAFMM_TIME_COMM
-      commtime = logger::stopTimer(event, 0);
+      remoteCommunicationTime += logger::stopTimer(event, 0);
       logger::startTimer("Traverse Remote");      
 #endif
   }
@@ -939,24 +946,35 @@ public:
     deallocateCompletedRequests();
   }
 
+#if EXAFMM_COUNT_LIST && EXAFMM_TIME_COMM
+  inline void updateInteractionList(int const& cellId, int const& numP2P, int const& rank) {
+    std::vector<int>& interaction = remoteInteractionList[cellId];    
+    interaction[mpirank] = numP2P;
+    interaction[rank]++;      
+  }
+#else
+  inline void updateInteractionList(int const&, int const&, int const&){ }
+#endif
+
   //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversalRemote(Cells & icells, Bodies& ibodies, int mpirank, int mpisize, int spwan, int commgrain, real_t remote = 1) {
     if (icells.empty()) return;                                 // Quit if either of the cell vectors are empty
     nspawn = spwan;
+    terminated = 0;
     granularity = commgrain;
     logger::startTimer("Traverse Remote");                      // Start timer
     kernel::Xperiodic = 0;
+    remoteCommunicationTime = 0;
     logger::initTracer();                                       // Initialize tracer    
     ///setSendLET(icells, ibodies);
     Ci0 = icells.begin();                                       // Set iterator of target root cell
-    for (int i = 0; i < mpisize; ++i) {
-      if (i != mpirank) {
-        double commtime;
+    for (int irank = 0; irank < mpisize; ++irank) {
+      if (irank != mpirank) {        
         bodyReferenceCount.assign(bodyReferenceCount.size(),0);
         cellReferenceCount.assign(cellReferenceCount.size(),0);
         childCellsReferenceCount.assign(childCellsReferenceCount.size(),0);
-        Cj0 = getCell(0, 1, 0, i, celltag, commtime);
-        traverseRemote(Ci0, Cj0, false, remote, i);        
+        Cj0 = getCell(0, 1, 0, irank, celltag);
+        traverseRemote(Ci0, Cj0, false, remote, irank);        
       }
     }
 #if EXAFMM_TIME_COMM
@@ -967,10 +985,76 @@ public:
     logger::writeTracer();                                      // Write tracer to file
   }
 
+  void rebalance(Cells const& cells, Bodies& bodies) {
+    logger::startTimer("Partition");                           // Start timer
+    std::vector<double> commTimes(mpisize);
+    MPI_Allgather(&remoteCommunicationTime, 1, MPI_DOUBLE, (double*)&commTimes[0], 1, MPI_DOUBLE, MPI_COMM_WORLD);// Gather all domain bounds
+    double avgTime = 0;
+    for (int irank = 1; irank < mpisize; ++irank)       
+      avgTime += commTimes[irank];    
+    avgTime/=mpisize;   
+    double upperImbBound = avgTime + avgTime * 0.25;
+    double lowerImbBound = avgTime - avgTime * 0.25;        
+    if(commTimes[mpirank] > lowerImbBound) return;    
+    std::vector<bool> imbalancedRanks(mpisize,false);    
+    bool imbalanceExists = false;
+    for (int irank = 1; irank < mpisize; ++irank) {      
+      if(commTimes[irank] > upperImbBound) {
+        imbalancedRanks[irank] = true;        
+        imbalanceExists = true;
+      }
+    }
+    if(imbalanceExists) {
+      int cellCount = remoteInteractionList.size();
+      std::vector<int> imbalancedNeighbors;
+      int leeway = mpisize/2;
+      int dd = mpirank - leeway;
+      if(dd < 0) leeway += -dd;      
+      for (int i = mpirank + 1; i <= leeway && i < mpisize; ++i) {
+        if(imbalancedRanks[i])
+          imbalancedNeighbors.push_back(i);
+      }
+      for (int i = mpirank - 1; i >= mpirank-1-leeway && i >= 0; --i) {
+        if(imbalancedRanks[i])
+          imbalancedNeighbors.push_back(i); 
+      }
+      int sizeImbalanced = imbalancedNeighbors.size();
+      if(sizeImbalanced > 0) {
+        for (int cc = 0; cc < cellCount; ++cc) {
+          std::vector<int> const& cellInteraction = remoteInteractionList[cc];        
+          int maxDiff = 0;
+          int index = 0; 
+          for (int i = 0; i < sizeImbalanced; ++i) {                      
+            if(cellInteraction[imbalancedNeighbors[i]] > cellInteraction[mpirank]) {              
+              int diff = cellInteraction[imbalancedNeighbors[i]] - cellInteraction[mpirank];
+              if(diff > maxDiff) {
+                maxDiff = diff;
+                index = i;
+              }                            
+            }
+          }
+          if(maxDiff > 0) {
+            B_iter body = cells[cc].BODY;
+            int nbody= cells[cc].NBODY;
+            for(B_iter bb = body; bb != body + nbody; ++bb) {
+              bb->IRANK = imbalancedNeighbors[index];
+            }
+          }   
+        }
+        logger::stopTimer("Partition");                           // Start timer
+        logger::startTimer("Sort");                               // Start timer
+        Sort sort;                                                // Instantiate sort class
+        bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
+        logger::stopTimer("Sort");                                // Stop timer
+      }
+    }
+  }
+
   //! Get bodies underlying a key and a level
-  B_iter getBody(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
+  B_iter getBody(int iparent, int numP2P, int key, int nchild, size_t level, int rank, int requestType) {
     assert(rank != mpirank);
-    commtime = 0.0;
+    //commtime = 0.0;
+    updateInteractionList(sendCells[iparent].ICHILD, numP2P,rank); 
     if (requestType == bodytag && bodyReferenceCount[key] == 0) {
       MPI_Request request;
       bodyReferenceCount[key]++;
@@ -998,21 +1082,21 @@ public:
         int bodyCount = recvCount / bodyWordSize;
         assert(recvBodies.size()>= bodyCount + key);
         MPI_Recv((int*)&recvBodies[key], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        stopCommTimer("Comm LET bodies",commtime);
+        stopCommTimer("Comm LET bodies");
       } else {
         std::cout << "bodies not found for cell " << key << std::endl;
         char null;
         MPI_Recv(&null, 1, MPI_CHAR, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        stopCommTimer("Comm LET bodies",commtime);
+        stopCommTimer("Comm LET bodies");
       }
     }
     return (recvBodies.begin() + key);
   }
 
   //! Get cells underlying a key and a level
-  C_iter getCell(int key, int nchild, size_t level, int rank, int requestType, double& commtime) {
+  C_iter getCell(int key, int nchild, size_t level, int rank, int requestType) {
     assert(rank != mpirank);
-    commtime = 0.0;
+    //commtime = 0.0;
     Cells recvData;    
     if ((requestType == childcelltag && childCellsReferenceCount[key] == 0) ||
         (requestType == celltag      && cellReferenceCount[key] == 0)) {
@@ -1041,7 +1125,7 @@ public:
         int cellCount = recvCount / cellWordSize;
         recvData.resize(cellCount);
         MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        stopCommTimer("Comm LET cells", commtime);
+        stopCommTimer("Comm LET cells");
         if (responseType == celltag) {          
           recvCells[key] = recvData[0];
           cellReferenceCount[key]++;
@@ -1062,7 +1146,7 @@ public:
       } else if (responseType == nulltag) {
         char null;
         MPI_Recv(&null, 1, MPI_CHAR, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        stopCommTimer("Comm LET cells",commtime);
+        stopCommTimer("Comm LET cells");
       }
     }
     return (recvCells.begin() + key);      

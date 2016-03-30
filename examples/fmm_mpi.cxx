@@ -34,12 +34,12 @@ int main(int argc, char ** argv) {
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
   kernel::setup();
-  args.numBodies /= baseMPI.mpisize;
+  args.numBodies /= baseMPI.mpisize;  
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
-  bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);  
   buffer.reserve(bodies.size());
   if (args.IneJ) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -61,12 +61,27 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies, localBounds);
     }
     globalBounds = baseMPI.allreduceBounds(localBounds);
-    partition.partitionHilbert(bodies, globalBounds);    
-    bodies = treeMPI.commBodies(bodies);
-    if (args.IneJ) {
-      partition.partitionHilbert(bodies, globalBounds);      
-      jbodies = treeMPI.commBodies(jbodies);
+#if EXAFMM_COUNT_LIST && EXAFMM_TIME_COMM
+    if(t > 0){
+      treeMPI.rebalance(cells,bodies);
+      bodies = treeMPI.commBodies(bodies);
+    } else{
+      partition.partitionHilbert(bodies, globalBounds);
+      bodies = treeMPI.commBodies(bodies);
+      if (args.IneJ) {
+        partition.partitionHilbert(jbodies, globalBounds);      
+        jbodies = treeMPI.commBodies(jbodies);
+      }
     }
+#else
+      partition.partitionHilbert(bodies, globalBounds);
+      bodies = treeMPI.commBodies(bodies);
+      if (args.IneJ) {
+        partition.partitionHilbert(jbodies, globalBounds);      
+        jbodies = treeMPI.commBodies(jbodies);
+      }
+
+#endif
     localBounds = boundBox.getBounds(bodies);
     cells = localTree.buildTree(bodies, buffer, localBounds);
     localBounds = boundBox.getBounds(cells, localBounds);
