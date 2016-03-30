@@ -208,6 +208,7 @@ namespace exafmm {
     void get_Ynmd(int nterms, real_t x, real_t Ynm[P*(P+1)/2], real_t Ynmd[P*(P+1)/2]) {
       real_t y = -sqrt((1 - x) * (1 + x));
       real_t y2 = y * y;
+      real_t invY = y == 0 ? 0 : 1 / y;
       Ynm[0] = 1;
       Ynmd[0] = 0;
       Ynm[1] = x * Ynm[0] * Anm1[1];
@@ -242,7 +243,7 @@ namespace exafmm {
         for (int m=1; m<=n; m++) {
           int nms = n * (n + 1) / 2 + m;
           Ynm[nms] *= sqrt(2 * n + 1.0);
-          Ynmd[nms] *= sqrt(2 * n + 1.0) / -y;
+          Ynmd[nms] *= sqrt(2 * n + 1.0) * -invY;
         }
       }
     }
@@ -364,9 +365,7 @@ namespace exafmm {
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
         vec3 dX = B->X - C->X;
         real_t r, theta, phi;
-        std::cout << dX << std::endl;
         cart2sph(dX, r, theta, phi);
-        std::cout << r << " " << theta << " " << phi << std::endl;
         real_t ctheta = std::cos(theta);
         real_t stheta = std::sin(theta);
         ephi[1] = exp(I * phi);
