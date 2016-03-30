@@ -364,7 +364,9 @@ namespace exafmm {
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
         vec3 dX = B->X - C->X;
         real_t r, theta, phi;
+        std::cout << dX << std::endl;
         cart2sph(dX, r, theta, phi);
+        std::cout << r << " " << theta << " " << phi << std::endl;
         real_t ctheta = std::cos(theta);
         real_t stheta = std::sin(theta);
         ephi[1] = exp(I * phi);
