@@ -589,7 +589,7 @@ public:
     std::stringstream name;                                   // File name
     name << "num" << std::setfill('0') << std::setw(6)        // Set format
          << mpirank << ".dat";                                // Create file name for list
-    std::ofstream listFile(name.str().c_str());               // Open list log file
+    std::ofstream listFile(name.str().c_str(),std::ios::app); // Open list log file
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "P2P calls" << " " << numP2P << std::endl;           //  Print event and timer
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
