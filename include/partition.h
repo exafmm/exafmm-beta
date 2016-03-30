@@ -328,12 +328,15 @@ namespace exafmm {
       if(remoteLoad[mpirank] > lowerImbBound)  {        
         MPI_Comm_split(MPI_COMM_WORLD, 0, mpirank, &balance_comm);
         MPI_Comm_free(&balance_comm);
+        logger::stopTimer("Partition");                           // Stop timer
+        logger::startTimer("Sort");                               // Start timer
+        logger::stopTimer("Sort");                                // Stop timer
         return;        
       } else {
         MPI_Comm_split(MPI_COMM_WORLD, 1, mpirank, &balance_comm);
         MPI_Comm_rank(balance_comm, &balance_rank);
         MPI_Comm_size(balance_comm, &balance_size);
-      }    
+      }  
       std::vector<bool> overloadedRanks(mpisize,false);  
       int overloadedCount = 0;      
       for (int irank = 1; irank < mpisize; ++irank) {      
@@ -380,6 +383,7 @@ namespace exafmm {
             ranksToBalance.push_back(irank);
         }
       } 
+      B_iter B0 = bodies.begin();
       //std::cout<<"avgLoad: " << avgLoad << std::endl;
       int rebalanceSize = ranksToBalance.size();
       bool repartition = (rebalanceSize>0);
@@ -399,10 +403,10 @@ namespace exafmm {
             rightLoad -= cellLoad - cellInteraction[irecv];
             if(loadDificit > 0 || rightLoad <= avgLoad)
               break;
-            B_iter body = cells[cc].BODY;
+            int ibody = cells[cc].IBODY;
             int nbody= cells[cc].NBODY;
-            for(B_iter bb = body; bb != body + nbody; ++bb) {
-              bb->IRANK = irecv;
+            for(int ii = ibody; ii < nbody; ++ii) {
+              (B0 + ii)->IRANK = irecv;
             }
             remoteInteractionList.erase(remoteInteractionList.begin() + cc);
             interactionCount--;                
