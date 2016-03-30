@@ -402,12 +402,21 @@ namespace exafmm {
         for (int n=0; n<P; n++) {
           jnd[n] *= wavek * B->SRC;
         }
-        for (int n=0; n<P; n++) {
+        complex_t ur, utheta, uphi, ux, uy, uz;
+        Mnm[0] = Ynm[0] * jn[0];
+        ur = jnd[0] * Ynm[0];
+        utheta = jn[0] * Ynmd[0];
+        uphi = 0;
+        sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
+        for (int n=1; n<P; n++) { //n=0
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
           Mnm[nm] += Ynm[nms] * jn[n];
-          Mnm[nm+P*P] += jnd[n] * Ynm[nms];
-          Mnm[nm+2*P*P] -= jn[n] * Ynmd[nms];
+          Mnm[nm+P*P] += ux;
+          Mnm[nm+2*P*P] += uy;
+          Mnm[nm+3*P*P] += uz;
+//          Mnm[nm+P*P] += jnd[n] * Ynm[nms];
+//          Mnm[nm+2*P*P] -= jn[n] * Ynmd[nms];
           for (int m=1; m<=n; m++) {
             nms = n * (n + 1) / 2 + m;
             int npm = n * n + n + m;
@@ -415,12 +424,29 @@ namespace exafmm {
             complex_t Ynmjn = Ynm[nms] * jn[n];
             Mnm[npm] += Ynmjn * conj(ephi[m]);
             Mnm[nmm] += Ynmjn * ephi[m];
-            Mnm[npm+P*P] += jnd[n] * Ynm[nms] * conj(ephi[m]);
-            Mnm[nmm+P*P] += jnd[n] * Ynm[nms] * ephi[m];
-            Mnm[npm+2*P*P] -= jn[n] * Ynmd[nms] * conj(ephi[m]);
-            Mnm[nmm+2*P*P] -= jn[n] * Ynmd[nms] * ephi[m];
-            Mnm[npm+3*P*P] += jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
-            Mnm[nmm+3*P*P] -= jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
+
+            ur = jnd[n] * Ynm[nms] * conj(ephi[m]);
+            utheta = jn[n] * Ynmd[nms] * conj(ephi[m]);
+            uphi = jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
+            sph2cart(dX, ur, -utheta, uphi, ux, uy, uz);
+            Mnm[npm+P*P] += ux;
+            Mnm[npm+2*P*P] += uy;
+            Mnm[npm+3*P*P] += uz;
+
+            ur = jnd[n] * Ynm[nms] * ephi[m];
+            utheta = jn[n] * Ynmd[nms] * ephi[m];
+            uphi = jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
+            sph2cart(dX, ur, -utheta, -uphi, ux, uy, uz);
+            Mnm[nmm+P*P] += ux;
+            Mnm[nmm+2*P*P] += uy;
+            Mnm[nmm+3*P*P] += uz;
+
+//            Mnm[npm+P*P] += jnd[n] * Ynm[nms] * conj(ephi[m]);
+//            Mnm[nmm+P*P] += jnd[n] * Ynm[nms] * ephi[m];
+//            Mnm[npm+2*P*P] -= jn[n] * Ynmd[nms] * conj(ephi[m]);
+//            Mnm[nmm+2*P*P] -= jn[n] * Ynmd[nms] * ephi[m];
+//            Mnm[npm+3*P*P] += jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
+//            Mnm[nmm+3*P*P] -= jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
           }
         }
       }
@@ -799,7 +825,6 @@ namespace exafmm {
           }
         }
         std::cout << ur << " " << utheta << " " << uphi << std::endl;
-#if 0
         TRG[0] = 0;
         ur = 0;
         utheta = 0;
@@ -825,15 +850,19 @@ namespace exafmm {
             uphi += Lj[nmm+3*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
           }
         }
-
-#endif
         std::cout << ur << " " << utheta << " " << uphi << std::endl;
-        complex_t ux, uy, uz;
-        sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
-        std::cout << ux << " " << uy << " " << uz << std::endl;
-        TRG[1] -= ux;
-        TRG[2] -= uy;
-        TRG[3] -= uz;
+//        complex_t ux = ur * rx + utheta * thetax + uphi * phix;
+//        complex_t uy = ur * ry + utheta * thetay + uphi * phiy;
+//        complex_t uz = ur * rz + utheta * thetaz + uphi * phiz;
+//        TRG[1] -= ux;
+//        TRG[2] -= uy;
+//        TRG[3] -= uz;
+//        B->TRG += TRG;
+//        complex_t ux, uy, uz;
+//        sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
+        TRG[1] -= ur;
+        TRG[2] -= utheta;
+        TRG[3] -= uphi;
         B->TRG += TRG;
       }
     }
