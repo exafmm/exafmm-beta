@@ -752,7 +752,6 @@ namespace exafmm {
         for (int n=0; n<P; n++) {
           jnd[n] *= wavek;
         }
-#if 0
         TRG[0] += Lj[0] * jn[0];
         complex_t ur = Lj[0] * jnd[0];
         complex_t utheta = 0;
@@ -777,10 +776,11 @@ namespace exafmm {
             uphi -= Lj[nmm] * jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
           }
         }
-#else
-        complex_t ur = 0;
-        complex_t utheta = 0;
-        complex_t uphi = 0;
+        std::cout << ur << " " << utheta << " " << uphi << std::endl;
+        TRG[0] = 0;
+        ur = 0;
+        utheta = 0;
+        uphi = 0;
         for (int n=0; n<P; n++) {
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
@@ -802,7 +802,7 @@ namespace exafmm {
             uphi += Lj[nmm+3*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
           }
         }
-#endif
+        std::cout << ur << " " << utheta << " " << uphi << std::endl;
         complex_t ux = ur * rx + utheta * thetax + uphi * phix;
         complex_t uy = ur * ry + utheta * thetay + uphi * phiy;
         complex_t uz = ur * rz + utheta * thetaz + uphi * phiz;
