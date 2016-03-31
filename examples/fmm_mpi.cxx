@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity);
   Traversal traversal(args.nspawn, args.images);  
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
     if(t > 0) {
       partition.rebalance(cells,bodies, treeMPI.getRemoteP2PCount(), treeMPI.getRemoteInteractionList());
       bodies = treeMPI.commBodies(bodies);
-    } else{
+    } else {
       partition.bisection(bodies, globalBounds);
       bodies = treeMPI.commBodies(bodies);
       if (args.IneJ) {
@@ -106,7 +106,7 @@ int main(int argc, char ** argv) {
         traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
         jbodies = bodies;
       }
-      treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn, args.granularity);
+      treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn);
 #pragma omp parallel sections
         {
 #pragma omp section
@@ -115,7 +115,7 @@ int main(int argc, char ** argv) {
           }
 #pragma omp section
           {
-        upDownPass.downwardPass(cells);
+        upDownPass.downwardPass(cells);        
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
           }
@@ -178,7 +178,7 @@ int main(int argc, char ** argv) {
     }
 #if 1    
     logger::printTitle("MPI direct sum");
-    const int numTargets = 1;
+    const int numTargets = 100;
     buffer = bodies;
     data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
