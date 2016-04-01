@@ -73,6 +73,8 @@ protected:
 #if EXAFMM_COUNT_KERNEL
   real_t numP2P;                                              //!< Number of P2P kernel calls
   real_t numM2L;                                              //!< Number of M2L kernel calls
+  real_t numM2LMsgs;                                          //!< Number of M2L cell messages 
+  real_t numP2PMsgs;                                          //!< Number of Leaf cells (P2P) messages 
 #endif
 private:
   //! Exchange send count for bodies
@@ -346,7 +348,8 @@ protected:
       if (Cj->NBODY == 0) {
         kernel::M2L(Ci, Cj, false);                             //   M2L kernel 
         countKernel(numM2L);            
-      } else {     
+    } else {             
+        countKernel(numP2P);            
         remoteP2P(Ci,Cj,rank);            
       }
     } else {                                                    // Else if cells are close but not bodies
@@ -523,7 +526,7 @@ protected:
           setLETSubset(cells, C0, *cc, grainSize, index, rank);
         } else {
           (*cells)[icell].NCHILD = 0;
-          //(*cells)[icell].NBODY = 0;          
+          (*cells)[icell].NBODY = 0;          
         }
       }
   }
@@ -597,7 +600,7 @@ public:
     requestmask(0xF), directionmask(0x1), grainmask(0xFFFF)
     , sendbit(1), receivebit(0)
 #if EXAFMM_COUNT_KERNEL
-    ,numP2P(0),numM2L(0)
+    ,numP2P(0),numM2L(0),numP2PMsgs(0),numM2LMsgs(0)
 #endif
      {                            // Initialize variables
     allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
@@ -610,10 +613,10 @@ public:
     sendCellDispl = new int [mpisize];                        // Allocate send displacement
     recvCellCount = new int [mpisize];                        // Allocate receive count
     recvCellDispl = new int [mpisize];                        // Allocate receive displacement
-    bodySendRequestBuffer = new int [granularity*2];                 // Allocate aggregate bodies send buffer
-    bodyReceiveRequestBuffer = new int [granularity*2];              // Allocate aggregate bodies recv buffer
+    bodySendRequestBuffer = new int [granularity*2];          // Allocate aggregate bodies send buffer
+    bodyReceiveRequestBuffer = new int [granularity*2];       // Allocate aggregate bodies recv buffer
   }
-
+  //! Constructor added to prevent breaking compatibility with other kernels using the class
   TreeMPI(int _mpirank, int _mpisize, int _images, int _grainSize) :
     mpirank(_mpirank), mpisize(_mpisize), images(_images),
     granularity(_grainSize), terminated(0), hitCount(0), nulltag(1), celltag(2),
@@ -623,7 +626,7 @@ public:
     requestmask(0xF), directionmask(0x1), grainmask(0xFFFF)
     , sendbit(1), receivebit(0)
 #if EXAFMM_COUNT_KERNEL
-    ,numP2P(0),numM2L(0)
+    ,numP2P(0),numM2L(0),numP2PMsgs(0),numM2LMsgs(0)
 #endif
      {                            // Initialize variables
     allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
@@ -1024,15 +1027,16 @@ public:
   //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversalRemote(Cells & icells, Bodies& ibodies, int mpirank, int mpisize, int spwan, real_t remote = 1) {
 #if EXAFMM_COUNT_KERNEL
-   numP2P = 0;                                                  //!< Number of P2P kernel calls
-   numM2L = 0;                                                  //!< Number of M2L kernel calls
+   numP2P = 0;                                                  //!< Reset number of P2P kernel calls
+   numM2L = 0;                                                  //!< Reset number of M2L kernel calls
+   numP2PMsgs = 0;                                              //!< Reset number of P2P Message requests
+   numM2LMsgs = 0;                                              //!< Reset number of M2L Message requests
 #endif
     if (icells.empty()) return;                                 // Quit if either of the cell vectors are empty
     nspawn = spwan;
     logger::startTimer("Traverse Remote");                      // Start timer
     kernel::Xperiodic = 0;    
-    logger::initTracer();                                       // Initialize tracer    
-    ///setSendLET(icells, ibodies);
+    logger::initTracer();                                       // Initialize tracer        
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     for (int irank = 0; irank < mpisize; ++irank) {
       if (irank != mpirank) {        
@@ -1056,15 +1060,14 @@ public:
   B_iter remoteP2P(C_iter Ci, C_iter Cj, int rank) {
     assert(rank != mpirank);        
     int key = Cj->IBODY;
-    if (bodyReferenceCount[key] == 0) {
-      int iparent = Ci->IPARENT;
+    int iparent = Ci->IPARENT;
 #if EXAFMM_COUNT_LIST    
       int localNumP2P = Ci->numP2P;
 #else 
       int localNumP2P = 0;
-#endif
-      updateInteractionList(sendCells[iparent].ICHILD, localNumP2P,rank); 
-      countKernel(numP2P);                            
+#endif   
+    updateInteractionList(sendCells[iparent].ICHILD, localNumP2P,rank);
+    if (bodyReferenceCount[key] == 0) {                                          
       aggregateP2PPairs.push_back(std::pair<C_iter,C_iter> (Ci,Cj));        
       bodySendRequestBuffer[aggregateP2PCount*2]     = Cj->IBODY;
       bodySendRequestBuffer[aggregateP2PCount*2 + 1] = Cj->NBODY;          
@@ -1097,7 +1100,8 @@ public:
 
   void aggregateP2PComm(int rank) {
     if(aggregateP2PCount > 0) {
-      startCommTimer("Comm LET bodies");              
+      startCommTimer("Comm LET bodies");
+      countKernel(numP2PMsgs);              
       int requestType = bodytag;        
       int tag = encryptMessage(1, requestType, 1, sendbit);
       MPI_Request request;
@@ -1160,6 +1164,7 @@ public:
       MPI_Isend(&key, 1, MPI_INT, rank, tag, MPI_COMM_WORLD, &request);
       MPI_Status status;
       int recvRank = rank;
+      countKernel(numM2LMsgs);
       int receivedTag;
       toggleDirection(tag);      
       int recv = 0;
@@ -1215,6 +1220,10 @@ public:
       << "Remote P2P calls" << " " << numP2P << std::endl;    //  Print event and timer
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "Remote M2L calls" << " " << numM2L << std::endl;    //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote P2P Msgs" << " " << numP2PMsgs << std::endl; //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote M2L Msgs" << " " << numM2LMsgs << std::endl; //  Print event and timer
 #endif
   }
 };

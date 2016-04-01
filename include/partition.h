@@ -235,6 +235,7 @@ namespace exafmm {
 	      for (int b = bodyBegin; b < bodyEnd; b++) {       //     Loop over bodies
 		real_t x = B[b].X[direction];                   //      Coordinate of body in current direction
 		int ibin = (x - xmin + EPS) / (dx + EPS);       //      Assign bin index to body
+    if(ibin>=numBins) ibin=numBins-1;               //      Account for floating point errors
 		countHist[ibin]++;                              //      Increment body count histogram
 		weightHist[ibin] += B[b].WEIGHT;                //      Increment body weight histogram
 	      }                                                 //     End loop over bodies
@@ -245,6 +246,7 @@ namespace exafmm {
 	      for (int b = bodyEnd - 1; b >= bodyBegin; b--) {  //     Loop over bodies backwards
 		real_t x = B[b].X[direction];                   //      Coordinate of body in current direction
 		int ibin = (x - xmin + EPS) / (dx + EPS);       //      Assign bin index to body
+    if(ibin>=numBins) ibin=numBins-1;               //      Account for floating point errors
 		scanHist[ibin]--;                               //      Decrement scanned histogram
 		int bnew = scanHist[ibin] + bodyBegin;          //      New index of sorted body
 		buffer[bnew] = B[b];                            //      Copy body to sort buffer
@@ -317,7 +319,7 @@ namespace exafmm {
     void rebalance(Cells const& cells, Bodies& bodies, real_t const& numP2P, T& remoteInteractionList) {
       logger::startTimer("Partition");                           // Start timer
       std::vector<double> remoteLoad(mpisize);
-      const double imbalanceRate = 0.2;
+      const double imbalanceRate = 0.01;
       double sumWork = static_cast<double>(numP2P);
       MPI_Allgather(&sumWork, 1, MPI_DOUBLE, (double*)&remoteLoad[0], 1, MPI_DOUBLE, MPI_COMM_WORLD);// Gather all domain bounds
       double avgLoad = std::accumulate(remoteLoad.begin(), remoteLoad.end(), 0.0) / mpisize;    
@@ -363,8 +365,13 @@ namespace exafmm {
       int cellCount = remoteInteractionList.size();                              
       for (int cc = 0; cc < cellCount; ++cc) {
         for (int irank = 0; irank < mpisize; ++irank) {
-          if(overloadedRanks[irank])
-            interactionList[irank]+=remoteInteractionList[cc][irank];
+          if(overloadedRanks[irank]) {
+            real_t localinteraction = remoteInteractionList[cc][mpirank];
+            real_t remoteinteraction = remoteInteractionList[cc][irank];
+            if(remoteinteraction > localinteraction)
+            interactionList[irank]+=remoteinteraction;
+          }
+            
         } 
       }    
       std::vector<int> ranksToBalance;
