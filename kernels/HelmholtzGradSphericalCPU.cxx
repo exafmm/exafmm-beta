@@ -403,20 +403,17 @@ namespace exafmm {
           jnd[n] *= wavek * B->SRC;
         }
         complex_t ur, utheta, uphi, ux, uy, uz;
-        Mnm[0] = Ynm[0] * jn[0];
-        ur = jnd[0] * Ynm[0];
-        utheta = jn[0] * Ynmd[0];
-        uphi = 0;
-        sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
-        for (int n=1; n<P; n++) { //n=0
+        for (int n=0; n<P; n++) {
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
+          ur = jnd[n] * Ynm[nms];
+          utheta = jn[n] * Ynmd[nms];
+          uphi = 0;
+          sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
           Mnm[nm] += Ynm[nms] * jn[n];
           Mnm[nm+P*P] += ux;
           Mnm[nm+2*P*P] += uy;
           Mnm[nm+3*P*P] += uz;
-//          Mnm[nm+P*P] += jnd[n] * Ynm[nms];
-//          Mnm[nm+2*P*P] -= jn[n] * Ynmd[nms];
           for (int m=1; m<=n; m++) {
             nms = n * (n + 1) / 2 + m;
             int npm = n * n + n + m;
