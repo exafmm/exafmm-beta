@@ -176,7 +176,7 @@ int main(int argc, char ** argv) {
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
     }
-#if 1    
+#if 0    
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
