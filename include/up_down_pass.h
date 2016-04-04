@@ -1,10 +1,10 @@
 #ifndef up_down_pass_h
 #define up_down_pass_h
-#include "kernel.h"
 #include "logger.h"
 #include "thread.h"
 
 namespace exafmm {
+  template<typename kernel>
   class UpDownPass {
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria

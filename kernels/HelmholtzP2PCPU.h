@@ -2,14 +2,10 @@
 #include "simdvec.h"
 
 namespace exafmm {
-  namespace kernel {
-    real_t eps2;
-    complex_t wavek;
-    vec3 Xperiodic;
-
-    const complex_t I(0.,1.);
-
-    void P2P(C_iter Ci, C_iter Cj, bool mutual) {
+  const complex_t I(0.,1.);
+  class HelmholtzP2PCPU : public Kernel {
+  public:
+    static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
       B_iter Bi = Ci->BODY;
@@ -151,7 +147,7 @@ namespace exafmm {
       }
     }
 
-    void P2P(C_iter C) {
+    static void P2P(C_iter C) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
       B_iter B = C->BODY;
@@ -281,5 +277,5 @@ namespace exafmm {
 	B[i].TRG[3] -= complex_t(az_r, az_i);
       }
     }
-  }
+  };
 }

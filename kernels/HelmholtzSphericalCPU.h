@@ -1,8 +1,6 @@
-#include "kernel.h"
+#include "HelmholtzP2PCPU.h"
 
 namespace exafmm {
-  namespace kernel {
-    const complex_t I(0.,1.);
     int nquad, nquad2;
     real_t xquad[P], xquad2[2*P];
     real_t wquad[P], wquad2[2*P];
@@ -339,7 +337,9 @@ namespace exafmm {
       }
     }
 
-    void setup() {
+    class HelmholtzSphericalCPU : public HelmholtzP2PCPU {
+    public:
+    static void setup() {
       nquad = fmax(6, P);
       legendre(nquad, xquad, wquad);
       nquad2 = fmax(6, 2*P);
@@ -347,7 +347,7 @@ namespace exafmm {
       getAnm();
     }
 
-    void P2M(C_iter C) {
+    static void P2M(C_iter C) {
       real_t Ynm[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       vecP Mnm = complex_t(0,0);
@@ -384,7 +384,7 @@ namespace exafmm {
       C->M += Mnm * I * wavek;
     }
 
-    void M2M(C_iter Ci, C_iter C0) {
+    static void M2M(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2];
       complex_t phitemp[2*P], hn[P], ephi[2*P];
       vecP Mnm = complex_t(0,0);
@@ -464,7 +464,7 @@ namespace exafmm {
       }
     }
 
-    void M2L(C_iter Ci, C_iter Cj, bool mutual) {
+    static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
       assert(mutual == false);
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
@@ -588,7 +588,7 @@ namespace exafmm {
       Ci->L += Lnm;
     }
 
-    void L2L(C_iter Ci, C_iter C0) {
+    static void L2L(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t jn[P+1], jnd[P+1], ephi[2*P];
@@ -706,7 +706,7 @@ namespace exafmm {
       Ci->L += Lnm;
     }
 
-    void L2P(C_iter C) {
+    static void L2P(C_iter C) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       real_t kscale = C->SCALE * abs(wavek);
@@ -776,5 +776,5 @@ namespace exafmm {
 	B->TRG += TRG;
       }
     }
-  }
+  };
 }
