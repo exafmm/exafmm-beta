@@ -16,7 +16,10 @@
 #if EXAFMM_EXPANSION < 10
 #error Use P >=10 for this test
 #endif
+#include "kernel_select.h"
 using namespace exafmm;
+vec3 Kernel::Xperiodic = 0;
+double Kernel::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
@@ -43,7 +46,6 @@ int main(int argc, char ** argv) {
   Verify verify;
   num_threads(args.threads);
 
-  kernel::eps2 = 0.0;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("Ewald Parameters");

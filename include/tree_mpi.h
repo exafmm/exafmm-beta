@@ -1,10 +1,10 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
-#include "kernel.h"
 #include "logger.h"
 
 namespace exafmm {
   //! Handles all the communication of local essential trees
+  template<typename kernel>
   class TreeMPI {
   protected:
     typedef std::map<int, Cell>    CellMap;                     //!< Type of cell hash map

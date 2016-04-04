@@ -1,6 +1,6 @@
-#include "kernel.h"
+#include "LaplaceP2PCPU.h"
+
 namespace exafmm {
-  namespace kernel {
     template<int nx, int ny, int nz>
     struct Index {
       static const int      I = Index<nx,ny+1,nz-1>::I + 1;
@@ -632,10 +632,11 @@ namespace exafmm {
     struct Coefs<0,0> {
       static inline void negate(vecP){}
     };
+  class LaplaceCartesianCPU : public LaplaceP2PCPU {
+  public:
+    static void setup() {}
 
-    void setup() {}
-
-    void P2M(C_iter C) {
+    static void P2M(C_iter C) {
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 	vec3 dX = C->X - B->X;
 	vecP M;
@@ -645,7 +646,7 @@ namespace exafmm {
       }
     }
 
-    void M2M(C_iter Ci, C_iter C0) {
+    static void M2M(C_iter Ci, C_iter C0) {
       for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
 	vec3 dX = Ci->X - Cj->X;
 	vecP M;
@@ -658,7 +659,7 @@ namespace exafmm {
       }
     }
 
-    void M2L(C_iter Ci, C_iter Cj, bool mutual) {
+    static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t invR2 = 1 / norm(dX);
 #if EXAFMM_MASS
@@ -675,7 +676,7 @@ namespace exafmm {
       }
     }
 
-    void L2L(C_iter Ci, C_iter Ci0) {
+    static void L2L(C_iter Ci, C_iter Ci0) {
       C_iter Cj = Ci0 + Ci->IPARENT;
       vec3 dX = Ci->X - Cj->X;
       vecP C;
@@ -689,7 +690,7 @@ namespace exafmm {
       Kernels<0,0,P-1>::L2L(Ci->L, C, Cj->L);
     }
 
-    void L2P(C_iter Ci) {
+    static void L2P(C_iter Ci) {
       for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
 	vec3 dX = B->X - Ci->X;
 	vecP C, L;
@@ -705,5 +706,5 @@ namespace exafmm {
 	Kernels<0,0,1>::L2P(B, C, L);
       }
     }
-  }
+  };
 }
