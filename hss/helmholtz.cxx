@@ -11,6 +11,10 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
+#include "HelmholtzSphericalCPU.h"
+typedef exafmm::HelmholtzSphericalCPU kernel;
+vec3 Kernel::Xperiodic = 0;
+double Kernel::eps2 = 0.0;
 
 /* Helmholtz, spherical coordinates example, 3D geometry.
  *

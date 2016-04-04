@@ -11,6 +11,11 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
+#include "LaplaceCartesianCPU.h"
+typedef exafmm::LaplaceCartesianCPU kernel;
+vec3 Kernel::Xperiodic = 0;
+double Kernel::eps2 = 0.0;
+complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *
@@ -43,7 +48,6 @@ int main(int argc, char ** argv) {
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  kernel::eps2 = 0.0;
   kernel::setup();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;

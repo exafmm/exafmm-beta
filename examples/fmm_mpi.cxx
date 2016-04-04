@@ -9,7 +9,13 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
+#include "kernel_select.h"
 using namespace exafmm;
+vec3 Kernel::Xperiodic = 0;
+double Kernel::eps2 = 0.0;
+#if EXAFMM_HELMHOLTZ
+complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+#endif
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
@@ -29,10 +35,6 @@ int main(int argc, char ** argv) {
   Verify verify;
   num_threads(args.threads);
 
-  kernel::eps2 = 0.0;
-#if EXAFMM_HELMHOLTZ
-  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-#endif
   kernel::setup();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
