@@ -1,6 +1,5 @@
 #ifndef traversal_h
 #define traversal_h
-#include "kernel.h"
 #include "logger.h"
 #include "thread.h"
 #include "morton_key.h"
@@ -12,6 +11,7 @@
 #endif
 
 namespace exafmm {
+template<typename kernel>
 class Traversal {
 private:
   const int nspawn;                                           //!< Threshold of NBODY for spawning new threads

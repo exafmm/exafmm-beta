@@ -4,11 +4,9 @@
 #endif
 
 namespace exafmm {
-  namespace kernel {
-    real_t eps2;
-    vec3 Xperiodic;
-
-    void P2P(C_iter Ci, C_iter Cj, bool mutual) {
+  class LaplaceP2PCPU : public TemplateKernel {
+  public:
+    static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
       int ni = Ci->NBODY;
@@ -109,7 +107,7 @@ namespace exafmm {
       }
     }
 
-    void P2P(C_iter C) {
+    static void P2P(C_iter C) {
       B_iter B = C->BODY;
       int n = C->NBODY;
       int i = 0;
@@ -199,5 +197,5 @@ namespace exafmm {
 	B[i].TRG[3] += az;
       }
     }
-  }
+  };
 }

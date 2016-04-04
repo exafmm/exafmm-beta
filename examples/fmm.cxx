@@ -6,7 +6,13 @@
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
+#include "kernel_select.h"
 using namespace exafmm;
+vec3 TemplateKernel::Xperiodic = 0;
+double TemplateKernel::eps2 = 0.0;
+#if EXAFMM_HELMHOLTZ
+complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+#endif
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
@@ -17,15 +23,11 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
   Dataset data;
-  Traversal traversal(args.nspawn, args.images);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
+  Traversal<kernel> traversal(args.nspawn, args.images);
+  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
 
-  kernel::eps2 = 0.0;
-#if EXAFMM_HELMHOLTZ
-  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-#endif
   kernel::setup();
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");

@@ -23,6 +23,7 @@ const int LTERM = (EXAFMM_PP+1)*(EXAFMM_PP+2)*(EXAFMM_PP+3)/6;
 namespace exafmm {
   class Kernel {
   public:
+    static vec3 Xperiodic;                                      //!< Periodic coordinate offset
     int maxLevel;
     int maxGlobLevel;
     int numBodies;

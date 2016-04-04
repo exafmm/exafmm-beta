@@ -18,6 +18,10 @@
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
 using namespace exafmm;
+#include "Empty.h"
+typedef EmptyKernel kernel;
+real_t TemplateKernel::eps2 = 0.0;
+vec3 TemplateKernel::Xperiodic = 0.0;
 
 static const double Celec = 332.0716;
 
@@ -26,9 +30,9 @@ BaseMPI * baseMPI;
 BoundBox * boundBox;
 BuildTree * localTree, * globalTree;
 Partition * partition;
-Traversal * traversal;
-TreeMPI * treeMPI;
-UpDownPass * upDownPass;
+Traversal<kernel> * traversal;
+TreeMPI<kernel> * treeMPI;
+UpDownPass<kernel> * upDownPass;
 
 #if EXAFMM_SERIAL
 SerialFMM * FMM;
@@ -45,7 +49,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   const int nspawn = 1000;
   const bool useRmax = true;
   const bool useRopt = true;
-  kernel::eps2 = 0.0;
   kernel::setup();
 
   args = new Args;
@@ -54,9 +57,9 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
-  treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
-  upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  traversal = new Traversal<kernel>(nspawn, images);
+  treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
+  upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
 #if EXAFMM_SERIAL
   FMM = new SerialFMM;
 #else
