@@ -1474,7 +1474,7 @@ public:
           read_write_unlock(i);
         }
         finalizeCommunicationThread = false;
-  #pragma omp parallel sections 
+  #pragma omp parallel sections
   {
   #pragma omp section
     {
@@ -1490,6 +1490,7 @@ public:
           flushP2PInteractions();
   #else
           finalizeCommunicationThread = true;
+          #pragma omp flush(finalizeCommunicationThread)
     }
   }
   #endif

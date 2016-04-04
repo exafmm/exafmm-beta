@@ -103,11 +103,11 @@ int main(int argc, char ** argv) {
       traversal.initWeight(cells);
 #pragma omp parallel 
 {
-  #pragma omp master
+  #pragma omp single
   {
       treeMPI.setSendLET();
   }
-  #pragma omp single
+  #pragma omp master
   {
     if (args.IneJ) {
       traversal.traverse(cells, jcells, cycle, args.dual, false);
@@ -187,7 +187,7 @@ int main(int argc, char ** argv) {
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
     }
-#if 1    
+#if 0    
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
