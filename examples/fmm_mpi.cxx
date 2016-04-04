@@ -29,9 +29,9 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  Traversal traversal(args.nspawn, args.images);  
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
+  TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  Traversal<kernel> traversal(args.nspawn, args.images);  
+  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
 

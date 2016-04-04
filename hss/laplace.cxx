@@ -15,7 +15,6 @@ using namespace exafmm;
 typedef exafmm::LaplaceCartesianCPU kernel;
 vec3 Kernel::Xperiodic = 0;
 double Kernel::eps2 = 0.0;
-complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *
@@ -39,9 +38,9 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
+  Traversal<kernel> traversal(args.nspawn, args.images);
+  TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
 
