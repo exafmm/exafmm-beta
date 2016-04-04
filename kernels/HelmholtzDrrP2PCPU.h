@@ -3,7 +3,7 @@
 
 namespace exafmm {
   const complex_t I(0.,1.);
-  class HelmholtzDrrP2PCPU : public Kernel {
+  class HelmholtzDrrP2PCPU : public TemplateKernel {
   public:
 
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {

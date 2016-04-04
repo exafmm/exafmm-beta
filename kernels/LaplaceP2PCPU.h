@@ -4,7 +4,7 @@
 #endif
 
 namespace exafmm {
-  class LaplaceP2PCPU : public Kernel {
+  class LaplaceP2PCPU : public TemplateKernel {
   public:
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;

@@ -14,6 +14,10 @@
 #include "../uniform/parallelfmm.h"
 #endif
 using namespace exafmm;
+#include "Empty.h"
+typedef EmptyKernel kernel;
+real_t TemplateKernel::eps2 = 0.0;
+vec3 TemplateKernel::Xperiodic = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
@@ -30,14 +34,14 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal traversal(args.nspawn, args.images);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
+  Traversal<kernel> traversal(args.nspawn, args.images);
+  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
-  TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
+  TreeMPI<kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
 
   args.numBodies /= FMM.MPISIZE;
   const int numBodies = args.numBodies;

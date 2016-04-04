@@ -15,6 +15,10 @@
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
 using namespace exafmm;
+#include "LaplaceSphericalCPU.h"
+typedef exafmm::LaplaceSphericalCPU kernel;
+vec3 TemplateKernel::Xperiodic = 0;
+double TemplateKernel::eps2 = 0.0;
 
 Args * args;
 BaseMPI * baseMPI;
@@ -22,9 +26,9 @@ BoundBox * boundBox;
 BuildTreeFromCluster * clusterTree;
 BuildTree * localTree, * globalTree;
 Partition * partition;
-Traversal * traversal;
-TreeMPI * treeMPI;
-UpDownPass * upDownPass;
+Traversal<kernel> * traversal;
+TreeMPI<kernel> * treeMPI;
+UpDownPass<kernel> * upDownPass;
 
 Bodies buffer;
 Bounds localBounds;
@@ -36,7 +40,6 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   const real_t theta = 0.5;
   const bool useRmax = false;
   const bool useRopt = false;
-  kernel::eps2 = 0.0;
   kernel::setup();
 
   args = new Args;
@@ -46,9 +49,9 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
-  treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
-  upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  traversal = new Traversal<kernel>(nspawn, images);
+  treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
+  upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
 
   args->ncrit = ncrit;
   args->distribution = "external";
