@@ -19,7 +19,7 @@
 #include "kernel_select.h"
 using namespace exafmm;
 vec3 TemplateKernel::Xperiodic = 0;
-double TemplateKernel::eps2 = 0.0;
+real_t TemplateKernel::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;

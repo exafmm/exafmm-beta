@@ -14,7 +14,7 @@ using namespace exafmm;
 #include "HelmholtzSphericalCPU.h"
 typedef exafmm::HelmholtzSphericalCPU kernel;
 vec3 TemplateKernel::Xperiodic = 0;
-double TemplateKernel::eps2 = 0.0;
+real_t TemplateKernel::eps2 = 0.0;
 complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 /* Helmholtz, spherical coordinates example, 3D geometry.

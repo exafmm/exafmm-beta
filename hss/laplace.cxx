@@ -14,7 +14,7 @@ using namespace exafmm;
 #include "LaplaceCartesianCPU.h"
 typedef exafmm::LaplaceCartesianCPU kernel;
 vec3 TemplateKernel::Xperiodic = 0;
-double TemplateKernel::eps2 = 0.0;
+real_t TemplateKernel::eps2 = 0.0;
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *

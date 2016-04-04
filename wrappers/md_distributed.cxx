@@ -15,7 +15,7 @@ using namespace exafmm;
 #include "LaplaceSphericalCPU.h"
 typedef exafmm::LaplaceSphericalCPU kernel;
 vec3 TemplateKernel::Xperiodic = 0;
-double TemplateKernel::eps2 = 0.0;
+real_t TemplateKernel::eps2 = 0.0;
 
 Args * args;
 BaseMPI * baseMPI;
