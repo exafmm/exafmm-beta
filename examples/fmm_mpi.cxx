@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity);
+  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity,args.threads,args.nspawn);
   Traversal traversal(args.nspawn, args.images);  
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
@@ -94,19 +94,30 @@ int main(int argc, char ** argv) {
     if(args.granularity > 0) { 
       treeMPI.allgatherBounds(localBounds);
       if (args.IneJ) {  
-        treeMPI.setSendLET(jcells, bodies);
+        treeMPI.setSendBodyNCells(jcells, bodies);
+
       } else {
-        treeMPI.setSendLET(cells, bodies);
+        treeMPI.setSendBodyNCells(cells, bodies);
       }
       traversal.initListCount(cells);
       traversal.initWeight(cells);
-      if (args.IneJ) {
-        traversal.traverse(cells, jcells, cycle, args.dual, false);
-      } else {
-        traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
-        jbodies = bodies;
-      }
-      treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize,args.nspawn);
+#pragma omp parallel 
+{
+  #pragma omp master
+  {
+      treeMPI.setSendLET();
+  }
+  #pragma omp single
+  {
+    if (args.IneJ) {
+      traversal.traverse(cells, jcells, cycle, args.dual, false);
+    } else {
+      traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+      jbodies = bodies;
+    }
+  }
+}      
+      treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize);
 #pragma omp parallel sections
         {
 #pragma omp section
@@ -119,7 +130,7 @@ int main(int argc, char ** argv) {
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
           }
-        }        
+        }
     } else {
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
         treeMPI.allgatherBounds(localBounds);
@@ -176,7 +187,7 @@ int main(int argc, char ** argv) {
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
     }
-#if 0    
+#if 1    
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
