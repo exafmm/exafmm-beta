@@ -90,18 +90,18 @@ namespace exafmm {
       real_t cphi = std::cos(phi);
       real_t sphi = std::sin(phi);
       real_t rx = stheta * cphi;
-      real_t thetax = ctheta * cphi / r;
-      real_t phix = -sphi / stheta;
+      real_t thetax = ctheta * cphi;
+      real_t phix = -sphi;
       real_t ry = stheta * sphi;
-      real_t thetay = ctheta * sphi / r;
-      real_t phiy = cphi / stheta;
+      real_t thetay = ctheta * sphi;
+      real_t phiy = cphi;
       real_t rz = ctheta;
-      real_t thetaz = -stheta / r;
+      real_t thetaz = -stheta;
       real_t phiz = 0;
-      ux = ur * rx + utheta * thetax + uphi * phix;
-      uy = ur * ry + utheta * thetay + uphi * phiy;
-      uz = ur * rz + utheta * thetaz + uphi * phiz;
-    }
+			ux = ur * rx + utheta * thetax + uphi * phix;
+			uy = ur * ry + utheta * thetay + uphi * phiy;
+			uz = ur * rz + utheta * thetaz + uphi * phiz;
+   }
 
     void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
                 complex_t Mrot[P*P]) {
@@ -402,48 +402,30 @@ namespace exafmm {
         for (int n=0; n<P; n++) {
           jnd[n] *= wavek * B->SRC;
         }
-        complex_t ur, utheta, uphi, ux, uy, uz;
-        for (int n=0; n<P; n++) {
+      	Mnm[0] += Ynm[0] * jn[0];
+     		Mnm[P*P] = jnd[0] * Ynm[0];
+      	Mnm[2*P*P] = 0;
+				Mnm[3*P*P] = 0;
+        for (int n=1; n<P; n++) {
           int nm = n * n + n;
           int nms = n * (n + 1) / 2;
-          ur = jnd[n] * Ynm[nms];
-          utheta = jn[n] * Ynmd[nms];
-          uphi = 0;
-          sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
           Mnm[nm] += Ynm[nms] * jn[n];
-          Mnm[nm+P*P] += ux;
-          Mnm[nm+2*P*P] += uy;
-          Mnm[nm+3*P*P] += uz;
+          Mnm[nm+P*P] += jnd[n] * Ynm[nms];
+          complex_t jnuse = jn[n+1] * kscale + jn[n-1] / kscale;
+          jnuse = wavek * jnuse / real_t(2 * n + 1.0);
+          Mnm[nm+2*P*P] -= jnuse * Ynmd[nms];
           for (int m=1; m<=n; m++) {
-            nms = n * (n + 1) / 2 + m;
             int npm = n * n + n + m;
             int nmm = n * n + n - m;
-            complex_t Ynmjn = Ynm[nms] * jn[n];
-            Mnm[npm] += Ynmjn * conj(ephi[m]);
-            Mnm[nmm] += Ynmjn * ephi[m];
-
-            ur = jnd[n] * Ynm[nms] * conj(ephi[m]);
-            utheta = jn[n] * Ynmd[nms] * conj(ephi[m]);
-            uphi = jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
-            sph2cart(dX, ur, -utheta, uphi, ux, uy, uz);
-            Mnm[npm+P*P] += ux;
-            Mnm[npm+2*P*P] += uy;
-            Mnm[npm+3*P*P] += uz;
-
-            ur = jnd[n] * Ynm[nms] * ephi[m];
-            utheta = jn[n] * Ynmd[nms] * ephi[m];
-            uphi = jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
-            sph2cart(dX, ur, -utheta, -uphi, ux, uy, uz);
-            Mnm[nmm+P*P] += ux;
-            Mnm[nmm+2*P*P] += uy;
-            Mnm[nmm+3*P*P] += uz;
-
-//            Mnm[npm+P*P] += jnd[n] * Ynm[nms] * conj(ephi[m]);
-//            Mnm[nmm+P*P] += jnd[n] * Ynm[nms] * ephi[m];
-//            Mnm[npm+2*P*P] -= jn[n] * Ynmd[nms] * conj(ephi[m]);
-//            Mnm[nmm+2*P*P] -= jn[n] * Ynmd[nms] * ephi[m];
-//            Mnm[npm+3*P*P] += jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
-//            Mnm[nmm+3*P*P] -= jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
+            int nms = n * (n + 1) / 2 + m;
+            Mnm[npm] += jn[n] * Ynm[nms] * conj(ephi[m]);
+            Mnm[nmm] += jn[n] * Ynm[nms] * ephi[m];
+            Mnm[npm+P*P] += jnd[n] * Ynm[nms] * conj(ephi[m]);
+            Mnm[nmm+P*P] += jnd[n] * Ynm[nms] * ephi[m];
+            Mnm[npm+2*P*P] -= jnuse * Ynmd[nms] * conj(ephi[m]);
+            Mnm[nmm+2*P*P] -= jnuse * Ynmd[nms] * ephi[m];
+            Mnm[npm+3*P*P] += jnuse * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / stheta;
+            Mnm[nmm+3*P*P] -= jnuse * Ynm[nms] *  real_t(m) * I * ephi[m] / stheta;
           }
         }
       }
@@ -806,7 +788,9 @@ namespace exafmm {
           int nms = n * (n + 1) / 2;
           TRG[0] += Lj[nm] * jn[n] * Ynm[nms];
           ur += jnd[n] * Ynm[nms] * Lj[nm];
-          utheta -= Lj[nm] * jn[n] * Ynmd[nms];
+    			complex_t jnuse = jn[n+1] * kscale + jn[n-1] / kscale;
+    			jnuse = wavek * jnuse / real_t(2 * n + 1.0);
+					utheta -= Lj[nm] * jnuse * Ynmd[nms];
           for (int m=1; m<=n; m++) {
             int npm = n * n + n + m;
             int nmm = n * n + n - m;
@@ -815,13 +799,13 @@ namespace exafmm {
             TRG[0] += Lj[nmm] * jn[n] * Ynm[nms] * conj(ephi[m]);
             ur += Lj[npm] * jnd[n] * Ynm[nms] * ephi[m];
             ur += Lj[nmm] * jnd[n] * Ynm[nms] * conj(ephi[m]);
-            utheta -= Lj[npm] * jn[n] * Ynmd[nms] * ephi[m];
-            utheta -= Lj[nmm] * jn[n] * Ynmd[nms] * conj(ephi[m]);
-            uphi += Lj[npm] * jn[n] * Ynm[nms] *  real_t(m) * I * ephi[m] / r;
-            uphi -= Lj[nmm] * jn[n] * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / r;
+            utheta -= Lj[npm] * jnuse * Ynmd[nms] * ephi[m];
+            utheta -= Lj[nmm] * jnuse * Ynmd[nms] * conj(ephi[m]);
+            uphi += Lj[npm] * jnuse * Ynm[nms] *  real_t(m) * I * ephi[m] / stheta;
+            uphi -= Lj[nmm] * jnuse * Ynm[nms] *  real_t(m) * I * conj(ephi[m]) / stheta;
           }
         }
-        std::cout << ur << " " << utheta << " " << uphi << std::endl;
+#if 1
         TRG[0] = 0;
         ur = 0;
         utheta = 0;
@@ -847,19 +831,14 @@ namespace exafmm {
             uphi += Lj[nmm+3*P*P] * jn[n] * Ynm[nms] * conj(ephi[m]);
           }
         }
-        std::cout << ur << " " << utheta << " " << uphi << std::endl;
-//        complex_t ux = ur * rx + utheta * thetax + uphi * phix;
-//        complex_t uy = ur * ry + utheta * thetay + uphi * phiy;
-//        complex_t uz = ur * rz + utheta * thetaz + uphi * phiz;
-//        TRG[1] -= ux;
-//        TRG[2] -= uy;
-//        TRG[3] -= uz;
-//        B->TRG += TRG;
-//        complex_t ux, uy, uz;
-//        sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
-        TRG[1] -= ur;
-        TRG[2] -= utheta;
-        TRG[3] -= uphi;
+#endif
+        complex_t ux, uy, uz;
+        sph2cart(dX, ur, utheta, uphi, ux, uy, uz);
+        std::cout << TRG[0]<<" "<<ur << " " << utheta << " " << uphi << std::endl;
+        std::cout << ux << " " << uy << " " << uz << std::endl;
+        TRG[1] -= ux;
+        TRG[2] -= uy;
+        TRG[3] -= uz;
         B->TRG += TRG;
       }
     }
