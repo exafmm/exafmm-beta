@@ -9,7 +9,7 @@
 #include "kernel_select.h"
 using namespace exafmm;
 vec3 TemplateKernel::Xperiodic = 0;
-double TemplateKernel::eps2 = 0.0;
+real_t TemplateKernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
 complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
