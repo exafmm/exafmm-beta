@@ -13,6 +13,10 @@
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
 using namespace exafmm;
+#include "LaplaceSphericalCPU.h"
+typedef exafmm::LaplaceSphericalCPU kernel;
+vec3 TemplateKernel::Xperiodic = 0;
+double TemplateKernel::eps2 = 0.0;
 
 static const double Celec = 332.0716;
 
@@ -21,9 +25,9 @@ BaseMPI * baseMPI;
 BoundBox * boundBox;
 BuildTree * localTree, * globalTree;
 Partition * partition;
-Traversal * traversal;
-TreeMPI * treeMPI;
-UpDownPass * upDownPass;
+Traversal<kernel> * traversal;
+TreeMPI<kernel> * treeMPI;
+UpDownPass<kernel> * upDownPass;
 
 Bodies buffer;
 Bounds localBounds;
@@ -34,7 +38,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int nspawn = 1000;
   const bool useRmax = true;
   const bool useRopt = false;
-  kernel::eps2 = 0.0;
   kernel::setup();
 
   args = new Args;
@@ -43,9 +46,9 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
-  treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
-  upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  traversal = new Traversal<kernel>(nspawn, images);
+  treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
+  upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
 
   args->ncrit = ncrit;
   args->distribution = "external";

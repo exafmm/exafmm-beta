@@ -8,10 +8,10 @@
 #include "verify.h"
 #include "kernel_select.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-double Kernel::eps2 = 0.0;
+vec3 TemplateKernel::Xperiodic = 0;
+double TemplateKernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
-complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
 
 int main(int argc, char ** argv) {

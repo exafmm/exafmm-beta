@@ -7,7 +7,13 @@
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
+#include "kernel_select.h"
 using namespace exafmm;
+vec3 TemplateKernel::Xperiodic = 0;
+double TemplateKernel::eps2 = 0.0;
+#if EXAFMM_HELMHOLTZ
+complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+#endif
 
 vec3 cycles;
 Bodies buffer;
@@ -22,9 +28,9 @@ BaseMPI * baseMPI;
 BoundBox * boundBox;
 BuildTree * localTree, * globalTree;
 Partition * partition;
-Traversal * traversal;
-TreeMPI * treeMPI;
-UpDownPass * upDownPass;
+Traversal<kernel> * traversal;
+TreeMPI<kernel> * treeMPI;
+UpDownPass<kernel> * upDownPass;
 
 void log_initialize() {
   args->verbose &= baseMPI->mpirank == 0;
@@ -52,10 +58,6 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   const bool useRmax = false;
   const bool useRopt = false;
   const bool verbose = false;
-  kernel::eps2 = eps2;
-#if EXAFMM_HELMHOLTZ
-  kernel::wavek = complex_t(kreal, kimag);
-#endif
   kernel::setup();
 
   args = new Args;
@@ -64,9 +66,9 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
-  treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
-  upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  traversal = new Traversal<kernel>(nspawn, images);
+  treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
+  upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
   num_threads(threads);
 
   args->ncrit = ncrit;

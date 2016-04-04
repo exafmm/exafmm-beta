@@ -18,8 +18,8 @@
 #endif
 #include "kernel_select.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-double Kernel::eps2 = 0.0;
+vec3 TemplateKernel::Xperiodic = 0;
+double TemplateKernel::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
@@ -40,9 +40,9 @@ int main(int argc, char ** argv) {
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
+  Traversal<kernel> traversal(args.nspawn, args.images);
+  TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
 
