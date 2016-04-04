@@ -357,7 +357,7 @@ namespace exafmm {
 	real_t r, theta, phi;
 	cart2sph(dX, r, theta, phi);
 	real_t ctheta = std::cos(theta);
- 	real_t stheta = -std::sin(theta);
+ 	real_t stheta = std::sin(theta);
 	ephi[1] = exp(I * phi);
 	for (int n=2; n<P; n++) {
 	  ephi[n] = ephi[n-1] * ephi[1];
