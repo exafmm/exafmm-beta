@@ -513,9 +513,7 @@ protected:
         {
           TraverseRemoteRange leftBranch(treeMPI, CiBegin, CiMid,//    Instantiate recursive functor
                                          CjBegin, CjMid, mutual, remote, rank);
-          if(CiMid - CiBegin > treeMPI->nspawn || CjMid - CjBegin > treeMPI->nspawn)
-            create_omp_task(leftBranch);                  
-          else leftBranch();
+          create_omp_task(leftBranch);                            
           TraverseRemoteRange rightBranch(treeMPI, CiMid, CiEnd,//    Instantiate recursive functor
                                           CjMid, CjEnd, mutual, remote, rank);;
           rightBranch();                                        //    Ci:latter Cj:latter
@@ -523,10 +521,8 @@ protected:
         }
         {
           TraverseRemoteRange leftBranch(treeMPI, CiBegin, CiMid,//    Instantiate recursive functor
-                                         CjMid, CjEnd, mutual, remote, rank);;
-          if(CiMid - CiBegin > treeMPI->nspawn || CjEnd - CjMid > treeMPI->nspawn)
-            create_omp_task(leftBranch);
-          else leftBranch();          
+                                         CjMid, CjEnd, mutual, remote, rank);;          
+          create_omp_task(leftBranch);          
           TraverseRemoteRange rightBranch(treeMPI, CiMid, CiEnd,//    Instantiate recursive functor
                                           CjBegin, CjMid, mutual, remote, rank);;
           rightBranch();                                        //    Ci:latter Cj:former
