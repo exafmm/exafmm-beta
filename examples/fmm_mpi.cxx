@@ -101,13 +101,13 @@ int main(int argc, char ** argv) {
       }
       traversal.initListCount(cells);
       traversal.initWeight(cells);
-#pragma omp parallel 
+#pragma omp parallel sections
 {
-  #pragma omp single
+  #pragma omp section
   {
       treeMPI.setSendLET();
   }
-  #pragma omp master
+  #pragma omp section
   {
     if (args.IneJ) {
       traversal.traverse(cells, jcells, cycle, args.dual, false);

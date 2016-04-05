@@ -140,7 +140,6 @@ protected:
   int threadCount;                                            //!< Number of threads
   volatile bool flushAggregate;                               //!< Trigger to flush aggregate P2P      
   volatile bool finalizeCommunicationThread;                  //!< Trigger end of communication thread   
-  volatile int currentRank;                                   //!< The current traversal rank 
 #endif
 #if EXAFMM_COUNT_KERNEL
   real_t numP2P;                                              //!< Number of P2P kernel calls
@@ -491,7 +490,7 @@ protected:
     C_iter CjBegin;                                             //!< Begin Iterator of source cells
     C_iter CjEnd;                                               //!< End iterator of source cells
     bool mutual;                                                //!< Flag for mutual interaction
-    real_t remote;                                              //!< Weight for remote work load
+    real_t remote;                                              //!< Weight for remote work load    
     int rank;
     TraverseRemoteRange(TreeMPI * _treeMPI, C_iter _CiBegin, C_iter _CiEnd,// Constructor
                         C_iter _CjBegin, C_iter _CjEnd,
@@ -514,7 +513,9 @@ protected:
         {
           TraverseRemoteRange leftBranch(treeMPI, CiBegin, CiMid,//    Instantiate recursive functor
                                          CjBegin, CjMid, mutual, remote, rank);
-          create_omp_task(leftBranch);                  
+          if(CiMid - CiBegin > treeMPI->nspawn || CjMid - CjBegin > treeMPI->nspawn)
+            create_omp_task(leftBranch);                  
+          else leftBranch();
           TraverseRemoteRange rightBranch(treeMPI, CiMid, CiEnd,//    Instantiate recursive functor
                                           CjMid, CjEnd, mutual, remote, rank);;
           rightBranch();                                        //    Ci:latter Cj:latter
@@ -523,8 +524,9 @@ protected:
         {
           TraverseRemoteRange leftBranch(treeMPI, CiBegin, CiMid,//    Instantiate recursive functor
                                          CjMid, CjEnd, mutual, remote, rank);;
-
-          create_omp_task(leftBranch);
+          if(CiMid - CiBegin > treeMPI->nspawn || CjEnd - CjMid > treeMPI->nspawn)
+            create_omp_task(leftBranch);
+          else leftBranch();          
           TraverseRemoteRange rightBranch(treeMPI, CiMid, CiEnd,//    Instantiate recursive functor
                                           CjBegin, CjMid, mutual, remote, rank);;
           rightBranch();                                        //    Ci:latter Cj:former
@@ -1018,7 +1020,7 @@ protected:
     bodyRequests[threadId].push_back(crequest_pair(Ci,Cj));
     read_write_unlock(threadId);
   }
-  
+
 #endif
 
   void sendRecvChildCells(int key, int nchild, int level, int rank, int requestType) {
@@ -1484,13 +1486,9 @@ public:
   void setSendLET() {
     exchangeTreeRoots();
     logger::startTimer("Set LET");    
-    //cellWordSize = sizeof(sendCells[0])  / 4; 
     Multipole _multipole;   
-    cellWordSize = sizeof(_multipole) / 4;
+    cellWordSize = sizeof(Multipole) / 4;
     bodyWordSize = sizeof(sendBodies[0]) / 4;
-    Cell _cell;
-    int ss = sizeof(_cell) / 4;
-
     int counts[2] = {sendBodies.size(),sendCells.size()};
     int maxCounts[2];
     MPI_Allreduce(counts, maxCounts, 2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmin
@@ -1564,47 +1562,56 @@ public:
     logger::startTimer("Traverse Remote");                      // Start timer
     kernel::Xperiodic = 0;    
     logger::initTracer();                                       // Initialize tracer        
-    Ci0 = icells.begin();                                       // Set iterator of target root cell   
+    Ci0 = icells.begin();                                       // Set iterator of target root cell  
+#if EXAFMM_OVERLAP_REMOTE
+#pragma omp parallel sections
+{
+  #pragma omp section
+  {
     for (int irank = 0; irank < mpisize; ++irank) {
       if (irank != mpirank) {         
         bodyReferenceCount.assign(bodyReferenceCount.size(),0);
         cellReferenceCount.assign(cellReferenceCount.size(),0);
         const int N = cellReferenceCount.size();
-        for (int j = 0; j < N; ++j)  childCellsReferenceCount[j] = 0;
-  #if EXAFMM_OVERLAP_REMOTE   
-        sendRecvChildCells(0,1,0,irank,celltag);  
+        for (int j = 0; j < N; ++j)  childCellsReferenceCount[j] = 0;        
         fullfilledCellRequests.assign(fullfilledCellRequests.size(),false);
         fullfilledBodyRequests.assign(fullfilledBodyRequests.size(),false);        
-        currentRank = irank;
-        for(int i = 0; i < threadCount; ++i) {
-          read_write_lock(i);
+        for(int i = 0; i < threadCount; ++i) {          
           cellRequests[i].clear();
-          bodyRequests[i].clear();
-          read_write_unlock(i);
+          bodyRequests[i].clear();          
         }
         finalizeCommunicationThread = false;
-  #pragma omp parallel sections
-  {
-  #pragma omp section
-    {
+        #pragma omp task
+        {          
           commBodiesCells(irank);
-    }
-  #pragma omp section
-    {
-  #endif      
+        }
+        #pragma omp task
+        {
           Cj0 = getRootCell(irank);
-          traverseRemote(Ci0, Cj0, false, remote, irank);        
-  #ifndef EXAFMM_OVERLAP_REMOTE
-          aggregateP2PComm(irank);
-          flushP2PInteractions();
-  #else
+          traverseRemote(Ci0, Cj0, false, remote, irank);
           finalizeCommunicationThread = true;
           #pragma omp flush(finalizeCommunicationThread)
-    }
-  }
-  #endif
+        }
+        #pragma omp taskwait
       }
     }
+    
+  }
+}
+#else 
+     for (int irank = 0; irank < mpisize; ++irank) {
+      if (irank != mpirank) {         
+        bodyReferenceCount.assign(bodyReferenceCount.size(),0);
+        cellReferenceCount.assign(cellReferenceCount.size(),0);
+        const int N = cellReferenceCount.size();
+        for (int j = 0; j < N; ++j)  childCellsReferenceCount[j] = 0;     
+          Cj0 = getRootCell(irank);
+          traverseRemote(Ci0, Cj0, false, remote, irank);        
+          aggregateP2PComm(irank);
+          flushP2PInteractions();
+        }
+      }
+#endif
 #if EXAFMM_TIME_COMM
     logger::printTime("Comm LET bodies");      
     logger::printTime("Comm LET cells");      
