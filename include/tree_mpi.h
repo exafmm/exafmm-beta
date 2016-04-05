@@ -28,12 +28,54 @@
 #endif
 
 namespace exafmm {
+  struct Multipole {    
+    int      ICHILD;                                            //!< Index of first child cell
+    int      NCHILD;                                            //!< Number of child cells
+    int      IBODY;                                             //!< Index of first body
+    int      NBODY;                                             //!< Number of descendant bodies
+    real_t   SCALE;                                             //!< Scale for Helmholtz kernel
+    vec3     X;                                                 //!< Cell center
+    real_t   R;                                                 //!< Cell radius
+    vecP     M;                                                 //!< Multipole coefficients
+  public:    
+    Multipole() { }
+    Multipole(C_iter const& cc):
+    ICHILD(cc->ICHILD),NCHILD(cc->NCHILD),IBODY(cc->IBODY),
+    NBODY(cc->NBODY),SCALE(cc->SCALE),X(cc->X),R(cc->R),M(cc->M){ }
+    Cell cell() const {
+      Cell c;
+      c.ICHILD = ICHILD;
+      c.NCHILD = NCHILD;
+      c.IBODY = IBODY;
+      c.NBODY = NBODY;
+      c.SCALE = SCALE;
+      c.X = X;
+      c.R = R;
+      c.M = M;
+      return c;
+    }    
+    Multipole(Multipole const& multipole) {
+      ICHILD = multipole.ICHILD;
+      NCHILD = multipole.NCHILD;
+      IBODY = multipole.IBODY;
+      NBODY = multipole.NBODY;
+      SCALE = multipole.SCALE;
+      X = multipole.X;
+      R = multipole.R;
+      M = multipole.M;
+    }
+  };
+  typedef std::vector<Multipole> Multipoles;
+  typedef Multipoles::iterator   M_iter;                        //!< Iterator of Multipole vector
+}
+
+namespace exafmm {
 //! Handles all the communication of local essential trees
 class TreeMPI {
 protected:  
   typedef std::vector<std::vector<int> > inter_list;          //!< Remote interaction list type  
   typedef std::pair<int,int>  request_pair;                   //!< Cell request int pair type
-  typedef std::pair<C_iter,C_iter>  crequest_pair;            //!< Cell request C_iter pair type
+  typedef std::pair<C_iter,C_iter>  crequest_pair;            //!< Cell request C_iter pair type  
   const int mpirank;                                          //!< Rank of MPI communicator
   const int mpisize;                                          //!< Size of MPI communicator
   const int images;                                           //!< Number of periodic image sublevels
@@ -60,7 +102,7 @@ protected:
   Bodies recvBodies;                                          //!< Receive buffer for bodies
   Cells sendCells;                                            //!< Send buffer for cells
   Cells recvCells;                                            //!< Receive buffer for cells
-  Cells* recvRoots;                                           //!< Receive buffer for tree roots
+  Multipoles* recvRoots;                                      //!< Receive buffer for tree roots
   int * sendBodyCount;                                        //!< Send count
   int * sendBodyDispl;                                        //!< Send displacement
   int * recvBodyCount;                                        //!< Receive count
@@ -76,7 +118,7 @@ protected:
   int cellWordSize;                                           //!< Number of words in cell struct
   int bodyWordSize;                                           //!< Number of words in body struct  
   std::vector<MPI_Request*> pendingCellMPI_Requests;          //!< Buffer for non-blocking requests
-  std::vector<Cells*> sendCellBuffers;                        //!< Buffer for non-blocking cell sends
+  std::vector<Multipoles*>  sendCellBuffers;                  //!< Buffer for non-blocking cell sends
   std::vector<MPI_Request*> pendingBodyMPI_Requests;          //!< Buffer for non-blocking requests
   std::vector<Bodies*> sendBodyBuffers;                       //!< Buffer for non-blocking body sends
   std::vector<int> bodyReferenceCount;                        //!< Reference count for received LET bodies
@@ -96,8 +138,7 @@ protected:
   std::vector<bool> fullfilledCellRequests;                   //!< Reference count for received LET cells
   pthread_mutex_t* mutex;                                     //!< Pthread mutex
   int threadCount;                                            //!< Number of threads
-  volatile bool flushAggregate;                               //!< Trigger to flush aggregate P2P    
-  volatile int rootCellRequest;                               //!< Root cell request
+  volatile bool flushAggregate;                               //!< Trigger to flush aggregate P2P      
   volatile bool finalizeCommunicationThread;                  //!< Trigger end of communication thread   
   volatile int currentRank;                                   //!< The current traversal rank 
 #endif
@@ -108,6 +149,7 @@ protected:
   real_t numP2PMsgs;                                          //!< Number of Leaf cells (P2P) messages 
 #endif
 private:
+
   //! Exchange send count for bodies
   void alltoall(Bodies & bodies) {
     for (int i = 0; i < mpisize; i++) {                       // Loop over ranks
@@ -236,6 +278,27 @@ private:
     }                                                         // End loop over ranks
   }
 
+  Multipoles alltoallv(Multipoles & multipoles) {
+    assert( (sizeof(multipoles[0]) & 3) == 0 );               // Cell structure must be 4 Byte aligned
+    int word = sizeof(multipoles[0]) / 4;                     // Word size of body structure
+    Multipoles recvMults(recvCellDispl[mpisize - 1] + recvCellCount[mpisize - 1]); // Resize receive buffer
+    for (int irank = 0; irank < mpisize; irank++) {           // Loop over ranks
+      sendCellCount[irank] *= word;                           //  Multiply send count by word size of data
+      sendCellDispl[irank] *= word;                           //  Multiply send displacement by word size of data
+      recvCellCount[irank] *= word;                           //  Multiply receive count by word size of data
+      recvCellDispl[irank] *= word;                           //  Multiply receive displacement by word size of data
+    }                                                         // End loop over ranks
+    MPI_Alltoallv((int*)&multipoles[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
+                  (int*)&recvMults[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
+    for (int irank = 0; irank < mpisize; irank++) {           // Loop over ranks
+      sendCellCount[irank] /= word;                           //  Divide send count by word size of data
+      sendCellDispl[irank] /= word;                           //  Divide send displacement by word size of data
+      recvCellCount[irank] /= word;                           //  Divide receive count by word size of data
+      recvCellDispl[irank] /= word;                           //  Divide receive displacement by word size of data
+    }                                                         // End loop over ranks
+    return recvMults;
+  }
+
   inline bool processIncomingMessage(int tag, int source) {
     if ((tag & directionmask) == receivebit)
       return false;    
@@ -252,20 +315,20 @@ private:
       toggleDirection(tag);      
       Cell& pcell = sendCells[sendCells[childID].IPARENT];
       if (pcell.NCHILD > 0) {
-        if(granularity > 1) {
-          int sendingSize = 0;
-          Cells* sendBuffer = new Cells();
-          setLETSubset(sendBuffer, sendCells.begin(), pcell, granularity, sendingSize, source);
-          MPI_Isend((int*) & (*sendBuffer)[0],  cellWordSize * sendingSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
-          sendCellBuffers.push_back(sendBuffer);
-          pendingCellMPI_Requests.push_back(request);          
-          dataReady = true;
+        int sendingSize = 0;
+        Multipoles* sendBuffer = new Multipoles();        
+        if(granularity > 1) {          
+          setLETSubset(sendBuffer, sendCells.begin(), pcell, granularity, sendingSize, source);          
         } else {
-          MPI_Isend((int*)&sendCells[pcell.ICHILD],  cellWordSize * pcell.NCHILD, MPI_INT, source, tag, MPI_COMM_WORLD, request);
-          dataReady = true;
+          sendingSize = pcell.NCHILD;
+          C_iter C0 = sendCells.begin() + pcell.ICHILD;
+          for(int i = 0; i < sendingSize; ++ i) sendBuffer->push_back(Multipole(C0+i));                  
         }
-      }
-      dataReady = false;
+        MPI_Isend((int*) & (*sendBuffer)[0],  cellWordSize * sendingSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+        sendCellBuffers.push_back(sendBuffer);
+        pendingCellMPI_Requests.push_back(request);          
+        dataReady = true;
+      }      
     } else if (msgType == bodytag) {
       hitCount++;            
       MPI_Recv(bodyReceiveRequestBuffer, 2*granularity, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -284,8 +347,7 @@ private:
       sendBodyBuffers.push_back(sendBuffer);
       pendingBodyMPI_Requests.push_back(request);          
       dataReady = true;
-    }
-    else if (msgType == celltag) {
+    } else if (msgType == celltag) {
       int cellID;
       hitCount++;            
       MPI_Recv(&cellID, 1, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -293,15 +355,19 @@ private:
       Cell& pcell = sendCells[cellID];           
       if(granularity > 1 && pcell.NCHILD > 0) {        
         int sendingSize = 1;
-        Cells* sendBuffer = new Cells();
-        sendBuffer->push_back(pcell);        
+        Multipoles* sendBuffer = new Multipoles();
+        sendBuffer->push_back(Multipole(sendCells.begin()+cellID));        
         setLETSubset(sendBuffer, sendCells.begin(), pcell, granularity, sendingSize, source);
         MPI_Isend((int*) & (*sendBuffer)[0],  cellWordSize * sendingSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
         sendCellBuffers.push_back(sendBuffer);
         pendingCellMPI_Requests.push_back(request);          
         dataReady = true;
       } else {
-        MPI_Isend((int*)&sendCells[cellID], cellWordSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+        Multipoles* sendBuffer = new Multipoles();
+        sendBuffer->push_back(Multipole(sendCells.begin()+cellID));
+        MPI_Isend((int*) & (*sendBuffer)[0], cellWordSize, MPI_INT, source, tag, MPI_COMM_WORLD, request);
+        sendCellBuffers.push_back(sendBuffer);
+        pendingCellMPI_Requests.push_back(request);        
         dataReady = true;
       }
     }
@@ -549,6 +615,28 @@ protected:
       }
   }
 
+  inline void setLETSubset(Multipoles* multipoles, C_iter const& C0, Cell const& C, uint16_t const& grainSize, int& index, int rank) {
+    C_iter begin = C0 + C.ICHILD;
+    C_iter end   = C0 + C.ICHILD + C.NCHILD;
+    int icell = index;        
+    for(C_iter cc = begin; cc!=end; ++cc) {
+      multipoles->push_back(Multipole(cc));
+    }
+    index += C.NCHILD;
+    real_t R2;
+    for (C_iter cc = begin; cc < end; ++cc, ++icell) {              
+      if (index < grainSize) {
+        R2 = getRankDistance(cc, kernel::Xperiodic, rank);    //       Get distance to other domain
+        if (cc->R * cc->R > R2) {                             //       Divide if cell seems too close
+          setLETSubset(multipoles, C0, *cc, grainSize, index, rank);
+        } else {
+          (*multipoles)[icell].NCHILD = 0;
+          (*multipoles)[icell].NBODY = 0;          
+        }
+      }
+    }
+  }
+
   //! Determine which cells to send
   void traverseLET(C_iter C, C_iter C0, Bounds bounds, vec3 cycle,
                    int & irank, int & ibody, int & icell, int iparent, bool copyData) {
@@ -611,6 +699,30 @@ protected:
       }
     }
   }
+
+  void appendLET(Multipoles const& multipoles, int& index, int id) {
+    Multipole parent = multipoles[id];
+    if (index < multipoles.size()) {
+      id = index;
+      if (parent.NCHILD > 0) {
+        for (int i = 0; i < parent.NCHILD; ++i) {  
+          recvCells[parent.ICHILD + i] = multipoles[index + i].cell();       
+        }          
+#if EXAFMM_OVERLAP_REMOTE
+        fullfilledCellRequests[parent.ICHILD] = true;
+        childCellsReferenceCount[parent.ICHILD] = -1;
+#else
+        childCellsReferenceCount[parent.ICHILD]++;        
+#endif        
+        index += parent.NCHILD;
+        for (int i = 0; i < parent.NCHILD; ++i) {
+          appendLET(multipoles, index, id++);
+        }
+      }
+    }
+  }
+
+
   #if EXAFMM_COUNT_LIST 
   inline void updateInteractionList(int const& cellId, int const& localNumP2P, int const& rank) {
     std::vector<int>& interaction = remoteInteractionList[cellId];    
@@ -704,7 +816,7 @@ protected:
         if(ibody>=0) bodyReferenceCount[ibody] = 1;                  
       }       
     } else if (responseType == childcelltag || responseType == celltag) {
-      Cells recvData;    
+      Multipoles recvData;    
       //startCommTimer("Comm LET cells");
       MPI_Get_count(status, MPI_INT, &recvCount);
       int cellCount = recvCount / cellWordSize;
@@ -712,18 +824,18 @@ protected:
       MPI_Recv(&recvData[0], recvCount, MPI_INT, recvRank, receivedTag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       //stopCommTimer("Comm LET cells");
       if (responseType == celltag) {          
-        recvCells[icell] = recvData[0];
+        recvCells[icell] = recvData[0].cell();
         cellReferenceCount[icell]++;
-#if EXAFMM_OVERLAP_REMOTE
-        rootCellRequest = -1;
-#endif        
         if(granularity > 1) {
           int index = 1;
           appendLET(recvData, index, 0);
         }
       } else if (responseType == childcelltag)  {
         assert(icell + nchild <= recvCells.size());
-        std::copy(recvData.begin(),recvData.begin() + nchild, recvCells.begin()+ icell);          
+        for(int i = 0; i < nchild;++i){
+          recvCells[icell+i] = recvData[i].cell();
+        }
+        //std::copy(recvData.begin(),recvData.begin() + nchild, recvCells.begin()+ icell);          
         childCellsReferenceCount[icell]++;
 #if EXAFMM_OVERLAP_REMOTE
         fullfilledCellRequests[icell] = true;
@@ -900,18 +1012,13 @@ protected:
     return false;
   }
 
-  C_iter requestRootCell() {
-    rootCellRequest = 1;
-    while(rootCellRequest == 1);
-    return recvCells.begin();
-  }
-
   void requestLeafCell(C_iter Ci, C_iter Cj) {
     int const& threadId = get_thread_num();
     read_write_lock(threadId);
     bodyRequests[threadId].push_back(crequest_pair(Ci,Cj));
     read_write_unlock(threadId);
   }
+  
 #endif
 
   void sendRecvChildCells(int key, int nchild, int level, int rank, int requestType) {
@@ -935,7 +1042,7 @@ protected:
   }
 
   C_iter getRootCell(int const& rank) {
-    recvCells[0] = recvRoots[rank][0];
+    recvCells[0] = recvRoots[rank][0].cell();
     if(granularity > 1) {
       int index = 1;
       appendLET(recvRoots[rank],index,0);
@@ -951,7 +1058,7 @@ protected:
 #else
     if (childCellsReferenceCount[key] == 0) {            
       int nchild = Cj->NCHILD;
-      int level = Cj->LEVEL;
+      int level = 0;//Cj->LEVEL;
       sendRecvChildCells(key,nchild,level,rank,childcelltag);
       ready = true;
     } else {
@@ -984,14 +1091,13 @@ public:
     sendCellDispl = new int [mpisize];                        // Allocate send displacement
     recvCellCount = new int [mpisize];                        // Allocate receive count
     recvCellDispl = new int [mpisize];                        // Allocate receive displacement
-    recvRoots = new Cells[mpisize];                           // Allocate receive buffer for tree roots
+    recvRoots = new Multipoles[mpisize];                      // Allocate receive buffer for tree roots
     bodySendRequestBuffer = new int [granularity*2];          // Allocate aggregate bodies send buffer
     bodyReceiveRequestBuffer = new int [granularity*2];       // Allocate aggregate bodies recv buffer
 #if EXAFMM_OVERLAP_REMOTE
     threadCount = get_num_threads();
     bodyRequests = new std::vector<crequest_pair >[threadCount];
-    cellRequests = new std::vector<crequest_pair >[threadCount];
-    rootCellRequest = 0;
+    cellRequests = new std::vector<crequest_pair >[threadCount];    
     finalizeCommunicationThread = false;  
     mutex = new pthread_mutex_t[threadCount];
     for (int i = 0; i < threadCount; ++i) {
@@ -1021,15 +1127,14 @@ public:
     sendCellDispl = new int [mpisize];                        // Allocate send displacement
     recvCellCount = new int [mpisize];                        // Allocate receive count
     recvCellDispl = new int [mpisize];                        // Allocate receive displacement
-    recvRoots = new Cells[mpisize];                           // Allocate receive buffer for tree roots
+    recvRoots = new Multipoles[mpisize];                      // Allocate receive buffer for tree roots
     bodySendRequestBuffer = new int [granularity*2];          // Allocate aggregate bodies send buffer
     bodyReceiveRequestBuffer = new int [granularity*2];       // Allocate aggregate bodies recv buffer
 #if EXAFMM_OVERLAP_REMOTE
     set_num_threads(_threads);
     threadCount = _threads;
     bodyRequests = new std::vector<crequest_pair>[threadCount];
-    cellRequests = new std::vector<crequest_pair>[threadCount];
-    rootCellRequest = 0;
+    cellRequests = new std::vector<crequest_pair>[threadCount];    
     finalizeCommunicationThread = false;  
     mutex = new pthread_mutex_t[threadCount];
     for (int i = 0; i < threadCount; ++i) {
@@ -1348,17 +1453,18 @@ public:
 
   void exchangeTreeRoots() {
     logger::startTimer("Set Tree Roots");
-    Cells* roots = new Cells();
+    Multipoles* roots = new Multipoles();
     int previous = 0;
     int index = 0;
     sendCellCount[0] = 0;
     sendCellDispl[0] = 0;
+    C_iter C0 = sendCells.begin();
     for(int i = 0; i< mpisize; ++i) {
       if(i!=mpirank) {        
-        roots->push_back(sendCells[0]);
+        roots->push_back(Multipole(C0));
         index++;
         if(granularity > 1)
-          setLETSubset(roots, sendCells.begin(), sendCells[0], granularity, index, i);
+          setLETSubset(roots, C0, sendCells[0], granularity, index, i);
       }      
       sendCellCount[i] = index - previous;
       if(i != 0) sendCellDispl[i] = sendCellDispl[i-1] + sendCellCount[i-1];
@@ -1366,21 +1472,25 @@ public:
     }
     logger::stopTimer("Set Tree Roots");
     logger::startTimer("Exchange Tree Roots");
-    alltoall(*roots);
-    alltoallv(*roots); 
-    C_iter C0 =recvCells.begin();   
+    alltoall(sendCells);
+    Multipoles recvMults = alltoallv(*roots); 
+    M_iter M0 =recvMults.begin();   
     for (int i = 0; i < mpisize; ++i) 
-      if(i!=mpirank)
-        recvRoots[i] = Cells(C0 + recvCellDispl[i], C0 + recvCellDispl[i] + recvCellCount[i]);
-        //std::copy(C0 + recvCellDispl[i], C0 + recvCellDispl[i] + recvCellCount[i],recvRoots[i].begin());    
+      if(i!=mpirank && recvCellCount[i] > 0)
+        recvRoots[i] = Multipoles(M0 + recvCellDispl[i], M0 + recvCellDispl[i] + recvCellCount[i]);          
     logger::stopTimer("Exchange Tree Roots"); 
   }  
 
   void setSendLET() {
     exchangeTreeRoots();
     logger::startTimer("Set LET");    
-    cellWordSize = sizeof(sendCells[0])  / 4;
+    //cellWordSize = sizeof(sendCells[0])  / 4; 
+    Multipole _multipole;   
+    cellWordSize = sizeof(_multipole) / 4;
     bodyWordSize = sizeof(sendBodies[0]) / 4;
+    Cell _cell;
+    int ss = sizeof(_cell) / 4;
+
     int counts[2] = {sendBodies.size(),sendCells.size()};
     int maxCounts[2];
     MPI_Allreduce(counts, maxCounts, 2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmin
@@ -1464,8 +1574,7 @@ public:
   #if EXAFMM_OVERLAP_REMOTE   
         sendRecvChildCells(0,1,0,irank,celltag);  
         fullfilledCellRequests.assign(fullfilledCellRequests.size(),false);
-        fullfilledBodyRequests.assign(fullfilledBodyRequests.size(),false);
-        rootCellRequest = 0;
+        fullfilledBodyRequests.assign(fullfilledBodyRequests.size(),false);        
         currentRank = irank;
         for(int i = 0; i < threadCount; ++i) {
           read_write_lock(i);
