@@ -11,13 +11,12 @@ complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
 
 int main() {
-  MAKE_CELL_TYPES(DefaultCell<DefaultBody>,)
   Bodies bodies(1), bodies2(1), jbodies(1);
   kernel::setup();
   logger::verbose = true;
 
   Cells cells(4);
-  Verify<> verify;
+  Verify verify;
   jbodies[0].X = 2;
 #if EXAFMM_BIOTSAVART
   jbodies[0].SRC[0] = drand48();

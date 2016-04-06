@@ -169,7 +169,6 @@ namespace exafmm {
 
     template<int nx, int ny, int nz>
     struct Kernels {
-      MAKE_CELL_TYPES(DefaultCell<DefaultBody>, typename)
       static inline void power(vecP &C, const vec3 &dX) {
 	Kernels<nx,ny+1,nz-1>::power(C, dX);
 	C[Index<nx,ny,nz>::I] = C[Index<nx,ny,nz-1>::I] * dX[2] / nz;
@@ -203,7 +202,6 @@ namespace exafmm {
 
     template<int nx, int ny>
     struct Kernels<nx,ny,0> {
-      MAKE_CELL_TYPES(DefaultCell<DefaultBody>, typename)
       static inline void power(vecP &C, const vec3 &dX) {
 	Kernels<nx+1,0,ny-1>::power(C, dX);
 	C[Index<nx,ny,0>::I] = C[Index<nx,ny-1,0>::I] * dX[1] / ny;
@@ -237,7 +235,6 @@ namespace exafmm {
 
     template<int nx>
     struct Kernels<nx,0,0> {
-      MAKE_CELL_TYPES(DefaultCell<DefaultBody>, typename)
       static inline void power(vecP &C, const vec3 &dX) {
 	Kernels<0,0,nx-1>::power(C, dX);
 	C[Index<nx,0,0>::I] = C[Index<nx-1,0,0>::I] * dX[0] / nx;
@@ -271,7 +268,6 @@ namespace exafmm {
 
     template<>
     struct Kernels<0,0,0> {
-      MAKE_CELL_TYPES(DefaultCell<DefaultBody>, typename)
       static inline void power(vecP&, const vec3&) {}
       static inline void derivative(vecP&, const vec3&, const real_t&) {}
       static inline void scale(vecP&) {}

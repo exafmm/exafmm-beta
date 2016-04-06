@@ -19,14 +19,13 @@ using namespace exafmm;
 typedef exafmm::LaplaceSphericalCPU kernel;
 vec3 TemplateKernel::Xperiodic = 0;
 real_t TemplateKernel::eps2 = 0.0;
-MAKE_CELL_TYPES(kernel::Cell,)
 
 Args * args;
 BaseMPI * baseMPI;
-BoundBox<kernel::Cell> * boundBox;
+BoundBox * boundBox;
 BuildTreeFromCluster * clusterTree;
-BuildTree<kernel::Cell> * localTree, * globalTree;
-Partition<kernel::Body> * partition;
+BuildTree * localTree, * globalTree;
+Partition * partition;
 Traversal<kernel> * traversal;
 TreeMPI<kernel> * treeMPI;
 UpDownPass<kernel> * upDownPass;
@@ -45,11 +44,11 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
 
   args = new Args;
   baseMPI = new BaseMPI;
-  boundBox = new BoundBox<kernel::Cell>(nspawn);
+  boundBox = new BoundBox(nspawn);
   clusterTree = new BuildTreeFromCluster();
-  localTree = new BuildTree<kernel::Cell>(ncrit, nspawn);
-  globalTree = new BuildTree<kernel::Cell>(1, nspawn);
-  partition = new Partition<kernel::Body>(baseMPI->mpirank, baseMPI->mpisize);
+  localTree = new BuildTree(ncrit, nspawn);
+  globalTree = new BuildTree(1, nspawn);
+  partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
   traversal = new Traversal<kernel>(nspawn, images);
   treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
@@ -214,7 +213,7 @@ extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle) {
   num_threads(args->threads);
   vec3 cycles = cycle;
-  Ewald<kernel> * ewald = new Ewald<kernel>(ksize, alpha, sigma, cutoff, cycles);
+  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
   args->numBodies = n;
   logger::printTitle("Ewald Parameters");
   args->print(logger::stringLength, P);

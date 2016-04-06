@@ -1,6 +1,5 @@
 #ifndef simdvec_h
 #define simdvec_h
-#include "types.h"
 
 namespace exafmm {
   template<typename T, int D, int N>
