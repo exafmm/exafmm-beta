@@ -105,7 +105,7 @@ namespace exafmm {
   MAKE_B_ITER(typename_keyword)
 #else 
 #define MAKE_BODY_TYPES(Body, typename_keyword)                             \
-  typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator; \
+  typedef exafmm::AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;      \
   typedef typename_keyword std::vector<Body,BodyAllocator> Bodies; \
   MAKE_B_ITER(typename_keyword)
 #endif

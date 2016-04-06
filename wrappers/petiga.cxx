@@ -8,14 +8,14 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "kernel_select.h"
-using namespace exafmm;
+
+namespace exafmm{
 vec3 TemplateKernel::Xperiodic = 0;
 real_t TemplateKernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
 complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
 MAKE_CELL_TYPES(kernel::Cell,)
-
 vec3 cycles;
 Bodies buffer;
 Bounds globalBounds;
@@ -367,4 +367,5 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * v
     vi[i] += B->TRG[0];
 #endif
   }
+}
 }
