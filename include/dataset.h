@@ -9,7 +9,9 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename Cell = DefaultCell<> >
   class Dataset {                                               // Contains all the different datasets
+    MAKE_CELL_TYPES(Cell, typename)
   private:
     long filePosition;                                          // Position of file stream
 
