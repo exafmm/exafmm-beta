@@ -86,7 +86,7 @@ namespace exafmm {
   } __attribute__((aligned (16)));
 
   //! Structure of bodies
-  struct Body : public Source {
+  struct DefaultBody : public Source {
     int      IBODY;                                             //!< Initial body numbering for sorting back
     int      IRANK;                                             //!< Initial rank numbering for partitioning back
     int64_t  ICELL;                                             //!< Cell index   
@@ -97,16 +97,24 @@ namespace exafmm {
     kcvec4   TRG;                                               //!< Scalar+vector3 target values
 #endif
   };
+
+#define MAKE_B_ITER typedef typename Bodies::iterator B_iter;                              //!< Iterator of body vector
 #if _SX
-  typedef std::vector<Body> Bodies;                             //!< Vector of bodies
+#define MAKE_BODY_TYPES(Body, typename)               \
+  typedef typename std::vector<Body> Bodies; \
+  MAKE_B_ITER
 #else 
-  typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;      //!< Body alignment allocator
-  typedef std::vector<Body,BodyAllocator> Bodies;               //!< Vector of bodies
+#define MAKE_BODY_TYPES(Body, typename)                             \
+  typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator; \
+  typedef typename std::vector<Body,BodyAllocator> Bodies; \
+  MAKE_B_ITER
 #endif
-  typedef Bodies::iterator B_iter;                              //!< Iterator of body vector
 
   //! Structure of cells
-  struct Cell {
+  template<typename Body=DefaultBody>
+  struct DefaultCell {
+    typedef Body BodyType;
+    MAKE_BODY_TYPES(Body, typename)
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
     int      NCHILD;                                            //!< Number of child cells
@@ -127,7 +135,14 @@ namespace exafmm {
     uint16_t LEVEL;                                             //!< Level at which cell is located
   };
   
-  typedef std::vector<Cell> Cells;                              //!< Vector of cells
-  typedef Cells::iterator   C_iter;                             //!< Iterator of cell vector
+
+#define MAKE_CELL_TYPES(Cell, typename)                                         \
+  typedef typename Cell::BodyType Body;\
+  MAKE_BODY_TYPES(Body, typename) \
+  typedef std::vector<Cell> Cells;            \
+  typedef typename Cells::iterator C_iter;
+
+  //MAKE_CELL_TYPES(DefaultCell<> )
+  //MAKE_CELL_TYPES(Cell)
 }
 #endif

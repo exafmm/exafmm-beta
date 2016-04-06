@@ -14,6 +14,7 @@ real_t TemplateKernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
 complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
+MAKE_CELL_TYPES(kernel::Cell,)
 
 vec3 cycles;
 Bodies buffer;
@@ -25,9 +26,9 @@ Cells vcells;
 
 Args * args;
 BaseMPI * baseMPI;
-BoundBox * boundBox;
-BuildTree * localTree, * globalTree;
-Partition * partition;
+BoundBox<kernel::Cell> * boundBox;
+BuildTree<kernel::Cell> * localTree, * globalTree;
+Partition<kernel::Body> * partition;
 Traversal<kernel> * traversal;
 TreeMPI<kernel> * treeMPI;
 UpDownPass<kernel> * upDownPass;
@@ -62,10 +63,10 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
 
   args = new Args;
   baseMPI = new BaseMPI;
-  boundBox = new BoundBox(nspawn);
-  localTree = new BuildTree(ncrit, nspawn);
-  globalTree = new BuildTree(1, nspawn);
-  partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
+  boundBox = new BoundBox<kernel::Cell>(nspawn);
+  localTree = new BuildTree<kernel::Cell>(ncrit, nspawn);
+  globalTree = new BuildTree<kernel::Cell>(1, nspawn);
+  partition = new Partition<kernel::Body>(baseMPI->mpirank, baseMPI->mpisize);
   traversal = new Traversal<kernel>(nspawn, images);
   treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);

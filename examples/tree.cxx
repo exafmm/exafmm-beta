@@ -6,13 +6,14 @@
 using namespace exafmm;
 
 int main(int argc, char ** argv) {
+  MAKE_CELL_TYPES(DefaultCell<DefaultBody>,)
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<> boundBox(args.nspawn);
   Bounds bounds;
-  BuildTree buildTree(args.ncrit, args.nspawn);
+  BuildTree<> buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
-  Dataset data;
+  Dataset<> data;
   num_threads(args.threads);
 
   logger::verbose = args.verbose;

@@ -6,7 +6,9 @@
 
 namespace exafmm {
   //! Handles all the partitioning of domains
+  template<typename Body = DefaultBody >
   class Partition {
+    MAKE_BODY_TYPES(Body, typename) \
     typedef std::vector<int64_t> VHilbert;                        //!< Type of Hilbert key vectors
     typedef std::pair<int64_t, int64_t> KeyPair;                  //!< Type of Hilbert Key Pair
   private:
@@ -348,7 +350,7 @@ namespace exafmm {
       }                                                         // End loop over bodies
       logger::stopTimer("Partition");                           // Stop timer
       logger::startTimer("Sort");                               // Start timer
-      Sort sort;                                                // Instantiate sort class
+      Sort<Body> sort;                                                // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
       return local;
@@ -384,7 +386,7 @@ namespace exafmm {
       }
       logger::stopTimer("Partition");                             // Stop timer
       logger::startTimer("Sort");
-      Sort sort;
+      Sort<Body> sort;
       bodies = sort.irank(bodies);
       logger::stopTimer("Sort");
     }
@@ -392,7 +394,7 @@ namespace exafmm {
     //! Send bodies back to where they came from
     void unpartition(Bodies & bodies) {
       logger::startTimer("Sort");                                 // Start timer
-      Sort sort;                                                  // Instantiate sort class
+      Sort<Body> sort;                                                  // Instantiate sort class
       bodies = sort.irank(bodies);                                // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                  // Stop timer
     }

@@ -5,7 +5,9 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename Cell = DefaultCell<> >
   class BoundBox {
+    MAKE_CELL_TYPES(Cell, typename)
   private:
     const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
 
