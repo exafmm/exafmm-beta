@@ -4,6 +4,7 @@
 
 namespace exafmm {
   class BuildTreeFromCluster {
+    MAKE_CELL_TYPES(DefaultCell<>,)
   public:
     typedef std::vector<int> ints;                              //!< Vector of integer types
     typedef std::vector<vec3> vec3s;                            //!< Vector of vec3 types

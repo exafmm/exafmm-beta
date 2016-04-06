@@ -25,11 +25,13 @@ vec3 TemplateKernel::Xperiodic = 0.0;
 
 static const double Celec = 332.0716;
 
+typedef DefaultCell<> Cell;
+MAKE_CELL_TYPES(Cell,)
 Args * args;
 BaseMPI * baseMPI;
-BoundBox * boundBox;
-BuildTree * localTree, * globalTree;
-Partition * partition;
+BoundBox<Cell> * boundBox;
+BuildTree<Cell> * localTree, * globalTree;
+Partition<Body> * partition;
 Traversal<kernel> * traversal;
 TreeMPI<kernel> * treeMPI;
 UpDownPass<kernel> * upDownPass;
@@ -49,14 +51,13 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   const int nspawn = 1000;
   const bool useRmax = true;
   const bool useRopt = true;
-  kernel::setup();
 
   args = new Args;
   baseMPI = new BaseMPI;
-  boundBox = new BoundBox(nspawn);
-  localTree = new BuildTree(ncrit, nspawn);
-  globalTree = new BuildTree(1, nspawn);
-  partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
+  boundBox = new BoundBox<Cell>(nspawn);
+  localTree = new BuildTree<Cell>(ncrit, nspawn);
+  globalTree = new BuildTree<Cell>(1, nspawn);
+  partition = new Partition<Body>(baseMPI->mpirank, baseMPI->mpisize);
   traversal = new Traversal<kernel>(nspawn, images);
   treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
@@ -353,7 +354,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
 			       int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
   num_threads(args->threads);
   vec3 cycles = cycle;
-  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
+  Ewald<kernel> * ewald = new Ewald<kernel>(ksize, alpha, sigma, cutoff, cycles);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;

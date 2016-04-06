@@ -1,11 +1,14 @@
 #include "kernel.h"
 #if EXAFMM_USE_SIMD
+namespace exafmm{typedef DefaultCell<>::B_iter B_iter;}
 #include "simdvec.h"
 #endif
 
 namespace exafmm {
   class BiotSavartP2PCPU : public TemplateKernel {
   public:
+    typedef DefaultCell<> Cell;
+    MAKE_CELL_TYPES(Cell,)
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
