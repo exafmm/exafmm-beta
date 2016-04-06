@@ -17,7 +17,7 @@
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
-using namespace exafmm;
+namespace exafmm{
 #include "Empty.h"
 typedef EmptyKernel kernel;
 real_t TemplateKernel::eps2 = 0.0;
@@ -685,4 +685,5 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
     }
   }
   logger::stopTimer("VdW Exclusion");
+}
 }

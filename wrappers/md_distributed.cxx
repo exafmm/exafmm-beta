@@ -11,7 +11,7 @@
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
-using namespace exafmm;
+namespace exafmm{
 #include "LaplaceSphericalCPU.h"
 typedef exafmm::LaplaceSphericalCPU kernel;
 vec3 TemplateKernel::Xperiodic = 0;
@@ -450,4 +450,5 @@ extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * 
   }
   delete[] x2;
   delete[] q2;
+}
 }
