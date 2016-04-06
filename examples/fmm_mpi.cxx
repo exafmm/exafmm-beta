@@ -91,6 +91,7 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
+#if 0    
     if(args.granularity > 0) { 
       treeMPI.allgatherBounds(localBounds);
       if (args.IneJ) {  
@@ -131,7 +132,9 @@ int main(int argc, char ** argv) {
         logger::stopTimer("Total FMM", 0);
           }
         }
-    } else {
+    } else 
+#endif
+    {
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
         treeMPI.allgatherBounds(localBounds);
         if (args.IneJ) {
@@ -139,14 +142,14 @@ int main(int argc, char ** argv) {
         } else {
           treeMPI.setLET(cells, cycle);
         }
-#pragma omp parallel sections
+//#pragma omp parallel sections
         {
-#pragma omp section
+//#pragma omp section
           {
     	treeMPI.commBodies();
     	treeMPI.commCells();
           }
-#pragma omp section
+//#pragma omp section
           {
     	traversal.initListCount(cells);
     	traversal.initWeight(cells);
