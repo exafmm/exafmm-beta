@@ -1389,7 +1389,6 @@ public:
 #else
     alltoallv_p2p(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);
 #endif    
-    alltoallv(sendCells);                                     // Senc cells
     logger::stopTimer("Comm LET cells");                      // Stop timer
   }
 
