@@ -98,16 +98,16 @@ namespace exafmm {
 #endif
   };
 
-#define MAKE_B_ITER typedef typename Bodies::iterator B_iter;                              //!< Iterator of body vector
+#define MAKE_B_ITER(typename_keyword) typedef typename_keyword Bodies::iterator B_iter;                              //!< Iterator of body vector
 #if _SX
-#define MAKE_BODY_TYPES(Body, typename)               \
-  typedef typename std::vector<Body> Bodies; \
-  MAKE_B_ITER
+#define MAKE_BODY_TYPES(Body, typename_keyword)               \
+  typedef typename_keyword std::vector<Body> Bodies; \
+  MAKE_B_ITER(typename_keyword)
 #else 
-#define MAKE_BODY_TYPES(Body, typename)                             \
+#define MAKE_BODY_TYPES(Body, typename_keyword)                             \
   typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator; \
-  typedef typename std::vector<Body,BodyAllocator> Bodies; \
-  MAKE_B_ITER
+  typedef typename_keyword std::vector<Body,BodyAllocator> Bodies; \
+  MAKE_B_ITER(typename_keyword)
 #endif
 
   //! Structure of cells
@@ -136,11 +136,11 @@ namespace exafmm {
   };
   
 
-#define MAKE_CELL_TYPES(Cell, typename)                                         \
-  typedef typename Cell::BodyType Body;\
-  MAKE_BODY_TYPES(Body, typename) \
+#define MAKE_CELL_TYPES(Cell, typename_keyword)                                         \
+  typedef typename_keyword Cell::BodyType Body;\
+  MAKE_BODY_TYPES(Body, typename_keyword) \
   typedef std::vector<Cell> Cells;            \
-  typedef typename Cells::iterator C_iter;
+  typedef typename_keyword Cells::iterator C_iter;
 
   //MAKE_CELL_TYPES(DefaultCell<> )
   //MAKE_CELL_TYPES(Cell)
