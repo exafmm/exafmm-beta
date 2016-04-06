@@ -4,7 +4,9 @@
 
 namespace exafmm {
   //! Verify results
+  template<typename Cell = DefaultCell<> >
   class Verify {
+    MAKE_CELL_TYPES(Cell, typename)
   public:
     //! Get sum of scalar component of a vector of target bodies
     double getSumScalar(Bodies & bodies) {

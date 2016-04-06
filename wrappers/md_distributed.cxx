@@ -19,13 +19,15 @@ real_t TemplateKernel::eps2 = 0.0;
 
 Args * args;
 BaseMPI * baseMPI;
-BoundBox * boundBox;
+BoundBox<kernel::Cell> * boundBox;
 BuildTreeFromCluster * clusterTree;
-BuildTree * localTree, * globalTree;
-Partition * partition;
+BuildTree<kernel::Cell> * localTree, * globalTree;
+Partition<kernel::Body> * partition;
 Traversal<kernel> * traversal;
 TreeMPI<kernel> * treeMPI;
 UpDownPass<kernel> * upDownPass;
+
+MAKE_CELL_TYPES(kernel::Cell,)
 
 Bodies buffer;
 Bounds localBounds;
@@ -40,11 +42,11 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, b
 
   args = new Args;
   baseMPI = new BaseMPI;
-  boundBox = new BoundBox(nspawn);
+  boundBox = new BoundBox<kernel::Cell>(nspawn);
   clusterTree = new BuildTreeFromCluster();
-  localTree = new BuildTree(ncrit, nspawn);
-  globalTree = new BuildTree(1, nspawn);
-  partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
+  localTree = new BuildTree<kernel::Cell>(ncrit, nspawn);
+  globalTree = new BuildTree<kernel::Cell>(1, nspawn);
+  partition = new Partition<kernel::Body>(baseMPI->mpirank, baseMPI->mpisize);
   traversal = new Traversal<kernel>(nspawn, images);
   treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
@@ -302,7 +304,7 @@ extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f
   num_threads(args->threads);
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
-  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
+  Ewald<kernel> * ewald = new Ewald<kernel>(ksize, alpha, sigma, cutoff, cycles);
   args->numBodies = ni;
   logger::printTitle("Ewald Parameters");
   args->print(logger::stringLength, P);

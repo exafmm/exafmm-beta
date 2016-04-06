@@ -7,6 +7,8 @@ namespace exafmm {
   template<typename kernel>
   class TreeMPI {
   protected:
+    typedef typename kernel::Cell Cell;
+    MAKE_CELL_TYPES(Cell, typename)
     typedef std::map<int, Cell>    CellMap;                     //!< Type of cell hash map
     typedef std::map<int, Cells>   ChildCellsMap;               //!< Type of child cells hash map
     typedef std::map<int, Bodies>  BodiesMap;                   //!< Type of bodies hash map

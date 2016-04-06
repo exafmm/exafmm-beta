@@ -13,6 +13,8 @@
 namespace exafmm {
 template<typename kernel>
 class Traversal {
+  typedef typename kernel::Cell Cell;
+  MAKE_CELL_TYPES(Cell, typename)
 private:
   const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
   const int images;                                           //!< Number of periodic image sublevels
