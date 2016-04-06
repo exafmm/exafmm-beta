@@ -11,8 +11,8 @@
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
-namespace exafmm{
 #include "LaplaceSphericalCPU.h"
+namespace exafmm{
 typedef exafmm::LaplaceSphericalCPU kernel;
 vec3 TemplateKernel::Xperiodic = 0;
 real_t TemplateKernel::eps2 = 0.0;

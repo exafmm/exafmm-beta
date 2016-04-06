@@ -17,8 +17,8 @@
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
-namespace exafmm{
 #include "Empty.h"
+namespace exafmm{
 typedef EmptyKernel kernel;
 real_t TemplateKernel::eps2 = 0.0;
 vec3 TemplateKernel::Xperiodic = 0.0;
