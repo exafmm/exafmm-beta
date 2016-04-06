@@ -271,7 +271,7 @@ namespace exafmm {
 
     template<>
     struct Kernels<0,0,0> {
-      MAKE_CELL_TYPES(DefaultCell<DefaultBody>, typename)
+      MAKE_CELL_TYPES(DefaultCell<DefaultBody>,)
       static inline void power(vecP&, const vec3&) {}
       static inline void derivative(vecP&, const vec3&, const real_t&) {}
       static inline void scale(vecP&) {}
