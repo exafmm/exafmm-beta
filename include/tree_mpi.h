@@ -190,54 +190,56 @@ private:
   }
 
   //! Exchange bodies in a point-to-point manner
-  void alltoallv_p2p(Bodies& bodies) {
-    int dataSize = recvBodyDispl[mpisize - 1] + recvBodyCount[mpisize - 1];
-    if (bodies.size() == sendBodyCount[mpirank] && dataSize == sendBodyCount[mpirank])
+  template<typename T>
+  void alltoallv_p2p(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {    
+    int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];
+    if (sendB.size() == sendCount[mpirank] && dataSize == sendCount[mpirank]) {
+      recvB = sendB;
       return;
-    recvBodies.resize(dataSize);
-    assert( (sizeof(bodies[0]) & 3) == 0 );
-    int word = sizeof(bodies[0]) / 4;
-    for (int irank = 0; irank < mpisize; ++irank) {
-      sendBodyCount[irank] *= word;
-      sendBodyDispl[irank] *= word;
-      recvBodyCount[irank] *= word;
-      recvBodyDispl[irank] *= word;
     }
-    int* sendBuff = (int*)&bodies[0];
-    int* recvBuff = (int*)&recvBodies[0];
+    recvB.resize(dataSize);
+    assert( (sizeof(sendB[0]) & 3) == 0 );
+    int word = sizeof(sendB[0]) / 4;
+    for (int irank = 0; irank < mpisize; ++irank) {
+      sendCount[irank] *= word;
+      sendDispl[irank] *= word;
+      recvCount[irank] *= word;
+      recvDispl[irank] *= word;
+    }
+    int* sendBuff = (int*)&sendB[0];
+    int* recvBuff = (int*)&recvB[0];
     int sendSize = 0;
     int recvSize = 0;
     MPI_Request* rreq   = new MPI_Request[mpisize - 1];
     MPI_Request* sreq   = new MPI_Request[mpisize - 1];
     MPI_Status* rstatus = new MPI_Status[mpisize - 1];
     MPI_Status* sstatus = new MPI_Status[mpisize - 1];
-
     for (int irank = 0; irank < mpisize; ++irank) {
       if (irank != mpirank) {
-        if (recvBodyCount[irank] > 0) {
-          MPI_Irecv(recvBuff + recvBodyDispl[irank],
-                    recvBodyCount[irank], MPI_INT, irank, irank, MPI_COMM_WORLD, &rreq[recvSize]);
+        if (recvCount[irank] > 0) {
+          MPI_Irecv(recvBuff + recvDispl[irank],
+                    recvCount[irank], MPI_INT, irank, irank, MPI_COMM_WORLD, &rreq[recvSize]);
           recvSize++;
         }
       }
     }
     for (int irank = 0; irank < mpisize; ++irank) {
       if (irank != mpirank) {
-        if (sendBodyCount[irank] > 0) {
-          MPI_Isend(sendBuff + sendBodyDispl[irank],
-                    sendBodyCount[irank], MPI_INT, irank, mpirank, MPI_COMM_WORLD, &sreq[sendSize]);
+        if (sendCount[irank] > 0) {
+          MPI_Isend(sendBuff + sendDispl[irank],
+                    sendCount[irank], MPI_INT, irank, mpirank, MPI_COMM_WORLD, &sreq[sendSize]);
           sendSize++;
         }
       }
     }
     for (int irank = 0; irank < mpisize; ++irank) {
-      sendBodyCount[irank] /= word;
-      sendBodyDispl[irank] /= word;
-      recvBodyCount[irank] /= word;
-      recvBodyDispl[irank] /= word;
+      sendCount[irank] /= word;
+      sendDispl[irank] /= word;
+      recvCount[irank] /= word;
+      recvDispl[irank] /= word;
     }
-    B_iter localBuffer = bodies.begin() + sendBodyDispl[mpirank];
-    std::copy(localBuffer, localBuffer + sendBodyCount[mpirank], recvBodies.begin() + recvBodyDispl[mpirank]);
+    typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
+    std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvBodyDispl[mpirank]);
     MPI_Waitall(sendSize, &sreq[0], &sstatus[0]);
     MPI_Waitall(recvSize, &rreq[0], &rstatus[0]);
     delete[] rreq;
@@ -1355,8 +1357,12 @@ public:
   //! Send bodies
   Bodies commBodies(Bodies bodies) {
     logger::startTimer("Comm partition");                     // Start timer
-    alltoall(bodies);                                         // Send body count
-    alltoallv(bodies);                                        // Send bodies
+    alltoall(bodies);                                         // Send body count    
+#if EXAFMM_USE_ALLTOALL    
+    alltoallv(bodies);                                        // Send bodies        
+#else    
+    alltoallv_p2p(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+#endif    
     logger::stopTimer("Comm partition");                      // Stop timer
     return recvBodies;                                        // Return received bodies
   }
@@ -1365,7 +1371,11 @@ public:
   Bodies commBodies() {
     logger::startTimer("Comm LET bodies");                    // Start timer
     alltoall(sendBodies);                                     // Send body count
+#if EXAFMM_USE_ALLTOALL        
     alltoallv(sendBodies);                                    // Send bodies
+#else        
+    alltoallv_p2p(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+#endif        
     logger::stopTimer("Comm LET bodies");                     // Stop timer
     return recvBodies;                                        // Return received bodies
   }
@@ -1374,6 +1384,11 @@ public:
   void commCells() {
     logger::startTimer("Comm LET cells");                     // Start timer
     alltoall(sendCells);                                      // Send cell count
+#if EXAFMM_USE_ALLTOALL            
+    alltoallv(sendCells);                                     // Senc cells
+#else
+    alltoallv_p2p(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);
+#endif    
     alltoallv(sendCells);                                     // Senc cells
     logger::stopTimer("Comm LET cells");                      // Stop timer
   }
