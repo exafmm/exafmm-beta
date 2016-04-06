@@ -191,61 +191,67 @@ private:
 
   //! Exchange bodies in a point-to-point manner
   template<typename T>
-  void alltoallv_p2p(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {    
-    int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];
+  void alltoallv_p2p(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
+    int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];    
     if (sendB.size() == sendCount[mpirank] && dataSize == sendCount[mpirank]) {
       recvB = sendB;
       return;
+    }    
+    int* granularRecvDispl = new int [mpisize];
+    int* granularSendDispl = new int [mpisize];
+    for (int i = 0; i < mpisize; ++i) {
+      granularSendDispl[i] = sendDispl[i];
+      granularRecvDispl[i] = recvDispl[i];
     }
     recvB.resize(dataSize);
     assert( (sizeof(sendB[0]) & 3) == 0 );
     int word = sizeof(sendB[0]) / 4;
-    for (int irank = 0; irank < mpisize; ++irank) {
-      sendCount[irank] *= word;
-      sendDispl[irank] *= word;
-      recvCount[irank] *= word;
-      recvDispl[irank] *= word;
-    }
     int* sendBuff = (int*)&sendB[0];
     int* recvBuff = (int*)&recvB[0];
-    int sendSize = 0;
-    int recvSize = 0;
-    MPI_Request* rreq   = new MPI_Request[mpisize - 1];
-    MPI_Request* sreq   = new MPI_Request[mpisize - 1];
-    MPI_Status* rstatus = new MPI_Status[mpisize - 1];
-    MPI_Status* sstatus = new MPI_Status[mpisize - 1];
-    for (int irank = 0; irank < mpisize; ++irank) {
-      if (irank != mpirank) {
-        if (recvCount[irank] > 0) {
-          MPI_Irecv(recvBuff + recvDispl[irank],
-                    recvCount[irank], MPI_INT, irank, irank, MPI_COMM_WORLD, &rreq[recvSize]);
-          recvSize++;
+    int grain_size = granularity;
+    if(grain_size <= 0) grain_size = 1;    
+    for (int i = 0; i < grain_size; ++i) {      
+      int sendSize = 0;
+      int recvSize = 0;
+      MPI_Request* rreq   = new MPI_Request[mpisize - 1];
+      MPI_Request* sreq   = new MPI_Request[mpisize - 1];
+      MPI_Status* rstatus = new MPI_Status[mpisize - 1];
+      MPI_Status* sstatus = new MPI_Status[mpisize - 1];
+      for (int irank = 0; irank < mpisize; ++irank) {
+        if (irank != mpirank) {
+          if (recvCount[irank] > 0) {
+            int gRecvCount = recvCount[irank]/grain_size;
+            if(i == grain_size - 1) gRecvCount += recvCount[irank]%grain_size;            
+            MPI_Irecv(recvBuff + granularRecvDispl[irank]*word,
+                      gRecvCount*word, MPI_INT, irank, irank, MPI_COMM_WORLD, &rreq[recvSize]);
+            granularRecvDispl[irank]+=gRecvCount;
+            recvSize++;
+          }
         }
       }
-    }
-    for (int irank = 0; irank < mpisize; ++irank) {
-      if (irank != mpirank) {
-        if (sendCount[irank] > 0) {
-          MPI_Isend(sendBuff + sendDispl[irank],
-                    sendCount[irank], MPI_INT, irank, mpirank, MPI_COMM_WORLD, &sreq[sendSize]);
-          sendSize++;
+      for (int irank = 0; irank < mpisize; ++irank) {
+        if (irank != mpirank) {
+          if (sendCount[irank] > 0) {
+            int gSendCount = sendCount[irank]/grain_size;
+            if(i == grain_size - 1) gSendCount += sendCount[irank]%grain_size;
+            MPI_Isend(sendBuff + granularSendDispl[irank]*word,
+                      gSendCount*word, MPI_INT, irank, mpirank, MPI_COMM_WORLD, &sreq[sendSize]);
+            granularSendDispl[irank]+=gSendCount;
+            sendSize++;
+          }
         }
-      }
-    }
-    for (int irank = 0; irank < mpisize; ++irank) {
-      sendCount[irank] /= word;
-      sendDispl[irank] /= word;
-      recvCount[irank] /= word;
-      recvDispl[irank] /= word;
-    }
+      }          
+      MPI_Waitall(sendSize, &sreq[0], &sstatus[0]);
+      MPI_Waitall(recvSize, &rreq[0], &rstatus[0]);
+      delete[] rreq;
+      delete[] sreq;
+      delete[] rstatus;
+      delete[] sstatus;      
+    } 
+    delete[] granularRecvDispl;
+    delete[] granularSendDispl;
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
-    std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvBodyDispl[mpirank]);
-    MPI_Waitall(sendSize, &sreq[0], &sstatus[0]);
-    MPI_Waitall(recvSize, &rreq[0], &rstatus[0]);
-    delete[] rreq;
-    delete[] sreq;
-    delete[] rstatus;
-    delete[] sstatus;
+    std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvBodyDispl[mpirank]);   
   }
 
   //! Exchange send count for cells
