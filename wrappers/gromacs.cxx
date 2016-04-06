@@ -14,7 +14,7 @@
 #if EXAFMM_NO_P2P
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
-using namespace exafmm;
+using namespace exafmm{
 #include "LaplaceSphericalCPU.h"
 typedef exafmm::LaplaceSphericalCPU kernel;
 vec3 TemplateKernel::Xperiodic = 0;
@@ -356,4 +356,5 @@ extern "C" void Direct_Coulomb(int Ni, float * x, float * q, float * p, float * 
   }
   delete[] x2;
   delete[] q2;
+}
 }
