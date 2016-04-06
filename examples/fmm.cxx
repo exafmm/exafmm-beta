@@ -15,18 +15,17 @@ complex_t TemplateKernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
 
 int main(int argc, char ** argv) {
-  MAKE_CELL_TYPES(kernel::Cell,)
   const vec3 cycle = 2 * M_PI;
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<kernel::Cell> boundBox(args.nspawn);
+  BoundBox boundBox(args.nspawn);
   Bounds bounds;
-  BuildTree<kernel::Cell> buildTree(args.ncrit, args.nspawn);
+  BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
-  Dataset<kernel::Cell> data;
+  Dataset data;
   Traversal<kernel> traversal(args.nspawn, args.images);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<kernel::Cell> verify;
+  Verify verify;
   num_threads(args.threads);
 
   kernel::setup();

@@ -22,7 +22,6 @@ vec3 TemplateKernel::Xperiodic = 0;
 real_t TemplateKernel::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
-  MAKE_CELL_TYPES(kernel::Cell,)
   const int ksize = 11;
   const vec3 cycle = 2 * M_PI;
   const real_t alpha = 10 / max(cycle);
@@ -33,18 +32,18 @@ int main(int argc, char ** argv) {
   args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<kernel::Cell> boundBox(args.nspawn);
+  BoundBox boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree<kernel::Cell> localTree(args.ncrit, args.nspawn);
-  BuildTree<kernel::Cell> globalTree(1, args.nspawn);
+  BuildTree localTree(args.ncrit, args.nspawn);
+  BuildTree globalTree(1, args.nspawn);
   Cells cells, jcells;
-  Dataset<kernel::Cell> data;
-  Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
-  Partition<kernel::Body> partition(baseMPI.mpirank, baseMPI.mpisize);
+  Dataset data;
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
+  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal<kernel> traversal(args.nspawn, args.images);
   TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<kernel::Cell> verify;
+  Verify verify;
   num_threads(args.threads);
 
   args.verbose &= baseMPI.mpirank == 0;

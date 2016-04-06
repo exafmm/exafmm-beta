@@ -4,9 +4,7 @@
 
 namespace exafmm {
   //! Custom radix sort for body and structures
-  template<typename Body = DefaultBody >
   class Sort {
-  MAKE_BODY_TYPES(Body, typename) \
   private:
     Bodies output;                                              //!< Output buffer
 
