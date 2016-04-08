@@ -315,15 +315,6 @@ private:
       granularSendDispl[i] = sendDispl[i];
       granularRecvDispl[i] = recvDispl[i];
     }
-    const int destinationMask = 0x3FFFF;
-    const int shift = 18;
-    //int* maxCount = new int[mpisize];
-    //MPI_Allreduce(sendCount, maxCount, mpisize, MPI_INT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmin
-    //std::vector<T> tempBuffer;
-    //tempBuffer.resize(mpisize);
-    //for (int i = 0; i < mpisize; ++i) {
-    //  tempBuffer[i].push_back(T(maxCount[i]));
-   // }
     std::vector<MPI_Request*> pendingRequests;                 //!< Buffer for non-blocking requests
     std::vector<T*>  pendingBuffers;                           //!< Buffer for non-blocking cell sends
     std::vector<std::vector<int> > path = getHypercubeMatrix(mpisize);
@@ -349,12 +340,9 @@ private:
       getMessageInfo(path, route,sendRecvRank, i+1,  logP);
       MPI_Request request;
       // Sending my rank's own data
-      int tag = getTag(mpirank, sendRecvRank, shift);
-      MPI_Isend(sendBuff + sendDispl[sendRecvRank]*word, sendCount[sendRecvRank]*word,MPI_INT,sendRecvRank,tag,MPI_COMM_WORLD,&request);
-      for (int s = 1; s < sendRecvSize; ++s) {
-        MPI_Request request;
-        tag = getTag(mpirank, route[s], shift);
-        MPI_Isend(sendBuff + sendDispl[route[s]]*word, sendCount[route[s]]*word,MPI_INT,sendRecvRank,tag,MPI_COMM_WORLD,&request);
+        MPI_Isend(sendBuff + sendDispl[sendRecvRank]*word, sendCount[sendRecvRank]*word,MPI_INT,sendRecvRank,sendRecvRank,MPI_COMM_WORLD,&request);
+      for (int s = 1; s < sendRecvSize; ++s) {                
+          MPI_Isend(sendBuff + sendDispl[route[s]]*word, sendCount[route[s]]*word,MPI_INT,sendRecvRank,route[s],MPI_COMM_WORLD,&request);        
       }      
       // end of sending my rank's own data
       int dataToSendSize = dataToSend.size();
@@ -364,9 +352,7 @@ private:
         int pp = dataToSend[s];
         std::pair<int, T*> const& dataPair = sendRecvBuffer[pp];
         T* data = dataPair.second;
-        int tag = dataPair.first;
-        int origin, dest;
-        getOriginNDestination(tag,destinationMask, shift,origin,dest);
+        int dest = dataPair.first;
         bool reroute = true;
         if(dest != sendRecvRank)
           reroute = searchMessagePath(path, sendRecvRank,i+1,logP,dest);
@@ -375,7 +361,7 @@ private:
           MPI_Request* pendingRequest = new MPI_Request();
           pendingRequests.push_back(pendingRequest);          
           pendingBuffers.push_back(data);
-          MPI_Isend((int*)&(*data)[0],size*word,MPI_INT,sendRecvRank,tag,MPI_COMM_WORLD,pendingRequest);
+          MPI_Isend((int*)&(*data)[0],size*word,MPI_INT,sendRecvRank,dest,MPI_COMM_WORLD,pendingRequest);
           dataToSend.erase(dataToSend.begin() + s); 
           dataToSendSize--;
           s--;   
@@ -386,9 +372,7 @@ private:
       for (int pp = previousSendBufferEnd; pp < previousSendBufferSize; ++pp) {
         std::pair<int, T*> const& dataPair = sendRecvBuffer[pp];
         T* data = dataPair.second;
-        int tag = dataPair.first;
-        int origin, dest;
-        getOriginNDestination(tag,destinationMask, shift,origin,dest);
+        int dest = dataPair.first;
         bool reroute = true;
         if(dest != sendRecvRank)
           reroute = searchMessagePath(path, sendRecvRank,i+1,logP,dest);
@@ -397,7 +381,7 @@ private:
           MPI_Request* pendingRequest = new MPI_Request();
           pendingRequests.push_back(pendingRequest);          
           pendingBuffers.push_back(data);
-          MPI_Isend((int*)&(*data)[0],size*word,MPI_INT,sendRecvRank,tag,MPI_COMM_WORLD,pendingRequest);
+          MPI_Isend((int*)&(*data)[0],size*word,MPI_INT,sendRecvRank,dest,MPI_COMM_WORLD,pendingRequest);
           rerouteSize++;
         } else {
           dataToSend.push_back(pp);
@@ -409,17 +393,17 @@ private:
       for (int s = 0; s < sendRecvSize + rerouteSize; ++s) {
         MPI_Probe(sendRecvRank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         MPI_Get_count(&status, MPI_INT, &intCount);
-        int tag = status.MPI_TAG;
+        int dest = status.MPI_TAG;
         int count = intCount/word;
         T* recvBuff= new T(count);  
-        MPI_Recv((int*)&(*recvBuff)[0], intCount, MPI_INT, sendRecvRank, tag, MPI_COMM_WORLD, &status);  
-        int origin, dest;
-        getOriginNDestination(tag,destinationMask, shift,origin,dest);
+        MPI_Recv((int*)&(*recvBuff)[0], intCount, MPI_INT, sendRecvRank, dest, MPI_COMM_WORLD, &status);  
         if(dest == mpirank) {
-          std::copy(recvBuff->begin(),recvBuff->end(),recvB.begin()+ recvDispl[origin]);
+         if(count>0) {
+            std::copy(recvBuff->begin(),recvBuff->end(),recvB.begin() + recvDispl[recvBuff->begin()->IRANK]);
+          }
           ownDataIndex++;
         } else {
-          sendRecvBuffer.push_back(std::pair<int,T*>(tag,recvBuff));
+          sendRecvBuffer.push_back(std::pair<int,T*>(dest,recvBuff));
         } 
       }
       previousSendBufferEnd = previousSendBufferSize;
@@ -435,13 +419,17 @@ private:
   }
 
   //! Exchange send count for cells
-  void alltoall(Cells) {
+  void alltoall(Cells& cells) {
     MPI_Alltoall(sendCellCount, 1, MPI_INT,                   // Communicate send count to get receive count
                  recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
     recvCellDispl[0] = 0;                                     // Initialize receive displacements
     for (int irank = 0; irank < mpisize - 1; irank++) {       // Loop over ranks
       recvCellDispl[irank + 1] = recvCellDispl[irank] + recvCellCount[irank]; //  Set receive displacement
-    }                                                         // End loop over ranks
+    }                                                         // End loop over ranks    
+    C_iter c0 = cells.begin();
+    for (C_iter cc=c0; cc!= cells.end(); ++cc) {
+      cc->IRANK = mpirank;
+    }
   }
 
   //! Exchange cells

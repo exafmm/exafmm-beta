@@ -118,6 +118,7 @@ namespace exafmm {
 #endif
     B_iter   BODY;                                              //!< Iterator of first body
     int64_t  ICELL;                                             //!< Cell index
+    int      IRANK;                                             //!< Added to identify the rank that the cell belongs to (used in butterfly alltoall)
     real_t   WEIGHT;                                            //!< Weight for partitioning
     real_t   SCALE;                                             //!< Scale for Helmholtz kernel
     vec3     X;                                                 //!< Cell center
