@@ -5,13 +5,15 @@
 #include "thread.h"
 #include "morton_key.h"
 
-#if EXAFMM_COUNT_KERNEL
-#define countKernel(N) N++
-#else
-#define countKernel(N)
-#endif
+// #if EXAFMM_COUNT_KERNEL
+// #define //countKernel(N) N++
+// #else
+// #define countKernel(N)
+// #endif
+
 
 namespace exafmm {
+
 class Traversal {
 private:
   const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
@@ -26,18 +28,44 @@ private:
   C_iter Cj0;                                                 //!< Iterator of first source cell
 
 private:
-#if EXAFMM_COUNT_LIST
+
+#if EXAFMM_COUNT_LIST  
+  std::vector<std::vector<int> > remoteInteractionList;       //!< Keep track of per cell interaction with remote cells
+  int mpirank;                                                //!< The MPI rank 
+  int mpisize;                                                //!< The MPI size 
+  int remoteNumP2P;                                           //!< Number of remote P2P interactions 
+  int remoteNumM2L;                                           //!< Number of remote M2L interactions  
   //! Accumulate interaction list size of cells
-  void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P) {
+  void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P, int remote = 0) {
     if (isP2P) Ci->numP2P++;                                  // If P2P, increment P2P counter of target cell
     else Ci->numM2L++;                                        // Else, increment M2L counter of target cell
     if (mutual) {                                             // If mutual interaction in on
       if (isP2P) Cj->numP2P++;                                //  If P2P, increment P2P counter of source cell
       else Cj->numM2L++;                                      //  Else, increment M2L counter of source cell
-    }                                                         // End if for mutual interaction
+    }                                                         // End if for mutual interaction 
+    if(mpisize > 0 && isP2P) {                                // Ignore if mpisize was not initialized in the constructor 
+      int ichild = (Ci0 + Ci->IPARENT)->ICHILD;  
+      int nchild = (Ci0 + Ci->IPARENT)->NCHILD;  
+      C_iter cc = Ci0 + ichild;
+      int i = 0;
+      for(; i < nchild; ++i) {
+        if((cc+i)->IBODY == Ci->IBODY) break;
+      }    
+      ichild+=i;                  
+      if(!remote)
+        remoteInteractionList[ichild][mpirank]++;
+      else {   
+        if(Cj->NBODY > 0)                                                       
+          remoteInteractionList[ichild][Cj->BODY->IRANK]++;      
+      }      
+    }
+    if(remote) {
+      if(isP2P) remoteNumP2P++;
+      else remoteNumM2L++;
+    }
   }
 #else
-  void countList(C_iter, C_iter, bool, bool) {}
+  void countList(C_iter, C_iter, bool, bool, int) {}
 #endif
 
 #if EXAFMM_USE_WEIGHT
@@ -187,8 +215,8 @@ private:
     real_t R2 = norm(dX);                                     // Scalar distance squared
     if (R2 > (Ci->R + Cj->R) * (Ci->R + Cj->R) * (1 - 1e-3)) { // If distance is far enough
       kernel::M2L(Ci, Cj, mutual);                            //  M2L kernel
-      countKernel(numM2L);                                    //  Increment M2L counter
-      countList(Ci, Cj, mutual, false);                       //  Increment M2L list
+      //countKernel(numM2L);                                    //  Increment M2L counter
+      countList(Ci, Cj, mutual, false, remote);               //  Increment M2L list
       countWeight(Ci, Cj, mutual, remote);                    //  Increment M2L weight
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          // Else if both cells are bodies
 #if EXAFMM_NO_P2P
@@ -220,14 +248,14 @@ private:
       if (Cj->NBODY == 0) {                                   //  If the bodies weren't sent from remote node
         //std::cout << "Warning: icell " << Ci->ICELL << " needs bodies from jcell" << Cj->ICELL << std::endl;
         kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
-        countKernel(numM2L);                                  //   Increment M2L counter
-        countList(Ci, Cj, mutual, false);                     //   Increment M2L list
+        //countKernel(numM2L);                                  //   Increment M2L counter
+        countList(Ci, Cj, mutual, false, remote);             //   Increment M2L list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
 #if EXAFMM_NO_P2P
       } else if (!isNeighbor) {                               //  If GROAMCS handles neighbors
         kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
-        countKernel(numM2L);                                  //   Increment M2L counter
-        countList(Ci, Cj, mutual, false);                     //   Increment M2L list
+        //countKernel(numM2L);                                  //   Increment M2L counter
+        countList(Ci, Cj, mutual, false, remote);             //   Increment M2L list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
       } else {
         countList(Ci, Cj, mutual, true);                      //   Increment P2P list
@@ -238,8 +266,8 @@ private:
         } else {                                              //   Else if source and target are different
           kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel for pair of cells
         }                                                     //   End if for same source and target
-        countKernel(numP2P);                                  //   Increment P2P counter
-        countList(Ci, Cj, mutual, true);                      //   Increment P2P list
+        //countKernel(numP2P);                                  //   Increment P2P counter
+        countList(Ci, Cj, mutual, true, remote);              //   Increment P2P list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment P2P weight
 #endif
       }                                                       //  End if for bodies
@@ -326,8 +354,8 @@ private:
           kernel::Xperiodic[d] = pX[d] * cycle[d];            //    Periodic coordinate offset
         }                                                     //   End loop over dimensions
         kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
-        countKernel(numM2L);                                  //   Increment M2L counter
-        countList(Ci, Cj, mutual, false);                     //   Increment M2L list
+        //countKernel(numM2L);                                  //   Increment M2L counter
+        countList(Ci, Cj, mutual, false, remote);             //   Increment M2L list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
       }                                                       //  End loop over M2L interaction list
     }                                                         // End loop over target cells
@@ -350,8 +378,8 @@ private:
             kernel::Xperiodic[d] = pX[d] * cycle[d];          //     Periodic coordinate offset
           }                                                   //    End loop over dimensions
           kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel
-          countKernel(numP2P);                                //    Increment P2P counter
-          countList(Ci, Cj, mutual, true);                    //    Increment P2P list
+          //countKernel(numP2P);                                //    Increment P2P counter
+          countList(Ci, Cj, mutual, true, remote);            //    Increment P2P list
           countWeight(Ci, Cj, mutual, remote);                //    Increment P2P weight
         }                                                     //   End loop over P2P interaction list
       }                                                       //  End if for target cell leaf
@@ -426,7 +454,25 @@ public:
 #if EXAFMM_COUNT_KERNEL
     , numP2P(0), numM2L(0)
 #endif
+#if EXAFMM_COUNT_LIST
+    , mpirank(0), mpisize(0), remoteNumM2L(0),remoteNumP2P(0)
+#endif    
   {}
+
+#if EXAFMM_COUNT_LIST
+  Traversal(int _nspawn, int _images, int _mpirank, int _mpisize) :// Constructor
+  nspawn(_nspawn), images(_images), mpirank(_mpirank), mpisize(_mpisize)
+  ,remoteNumM2L(0),remoteNumP2P(0)                              // Initialize variables      
+#else 
+  Traversal(int _nspawn, int _images,int ,int) :                   // Constructor
+  nspawn(_nspawn), images(_images)                               // Initialize variables    
+#endif      
+#if EXAFMM_COUNT_KERNEL
+    , numP2P(0), numM2L(0)
+#endif
+  { }
+
+
 
 #if EXAFMM_COUNT_LIST
   //! Initialize size of P2P and M2L interaction lists per cell
@@ -434,7 +480,24 @@ public:
     for (C_iter C = cells.begin(); C != cells.end(); C++) {   // Loop over cells
       C->numP2P = C->numM2L = 0;                              //  Initialize size of interaction list
     }                                                         // End loop over cells
+    if(mpisize>0)                                             // Ignore if MPI size is not set in the constructor 
+      remoteInteractionList.resize(cells.size(),std::vector<int>(mpisize,0)); // initialize remote interaction list   
+    remoteNumM2L = 0;
+    remoteNumP2P = 0;        
   }
+
+  std::vector<std::vector<int> >& getRemoteInteractionList() {
+    return remoteInteractionList;
+  }
+
+  int getRemoteP2PCount() {
+    return remoteNumP2P;
+  }
+
+  int getRemoteM2LCount() {
+    return remoteNumM2L;
+  }
+
 #else
   void initListCount(Cells) {}
 #endif
@@ -585,17 +648,32 @@ public:
 #endif
   }
   void writeTraversalData(int mpirank){
-#if EXAFMM_COUNT_KERNEL    
+#if EXAFMM_COUNT_KERNEL || EXAFMM_COUNT_LIST
     std::stringstream name;                                   // File name
     name << "num" << std::setfill('0') << std::setw(6)        // Set format
          << mpirank << ".dat";                                // Create file name for list
-    std::ofstream listFile(name.str().c_str(),std::ios::app); // Open list log file
+    std::ofstream listFile(name.str().c_str(),std::ios::app); // Open list log file         
+#endif
+#if EXAFMM_COUNT_KERNEL && EXAFMM_COUNT_LIST
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "P2P calls" << " " << numP2P - remoteNumP2P << std::endl;           //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "M2L calls" << " " << numM2L - remoteNumM2L<< std::endl;           //  Print event and timer          
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote P2P calls" << " " << remoteNumM2L << std::endl; //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote M2L calls" << " " << remoteNumP2P << std::endl; //  Print event and timer          
+#elif EXAFMM_COUNT_LIST      
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote P2P calls" << " " << remoteNumM2L << std::endl; //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Remote M2L calls" << " " << remoteNumP2P << std::endl; //  Print event and timer          
+#elif EXAFMM_COUNT_KERNEL      
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "P2P calls" << " " << numP2P << std::endl;           //  Print event and timer
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
-      << "M2L calls" << " " << numM2L << std::endl;           //  Print event and timer
-
-#endif
+      << "M2L calls" << " " << numM2L << std::endl;           //  Print event and timer          
+#endif      
   }
 #if EXAFMM_COUNT_LIST
   void writeList(Cells cells, int mpirank) {

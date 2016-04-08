@@ -23,8 +23,8 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity,args.threads,args.nspawn);
-  Traversal traversal(args.nspawn, args.images);  
+  TreeMPI* treeMPI = new TreeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity,args.threads,args.nspawn);
+  Traversal traversal(args.nspawn, args.images,baseMPI.mpirank, baseMPI.mpisize);  
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
@@ -61,24 +61,24 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies, localBounds);
     }
     globalBounds = baseMPI.allreduceBounds(localBounds);
-#if EXAFMM_COUNT_LIST && EXAFMM_COUNT_KERNEL
+#if EXAFMM_COUNT_LIST 
     if(t > 0) {
-      partition.rebalance(cells,bodies, treeMPI.getRemoteP2PCount(), treeMPI.getRemoteInteractionList());
-      bodies = treeMPI.commBodies(bodies);
+      partition.rebalance(cells,bodies, traversal.getRemoteP2PCount(), traversal.getRemoteInteractionList());
+      bodies = treeMPI->commBodies(bodies);
     } else {
-      partition.bisection(bodies, globalBounds);
-      bodies = treeMPI.commBodies(bodies);
-      if (args.IneJ) {
+      partition.bisection(bodies, globalBounds);      
+      bodies = treeMPI->commBodies(bodies);
+      if (args.IneJ) {        
         partition.bisection(jbodies, globalBounds);      
-        jbodies = treeMPI.commBodies(jbodies);
+        jbodies = treeMPI->commBodies(jbodies);
       }
     }
 #else    
     partition.bisection(bodies, globalBounds);
-    bodies = treeMPI.commBodies(bodies);
+    bodies = treeMPI->commBodies(bodies);
     if (args.IneJ) {
       partition.bisection(jbodies, globalBounds);      
-      jbodies = treeMPI.commBodies(jbodies);
+      jbodies = treeMPI->commBodies(jbodies);
     }
 #endif
     localBounds = boundBox.getBounds(bodies);
@@ -93,12 +93,12 @@ int main(int argc, char ** argv) {
     }
 #if 0    
     if(args.granularity > 0) { 
-      treeMPI.allgatherBounds(localBounds);
+      treeMPI->allgatherBounds(localBounds);
       if (args.IneJ) {  
-        treeMPI.setSendBodyNCells(jcells, bodies);
+        treeMPI->setSendBodyNCells(jcells, bodies);
 
       } else {
-        treeMPI.setSendBodyNCells(cells, bodies);
+        treeMPI->setSendBodyNCells(cells, bodies);
       }
       traversal.initListCount(cells);
       traversal.initWeight(cells);
@@ -106,7 +106,7 @@ int main(int argc, char ** argv) {
 {
   #pragma omp section
   {
-      treeMPI.setSendLET();
+      treeMPI->setSendLET();
   }
   #pragma omp section
   {
@@ -118,12 +118,12 @@ int main(int argc, char ** argv) {
     }
   }
 }      
-      treeMPI.dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize);
+      treeMPI->dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize);
 #pragma omp parallel sections
         {
 #pragma omp section
           {
-        treeMPI.flushAllRequests();
+        treeMPI->flushAllRequests();
           }
 #pragma omp section
           {
@@ -136,41 +136,41 @@ int main(int argc, char ** argv) {
 #endif
     {
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
-        treeMPI.allgatherBounds(localBounds);
+        treeMPI->allgatherBounds(localBounds);
         if (args.IneJ) {
-          treeMPI.setLET(jcells, cycle);
+          treeMPI->setLET(jcells, cycle);
         } else {
-          treeMPI.setLET(cells, cycle);
+          treeMPI->setLET(cells, cycle);
         }
 //#pragma omp parallel sections
         {
 //#pragma omp section
           {
-    	treeMPI.commBodies();
-    	treeMPI.commCells();
+    	treeMPI->commBodies();
+    	treeMPI->commCells();
           }
 //#pragma omp section
           {
     	traversal.initListCount(cells);
     	traversal.initWeight(cells);
     	if (args.IneJ) {
-    	  traversal.traverse(cells, jcells, cycle, args.dual, false);
+    	  traversal.traverse(cells, jcells, cycle, args.dual, false,0);
     	} else {
-    	  traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+    	  traversal.traverse(cells, cells, cycle, args.dual, args.mutual,0);
     	  jbodies = bodies;
     	}
           }
         }
         if (baseMPI.mpisize > 1) {
           if (args.graft) {
-    	treeMPI.linkLET();
-    	gbodies = treeMPI.root2body();
+    	treeMPI->linkLET();
+    	gbodies = treeMPI->root2body();
     	jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
-    	treeMPI.attachRoot(jcells);
+    	treeMPI->attachRoot(jcells);
     	traversal.traverse(cells, jcells, cycle, args.dual, false);
           } else {
     	for (int irank=0; irank<baseMPI.mpisize; irank++) {
-    	  treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
+    	  treeMPI->getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
     	  traversal.traverse(cells, jcells, cycle, args.dual, false);
     	}
           }
@@ -178,7 +178,7 @@ int main(int argc, char ** argv) {
 #else
         jbodies = bodies;
         for (int irank=0; irank<baseMPI.mpisize; irank++) {
-          treeMPI.shiftBodies(jbodies);
+          treeMPI->shiftBodies(jbodies);
           jcells.clear();
           localBounds = boundBox.getBounds(jbodies);
           jcells = localTree.buildTree(jbodies, buffer, localBounds);
@@ -190,7 +190,7 @@ int main(int argc, char ** argv) {
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
     }
-#if 0    
+#if 1 
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
@@ -200,7 +200,7 @@ int main(int argc, char ** argv) {
     logger::startTimer("Total Direct");
     for (int i=0; i<baseMPI.mpisize; i++) {
       if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
-      treeMPI.shiftBodies(jbodies);
+      treeMPI->shiftBodies(jbodies);
       traversal.direct(bodies, jbodies, cycle);
     }
     traversal.normalize(bodies);
@@ -233,8 +233,9 @@ int main(int argc, char ** argv) {
     if (args.write) {
       logger::writeTime(baseMPI.mpirank);
       traversal.writeTraversalData(baseMPI.mpirank);
-      treeMPI.writeRemoteTraversalData(baseMPI.mpirank);
+      //treeMPI->writeRemoteTraversalData(baseMPI.mpirank);
     }
   }
+  delete treeMPI;
   return 0;
 }
