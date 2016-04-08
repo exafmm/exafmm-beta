@@ -44,7 +44,7 @@ int main(int argc, char ** argv) {
 #endif
   TreeMPI<kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
 
-  args.numBodies /= FMM.MPISIZE;
+  //args.numBodies /= FMM.MPISIZE;
   const int numBodies = args.numBodies;
   const int ncrit = 100;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
