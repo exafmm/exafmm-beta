@@ -304,25 +304,27 @@ private:
     //! Exchange bodies in a point-to-point manner
   template<typename T>
   void alltoallv_p2p_hypercube(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
-    int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];    
-    if (sendB.size() == sendCount[mpirank] && dataSize == sendCount[mpirank]) {
-      recvB = sendB;
-      return;
-    }    
-    int* granularRecvDispl = new int [mpisize];
-    int* granularSendDispl = new int [mpisize];
-    for (int i = 0; i < mpisize; ++i) {
-      granularSendDispl[i] = sendDispl[i];
-      granularRecvDispl[i] = recvDispl[i];
-    }
+    int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];       
+    // int* granularRecvDispl = new int [mpisize];
+    // int* granularSendDispl = new int [mpisize];
+    // for (int i = 0; i < mpisize; ++i) {
+    //   granularSendDispl[i] = sendDispl[i];
+    //   granularRecvDispl[i] = recvDispl[i];
+    // }
+    // int* maxCount = new int[mpisize];
+    // MPI_Allreduce(sendCount, maxCount, mpisize, MPI_INT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmin
+    // int maxSize = maxCount[0];
+    // for (int i = 1; i < mpisize; ++i) 
+    //   if(maxCount[i] > maxSize)
+    //     maxSize = maxCount[i]; 
+    // delete[] maxCount;
     std::vector<MPI_Request*> pendingRequests;                 //!< Buffer for non-blocking requests
     std::vector<T*>  pendingBuffers;                           //!< Buffer for non-blocking cell sends
     std::vector<std::vector<int> > path = getHypercubeMatrix(mpisize);
     recvB.resize(dataSize);
     assert( (sizeof(sendB[0]) & 3) == 0 );
     int word = sizeof(sendB[0]) / 4;
-    int* sendBuff = (int*)&sendB[0];
-    int* recvBuff = (int*)&recvB[0];
+    int* sendBuff = (int*)&sendB[0];    
     int grain_size = granularity;
     int logP = log(mpisize)/log(2);
     int dataCursor = 0;
@@ -390,12 +392,12 @@ private:
       // Receiving some other rank's data
       MPI_Status status; 
       int intCount;
-      for (int s = 0; s < sendRecvSize + rerouteSize; ++s) {
+      for (int s = 0; s < sendRecvSize + rerouteSize; ++s) {        
         MPI_Probe(sendRecvRank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         MPI_Get_count(&status, MPI_INT, &intCount);
         int dest = status.MPI_TAG;
         int count = intCount/word;
-        T* recvBuff= new T(count);  
+        T* recvBuff= new T(count);          
         MPI_Recv((int*)&(*recvBuff)[0], intCount, MPI_INT, sendRecvRank, dest, MPI_COMM_WORLD, &status);  
         if(dest == mpirank) {
          if(count>0) {

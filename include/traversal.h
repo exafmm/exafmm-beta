@@ -5,11 +5,11 @@
 #include "thread.h"
 #include "morton_key.h"
 
-// #if EXAFMM_COUNT_KERNEL
-// #define //countKernel(N) N++
-// #else
-// #define countKernel(N)
-// #endif
+#if EXAFMM_COUNT_KERNEL
+#define countKernel(N) N++
+#else
+#define countKernel(N)
+#endif
 
 
 namespace exafmm {
@@ -215,7 +215,7 @@ private:
     real_t R2 = norm(dX);                                     // Scalar distance squared
     if (R2 > (Ci->R + Cj->R) * (Ci->R + Cj->R) * (1 - 1e-3)) { // If distance is far enough
       kernel::M2L(Ci, Cj, mutual);                            //  M2L kernel
-      //countKernel(numM2L);                                    //  Increment M2L counter
+      countKernel(numM2L);                                    //  Increment M2L counter
       countList(Ci, Cj, mutual, false, remote);               //  Increment M2L list
       countWeight(Ci, Cj, mutual, remote);                    //  Increment M2L weight
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          // Else if both cells are bodies
@@ -248,13 +248,13 @@ private:
       if (Cj->NBODY == 0) {                                   //  If the bodies weren't sent from remote node
         //std::cout << "Warning: icell " << Ci->ICELL << " needs bodies from jcell" << Cj->ICELL << std::endl;
         kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
-        //countKernel(numM2L);                                  //   Increment M2L counter
+        countKernel(numM2L);                                  //   Increment M2L counter
         countList(Ci, Cj, mutual, false, remote);             //   Increment M2L list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
 #if EXAFMM_NO_P2P
       } else if (!isNeighbor) {                               //  If GROAMCS handles neighbors
         kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
-        //countKernel(numM2L);                                  //   Increment M2L counter
+        countKernel(numM2L);                                  //   Increment M2L counter
         countList(Ci, Cj, mutual, false, remote);             //   Increment M2L list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
       } else {
@@ -266,7 +266,7 @@ private:
         } else {                                              //   Else if source and target are different
           kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel for pair of cells
         }                                                     //   End if for same source and target
-        //countKernel(numP2P);                                  //   Increment P2P counter
+        countKernel(numP2P);                                  //   Increment P2P counter
         countList(Ci, Cj, mutual, true, remote);              //   Increment P2P list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment P2P weight
 #endif
@@ -516,6 +516,15 @@ public:
   }
 #else
   void initWeight(Cells) {}
+#endif
+
+#if EXAFMM_COUNT_KERNEL
+  void initCountKernel() {
+    numP2P = 0;
+    numM2L = 0;
+  }
+#else   
+  void initCountKernel() {}
 #endif
 
   //! Evaluate P2P and M2L using list based traversal

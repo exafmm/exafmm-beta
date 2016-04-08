@@ -394,7 +394,7 @@ namespace exafmm {
         }
       } 
       B_iter B0 = bodies.begin();
-      std::cout<<"avgLoad: " << avgLoad << std::endl;
+      //std::cout<<"avgLoad: " << avgLoad << std::endl;
       int rebalanceSize = ranksToBalance.size();
       bool repartition = (rebalanceSize>0);
       for (int i = 0; i < ranksToBalance.size(); ++i) {      
@@ -402,7 +402,7 @@ namespace exafmm {
         int irecv = ranksToBalance[i];
         int interactionCount = remoteInteractionList.size();
         double rightLoad = remoteLoad[irecv];
-        std::cout<<" rank " << mpirank << " is balancing " << irecv <<" with load " << rightLoad << std::endl;
+        //std::cout<<" rank " << mpirank << " is balancing " << irecv <<" with load " << rightLoad << std::endl;
         for (int cc = 0; cc < interactionCount; ++cc) {
           std::vector<int> const& cellInteraction = remoteInteractionList[cc];        
           int maxDiff = 0;
@@ -422,7 +422,7 @@ namespace exafmm {
             interactionCount--;                
           }
         }
-        std::cout<<" rank " << mpirank << " reduced load of " << irecv <<" to  " << rightLoad << std::endl;
+        //std::cout<<" rank " << mpirank << " reduced load of " << irecv <<" to  " << rightLoad << std::endl;
       }    
       logger::stopTimer("Partition");                           // Start timer
       logger::startTimer("Sort");                               // Start timer

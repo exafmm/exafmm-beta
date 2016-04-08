@@ -153,6 +153,7 @@ int main(int argc, char ** argv) {
           {
     	traversal.initListCount(cells);
     	traversal.initWeight(cells);
+      traversal.initCountKernel();
     	if (args.IneJ) {
     	  traversal.traverse(cells, jcells, cycle, args.dual, false,0);
     	} else {
@@ -190,7 +191,7 @@ int main(int argc, char ** argv) {
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
     }
-#if 0 
+#if 1 
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
