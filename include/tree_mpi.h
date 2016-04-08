@@ -430,6 +430,7 @@ private:
     assert(ownDataIndex == mpisize - 1);
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
+    sendB.clear();
     MPI_Barrier(MPI_COMM_WORLD);    
   }
 
