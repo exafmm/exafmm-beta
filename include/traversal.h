@@ -258,7 +258,7 @@ private:
         countList(Ci, Cj, mutual, false, remote);             //   Increment M2L list
         countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
       } else {
-        countList(Ci, Cj, mutual, true);                      //   Increment P2P list
+        countList(Ci, Cj, mutual, true, remote);              //   Increment P2P list
 #else
       } else {
         if (R2 == 0 && Ci == Cj) {                            //   If source and target are same
