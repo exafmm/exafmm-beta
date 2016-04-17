@@ -1449,14 +1449,12 @@ cleanbin:
 	@make -C .. cleanbin
 cleandat:
 	@make -C .. cleandat
+cleanext:
+	@make -C .. cleanext
 cleanlib:
 	@make -C .. cleanlib
 cleanall:
 	@make -C .. cleanall
-revert:
-	@make -C .. revert
-save:
-	@make -C .. save
 
 @EXAFMM_HAVE_MPI_TRUE@run_charmm_mpi: charmm_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< water_32.fmm water.out 0

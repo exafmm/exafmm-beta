@@ -882,14 +882,12 @@ cleanbin:
 	@make -C .. cleanbin
 cleandat:
 	@make -C .. cleandat
+cleanext:
+	@make -C .. cleanext
 cleanlib:
 	@make -C .. cleanlib
 cleanall:
 	@make -C .. cleanall
-revert:
-	@make -C .. revert
-save:
-	@make -C .. save
 
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@run_laplace: laplace
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@	$(MPIRUN) -n 4 ./$< -DgGmox -n 4096

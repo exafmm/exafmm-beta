@@ -1842,14 +1842,12 @@ cleanbin:
 	@make -C .. cleanbin
 cleandat:
 	@make -C .. cleandat
+cleanext:
+	@make -C .. cleanext
 cleanlib:
 	@make -C .. cleanlib
 cleanall:
 	@make -C .. cleanall
-revert:
-	@make -C .. revert
-save:
-	@make -C .. save
 
 run_laplace_cartesian: laplace_cartesian
 	./$< -Dgmovx
