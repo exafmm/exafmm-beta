@@ -6,10 +6,14 @@ cleanbin:
 	@find . -name "*.o" -o -name "*.out*" -o -name "*.mod" | xargs rm -rf
 cleandat:
 	@find . -name "*.dat" -o -name "*.pdb" -o -name "*.svg" -o -name "*_restart" | xargs rm -f
+cleanext:
+	@find . -name "*.mpits" -o -name "*.spawn" -o -name "*.pcf" -o -name "*.prv" -o -name "*.row" | xargs rm -f
+	@find . -name "set-0" | xargs rm -rf
 cleanlib:
 	@find . -name "*.a" -o -name "*.so" | xargs rm -f
 cleanall:
 	make cleanbin
 	make cleandat
+	make cleanext
 	make cleanlib
 

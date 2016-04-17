@@ -2,9 +2,14 @@
 *.dat
 *genmod*
 *.mod
+*.mpits
 *.o
 *.so
+*.spawn
 *.out*
+*.pcf
+*.prv
+*.row
 *.th_o
 .deps
 .dirstamp
@@ -15,4 +20,5 @@ config.h.in~
 config.log
 config.status
 Makefile
+set-0
 stamp-h1
