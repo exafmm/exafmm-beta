@@ -280,7 +280,7 @@ private:
   }
 
   std::vector<std::vector<int> > getHypercubeMatrix(int P) {
-    int logP = log(P)/log(2);
+    int logP = log2(P);
     std::vector<std::vector<int> >path(P,std::vector<int> (logP));
     for (int irank = 0; irank < P; ++irank) {
       for (int i = 0; i < logP; ++i) 
@@ -321,7 +321,7 @@ private:
     int word = sizeof(sendB[0]) / 4;
     int* sendBuff = (int*)&sendB[0];    
     int grain_size = granularity;
-    int logP = log(mpisize)/log(2);
+    int logP = log2(mpisize);
     int dataCursor = 0;
     int previousSendBufferEnd = 0;
     int previousSendBufferSize = 0;
@@ -347,8 +347,8 @@ private:
         MPI_Irecv((int*)&(*irecvBuff[s])[0], maxSize*word , MPI_INT, sendRecvRank, MPI_ANY_TAG, MPI_COMM_WORLD, &rreq[s]);
       }
       // Sending my rank's own data
-      MPI_Isend(sendBuff + sendDispl[sendRecvRank]*word, sendCount[sendRecvRank]*word,MPI_INT,sendRecvRank,sendRecvRank,MPI_COMM_WORLD,&request);
-      for (int s = 1; s < sendRecvSize; ++s) {                
+      MPI_Isend(sendBuff + sendDispl[sendRecvRank]*word, sendCount[sendRecvRank]*word,MPI_INT,sendRecvRank,sendRecvRank,MPI_COMM_WORLD,&request);      
+      for (int s = 1; s < sendRecvSize; ++s) {                     
           MPI_Isend(sendBuff + sendDispl[route[s]]*word, sendCount[route[s]]*word,MPI_INT,sendRecvRank,route[s],MPI_COMM_WORLD,&request);        
       }      
 
