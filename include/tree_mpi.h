@@ -301,8 +301,8 @@ private:
     origin = tag>>shift;
   }
 
-    //! Exchange bodies in a point-to-point manner
-  template<typename T>
+  //! Exchange bodies in a point-to-point manner following hypercube pattern    
+  template<typename T>  
   void alltoallv_p2p_hypercube(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
     int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];       
     int* maxCount = new int[mpisize];
@@ -312,6 +312,7 @@ private:
       if(maxCount[i] > maxSize)
         maxSize = maxCount[i]; 
     delete[] maxCount;
+
     std::vector<MPI_Request*> pendingRequests;                 //!< Buffer for non-blocking requests
     std::vector<T*>  pendingBuffers;                           //!< Buffer for non-blocking cell sends
     std::vector<std::vector<int> > path = getHypercubeMatrix(mpisize);
@@ -326,13 +327,13 @@ private:
     int previousSendBufferSize = 0;
     std::vector<std::pair<int,T*> > sendRecvBuffer;
     std::vector<int> dataToSend;
-    int ownDataIndex = 0;
+    int ownDataIndex = 0;    
+
     const int logPReceiveSize = mpisize >> 1;
-    MPI_Request* rreq   = new MPI_Request[logPReceiveSize];    
-    T** irecvBuff = new T*[logPReceiveSize];
-    for (int i = 0; i < logPReceiveSize; ++i) {
-      irecvBuff[i] = new T(maxSize);
-    }
+    MPI_Request* rreq = new MPI_Request[logPReceiveSize];            
+    T** irecvBuff = new T*[logPReceiveSize];    
+    for (int i = 0; i < logPReceiveSize; ++i) 
+      irecvBuff[i] = new T(maxSize);    
 
     for (int i = 0; i < logP; ++i) {
       int sendRecvSize = mpisize>>(i+1);      
@@ -375,7 +376,6 @@ private:
           rerouteSize++;       
         } 
       }
-
       for (int pp = previousSendBufferEnd; pp < previousSendBufferSize; ++pp) {
         std::pair<int, T*> const& dataPair = sendRecvBuffer[pp];
         T* data = dataPair.second;
@@ -407,7 +407,7 @@ private:
             std::copy(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count,recvB.begin() + recvDispl[irecvBuff[index]->begin()->IRANK]);  
           ownDataIndex++;
         } else {         
-          T* recvBuff = new T(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count); 
+          T* recvBuff = new T(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count);
           if(i + 1 < logP) {
             int nextRank = path[mpirank][i+1];
             bool reroute = searchMessagePath(path, nextRank,i+2,logP,dest);
@@ -426,16 +426,16 @@ private:
       previousSendBufferSize = sendRecvBuffer.size();    
       deallocateCompletedRequests(pendingRequests, pendingBuffers);
     }
-    deallocateCompletedRequests(pendingRequests, pendingBuffers);
+    deallocateCompletedRequests(pendingRequests, pendingBuffers, true,true);
     assert(ownDataIndex == mpisize - 1);
+    assert(pendingBuffers.size() == 0);
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
     sendB.clear();
     for (int i = 0; i < logPReceiveSize; ++i) {
       delete irecvBuff[i];  
     }
-    delete[] irecvBuff;  
-    //MPI_Barrier(MPI_COMM_WORLD);  
+    delete[] irecvBuff;    
   }
 
   //! Exchange send count for cells
@@ -581,18 +581,24 @@ private:
   }
 
   template<typename MPI_T, typename BUFF_T>
-  void deallocateCompletedRequests(MPI_T& requests, BUFF_T& data, bool eraseRequests=true) {
+  void deallocateCompletedRequests(MPI_T& requests, BUFF_T& data, bool eraseRequests=true, bool finalize = false) {
     int count = requests.size();
     for (int i = 0; i < count; ++i) {
       if (*(requests[i]) != MPI_REQUEST_NULL) {
-        int flag;
-        MPI_Test(requests[i], &flag, MPI_STATUS_IGNORE);
-        if (flag) {
+        int flag = 0;
+        if(!finalize) {          
+          MPI_Test(requests[i], &flag, MPI_STATUS_IGNORE);          
+        } else {
+          MPI_Wait(requests[i], MPI_STATUS_IGNORE);
+          flag = 1;          
+        }
+        if(flag) {          
           delete data[i];
           if(eraseRequests) {
             requests.erase(requests.begin() + i);
             data.erase(data.begin() + i);
             count--;
+            i--;
           }
         }
       } else {
@@ -601,6 +607,7 @@ private:
           requests.erase(requests.begin() + i);
           data.erase(data.begin() + i);
           count--;
+          i--;
         } 
       }
     }
