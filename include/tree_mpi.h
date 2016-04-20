@@ -305,19 +305,13 @@ private:
   template<typename T>
   void alltoallv_p2p_hypercube(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
     int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];       
-    // int* granularRecvDispl = new int [mpisize];
-    // int* granularSendDispl = new int [mpisize];
-    // for (int i = 0; i < mpisize; ++i) {
-    //   granularSendDispl[i] = sendDispl[i];
-    //   granularRecvDispl[i] = recvDispl[i];
-    // }
-    // int* maxCount = new int[mpisize];
-    // MPI_Allreduce(sendCount, maxCount, mpisize, MPI_INT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmin
-    // int maxSize = maxCount[0];
-    // for (int i = 1; i < mpisize; ++i) 
-    //   if(maxCount[i] > maxSize)
-    //     maxSize = maxCount[i]; 
-    // delete[] maxCount;
+    int* maxCount = new int[mpisize];
+    MPI_Allreduce(sendCount, maxCount, mpisize, MPI_INT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmin
+    int maxSize = maxCount[0];
+    for (int i = 1; i < mpisize; ++i) 
+      if(maxCount[i] > maxSize)
+        maxSize = maxCount[i]; 
+    delete[] maxCount;
     std::vector<MPI_Request*> pendingRequests;                 //!< Buffer for non-blocking requests
     std::vector<T*>  pendingBuffers;                           //!< Buffer for non-blocking cell sends
     std::vector<std::vector<int> > path = getHypercubeMatrix(mpisize);
@@ -333,6 +327,13 @@ private:
     std::vector<std::pair<int,T*> > sendRecvBuffer;
     std::vector<int> dataToSend;
     int ownDataIndex = 0;
+    const int logPReceiveSize = mpisize >> 1;
+    MPI_Request* rreq   = new MPI_Request[logPReceiveSize];    
+    T** irecvBuff = new T*[logPReceiveSize];
+    for (int i = 0; i < logPReceiveSize; ++i) {
+      irecvBuff[i] = new T(maxSize);
+    }
+
     for (int i = 0; i < logP; ++i) {
       int sendRecvSize = mpisize>>(i+1);      
       std::vector<int> msgData;
@@ -341,11 +342,15 @@ private:
       route.push_back(sendRecvRank);
       getMessageInfo(path, route,sendRecvRank, i+1,  logP);
       MPI_Request request;
+      for (int s = 0; s < logPReceiveSize; ++s) {
+        MPI_Irecv((int*)&(*irecvBuff[s])[0], maxSize*word , MPI_INT, sendRecvRank, MPI_ANY_TAG, MPI_COMM_WORLD, &rreq[s]);
+      }
       // Sending my rank's own data
-        MPI_Isend(sendBuff + sendDispl[sendRecvRank]*word, sendCount[sendRecvRank]*word,MPI_INT,sendRecvRank,sendRecvRank,MPI_COMM_WORLD,&request);
+      MPI_Isend(sendBuff + sendDispl[sendRecvRank]*word, sendCount[sendRecvRank]*word,MPI_INT,sendRecvRank,sendRecvRank,MPI_COMM_WORLD,&request);
       for (int s = 1; s < sendRecvSize; ++s) {                
           MPI_Isend(sendBuff + sendDispl[route[s]]*word, sendCount[route[s]]*word,MPI_INT,sendRecvRank,route[s],MPI_COMM_WORLD,&request);        
       }      
+
       // end of sending my rank's own data
       int dataToSendSize = dataToSend.size();
       int rerouteSize = 0;
@@ -389,25 +394,34 @@ private:
           dataToSend.push_back(pp);
         }
       }
-      // Receiving some other rank's data
-      MPI_Status status; 
-      int intCount;
-      for (int s = 0; s < sendRecvSize + rerouteSize; ++s) {        
-        MPI_Probe(sendRecvRank, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        MPI_Get_count(&status, MPI_INT, &intCount);
+      for (int s = 0; s < logPReceiveSize; ++s) {
+        int index; 
+        MPI_Status status;
+        MPI_Waitany(logPReceiveSize, rreq, &index, &status);
+        int intCount; 
+        MPI_Get_count(&status, MPI_INT, &intCount);     
         int dest = status.MPI_TAG;
         int count = intCount/word;
-        T* recvBuff= new T(count);          
-        MPI_Recv((int*)&(*recvBuff)[0], intCount, MPI_INT, sendRecvRank, dest, MPI_COMM_WORLD, &status);  
         if(dest == mpirank) {
-         if(count>0) {
-            std::copy(recvBuff->begin(),recvBuff->end(),recvB.begin() + recvDispl[recvBuff->begin()->IRANK]);
-          }
+          if(count>0) 
+            std::copy(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count,recvB.begin() + recvDispl[irecvBuff[index]->begin()->IRANK]);  
           ownDataIndex++;
-        } else {
-          sendRecvBuffer.push_back(std::pair<int,T*>(dest,recvBuff));
-        } 
-      }
+        } else {         
+          T* recvBuff = new T(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count); 
+          if(i + 1 < logP) {
+            int nextRank = path[mpirank][i+1];
+            bool reroute = searchMessagePath(path, nextRank,i+2,logP,dest);
+            if(reroute) {
+              MPI_Request* pendingRequest = new MPI_Request();
+              pendingRequests.push_back(pendingRequest);          
+              pendingBuffers.push_back(recvBuff);
+              MPI_Isend((int*)&(*recvBuff)[0],intCount,MPI_INT,nextRank,dest,MPI_COMM_WORLD,pendingRequest);                         
+            } else {
+              sendRecvBuffer.push_back(std::pair<int,T*>(dest,recvBuff));
+            }             
+          }          
+        }        
+      }      
       previousSendBufferEnd = previousSendBufferSize;
       previousSendBufferSize = sendRecvBuffer.size();    
       deallocateCompletedRequests(pendingRequests, pendingBuffers);
@@ -417,7 +431,11 @@ private:
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
     sendB.clear();
-    MPI_Barrier(MPI_COMM_WORLD);    
+    for (int i = 0; i < logPReceiveSize; ++i) {
+      delete irecvBuff[i];  
+    }
+    delete[] irecvBuff;  
+    //MPI_Barrier(MPI_COMM_WORLD);  
   }
 
   //! Exchange send count for cells
