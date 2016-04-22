@@ -194,7 +194,7 @@ private:
     std::vector<MPI_Request*> pendingRequests;                 //!< Buffer for non-blocking requests
     std::vector<T*>  pendingBuffers;                           //!< Buffer for non-blocking cell sends
     std::vector<std::vector<int> > path = getHypercubeMatrix(mpisize);
-    recvB.resize(dataSize);
+    recvB.clear();
     assert( (sizeof(sendB[0]) & 3) == 0 );
     int word = sizeof(sendB[0]) / 4;
     int* sendBuff = (int*)&sendB[0];    
@@ -203,7 +203,8 @@ private:
     int previousSendBufferSize = 0;
     std::vector<std::pair<int,T*> > sendRecvBuffer;
     std::vector<int> dataToSend;
-    int ownDataIndex = 0;    
+    int ownDataIndex = 0; 
+    int ownDataCursor = 0;   
     const int logPReceiveSize = mpisize >> 1;
     MPI_Request* rreq = new MPI_Request[logPReceiveSize];            
     T** irecvBuff = new T*[logPReceiveSize];    
@@ -278,7 +279,10 @@ private:
         int count = intCount/word;
         if(dest == mpirank) {
           if(count>0) 
-            std::copy(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count,recvB.begin() + recvDispl[irecvBuff[index]->begin()->IRANK]);  
+            recvB.insert(recvB.end(),irecvBuff[index]->begin(),irecvBuff[index]->begin() + count);
+          recvDispl[irecvBuff[index]->begin()->IRANK] = ownDataCursor;
+          recvCount[irecvBuff[index]->begin()->IRANK] = count;
+          ownDataCursor+=count;  
           ownDataIndex++;
         } else {         
           sendRecvBuffer.push_back(std::pair<int,T*>(dest,new T(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count)));
@@ -292,7 +296,9 @@ private:
     assert(ownDataIndex == mpisize - 1);
     assert(pendingBuffers.size() == 0);
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
-    std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
+    recvB.insert(recvB.end(),localBuffer, localBuffer + sendCount[mpirank]);
+    recvDispl[mpirank] = ownDataCursor;
+    recvCount[mpirank] = sendCount[mpirank];
     sendB.clear();
     for (int i = 0; i < logPReceiveSize; ++i) {
       delete irecvBuff[i];  
@@ -696,12 +702,25 @@ public:
   //! Send bodies
   Bodies commBodies(Bodies bodies) {
     logger::startTimer("Comm partition");                     // Start timer
-    alltoall(bodies);                                         // Send body count    
 #if EXAFMM_USE_ALLTOALL    
+    alltoall(bodies);                                         // Send body count    
     alltoallv(bodies);                                        // Send bodies        
 #elif EXAFMM_USE_BUTTERFLY   
+    for (int i = 0; i < mpisize; i++) {                       // Loop over ranks
+      sendBodyCount[i] = 0;                                   //  Initialize send counts
+    }                                                         // End loop over ranks
+    for (B_iter B = bodies.begin(); B != bodies.end(); B++) { // Loop over bodies
+      assert(0 <= B->IRANK && B->IRANK < mpisize);            //  Check bounds for process ID
+      sendBodyCount[B->IRANK]++;                              //  Fill send count bucket
+      B->IRANK = mpirank;                                     //  Tag for sending back to original rank
+    }                                                         // End loop over bodies
+    sendBodyDispl[0]  = 0;                                    // Initialize send displacements
+    for (int irank = 0; irank < mpisize - 1; irank++) {       // Loop over ranks
+      sendBodyDispl[irank + 1] = sendBodyDispl[irank] + sendBodyCount[irank]; //  Set send displacement
+    }
     alltoallv_p2p_hypercube(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #else 
+    alltoall(bodies);                                         // Send body count    
     alltoallv_p2p(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #endif    
     logger::stopTimer("Comm partition");                      // Stop timer
@@ -711,12 +730,25 @@ public:
   //! Send bodies
   Bodies commBodies() {
     logger::startTimer("Comm LET bodies");                    // Start timer
-    alltoall(sendBodies);                                     // Send body count
-#if EXAFMM_USE_ALLTOALL        
+#if EXAFMM_USE_ALLTOALL 
+    alltoall(sendBodies);                                     // Send body count       
     alltoallv(sendBodies);                                    // Send bodies
-#elif EXAFMM_USE_BUTTERFLY          
+#elif EXAFMM_USE_BUTTERFLY    
+    for (int i = 0; i < mpisize; i++) {                       // Loop over ranks
+      sendBodyCount[i] = 0;                                   //  Initialize send counts
+    }                                                         // End loop over ranks
+    for (B_iter B = sendBodies.begin(); B != sendBodies.end(); B++) { // Loop over bodies
+      assert(0 <= B->IRANK && B->IRANK < mpisize);            //  Check bounds for process ID
+      sendBodyCount[B->IRANK]++;                              //  Fill send count bucket
+      B->IRANK = mpirank;                                     //  Tag for sending back to original rank
+    }  
+    sendBodyDispl[0] = 0;                                     // Initialize send displacements
+    for (int irank = 0; irank < mpisize - 1; irank++) {       // Loop over ranks
+      sendBodyDispl[irank + 1] = sendBodyDispl[irank] + sendBodyCount[irank]; //  Set send displacement
+    }      
     alltoallv_p2p_hypercube(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
-#else 
+#else
+    alltoall(sendBodies);                                     // Send body count 
     alltoallv_p2p(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #endif        
     logger::stopTimer("Comm LET bodies");                     // Stop timer
@@ -726,12 +758,17 @@ public:
   //! Send cells
   void commCells() {
     logger::startTimer("Comm LET cells");                     // Start timer
-    alltoall(sendCells);                                      // Send cell count
-#if EXAFMM_USE_ALLTOALL            
+#if EXAFMM_USE_ALLTOALL
+    alltoall(sendCells);                                      // Send cell count            
     alltoallv(sendCells);                                     // Senc cells
 #elif EXAFMM_USE_BUTTERFLY
+    C_iter c0 = sendCells.begin();
+    for (C_iter cc=c0; cc!= sendCells.end(); ++cc) {
+      cc->IRANK = mpirank;
+    }
     alltoallv_p2p_hypercube(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);
 #else 
+    alltoall(sendCells);                                      // Send cell count
     alltoallv_p2p(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);    
 #endif    
     logger::stopTimer("Comm LET cells");                      // Stop timer
