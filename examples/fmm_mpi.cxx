@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI* treeMPI = new TreeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity,args.threads,args.nspawn);
+  TreeMPI* treeMPI = new TreeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity);
   Traversal traversal(args.nspawn, args.images,baseMPI.mpirank, baseMPI.mpisize);  
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
@@ -91,50 +91,6 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
-#if 0    
-    if(args.granularity > 0) { 
-      treeMPI->allgatherBounds(localBounds);
-      if (args.IneJ) {  
-        treeMPI->setSendBodyNCells(jcells, bodies);
-
-      } else {
-        treeMPI->setSendBodyNCells(cells, bodies);
-      }
-      traversal.initListCount(cells);
-      traversal.initWeight(cells);
-#pragma omp parallel sections
-{
-  #pragma omp section
-  {
-      treeMPI->setSendLET();
-  }
-  #pragma omp section
-  {
-    if (args.IneJ) {
-      traversal.traverse(cells, jcells, cycle, args.dual, false);
-    } else {
-      traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
-      jbodies = bodies;
-    }
-  }
-}      
-      treeMPI->dualTreeTraversalRemote(cells,bodies,baseMPI.mpirank,baseMPI.mpisize);
-#pragma omp parallel sections
-        {
-#pragma omp section
-          {
-        treeMPI->flushAllRequests();
-          }
-#pragma omp section
-          {
-        upDownPass.downwardPass(cells);        
-        logger::stopPAPI();
-        logger::stopTimer("Total FMM", 0);
-          }
-        }
-    } else 
-#endif
-    {
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
         treeMPI->allgatherBounds(localBounds);
         if (args.IneJ) {
@@ -190,7 +146,6 @@ int main(int argc, char ** argv) {
         upDownPass.downwardPass(cells);
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
-    }
 #if 1 
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
@@ -234,7 +189,6 @@ int main(int argc, char ** argv) {
     if (args.write) {
       logger::writeTime(baseMPI.mpirank);
       traversal.writeTraversalData(baseMPI.mpirank);
-      //treeMPI->writeRemoteTraversalData(baseMPI.mpirank);
     }
   }
   delete treeMPI;
