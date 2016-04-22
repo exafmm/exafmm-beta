@@ -278,11 +278,12 @@ private:
         int dest = status.MPI_TAG;
         int count = intCount/word;
         if(dest == mpirank) {
-          if(count>0) 
+          if(count>0) {
             recvB.insert(recvB.end(),irecvBuff[index]->begin(),irecvBuff[index]->begin() + count);
-          recvDispl[irecvBuff[index]->begin()->IRANK] = ownDataCursor;
-          recvCount[irecvBuff[index]->begin()->IRANK] = count;
-          ownDataCursor+=count;  
+            recvDispl[irecvBuff[index]->begin()->IRANK] = ownDataCursor;
+            recvCount[irecvBuff[index]->begin()->IRANK] = count;
+            ownDataCursor+=count;
+          }  
           ownDataIndex++;
         } else {         
           sendRecvBuffer.push_back(std::pair<int,T*>(dest,new T(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count)));
@@ -708,6 +709,8 @@ public:
 #elif EXAFMM_USE_BUTTERFLY   
     for (int i = 0; i < mpisize; i++) {                       // Loop over ranks
       sendBodyCount[i] = 0;                                   //  Initialize send counts
+      recvBodyCount[i] = 0;
+      recvBodyDispl[i] = 0;
     }                                                         // End loop over ranks
     for (B_iter B = bodies.begin(); B != bodies.end(); B++) { // Loop over bodies
       assert(0 <= B->IRANK && B->IRANK < mpisize);            //  Check bounds for process ID
@@ -736,7 +739,9 @@ public:
 #elif EXAFMM_USE_BUTTERFLY    
     for (int i = 0; i < mpisize; i++) {                       // Loop over ranks
       sendBodyCount[i] = 0;                                   //  Initialize send counts
-    }                                                         // End loop over ranks
+      recvBodyCount[i] = 0;
+      recvBodyDispl[i] = 0;
+    }                                                       // End loop over ranks
     for (B_iter B = sendBodies.begin(); B != sendBodies.end(); B++) { // Loop over bodies
       assert(0 <= B->IRANK && B->IRANK < mpisize);            //  Check bounds for process ID
       sendBodyCount[B->IRANK]++;                              //  Fill send count bucket
@@ -766,6 +771,10 @@ public:
     for (C_iter cc=c0; cc!= sendCells.end(); ++cc) {
       cc->IRANK = mpirank;
     }
+    for (int i = 0; i < mpisize; i++) {                       // Loop over ranks
+      recvCellCount[i] = 0;
+      recvCellDispl[i] = 0;
+    }  
     alltoallv_p2p_hypercube(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);
 #else 
     alltoall(sendCells);                                      // Send cell count
