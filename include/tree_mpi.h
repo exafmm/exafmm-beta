@@ -407,19 +407,7 @@ private:
             std::copy(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count,recvB.begin() + recvDispl[irecvBuff[index]->begin()->IRANK]);  
           ownDataIndex++;
         } else {         
-          T* recvBuff = new T(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count);
-          if(i + 1 < logP) {
-            int nextRank = path[mpirank][i+1];
-            bool reroute = searchMessagePath(path, nextRank,i+2,logP,dest);
-            if(reroute) {
-              MPI_Request* pendingRequest = new MPI_Request();
-              pendingRequests.push_back(pendingRequest);          
-              pendingBuffers.push_back(recvBuff);
-              MPI_Isend((int*)&(*recvBuff)[0],intCount,MPI_INT,nextRank,dest,MPI_COMM_WORLD,pendingRequest);                         
-            } else {
-              sendRecvBuffer.push_back(std::pair<int,T*>(dest,recvBuff));
-            }             
-          }          
+          sendRecvBuffer.push_back(std::pair<int,T*>(dest,new T(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count)));
         }        
       }      
       previousSendBufferEnd = previousSendBufferSize;
