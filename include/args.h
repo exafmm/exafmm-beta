@@ -51,6 +51,7 @@ namespace exafmm {
     int numBodies;
     int useRopt;
     int PP;
+    const char * partitioning;
     int repeat;
     int nspawn;
     double theta;
@@ -78,6 +79,7 @@ namespace exafmm {
 	      " --numBodies (-n)              : Number of bodies (%d)\n"
 	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
 	      " --P (-P) not working          : Order of expansion (%d)\n"
+        " --partitioning(-p) [b/h/o]    : Partitioning method (Bisection, Hilbert or Octsection) (%d)\n"
 	      " --repeat (-r)                 : Number of iteration loops (%d)\n"
 	      " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
 	      " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
@@ -99,6 +101,7 @@ namespace exafmm {
 	      numBodies,
 	      useRopt,
 	      PP,
+        partitioning,
 	      repeat,
 	      nspawn,
 	      theta,
@@ -108,7 +111,7 @@ namespace exafmm {
 	      useRmax);
     }
 
-    const char * parse(const char * arg) {
+    const char * parseDistribution(const char * arg) {
       switch (arg[0]) {
       case 'c':
 	return "cube";
@@ -123,6 +126,21 @@ namespace exafmm {
       default:
 	fprintf(stderr, "invalid distribution %s\n", arg);
 	exit(0);
+      }
+      return "";
+    }
+
+    const char * parsePartitioning(const char * arg) {
+      switch (arg[0]) {
+      case 'o':
+  return "octsection";
+      case 'h':
+  return "hilbert";
+      case 'b':
+  return "bisection";
+      default:
+  fprintf(stderr, "invalid partitioning %s\n", arg);
+  exit(0);
       }
       return "";
     }
@@ -142,6 +160,7 @@ namespace exafmm {
       numBodies(1000000),
       useRopt(0),
       PP(4),
+      partitioning("bisection"),
       repeat(1),
       nspawn(5000),
       theta(.4),
@@ -152,10 +171,10 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "c:d:DgG:hi:jmMn:oP:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "c:d:DgG:hi:jmMn:oPp:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "c:d:DgG:hi:jmMn:oP:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "c:d:DgG:hi:jmMn:oPp:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
@@ -166,7 +185,7 @@ namespace exafmm {
 	  cutoff = atof(optarg);
 	  break;
 	case 'd':
-	  distribution = parse(optarg);
+	  distribution = parseDistribution(optarg);
 	  break;
 	case 'D':
 	  dual = 1;
@@ -201,6 +220,9 @@ namespace exafmm {
 	case 'P':
 	  PP = atoi(optarg);
 	  break;
+  case 'p':
+    partitioning = parsePartitioning(optarg);
+    break;    
 	case 'r':
 	  repeat = atoi(optarg);
 	  break;
@@ -258,6 +280,8 @@ namespace exafmm {
 		  << std::setw(stringLength)
 		  << "P" << " : " << PP << std::endl
 		  << std::setw(stringLength)
+      << "partitioning" << " : " << partitioning << std::endl
+      << std::setw(stringLength)
 		  << "repeat" << " : " << repeat << std::endl
 		  << std::setw(stringLength)
 		  << "nspawn" << " : " << nspawn << std::endl

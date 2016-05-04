@@ -31,7 +31,7 @@ namespace exafmm {
     VHilbert range;                                             //!< Key ranges for ranks
     VHilbert::iterator rangeBegin;                              //!< begin iterator of range
     VHilbert::iterator rangeEnd;                                //!< end iterator of range
-    KeyPair globalBounds;                                       //!< Global key bounds
+    KeyPair globalKeyBounds;                                    //!< Global key bounds
 
   private:
     //! Generate Space-filling order (Hilbert) from given the particles structure  and returns min/max orders
@@ -87,8 +87,8 @@ namespace exafmm {
       range = rg;
       rangeBegin = range.begin();
       rangeEnd = range.end();
-      globalBounds.first = range[0];
-      globalBounds.second = range[mpisize];
+      globalKeyBounds.first = range[0];
+      globalKeyBounds.second = range[mpisize];
     }
 
     //! applies partition sort algorithm to sort through particles based on Hilbert index
@@ -477,38 +477,61 @@ namespace exafmm {
       logger::stopTimer("Sort");                                // Stop timer
       return local;
     }
-
-    void partitionHilbert(Bodies& bodies, Bounds const& bounds) {
-      if (mpisize == 1) return;
+    
+    void partitionHilbert(Bodies & bodies, Bounds globalBounds) {
       logger::startTimer("Partition");                          // Start timer
-      uint32_t depth;
-      KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);      
-      int64_t min, max;
-      MPI_Allreduce(&localHilbertBounds.first,  &min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
-      MPI_Allreduce(&localHilbertBounds.second, &max, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-      globalBounds = std::make_pair(min, max);      
-      int64_t lbound = globalBounds.first;
-      int64_t rbound = globalBounds.second;
-      VHilbert rq;
-      rq.reserve(mpisize + 1);
-      rq.push_back(lbound); rq.push_back(rbound);
-      int64_t startPivot = lbound + ((rbound - lbound) >> 1);
-      VHilbert keys(bodies.size());
-      int index = 0;
-      for (B_iter B = bodies.begin(); B != bodies.end(); ++B)
-	keys[index++] = B->ICELL;
-      hilbertPartitionSort(keys, lbound, rbound, rq, startPivot);
-      std::sort(rq.begin(), rq.end());
-      updateRangeParameters(rq);
-      for (B_iter B = bodies.begin(); B != bodies.end(); ++B) {
-	B->IRANK = getPartitionNumber(B->ICELL);                  // Get partition
-	assert(B->IRANK >= 0 && B->IRANK < mpisize);              // Make sure rank is within communication size
-      }
+      if(mpisize > 1) {
+        uint32_t depth;
+        KeyPair localHilbertBounds = assignSFCtoBodies(bodies, globalBounds, depth);      
+        int64_t min, max;
+        MPI_Allreduce(&localHilbertBounds.first,  &min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
+        MPI_Allreduce(&localHilbertBounds.second, &max, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
+        globalKeyBounds = std::make_pair(min, max);      
+        int64_t lbound = globalKeyBounds.first;
+        int64_t rbound = globalKeyBounds.second;
+        VHilbert rq;
+        rq.reserve(mpisize + 1);
+        rq.push_back(lbound); rq.push_back(rbound);
+        int64_t startPivot = lbound + ((rbound - lbound) >> 1);
+        VHilbert keys(bodies.size());
+        int index = 0;
+        for (B_iter B = bodies.begin(); B != bodies.end(); ++B)
+  	keys[index++] = B->ICELL;
+        hilbertPartitionSort(keys, lbound, rbound, rq, startPivot);
+        std::sort(rq.begin(), rq.end());
+        updateRangeParameters(rq);
+        for (B_iter B = bodies.begin(); B != bodies.end(); ++B) {
+  	B->IRANK = getPartitionNumber(B->ICELL);                  // Get partition
+  	assert(B->IRANK >= 0 && B->IRANK < mpisize);              // Make sure rank is within communication size
+        }
+      } else {
+        for (B_iter B = bodies.begin(); B != bodies.end(); ++B) 
+          B->IRANK = mpirank;
+      }      
       logger::stopTimer("Partition");                             // Stop timer
       logger::startTimer("Sort");
       Sort sort;
       bodies = sort.irank(bodies);
       logger::stopTimer("Sort");
+    }
+
+    //! Wrapper for partitioning 
+    Bounds partition(Bodies& bodies, Bounds globalBounds, const char* partitioingType){
+      Bounds localBounds;
+      switch(partitioingType[0]) {
+        case 'h':
+          partitionHilbert(bodies,globalBounds);
+          break;
+        case 'b':
+          localBounds = bisection(bodies,globalBounds);
+          break;
+        case 'o':
+          localBounds = octsection(bodies,globalBounds);
+          break;
+        default:
+          localBounds = bisection(bodies,globalBounds);                
+      }
+      return localBounds;
     }
 
     //! Send bodies back to where they came from

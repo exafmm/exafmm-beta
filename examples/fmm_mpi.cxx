@@ -66,18 +66,18 @@ int main(int argc, char ** argv) {
       partition.rebalance(cells,bodies, traversal.getRemoteP2PCount(), traversal.getRemoteInteractionList());
       bodies = treeMPI->commBodies(bodies);
     } else {
-      partition.bisection(bodies, globalBounds);      
+      partition.partition(bodies, globalBounds, args.partitioning);      
       bodies = treeMPI->commBodies(bodies);
       if (args.IneJ) {        
-        partition.bisection(jbodies, globalBounds);      
+        partition.partition(jbodies, globalBounds, args.partitioning);      
         jbodies = treeMPI->commBodies(jbodies);
       }
     }
 #else    
-    partition.bisection(bodies, globalBounds);
+    partition.partition(bodies, globalBounds, args.partitioning);      
     bodies = treeMPI->commBodies(bodies);
     if (args.IneJ) {
-      partition.bisection(jbodies, globalBounds);      
+      partition.partition(jbodies, globalBounds, args.partitioning);      
       jbodies = treeMPI->commBodies(jbodies);
     }
 #endif
