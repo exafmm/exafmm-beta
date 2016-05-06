@@ -8,11 +8,6 @@ int main() {
   Bodies bodies(1), bodies2(1), jbodies(1);
   kernel::eps2 = 0.0;
   kernel::Xperiodic = 0;
-#if EXAFMM_HELMHOLTZ
-  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-#endif
-  kernel::setup();
-  logger::verbose = true;
 
   Cells cells(4);
   Verify verify;
@@ -28,7 +23,6 @@ int main() {
   C_iter Cj = cells.begin();
   Cj->X = 1;
   Cj->X[0] = 3;
-  Cj->SCALE = 2;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M = 0;
@@ -40,14 +34,12 @@ int main() {
   CJ->NCHILD = 1;
   CJ->X = 0;
   CJ->X[0] = 4;
-  CJ->SCALE = 4;
   CJ->M = 0;
   kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;
   CI->X[0] = -4;
-  CI->SCALE = 4;
   CI->M = 1;
   CI->L = 0;
 #if EXAFMM_MASS
@@ -58,7 +50,6 @@ int main() {
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
-  Ci->SCALE = 2;
   Ci->IPARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
@@ -67,7 +58,6 @@ int main() {
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
-  Ci->SCALE = 2;
   Ci->M = 1;
   Ci->L = 0;
 #if EXAFMM_MASS
@@ -102,6 +92,7 @@ int main() {
   double potNrm = verify.getNrmScalar(bodies);
   double accDif = verify.getDifVector(bodies, bodies2);
   double accNrm = verify.getNrmVector(bodies);
+  std::cout << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
   file << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;

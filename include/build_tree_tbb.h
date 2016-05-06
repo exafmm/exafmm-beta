@@ -3,7 +3,6 @@
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
-#include "morton_key.h"
 
 namespace exafmm {
   class BuildTree {
@@ -248,7 +247,12 @@ namespace exafmm {
       uint64_t getKey(vec3 X, vec3 Xmin, real_t diameter) {
 	int iX[3] = {0, 0, 0};                                  // Initialize 3-D index
 	for (int d=0; d<3; d++) iX[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
-	return morton::getKey(iX, level);                       // Return Morton key
+	uint64_t index = ((1 << 3 * level) - 1) / 7;            // Levelwise offset
+	for (int l=0; l<level; l++) {                           // Loop over levels
+	  for (int d=0; d<3; d++) index += (iX[d] & 1) << (3 * l + d); // Interleave bits into Morton key
+	  for (int d=0; d<3; d++) iX[d] >>= 1;                  //  Bitshift 3-D index
+	}                                                       // End loop over levels
+	return index;                                           // Return Morton key
       }
       void operator() () {                                      // Overload operator()
 	C->IPARENT = iparent;                                   //  Index of parent cell

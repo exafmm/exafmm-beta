@@ -82,6 +82,8 @@ extern "C" void Set_Index(int * ni, int nimax, int * res_index, double * x, doub
   num_threads(args->threads);
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   Bodies bodies(*ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
@@ -92,12 +94,11 @@ extern "C" void Set_Index(int * ni, int nimax, int * res_index, double * x, doub
     B->TRG[0] = v[3*i+0];
     B->TRG[1] = v[3*i+1];
     B->TRG[2] = v[3*i+2];
-    B->IBODY = i;
+    int iwrap = wrap(B->X, cycles);
+    B->IBODY = i | (iwrap << shift);
     B->ICELL = res_index[i];
   }
   localBounds = boundBox->getBounds(bodies);
-  localBounds.Xmin = max(localBounds.Xmin,-cycles/2);
-  localBounds.Xmax = min(localBounds.Xmax, cycles/2);
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   int id = 0;
@@ -119,6 +120,8 @@ extern "C" void Set_Index(int * ni, int nimax, int * res_index, double * x, doub
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       int i = B-bodies.begin();
       res_index[i] = B->ICELL;
+      int iwrap = unsigned(B->IBODY) >> shift;
+      unwrap(B->X, cycles, iwrap);
       x[3*i+0] = B->X[0];
       x[3*i+1] = B->X[1];
       x[3*i+2] = B->X[2];
@@ -135,6 +138,8 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
   logger::printTitle("Partition Profiling");
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   Bodies bodies(*ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
@@ -145,12 +150,11 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
     B->TRG[0] = v[3*i+0];
     B->TRG[1] = v[3*i+1];
     B->TRG[2] = v[3*i+2];
-    B->IBODY = i;
+    int iwrap = wrap(B->X, cycles);
+    B->IBODY = i | (iwrap << shift);
     B->ICELL = res_index[i];
   }
   localBounds = boundBox->getBounds(bodies);
-  localBounds.Xmin = max(localBounds.Xmin,-cycles/2);
-  localBounds.Xmax = min(localBounds.Xmax, cycles/2);
   globalBounds = baseMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
@@ -162,6 +166,8 @@ extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, 
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       int i = B-bodies.begin();
       res_index[i] = B->ICELL;
+      int iwrap = unsigned(B->IBODY) >> shift;
+      unwrap(B->X, cycles, iwrap);
       x[3*i+0] = B->X[0];
       x[3*i+1] = B->X[1];
       x[3*i+2] = B->X[2];
@@ -178,6 +184,8 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   double cutoff = args->cutoff;
   vec3 cycles;
   for (int d=0; d<3; d++) cycles[d] = cycle[d];
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   args->numBodies = ni;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -190,12 +198,14 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
+    wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];
     B->TRG[2] = f[3*i+1];
     B->TRG[3] = f[3*i+2];
-    B->IBODY = i;
+    int iwrap = wrap(B->X, cycles);
+    B->IBODY = i | (iwrap << shift);
     B->ICELL = res_index[i];
   }
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
@@ -244,8 +254,8 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   Bodies jbodies = treeMPI->getRecvBodies();
   jbodies.insert(jbodies.begin(), bodies.begin(), bodies.end());
   bodies.clear();
-  vec3 Xmin = localBounds.Xmin - cutoff * 1.1;
-  vec3 Xmax = localBounds.Xmax + cutoff * 1.1;
+  vec3 Xmin = localBounds.Xmin - cutoff;
+  vec3 Xmax = localBounds.Xmax + cutoff;
   ivec3 iX;
   real_t X[3];
   for (iX[0]=-1; iX[0]<=1; iX[0]++) {
@@ -253,15 +263,13 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
       for (iX[2]=-1; iX[2]<=1; iX[2]++) {
 	if (norm(iX) != 0) {
 	  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-	    int ic = 0;
-	    if (B->ICELL < 0) ic = B->ICELL;
-	    for (int d=0; d<3; d++) X[d] = (B+ic)->X[d] + iX[d] * cycles[d];
+	    for (int d=0; d<3; d++) X[d] = B->X[d] + iX[d] * cycles[d];
 	    if (Xmin[0] < X[0] && X[0] < Xmax[0] &&
 		Xmin[1] < X[1] && X[1] < Xmax[1] &&
 		Xmin[2] < X[2] && X[2] < Xmax[2]) {
 	      bodies.push_back(*B);
 	      for (int d=0; d<3; d++) {
-		bodies.back().X[d] += iX[d] * cycles[d];
+		bodies.back().X[d] = X[d];
 	      }
 	    }
 	  }
@@ -271,12 +279,9 @@ extern "C" void FMM_FMM(int ni, int * nj, int * res_index, double * x, double * 
   }
   jbodies = treeMPI->getRecvBodies();
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    int ic = 0;
-    if (B->ICELL < 0) ic = B->ICELL;
-    for (int d=0; d<3; d++) X[d] = (B+ic)->X[d];
-    if (Xmin[0] < X[0] && X[0] < Xmax[0] &&
-	Xmin[1] < X[1] && X[1] < Xmax[1] &&
-	Xmin[2] < X[2] && X[2] < Xmax[2]) {
+    if (Xmin[0] < B->X[0] && B->X[0] < Xmax[0] &&
+	Xmin[1] < B->X[1] && B->X[1] < Xmax[1] &&
+	Xmin[2] < B->X[2] && B->X[2] < Xmax[2]) {
       bodies.push_back(*B);
     }
   }
@@ -313,6 +318,7 @@ extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
+    wrap(B->X, cycles);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];

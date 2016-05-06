@@ -110,12 +110,21 @@ namespace exafmm {
 	  int ix = icell / dimLeafs / dimLeafs;                 //   Index in x dimension
 	  int iy = icell / dimLeafs % dimLeafs;                 //   Index in y dimension
 	  int iz = icell % dimLeafs;                            //   Index in z dimension
+	  int key = 0;                                          //   Initialize key
+	  for (int l=0; l<numLevels; l++) {                     //   Loop over levels
+	    key += (ix & 1) << (3 * l);                         //    Interleave x bits
+	    key += (iy & 1) << (3 * l + 1);                     //    Interleave y bits
+	    key += (iz & 1) << (3 * l + 2);                     //    Interleave z bits
+	    ix >>= 1;                                           //    Shift x bits
+	    iy >>= 1;                                           //    Shift y bits
+	    iz >>= 1;                                           //    Shift z bits
+	  }                                                     //   End loop over levels
 	  C->X = C->BODY->X;                                    //   Store coordinates
 	  C->BODY = B;                                          //   Store body iterator
 	  C->IBODY = B - B0;                                    //   Store body index
 	  C->NBODY = 0;                                         //   Store number of bodies
-	  C->ICELL = morton::getKey(ix, iy, iz, numLevels);     //   Store Morton key as cell index
-	  C->R = max(cycle) / dimLeafs / 2;                     //   Store cell radius
+	  C->ICELL = key;                                       //   Store Morton key as cell index
+	  C->R = max(cycle) / dimLeafs / 2;                          //   Store cell radius
 	  while (B->ICELL == icell) {                           //   Loop while icell is same (same cell)
 	    C->NBODY++;                                         //    Increment number of bodies
 	    if (B==bodies.end()-1) break;                       //    If end of bodies then exit loop
