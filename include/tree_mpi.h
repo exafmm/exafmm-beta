@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "logger.h"
 #include "sort.h"
+#include <set>
 
 namespace exafmm {
 //! Handles all the communication of local essential trees
@@ -68,7 +69,7 @@ private:
       recvBodyDispl[irank] /= word;                           //  Divide receive displacement by word size of data
     }                                                         // End loop over ranks
   }
-
+  
   //! Exchange bodies in a point-to-point manner
   template<typename T>
   void alltoallv_p2p(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
@@ -134,6 +135,35 @@ private:
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
   }
 
+  //! Exchange bodies in a point-to-point manner
+  template<typename T>
+  void alltoallv_p2p_onesided(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
+    int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];    
+    if (sendB.size() == sendCount[mpirank] && dataSize == sendCount[mpirank]) {
+      recvB = sendB;
+      return;
+    }    
+    MPI_Win win;          
+    int* displ = new int[mpisize];    
+    MPI_Alltoall(recvDispl, 1, MPI_INT, displ, 1, MPI_INT, MPI_COMM_WORLD);                
+    recvB.resize(dataSize);
+    assert( (sizeof(sendB[0]) & 3) == 0 );
+    int word = sizeof(sendB[0]) / 4;    
+    MPI_Win_create((int*)&recvB[0], dataSize*word*sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);          
+    for (int irank = 0; irank < mpisize; ++irank) {
+      if (irank != mpirank) {
+        MPI_Win_lock(MPI_LOCK_SHARED, irank, 0, win);
+        MPI_Put((int*)&sendB[0] + sendDispl[irank]*word, sendBodyCount[irank]*word,MPI_INT, irank, displ[irank]*word,sendCount[irank]*word,MPI_INT,win);
+        MPI_Win_unlock(irank, win);        
+      }                     
+    }         
+    MPI_Win_fence(0,win);
+    MPI_Win_free(&win);
+    delete[] displ;    
+    typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
+    std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
+  }
+
   template<typename PathT, typename Msg>
   void getMessageInfo(PathT const& path, Msg& content, int rank , int stage, int const& logP) {
     if(stage<logP) {
@@ -144,6 +174,7 @@ private:
       }
     }
   }
+
 
   template<typename PathT>
   bool searchMessagePath(PathT const& path, int rank , int stage, int const& logP, int const& dest) {    
@@ -307,6 +338,26 @@ private:
     delete[] irecvBuff;    
   }
 
+  int* getMaxRanks(int P, int* sendCount, int size) {    
+    int* path = new int[size];
+    int max = 0;
+    int*ind = new int[P];
+    int*val = new int[P];
+    for (int i = 0; i < P; ++i) {
+      ind[i] = i;
+      val[i] = sendCount[i];
+    }
+    Sort isort;
+    isort.radixsort(val,ind,P);
+    for (int i = 0; i < size; ++i) {
+      path[i] = ind[P - i - 1];
+    }
+    delete[] ind;
+    delete[] val;
+    return path;
+  }
+
+
   template<typename T>
   void alltoallv_heirarchical(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) { 
     int logP = log2(mpisize);
@@ -320,6 +371,10 @@ private:
     int word = sizeof(sendB[0]) / 4;    
     int* sendBuff = (int*)&sendB[0];
     int* recvBuff = (int*)&recvB[0];
+    int* groupSendCount = new int[mpisize];
+    int* groupRecvCount = new int[mpisize];
+    int* groupSendDispl = new int[mpisize];
+    int* groupRecvDispl = new int[mpisize];
     for (int i = 0; i < logP; ++i) {
       int partitions = mpisize<<i;      
       if(depth == 0) {
@@ -343,11 +398,7 @@ private:
         int lead_dest = (dest >> depth) << depth ;
         MPI_Intercomm_create(commSplit, 0, MPI_COMM_WORLD, lead_dest, 
                             intraCount, &interComm); 
-        int sendRecvSize = 1 << depth;
-        int* groupSendCount = new int[sendRecvSize];
-        int* groupRecvCount = new int[sendRecvSize];
-        int* groupSendDispl = new int[sendRecvSize];
-        int* groupRecvDispl = new int[sendRecvSize];
+        int sendRecvSize = 1 << depth;      
         for (int i = 0; i < sendRecvSize; ++i) {
           groupSendCount[i] = sendCount[lead_dest+i] * word;          
           groupRecvCount[i] = recvCount[lead_dest+i] * word;
@@ -357,16 +408,17 @@ private:
         MPI_Alltoallv(sendBuff,groupSendCount,groupSendDispl,MPI_INT, recvBuff, groupRecvCount, groupRecvDispl,MPI_INT, interComm);
         MPI_Comm_free(&commSplit); 
         MPI_Comm_free(&interComm); 
-        delete[] groupRecvCount;        
-        delete[] groupSendCount;
-        delete[] groupRecvDispl;
-        delete[] groupSendDispl;
-      }
+      }      
       depth++;
     }
+    delete[] groupRecvCount;        
+    delete[] groupSendCount;
+    delete[] groupRecvDispl;
+    delete[] groupSendDispl;
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);  
   }       
+  
 
   //! Exchange send count for cells
   void alltoall(Cells& cells) {
@@ -783,6 +835,9 @@ public:
       sendBodyDispl[irank + 1] = sendBodyDispl[irank] + sendBodyCount[irank]; //  Set send displacement
     }
     alltoallv_p2p_hypercube(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+#elif EXAFMM_USE_ONESIDED
+    alltoall(bodies);                                     // Send body count       
+    alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #else 
     alltoall(bodies);                                         // Send body count    
     alltoallv(bodies);                                        // Send bodies        
@@ -813,7 +868,10 @@ public:
       sendBodyDispl[irank + 1] = sendBodyDispl[irank] + sendBodyCount[irank]; //  Set send displacement
     }      
     alltoallv_p2p_hypercube(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
-#else
+#elif EXAFMM_USE_ONESIDED
+    alltoall(sendBodies);                                     // Send body count       
+    alltoallv_p2p_onesided(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+#else    
     alltoall(sendBodies);                                     // Send body count       
     alltoallv(sendBodies);                                    // Send bodies
 #endif        
@@ -837,6 +895,9 @@ public:
       recvCellDispl[i] = 0;
     }  
     alltoallv_p2p_hypercube(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);
+#elif EXAFMM_USE_ONESIDED
+    alltoall(sendCells);                                     // Send body count       
+    alltoallv_p2p_onesided(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);      
 #else 
     alltoall(sendCells);                                      // Send cell count            
     alltoallv(sendCells);                                     // Senc cells
