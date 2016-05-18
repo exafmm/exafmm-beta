@@ -153,7 +153,7 @@ private:
     for (int irank = 0; irank < mpisize; ++irank) {
       if (irank != mpirank) {
         MPI_Win_lock(MPI_LOCK_SHARED, irank, 0, win);
-        MPI_Put((int*)&sendB[0] + sendDispl[irank]*word, sendBodyCount[irank]*word,MPI_INT, irank, displ[irank]*word,sendCount[irank]*word,MPI_INT,win);
+        MPI_Put((int*)&sendB[0] + sendDispl[irank]*word, sendCount[irank]*word,MPI_INT, irank, displ[irank]*word,sendCount[irank]*word,MPI_INT,win);
         MPI_Win_unlock(irank, win);        
       }                     
     }         
