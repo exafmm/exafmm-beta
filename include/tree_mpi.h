@@ -338,26 +338,6 @@ private:
     delete[] irecvBuff;    
   }
 
-  int* getMaxRanks(int P, int* sendCount, int size) {    
-    int* path = new int[size];
-    int max = 0;
-    int*ind = new int[P];
-    int*val = new int[P];
-    for (int i = 0; i < P; ++i) {
-      ind[i] = i;
-      val[i] = sendCount[i];
-    }
-    Sort isort;
-    isort.radixsort(val,ind,P);
-    for (int i = 0; i < size; ++i) {
-      path[i] = ind[P - i - 1];
-    }
-    delete[] ind;
-    delete[] val;
-    return path;
-  }
-
-
   template<typename T>
   void alltoallv_heirarchical(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) { 
     int logP = log2(mpisize);
