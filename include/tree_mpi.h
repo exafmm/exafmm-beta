@@ -137,31 +137,32 @@ private:
 
   //! Exchange bodies in a point-to-point manner
   template<typename T>
-  void alltoallv_p2p_onesided(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
+  void alltoallv_p2p_onesided(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount, bool moveLocalData = false) {        
     int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];    
     if (sendB.size() == sendCount[mpirank] && dataSize == sendCount[mpirank]) {
       recvB = sendB;
       return;
     }    
     MPI_Win win;          
-    int* displ = new int[mpisize];    
-    MPI_Alltoall(recvDispl, 1, MPI_INT, displ, 1, MPI_INT, MPI_COMM_WORLD);                
+    int* remoteDispl = new int[mpisize];    
+    MPI_Alltoall(sendDispl, 1, MPI_INT, remoteDispl, 1, MPI_INT, MPI_COMM_WORLD);                
     recvB.resize(dataSize);
     assert( (sizeof(sendB[0]) & 3) == 0 );
     int word = sizeof(sendB[0]) / 4;    
-    MPI_Win_create((int*)&recvB[0], dataSize*word*sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);          
+    MPI_Win_create((int*)&sendB[0], sendB.size()*word*sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);          
     for (int irank = 0; irank < mpisize; ++irank) {
       if (irank != mpirank) {
         MPI_Win_lock(MPI_LOCK_SHARED, irank, 0, win);
-        MPI_Put((int*)&sendB[0] + sendDispl[irank]*word, sendCount[irank]*word,MPI_INT, irank, displ[irank]*word,sendCount[irank]*word,MPI_INT,win);
+        MPI_Get((int*)&recvB[0] + recvDispl[irank]*word, recvCount[irank]*word,MPI_INT, irank, remoteDispl[irank]*word,recvCount[irank]*word,MPI_INT,win);
         MPI_Win_unlock(irank, win);        
       }                     
-    }         
-    MPI_Win_fence(0,win);
+    }             
     MPI_Win_free(&win);
-    delete[] displ;    
-    typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
-    std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
+    delete[] remoteDispl;    
+    if(moveLocalData) {
+      typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
+      std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
+    }
   }
 
   template<typename PathT, typename Msg>
@@ -252,7 +253,7 @@ private:
       for (int s = 0; s < logPReceiveSize; ++s) {
         MPI_Irecv((int*)&(*irecvBuff[s])[0], maxSize*word , MPI_INT, sendRecvRank, MPI_ANY_TAG, MPI_COMM_WORLD, &rreq[s]);
       }
-      // Sending my rank's own data
+      // Sending rank's own data
       MPI_Isend(sendBuff + sendDispl[sendRecvRank]*word, sendCount[sendRecvRank]*word,MPI_INT,sendRecvRank,sendRecvRank,MPI_COMM_WORLD,&request);      
       for (int s = 1; s < sendRecvSize; ++s) {                     
           MPI_Isend(sendBuff + sendDispl[route[s]]*word, sendCount[route[s]]*word,MPI_INT,sendRecvRank,route[s],MPI_COMM_WORLD,&request);        
@@ -817,7 +818,7 @@ public:
     alltoallv_p2p_hypercube(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #elif EXAFMM_USE_ONESIDED
     alltoall(bodies);                                     // Send body count       
-    alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+    alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount, true);
 #else 
     alltoall(bodies);                                         // Send body count    
     alltoallv(bodies);                                        // Send bodies        
