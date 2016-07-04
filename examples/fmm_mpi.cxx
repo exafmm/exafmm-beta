@@ -9,6 +9,8 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
+#include <fstream>
+
 using namespace exafmm;
 
 int main(int argc, char ** argv) {
@@ -74,7 +76,13 @@ int main(int argc, char ** argv) {
       }
     }
 #else    
-    partition.partition(bodies, globalBounds, args.partitioning);      
+    partition.partition(bodies, globalBounds, args.partitioning);    
+    // if(baseMPI.mpirank == 0) {
+    // std::ofstream pfile("particles.txt");
+    // for (int i = 0; i < args.numBodies; ++i) 
+    //   pfile<< bodies[i].X <<","<<bodies[i].IRANK<< std::endl;      
+    //   pfile.close();      
+    // }  
     bodies = treeMPI->commBodies(bodies);
     if (args.IneJ) {
       partition.partition(jbodies, globalBounds, args.partitioning);      
@@ -98,26 +106,38 @@ int main(int argc, char ** argv) {
         } else {
           treeMPI->setLET(cells, cycle);
         }
-//#pragma omp parallel sections
-        {
-//#pragma omp section
-          {
-    	treeMPI->commBodies();
-    	treeMPI->commCells();
-          }
-//#pragma omp section
-          {
-    	traversal.initListCount(cells);
-    	traversal.initWeight(cells);
+#if EXAFMM_USE_DISTGRAPH
+      traversal.initListCount(cells);
+      traversal.initWeight(cells);
       traversal.initCountKernel();
-    	if (args.IneJ) {
-    	  traversal.traverse(cells, jcells, cycle, args.dual, false,0);
-    	} else {
-    	  traversal.traverse(cells, cells, cycle, args.dual, args.mutual,0);
-    	  jbodies = bodies;
-    	}
+      if (args.IneJ) {
+        traversal.traverse(cells, jcells, cycle, args.dual, false,0);
+      } else {
+        traversal.traverse(cells, cells, cycle, args.dual, args.mutual,0);
+        jbodies = bodies;
+      }
+        treeMPI->traverseNeighborTrees(traversal,cells,cycle, args.dual, false, globalBounds);
+#else    
+#pragma omp parallel sections
+        {
+#pragma omp section
+          {
+      treeMPI->commBodies();
+      treeMPI->commCells();
           }
-        }
+#pragma omp section
+          {
+      traversal.initListCount(cells);
+      traversal.initWeight(cells);
+      traversal.initCountKernel();
+      if (args.IneJ) {
+        traversal.traverse(cells, jcells, cycle, args.dual, false,0);
+      } else {
+        traversal.traverse(cells, cells, cycle, args.dual, args.mutual,0);
+        jbodies = bodies;
+      }
+          }
+        }    
         if (baseMPI.mpisize > 1) {
           if (args.graft) {
     	treeMPI->linkLET();
@@ -132,6 +152,7 @@ int main(int argc, char ** argv) {
     	}
           }
         }
+#endif
 #else
         jbodies = bodies;
         for (int irank=0; irank<baseMPI.mpisize; irank++) {

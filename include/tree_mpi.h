@@ -3,7 +3,9 @@
 #include "kernel.h"
 #include "logger.h"
 #include "sort.h"
+#include "build_tree.h"
 #include <set>
+#include <queue>
 
 namespace exafmm {
 //! Handles all the communication of local essential trees
@@ -29,6 +31,20 @@ protected:
   int * recvCellDispl;                                        //!< Receive displacement  
   C_iter Ci0;                                                 //!< Iterator of first target cell
   C_iter Cj0;                                                 //!< Iterator of first source cell
+  typedef std::vector<std::vector<int> > NeighborList;        //!< Type of Neighbor list  
+  struct GraphNode
+  {
+  public:
+    GraphNode(int p, int number, int src)
+    :parent(p),id(number),source(src){ }
+    int parent;
+    int id;
+    int source;
+  };
+  typedef std::vector<GraphNode> TreeLevel;                  //! The FMM communication tree level 
+  typedef std::vector<TreeLevel> CommTree;                   //! The FMM communication tree
+  typedef std::vector<CommTree> CommGraph;                   //! The Hierarchical communication tree
+  
 private:
   //! Exchange send count for bodies
   void alltoall(Bodies & bodies) {
@@ -137,7 +153,8 @@ private:
 
   //! Exchange bodies in a point-to-point manner
   template<typename T>
-  void alltoallv_p2p_onesided(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount, bool moveLocalData = false) {        
+  void alltoallv_p2p_onesided(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) { 
+    //std::vector<int> v = getNeighborRanks();       
     int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];    
     if (sendB.size() == sendCount[mpirank] && dataSize == sendCount[mpirank]) {
       recvB = sendB;
@@ -151,23 +168,22 @@ private:
     int word = sizeof(sendB[0]) / 4;    
     MPI_Win_create((int*)&sendB[0], sendB.size()*word*sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);          
     for (int irank = 0; irank < mpisize; ++irank) {
-      if (irank != mpirank) {
-        MPI_Win_lock(MPI_LOCK_SHARED, irank, 0, win);
-        MPI_Get((int*)&recvB[0] + recvDispl[irank]*word, recvCount[irank]*word,MPI_INT, irank, remoteDispl[irank]*word,recvCount[irank]*word,MPI_INT,win);
-        MPI_Win_unlock(irank, win);        
+      int sendRank = (mpirank + 1 + irank) % mpisize;
+      if (sendRank != mpirank) {
+        MPI_Win_lock(MPI_LOCK_SHARED, sendRank, 0, win);
+        MPI_Get((int*)&recvB[0] + recvDispl[sendRank]*word, recvCount[sendRank]*word,MPI_INT, sendRank, remoteDispl[sendRank]*word,recvCount[sendRank]*word,MPI_INT,win);
+        MPI_Win_unlock(sendRank, win);        
       }                     
     }             
     MPI_Win_free(&win);
-    delete[] remoteDispl;    
-    if(moveLocalData) {
-      typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
-      std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
-    }
+    delete[] remoteDispl;        
+    typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
+    std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);       
   }
 
   template<typename PathT, typename Msg>
   void getMessageInfo(PathT const& path, Msg& content, int rank , int stage, int const& logP) {
-    if(stage<logP) {
+    if(stage < logP) {
       for (int l = stage; l < logP; ++l) {
         int newDest = path[rank][l];
         content.push_back(newDest);
@@ -175,7 +191,6 @@ private:
       }
     }
   }
-
 
   template<typename PathT>
   bool searchMessagePath(PathT const& path, int rank , int stage, int const& logP, int const& dest) {    
@@ -550,10 +565,124 @@ protected:
       if (divide[cc]) {                                       //  If cell must be divided further
         iparent = icells[cc];                                 //   Parent cell index
         traverseLET(CC, C0, bounds, cycle, irank, ibody, icell, iparent, copyData);// Recursively traverse tree to set LET
-      } else{
-
-      }                                                      //  End if for cell division
+      }                                                       //  End if for cell division
     }                                                         // End loop over child cells
+  }
+
+  template<typename BoundsArr>
+  NeighborList setNeighbors(BoundsArr minBounds, BoundsArr maxBounds) {
+    NeighborList neighbors(mpisize);
+    const int leeway = 0.01;
+    for (int i = 0; i < mpisize; ++i) {
+      real_t* localXmin = minBounds[i];
+      real_t* localXmax = maxBounds[i];    
+      for (int irank = 0; irank < mpisize; ++irank) {
+         if(i!=irank) {
+          for (int dim = 0; dim < 3; ++dim) {
+            int dim1 = (dim+1)%3;
+            int dim2 = (dim+2)%3;
+            real_t inc = minBounds[irank][dim] - localXmax[dim];
+            real_t dec = localXmin[dim] - maxBounds[irank][dim];
+            if((abs(inc) <= leeway || abs(dec) <= leeway) &&
+              ((minBounds[irank][dim1] <= localXmax[dim1]+leeway && maxBounds[irank][dim1]+leeway>=localXmax[dim1]) || (localXmin[dim1] <= maxBounds[irank][dim1]+leeway && localXmax[dim1]+leeway>=maxBounds[irank][dim1])) &&
+              ((minBounds[irank][dim2] <= localXmax[dim2]+leeway && maxBounds[irank][dim2]+leeway>=localXmax[dim2]) || (localXmin[dim2] <= maxBounds[irank][dim2]+leeway && localXmax[dim2]+leeway>=maxBounds[irank][dim2]))) {                                     
+              neighbors[i].push_back(irank);
+              break;     
+            }          
+          }          
+        }
+      }      
+    }  
+    return neighbors;
+  }
+
+  template <typename TraversedSet>
+  void updateNeighbors(NeighborList const& neighbors, int parent, int depth, TraversedSet& traversedSet, NeighborList& output) {
+    if(traversedSet.find(parent) == traversedSet.end()) {
+      traversedSet.insert(parent);
+      if(output.size() > depth) {
+        output[depth].push_back(parent);
+      }
+      else {
+        output.push_back(std::vector<int>());
+        output[depth].push_back(parent);
+      }
+      std::vector<int> r_neighbors = neighbors[parent];
+      for (int i = 0; i < r_neighbors.size(); ++i) {      
+        updateNeighbors(neighbors, r_neighbors[i], depth+1 , traversedSet, output);          
+      }
+    }
+  }
+
+
+  void setSendRecvTrees(CommGraph const& graph, int const& level, std::map<int, TreeLevel>& sendList, std::map<int, TreeLevel>& recvList) {
+    assert(level >= 2);    
+    if(level < graph[mpirank].size()) {
+      TreeLevel treeLevel = graph[mpirank][level];    
+      for (int i = 0; i < treeLevel.size(); ++i) {  
+        GraphNode node = treeLevel[i];
+        if(recvList.find(node.source) == recvList.end()) recvList[node.source] = TreeLevel();          
+        recvList[node.source].push_back(node);
+      }
+    }    
+    for (int irank = 0; irank < mpisize; ++irank) {
+      if(irank!=mpirank) {
+        if(level < graph[irank].size()) {
+          TreeLevel treeLevel = graph[irank][level];
+          for (int i = 0; i < treeLevel.size(); ++i) {  
+            GraphNode node = treeLevel[i];
+            if(node.source == mpirank) {
+              if(sendList.find(node.source) == sendList.end()) 
+                sendList[node.source] = TreeLevel();          
+              sendList[irank].push_back(node);
+            }          
+          }
+        }   
+      }       
+    }
+  }
+
+  CommGraph setFMMTreeCommunicationGraph(NeighborList const& neighbors) {    
+    CommGraph graph(mpisize);
+    for (int source = 0; source < mpisize; ++source) {
+      std::queue<GraphNode> traversalQ;
+      CommTree output;    
+      traversalQ.push(GraphNode(-1,source,0));
+      std::set<int> traversedSet;
+      int currentDepth = 0, elemToDepthInc = 1, nextElemToDepthInc = 0;
+      bool visit = false;
+      while(!traversalQ.empty() && traversedSet.size() < mpisize){
+        GraphNode current = traversalQ.front();   
+        traversalQ.pop();         
+        visit = false;
+        if(traversedSet.find(current.id) == traversedSet.end()) {
+          visit = true;
+          traversedSet.insert(current.id);
+          if(output.size() > currentDepth) {
+            output[currentDepth].push_back(current);
+          }
+          else {
+            output.push_back(std::vector<GraphNode>());
+            output[currentDepth].push_back(current);
+          }      
+        }
+        if(visit) {
+          std::vector<int> r_neighbors = neighbors[current.id];
+          for (int i = 0; i < r_neighbors.size(); ++i) {    
+              traversalQ.push(GraphNode(current.id, r_neighbors[i],(currentDepth>1)?current.source:current.id));
+          }        
+        } 
+        nextElemToDepthInc += neighbors[current.id].size();
+        elemToDepthInc--;
+        if(elemToDepthInc == 0) {
+          currentDepth++;
+          elemToDepthInc = nextElemToDepthInc;
+          nextElemToDepthInc = 0;
+        }      
+      }
+      graph[source] = output;
+    }        
+    return graph;
   }
   
 public:
@@ -615,6 +744,284 @@ public:
     MPI_Allgather(Xmax, 3, MPI_FLOAT, allBoundsXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
   }
 
+
+  void setSourcesNDestinations(NeighborList const& neighbors, int rank, int*& sources, int*& destinations,int& indegree,int& outdegree) {
+    std::vector<int> inwardNeighbors = neighbors[rank];
+    indegree = inwardNeighbors.size();
+    sources = new int[indegree];
+    for (int i = 0; i < indegree; ++i) {      
+      sources[i] = inwardNeighbors[i];
+    }
+    std::vector<int> outwardNeighbors;
+    for (int i = 0; i < neighbors.size(); ++i) {
+      if(i != rank) {
+        for (int j = 0; j < neighbors[i].size(); ++j)
+        {
+          if(neighbors[i][j] == rank){
+            outwardNeighbors.push_back(i);
+          }
+        }
+      }
+    }
+    outdegree = outwardNeighbors.size();
+    destinations = new int[outdegree];
+    for (int i = 0; i < outdegree; ++i) {
+      destinations[i] = outwardNeighbors[i];
+    }
+  }
+
+  template<typename TraverseType, typename Cycle>
+  void traverseNeighborTrees(TraverseType& traversal, Cells& cells, Cycle cycle, bool dual, bool mutual, Bounds globalBounds, real_t remote = 1) {
+    real_t leeway = 0.1f;
+    real_t* localXmin = allBoundsXmin[mpirank];
+    real_t* localXmax = allBoundsXmax[mpirank];        
+    alltoall(sendBodies);
+    alltoall(sendCells);
+    int bodyDataSize = recvBodyDispl[mpisize - 1] + recvBodyCount[mpisize - 1];    
+    int cellDataSize = recvCellDispl[mpisize - 1] + recvCellCount[mpisize - 1];    
+    recvBodies.resize(bodyDataSize);
+    recvCells.resize(cellDataSize);    
+    int bodyWord = sizeof(sendBodies[0]) / 4;    
+    int cellWord = sizeof(sendCells[0]) / 4;    
+    Bodies tempBodies;
+    Cells tempCells;
+    NeighborList neighbors = setNeighbors(allBoundsXmin, allBoundsXmax);         
+    CommGraph res = setFMMTreeCommunicationGraph(neighbors);  
+    int* sources;
+    int* destinations;
+    int indegree;
+    int outdegree;
+    MPI_Comm graphComm;
+    setSourcesNDestinations(neighbors,mpirank,sources,destinations,indegree, outdegree);
+    int* inWeights = new int[indegree];
+    int* outWeights = new int[outdegree];
+    for (int i = 0; i < indegree; ++i)  inWeights[i] = 0;
+    for (int i = 0; i < outdegree; ++i) outWeights[i] = 0;    
+    MPI_Dist_graph_create_adjacent(MPI_COMM_WORLD, indegree, sources,inWeights,outdegree, destinations, outWeights, MPI_INFO_NULL, 0, &graphComm);
+    int topo_type;
+    MPI_Topo_test(graphComm, &topo_type ); // Get the type of Toplogy we are using.
+    assert(topo_type==MPI_DIST_GRAPH);    
+    MPI_Dist_graph_neighbors(graphComm, indegree, sources, inWeights,outdegree,destinations,outWeights);
+    std::map<int,int> ranktoindex; 
+    for (int i = 0; i < outdegree; ++i)
+      ranktoindex[destinations[i]] = i;        
+    
+    int* sendBodyCountNeighbor = new int[outdegree];
+    int* sendBodyDisplNeighbor = new int[outdegree];
+    int* sendCellCountNeighbor = new int[outdegree];
+    int* sendCellDisplNeighbor = new int[outdegree];
+    for (int i = 0; i < outdegree; ++i) {
+      sendBodyCountNeighbor[i] = sendBodyCount[destinations[i]] * bodyWord;   
+      sendBodyDisplNeighbor[i] = sendBodyDispl[destinations[i]] * bodyWord;      
+      sendCellCountNeighbor[i] = sendCellCount[destinations[i]] * cellWord; 
+      sendCellDisplNeighbor[i] = sendCellDispl[destinations[i]] * cellWord; 
+    }
+    int* recvBodyCountNeighbor = new int[indegree];
+    int* recvBodyDisplNeighbor = new int[indegree];
+    int* recvCellCountNeighbor = new int[indegree];
+    int* recvCellDisplNeighbor = new int[indegree];
+    for (int i = 0; i < indegree; ++i) {
+      recvBodyCountNeighbor[i] = recvBodyCount[sources[i]] * bodyWord; 
+      recvBodyDisplNeighbor[i] = recvBodyDispl[sources[i]] * bodyWord; 
+      recvCellCountNeighbor[i] = recvCellCount[sources[i]] * cellWord; 
+      recvCellDisplNeighbor[i] = recvCellDispl[sources[i]] * cellWord; 
+    }
+    MPI_Neighbor_alltoallv((int*)&sendBodies[0], sendBodyCountNeighbor, sendBodyDisplNeighbor, MPI_INT, (int*)&recvBodies[0],recvBodyCountNeighbor,recvBodyDisplNeighbor,MPI_INT,graphComm);
+    MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&recvCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);              
+    std::vector<int> receivedTrees;
+    for (int i = 0; i < indegree; ++i) {      
+      Cells jcells;      
+      int irank = sources[i];
+      receivedTrees.push_back(irank);
+      getLET(jcells,irank);
+      traversal.traverse(cells, jcells, cycle, dual, mutual, remote);  
+    }
+
+    int logP = log2(mpisize);
+    typedef std::map<int, TreeLevel> nodemap;
+    typedef nodemap::iterator map_iterator;
+
+    int* sendCountB = new int[outdegree];
+    int* sendDisplB = new int[outdegree];
+    int* sendCountC = new int[outdegree];
+    int* sendDisplC = new int[outdegree];
+
+
+    int* recvCountB = new int[indegree];
+    int* recvDisplB = new int[indegree];
+    int* recvCountC = new int[indegree];
+    int* recvDisplC = new int[indegree];
+
+    int isend;
+    linkLET(receivedTrees);
+    int maxLevels = 0; 
+    for (int i = 0; i < res.size(); ++i) {
+      if(res[i].size() > maxLevels)
+        maxLevels = res[i].size();
+    }
+
+    for (int level = 2; level < maxLevels; ++level) {      
+      for (int i = 0; i < outdegree; ++i) {
+        sendCountB[i] = 0; sendDisplB[i] = 0;    
+        sendCountC[i] = 0; sendDisplC[i] = 0;    
+      }
+      
+      std::map<int, TreeLevel> sendList, recvList;       
+      setSendRecvTrees(res, level, sendList, recvList);  
+      std::vector<int> sendRanks;    
+      std::vector<std::vector<int> > sendLETs;
+      std::vector<std::vector<int> > recvLETs;
+      std::vector<std::vector<int> > cellCounts(outdegree);                  
+      std::vector<std::vector<int> > bodyCounts(outdegree);                  
+
+      for (int i = 0; i < outdegree; ++i) {
+        int irank = destinations[i];
+        sendRanks.push_back(irank);
+        sendLETs.push_back(std::vector<int>());
+        if(sendList.find(irank) != sendList.end()) {
+          TreeLevel tLevel = sendList[irank];
+          for (int j = 0; j < tLevel.size(); ++j) {
+            GraphNode node = tLevel[j];
+            sendLETs[i].push_back(node.id);
+          }
+        }
+      }
+      for (int i = 0; i < indegree; ++i) {
+        int irank = sources[i];
+        recvLETs.push_back(std::vector<int>());
+        if(recvList.find(irank) != recvList.end()) {
+          TreeLevel tLevel = recvList[irank];
+          for (int j = 0; j < tLevel.size(); ++j) {
+            GraphNode node = tLevel[j];
+            recvLETs[i].push_back(node.id);
+          }
+        }
+      }
+      if(sendList.size() > 0) 
+        setLET(sendLETs, cycle, sendRanks, cellCounts, bodyCounts);
+      std::vector<int> flatSendCellCounts;
+      std::vector<int> flatSendBodyCounts;
+      std::vector<int> flatRecvCellCounts;
+      std::vector<int> flatRecvBodyCounts;      
+      for (int i = 0; i < outdegree; ++i) {
+        if(i!=0) sendDisplC[i] = sendDisplC[i-1] + sendCountC[i-1];
+        if(i!=0) sendDisplB[i] = sendDisplB[i-1] + sendCountB[i-1];
+        sendCountC[i] = cellCounts[i].size();
+        for (int j = 0; j < sendCountC[i]; ++j) {
+          int prev = (j!=0)? cellCounts[i][j-1]:0;
+          flatSendCellCounts.push_back(cellCounts[i][j] - prev);
+        }
+        sendCountB[i] = bodyCounts[i].size();
+        for (int j = 0; j < sendCountB[i]; ++j) {
+          int prev = (j!=0)? bodyCounts[i][j-1]:0;
+          flatSendBodyCounts.push_back(bodyCounts[i][j] - prev);
+        }
+      }
+      MPI_Neighbor_alltoall(sendCountC, 1, MPI_INT, recvCountC, 1, MPI_INT, graphComm);
+      MPI_Neighbor_alltoall(sendCountB, 1, MPI_INT, recvCountB, 1, MPI_INT, graphComm);
+      recvDisplC[0] = 0;
+      recvDisplB[0] = 0;
+      for (int i = 1; i < indegree; ++i) {
+        recvDisplC[i] = recvDisplC[i-1] + recvCountC[i-1];
+        recvDisplB[i] = recvDisplB[i-1] + recvCountB[i-1];
+      }
+      flatRecvCellCounts.resize(recvDisplC[indegree-1] + recvCountC[indegree-1]);
+      flatRecvBodyCounts.resize(recvDisplB[indegree-1] + recvCountB[indegree-1]);
+      MPI_Neighbor_alltoallv((int*)&flatSendCellCounts[0], sendCountC, sendDisplC, MPI_INT, (int*)&flatRecvCellCounts[0],recvCountC,recvDisplC,MPI_INT,graphComm);
+      MPI_Neighbor_alltoallv((int*)&flatSendBodyCounts[0], sendCountB, sendDisplB, MPI_INT, (int*)&flatRecvBodyCounts[0],recvCountB,recvDisplB,MPI_INT,graphComm);
+      if(sendList.size() > 0) {
+        for (int i = 0; i < outdegree; ++i) {
+          sendBodyCountNeighbor[i] = sendBodyCount[destinations[i]] * bodyWord;   
+          sendBodyDisplNeighbor[i] = sendBodyDispl[destinations[i]] * bodyWord;      
+          sendCellCountNeighbor[i] = sendCellCount[destinations[i]] * cellWord; 
+          sendCellDisplNeighbor[i] = sendCellDispl[destinations[i]] * cellWord; 
+        }
+      } else {
+        for (int i = 0; i < outdegree; ++i) {
+          sendBodyCountNeighbor[i] = 0;   
+          sendBodyDisplNeighbor[i] = 0;      
+          sendCellCountNeighbor[i] = 0; 
+          sendCellDisplNeighbor[i] = 0; 
+        }
+      }
+      recvCellDisplNeighbor[0] = 0;
+      recvBodyDisplNeighbor[0] = 0;
+      for (int i = 0; i < indegree; ++i) {
+        recvBodyCountNeighbor[i] = 0;
+        recvCellCountNeighbor[i] = 0;
+        for(int j = 0; j < recvCountB[i]; ++j){
+          recvBodyCountNeighbor[i] += flatRecvBodyCounts[recvDisplB[i] + j];
+        }
+        for(int j = 0; j < recvCountC[i]; ++j){
+          recvCellCountNeighbor[i] += flatRecvCellCounts[recvDisplC[i] + j];
+        }
+        recvBodyCountNeighbor[i] *= bodyWord;
+        recvCellCountNeighbor[i] *= cellWord;
+        if(i!=0) {
+          recvCellDisplNeighbor[i] = recvCellDisplNeighbor[i-1] + recvCellCountNeighbor[i-1];
+          recvBodyDisplNeighbor[i] = recvBodyDisplNeighbor[i-1] + recvBodyCountNeighbor[i-1];
+        }        
+      }
+      bodyDataSize = recvBodyDisplNeighbor[indegree - 1] + recvBodyCountNeighbor[indegree - 1];    
+      cellDataSize = recvCellDisplNeighbor[indegree - 1] + recvCellCountNeighbor[indegree - 1];              
+      tempBodies.resize(bodyDataSize/bodyWord);
+      tempCells.resize(cellDataSize/cellWord);
+      MPI_Neighbor_alltoallv((int*)&sendBodies[0], sendBodyCountNeighbor, sendBodyDisplNeighbor, MPI_INT, (int*)&tempBodies[0],recvBodyCountNeighbor,recvBodyDisplNeighbor,MPI_INT,graphComm);
+      MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&tempCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);                    
+      receivedTrees.clear();
+      for (int i = 0; i < indegree; ++i) {
+        int cDispl = 0;
+        int bDispl = 0;
+        recvBodyDisplNeighbor[i]/=bodyWord;
+        recvCellDisplNeighbor[i]/=cellWord;
+        for (int j = 0; j < recvLETs[i].size(); ++j) {
+          int irank = recvLETs[i][j];                    
+          int cCount = flatRecvCellCounts[recvDisplC[i] + j];
+          int bCount = flatRecvBodyCounts[recvDisplB[i] + j];
+          receivedTrees.push_back(irank);
+          std::copy(tempBodies.begin() + recvBodyDisplNeighbor[i] + bDispl, tempBodies.begin() + recvBodyDisplNeighbor[i] + bDispl + bCount, recvBodies.begin() + recvBodyDispl[irank]);
+          recvBodyCount[irank] = bCount;          
+          C_iter CC  = tempCells.begin() + recvCellDisplNeighbor[i] + cDispl;
+          C_iter CR0 = recvCells.begin() + recvCellDispl[irank];
+          for (int k = 0; k < cCount; ++k) {
+            C_iter recvIter = CR0 + k;
+            *recvIter = *(CC+k);
+            if(recvIter->NBODY > 0)
+              recvIter->IBODY  = recvIter->IBODY - bDispl;
+            recvIter->ICHILD = recvIter->ICHILD - cDispl;
+            if(recvIter->IPARENT > 0)
+              recvIter->IPARENT= recvIter->IPARENT - cDispl;
+          }            
+          recvCellCount[irank] = cCount;
+          recvBodyCount[irank] = bCount;
+          cDispl+=cCount;
+          bDispl+=bCount;
+        }
+      }
+      //(receivedTrees);
+      for (int i = 0; i < receivedTrees.size(); ++i) {
+        Cells jcells;      
+        int irank = receivedTrees[i];
+        getLET(jcells,irank);
+        traversal.traverse(cells, jcells, cycle, dual, mutual, remote);          
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+
+    delete[] sources;
+    delete[] destinations;
+    delete[] inWeights;
+    delete[] outWeights;
+    delete[] sendBodyCountNeighbor;
+    delete[] sendBodyDisplNeighbor;
+    delete[] sendCellCountNeighbor;
+    delete[] sendCellDisplNeighbor;
+    delete[] recvBodyCountNeighbor;
+    delete[] recvBodyDisplNeighbor;
+    delete[] recvCellCountNeighbor;
+    delete[] recvCellDisplNeighbor;
+  }
+
   //! Set local essential tree to send to each process
   void setLET(Cells & cells, vec3 cycle) {
     logger::startTimer("Set LET size");                       // Start timer
@@ -670,6 +1077,83 @@ public:
     logger::stopTimer("Set LET");                             // Stop timer
   }
 
+  //! Set local essential tree to send to each process
+  void setLET(std::vector<std::vector<int> > cells, vec3 cycle, std::vector<int> ranks, std::vector<std::vector<int> >& cellCounts, std::vector<std::vector<int> >& bodyCounts) {
+    logger::startTimer("Set LET size");                       // Start timer
+    Bounds bounds;                                            // Bounds of local subdomain
+    for (int irank = 0; irank < mpisize; ++irank) {
+      sendBodyDispl[0] = 0;                                     // Initialize body displacement vector
+      sendCellDispl[0] = 0;                                     // Initialize cell displacement vector    
+      sendBodyCount[0] = 0;                                     // Initialize body displacement vector
+      sendCellCount[0] = 0;                                     // Initialize cell displacement vector    
+    }  
+    int size = ranks.size();
+    cellCounts.resize(size);
+    bodyCounts.resize(size);
+    for (int i = 0; i < size; ++i) {
+      int irank = ranks[i];
+      if (i != 0) {
+        int prevRank = ranks[i-1];
+        sendBodyDispl[irank] = sendBodyDispl[prevRank] + sendBodyCount[prevRank]; // Update body displacement
+        sendCellDispl[irank] = sendCellDispl[prevRank] + sendCellCount[prevRank]; // Update cell displacement
+      }
+      for (int d = 0; d < 3; d++) {                         //   Loop over dimensions
+        bounds.Xmin[d] = allBoundsXmin[irank][d];           //    Local Xmin for irank
+        bounds.Xmax[d] = allBoundsXmax[irank][d];           //    Local Xmax for irank
+      }                                                     //   End loop over dimensions
+      int ibody = 0;                                        //   Initialize send body's offset
+      int icell = 1;                                        //   Initialize send cell's offset
+      for (int j = 0; j < cells[i].size(); ++j) {
+        int r = cells[i][j];
+        C_iter C0 = recvCells.begin() + recvCellDispl[r];
+        if (irank != mpirank) {                                 //  If not current rank and cell vector is not empty
+          if (C0->NCHILD == 0) {                                //   If root cell is leaf
+            addSendBody(C0, irank, ibody, icell - 1, false);    //    Add bodies to send
+          }                                                     //   End if for root cell leaf
+          traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, 0, false); // Traverse tree to set LET
+        }
+        cellCounts[i].push_back(icell);
+        bodyCounts[i].push_back(ibody);
+        icell++;            
+      }              
+      sendBodyCount[irank] = ibody;                         //   Send body count for current rank
+      sendCellCount[irank] = icell - 1;                     //   Send cell count for current rank
+    }
+    logger::stopTimer("Set LET size");                        // Stop timer
+    logger::startTimer("Set LET");                            // Start timer
+    int lastRank = ranks[size-1];
+    int numSendBodies = sendBodyDispl[lastRank] + sendBodyCount[lastRank]; // Total number of send bodies
+    int numSendCells = sendCellDispl[lastRank] + sendCellCount[lastRank]; // Total number of send cells
+    sendBodies.resize(numSendBodies);                         // Clear send buffer for bodies
+    sendCells.resize(numSendCells);                           // Clear send buffer for cells
+    //MPI_Barrier(MPI_COMM_WORLD);
+    for (int i = 0; i < size; ++i) {
+      int irank = ranks[i];
+      for (int d = 0; d < 3; d++) {                         //   Loop over dimensions
+        bounds.Xmin[d] = allBoundsXmin[irank][d];           //    Local Xmin for irank
+        bounds.Xmax[d] = allBoundsXmax[irank][d];           //    Local Xmax for irank
+      }                                                     //   End loop over dimensions
+      int ibody = 0;                                        //   Initialize send body's offset
+      int icell = 0;                                        //   Initialize send cell's offset
+      for (int j = 0; j < cells[i].size(); ++j) {
+        int r = cells[i][j];
+        C_iter C0 = recvCells.begin() + recvCellDispl[r];
+        if (irank != mpirank) {                                //  If not current rank and cell vector is not empty
+          C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;//   Send cell iterator
+         *Csend = *C0;                                         //   Copy cell to send buffer
+          Csend->NCHILD = Csend->NBODY = 0;                     //   Reset link to children and bodies
+          icell++;                                              //   Increment send cell counter
+          if (C0->NCHILD == 0) {                                //   If root cell is leaf
+            addSendBody(C0, irank, ibody, icell - 1, true);    //    Add bodies to send
+          }                                                     //   End if for root cell leaf
+          traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, icell - 1, true); // Traverse tree to set LET
+        }
+      }              
+    }
+    logger::stopTimer("Set LET");                             // Stop timer
+  }
+
+
   //! Get local essential tree from irank
   void getLET(Cells & cells, int irank) {
     std::stringstream event;                                  // Event name
@@ -691,6 +1175,21 @@ public:
   void linkLET() {
     logger::startTimer("Link LET");                           // Start timer
     for (int irank = 0; irank < mpisize; irank++) {           // Loop over ranks
+      for (int i = 0; i < recvCellCount[irank]; i++) {        //  Loop over receive cells
+        C_iter C = recvCells.begin() + recvCellDispl[irank] + i;//   Iterator of receive cell
+        if (C->NBODY != 0) {                                  //   If cell has bodies
+          C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->IBODY;// Iterator of first body
+        }                                                     //   End if for bodies
+      }                                                       //  End loop over receive cells
+    }                                                         // End loop over ranks
+    logger::stopTimer("Link LET");                            // End timer
+  }
+
+  //! Link LET with received bodies and calcualte NBODY
+  void linkLET(std::vector<int> ranks) {
+    logger::startTimer("Link LET");                           // Start timer
+    for (int c = 0; c < ranks.size(); ++c) {                 // Loop over ranks
+      int irank = ranks[c];
       for (int i = 0; i < recvCellCount[irank]; i++) {        //  Loop over receive cells
         C_iter C = recvCells.begin() + recvCellDispl[irank] + i;//   Iterator of receive cell
         if (C->NBODY != 0) {                                  //   If cell has bodies
@@ -735,6 +1234,25 @@ public:
     Bodies bodies;                                            // Bodies to contain remote root coordinates
     bodies.reserve(mpisize - 1);                              // Reserve size of body vector
     for (int irank = 0; irank < mpisize; irank++) {           // Loop over ranks
+      if (irank != mpirank) {                                 //  If not current rank
+        C_iter C0 = recvCells.begin() + recvCellDispl[irank]; //   Root cell iterator for irank
+        Body body;                                            //   Body to contain remote root coordinates
+        body.X = C0->X;                                       //   Copy remote root coordinates
+        body.IBODY = recvCellDispl[irank];                    //   Copy remote root displacement in vector
+        bodies.push_back(body);                               //   Push this root cell to body vector
+      }                                                       //  End if for not current rank
+    }                                                         // End loop over ranks
+    logger::stopTimer("Root to body");                        // Stop timer
+    return bodies;                                            // Return body vector
+  }
+
+  //! Copy a subset of remote root cells to body structs (for building global tree)
+  Bodies root2body(std::vector<int> iranks) {
+    logger::startTimer("Root to body");                       // Start timer
+    Bodies bodies;                                            // Bodies to contain remote root coordinates
+    bodies.reserve(iranks.size());                            // Reserve size of body vector
+    for (int i = 0; i < iranks.size(); i++) {                 // Loop over ranks
+      int irank = iranks[i];                                  //  index the the current rank
       if (irank != mpirank) {                                 //  If not current rank
         C_iter C0 = recvCells.begin() + recvCellDispl[irank]; //   Root cell iterator for irank
         Body body;                                            //   Body to contain remote root coordinates
@@ -816,9 +1334,9 @@ public:
       sendBodyDispl[irank + 1] = sendBodyDispl[irank] + sendBodyCount[irank]; //  Set send displacement
     }
     alltoallv_p2p_hypercube(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
-#elif EXAFMM_USE_ONESIDED
-    alltoall(bodies);                                     // Send body count       
-    alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount, true);
+// #elif EXAFMM_USE_ONESIDED
+//     alltoall(bodies);                                     // Send body count       
+//     alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #else 
     alltoall(bodies);                                         // Send body count    
     alltoallv(bodies);                                        // Send bodies        
@@ -849,9 +1367,9 @@ public:
       sendBodyDispl[irank + 1] = sendBodyDispl[irank] + sendBodyCount[irank]; //  Set send displacement
     }      
     alltoallv_p2p_hypercube(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
-#elif EXAFMM_USE_ONESIDED
-    alltoall(sendBodies);                                     // Send body count       
-    alltoallv_p2p_onesided(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+   #elif EXAFMM_USE_ONESIDED
+     alltoall(sendBodies);                                     // Send body count       
+     alltoallv_p2p_onesided(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #else    
     alltoall(sendBodies);                                     // Send body count       
     alltoallv(sendBodies);                                    // Send bodies
@@ -876,7 +1394,7 @@ public:
       recvCellDispl[i] = 0;
     }  
     alltoallv_p2p_hypercube(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);
-#elif EXAFMM_USE_ONESIDED
+ #elif EXAFMM_USE_ONESIDED
     alltoall(sendCells);                                     // Send body count       
     alltoallv_p2p_onesided(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);      
 #else 
@@ -884,6 +1402,11 @@ public:
     alltoallv(sendCells);                                     // Senc cells
 #endif    
     logger::stopTimer("Comm LET cells");                      // Stop timer
+  }
+
+  //! Copy recvBodies to bodies
+  Bodies getRecvBodies() {
+    return recvBodies;                                        // Return recvBodies
   }
 
   //! Send bodies to next rank (round robin)
