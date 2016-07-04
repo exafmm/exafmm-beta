@@ -837,16 +837,13 @@ public:
       traversal.traverse(cells, jcells, cycle, dual, mutual, remote);  
     }
 
-    int logP = log2(mpisize);
     typedef std::map<int, TreeLevel> nodemap;
     typedef nodemap::iterator map_iterator;
-
     int* sendCountB = new int[outdegree];
     int* sendDisplB = new int[outdegree];
     int* sendCountC = new int[outdegree];
     int* sendDisplC = new int[outdegree];
-
-
+    
     int* recvCountB = new int[indegree];
     int* recvDisplB = new int[indegree];
     int* recvCountC = new int[indegree];
@@ -1020,6 +1017,14 @@ public:
     delete[] recvBodyDisplNeighbor;
     delete[] recvCellCountNeighbor;
     delete[] recvCellDisplNeighbor;
+    delete[] sendCountB;
+    delete[] sendDisplB;
+    delete[] sendCountC;
+    delete[] sendDisplC;
+    delete[] recvCountB;
+    delete[] recvDisplB;
+    delete[] recvCountC;
+    delete[] recvDisplC;
   }
 
   //! Set local essential tree to send to each process
