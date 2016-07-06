@@ -770,8 +770,9 @@ public:
     }
   }
 
-  template<typename TraverseType, typename Cycle>
-  void traverseNeighborTrees(TraverseType& traversal, Cells& cells, Cycle cycle, bool dual, bool mutual, Bounds globalBounds, real_t remote = 1) {
+  template<typename Cycle>
+  void commDistGraph(Cells& cells, Cycle cycle, Bounds globalBounds) {
+    logger::startTimer("Comm LET");
     real_t leeway = 0.1f;
     real_t* localXmin = allBoundsXmin[mpirank];
     real_t* localXmax = allBoundsXmax[mpirank];        
@@ -829,13 +830,6 @@ public:
     MPI_Neighbor_alltoallv((int*)&sendBodies[0], sendBodyCountNeighbor, sendBodyDisplNeighbor, MPI_INT, (int*)&recvBodies[0],recvBodyCountNeighbor,recvBodyDisplNeighbor,MPI_INT,graphComm);
     MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&recvCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);              
     std::vector<int> receivedTrees;
-    for (int i = 0; i < indegree; ++i) {      
-      Cells jcells;      
-      int irank = sources[i];
-      receivedTrees.push_back(irank);
-      getLET(jcells,irank);
-      traversal.traverse(cells, jcells, cycle, dual, mutual, remote);  
-    }
 
     typedef std::map<int, TreeLevel> nodemap;
     typedef nodemap::iterator map_iterator;
@@ -848,15 +842,12 @@ public:
     int* recvDisplB = new int[indegree];
     int* recvCountC = new int[indegree];
     int* recvDisplC = new int[indegree];
-
     int isend;
-    linkLET(receivedTrees);
     int maxLevels = 0; 
     for (int i = 0; i < res.size(); ++i) {
       if(res[i].size() > maxLevels)
         maxLevels = res[i].size();
     }
-
     for (int level = 2; level < maxLevels; ++level) {      
       for (int i = 0; i < outdegree; ++i) {
         sendCountB[i] = 0; sendDisplB[i] = 0;    
@@ -995,14 +986,6 @@ public:
           bDispl+=bCount;
         }
       }
-      //(receivedTrees);
-      for (int i = 0; i < receivedTrees.size(); ++i) {
-        Cells jcells;      
-        int irank = receivedTrees[i];
-        getLET(jcells,irank);
-        traversal.traverse(cells, jcells, cycle, dual, mutual, remote);          
-      }
-      MPI_Barrier(MPI_COMM_WORLD);
     }
 
     delete[] sources;
@@ -1025,6 +1008,7 @@ public:
     delete[] recvDisplB;
     delete[] recvCountC;
     delete[] recvDisplC;
+    logger::stopTimer("Comm LET");
   }
 
   //! Set local essential tree to send to each process

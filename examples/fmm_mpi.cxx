@@ -106,25 +106,18 @@ int main(int argc, char ** argv) {
         } else {
           treeMPI->setLET(cells, cycle);
         }
-#if EXAFMM_USE_DISTGRAPH
-      traversal.initListCount(cells);
-      traversal.initWeight(cells);
-      traversal.initCountKernel();
-      if (args.IneJ) {
-        traversal.traverse(cells, jcells, cycle, args.dual, false,0);
-      } else {
-        traversal.traverse(cells, cells, cycle, args.dual, args.mutual,0);
-        jbodies = bodies;
-      }
-        treeMPI->traverseNeighborTrees(traversal,cells,cycle, args.dual, false, globalBounds);
-#else    
 #pragma omp parallel sections
         {
 #pragma omp section
           {
+#if EXAFMM_USE_DISTGRAPH     
+      treeMPI->commDistGraph(cells, cycle, globalBounds);   
+#else
       treeMPI->commBodies();
       treeMPI->commCells();
-          }
+#endif
+          
+	}
 #pragma omp section
           {
       traversal.initListCount(cells);
@@ -152,7 +145,6 @@ int main(int argc, char ** argv) {
     	}
           }
         }
-#endif
 #else
         jbodies = bodies;
         for (int irank=0; irank<baseMPI.mpisize; irank++) {
