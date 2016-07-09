@@ -1,9 +1,12 @@
 #ifndef args_h
 #define args_h
+#include <cassert>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <stdint.h>
 #ifndef _SX
 #include <getopt.h>
 #endif
@@ -118,9 +121,48 @@ namespace exafmm {
 	return "sphere";
       default:
 	fprintf(stderr, "invalid distribution %s\n", arg);
-	exit(0);
+	abort();
       }
       return "";
+    }
+
+    uint64_t getDistNum(const char * distribution) {
+      if (distribution == "cube")
+        return 0;
+      else if (distribution == "lattice")
+        return 1;
+      else if (distribution == "octant")
+        return 2;
+      else if (distribution == "plummer")
+        return 3;
+      else if (distribution == "sphere")
+        return 4;
+      else {
+        fprintf(stderr, "invalid distribution %s\n", distribution);
+        abort();
+      }
+    }
+
+    uint64_t getKernelNum() {
+      uint64_t key = 0;
+#if EXAFMM_LAPLACE
+      key |= 0;
+#elif EXAFMM_HELMHOLTZ
+      key |= 1;
+#elif EXAFMM_STOKES
+      key |= 2;
+#elif EXAFMM_BIOTSAVART
+      key |= 3;
+#endif
+#if EXAFMM_CARTESIAN
+      key |= 0 << 3;
+#elif EXAFMM_SPHERICAL
+      key |= 1 << 3;
+#elif EXAFMM_PLANEWAVE
+      key |= 2 << 3;
+#elif EXAFMM_EQUIVALENT
+      key |= 3 << 3;
+#endif
     }
 
   public:
@@ -174,7 +216,7 @@ namespace exafmm {
 	  break;
 	case 'h':
 	  usage(argv[0]);
-	  exit(0);
+	  abort();
 	case 'i':
 	  images = atoi(optarg);
 	  break;
@@ -216,9 +258,31 @@ namespace exafmm {
 	  break;
 	default:
 	  usage(argv[0]);
-	  exit(0);
+	  abort();
 	}
       }
+    }
+
+    uint64_t getKey(int type, int mpisize=1) {
+      uint64_t key = 0;
+      key |= uint64_t(log(ncrit)/log(2)); assert(key <= 1 << 4);
+      key |= getDistNum(distribution) << 4; assert(key <= 1 << 7);
+      key |= dual << 7; assert(key <= 1 << 8);
+      key |= graft << 8; assert(key <= 1 << 9);
+      key |= images << 9; assert(key <= 1 << 11);
+      key |= IneJ << 11; assert(key <= 1 << 12);
+      key |= mutual << 12; assert(key <= 1 << 13);
+      key |= uint64_t(log(numBodies)/log(10)) << 13; assert(key <= 1 << 17);
+      key |= useRopt << 17; assert(key <= 1 << 8);
+      key |= PP << 18; assert(key <= 1 << 24);
+      key |= uint64_t(log(nspawn)/log(10)) << 24; assert(key <= 1 << 27);
+      key |= uint64_t(theta*14) << 27; assert(key <= 1 << 30);
+      key |= uint64_t(log(threads)/log(2)) << 30; assert(key <= uint64_t(1) << 33);
+      key |= uint64_t(useRmax) << 33; assert(key <= uint64_t(1) << 34);
+      key |= getKernelNum() << 34; assert(key <= uint64_t(1) << 40);
+      key |= uint64_t(type) << 40; assert(key <= uint64_t(1) << 41);
+      key |= uint64_t(log(mpisize)/log(2)) << 41; 
+      return key;
     }
 
     void print(int stringLength, int PP) {

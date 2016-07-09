@@ -43,7 +43,9 @@ int main(int argc, char ** argv) {
       B->X[0] *= 0.5;
     }
   }
-  for (int t=0; t<args.repeat; t++) {
+  bool pass;
+  int t;
+  for (t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
@@ -68,7 +70,7 @@ int main(int argc, char ** argv) {
     logger::printTitle("Total runtime");
     logger::stopDAG();
     logger::stopPAPI();
-    logger::stopTimer("Total FMM");
+    double totalFMM = logger::stopTimer("Total FMM");
     logger::resetTimer("Total FMM");
     if (args.write) {
       logger::writeTime();
@@ -90,11 +92,22 @@ int main(int argc, char ** argv) {
     logger::printTitle("FMM vs. direct");
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+    pass = true;
+    uint64_t key = args.getKey(0);
+    pass &= verify.regression(key, std::sqrt(potDif/potNrm), t);
+    key = args.getKey(1);
+    pass &= verify.regression(key, totalFMM, t);
+    if (pass) break;
     buildTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
+  }
+  if (pass) std::cout << "passed regression at iteration: " << t << std::endl;
+  else {
+    std::cout << "failed regression" << std::endl;
+    abort();
   }
   if (args.getMatrix) {
     traversal.writeMatrix(bodies, jbodies);

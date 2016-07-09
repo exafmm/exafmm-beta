@@ -13,15 +13,15 @@ tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 
 run_laplace_cartesian: laplace_cartesian
-	./$< -Dgmovx
+	./$< -Dgmovx -r 3
 run_laplace_spherical: laplace_spherical
-	./$< -Dgmovx
+	./$< -Dgmovx -r 3
 run_helmholtz_spherical: helmholtz_spherical
-	./$< -Dgv -n 40000
+	./$< -Dgv -n 40000 -r 3
 run_biotsavart_spherical: biotsavart_spherical
-	./$< -Dgv -n 40000
+	./$< -Dgv -n 40000 -r 3
 run_tree: tree
-	./$< -v -n 10000000
+	./$< -v -n 10000000 -r 3
 
 bin_PROGRAMS += laplace_cartesian_kernel laplace_spherical_kernel helmholtz_spherical_kernel biotsavart_spherical_kernel
 laplace_cartesian_kernel_SOURCES = kernel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
@@ -34,13 +34,13 @@ biotsavart_spherical_kernel_SOURCES = kernel.cxx ../kernels/BiotSavartSphericalC
 biotsavart_spherical_kernel_CPPFLAGS = $(biotsavart_spherical_CPPFLAGS)
 
 run_laplace_cartesian_kernel: laplace_cartesian_kernel
-	./$< -v
+	./$< -v -r 3
 run_laplace_spherical_kernel: laplace_spherical_kernel
-	./$< -v
+	./$< -v -r 3
 run_helmholtz_spherical_kernel: helmholtz_spherical_kernel
-	./$< -v
+	./$< -v -r 3
 run_biotsavart_spherical_kernel: biotsavart_spherical_kernel
-	./$< -v
+	./$< -v -r 3
 
 if EXAFMM_HAVE_MPI
 bin_PROGRAMS += laplace_cartesian_mpi laplace_spherical_mpi helmholtz_spherical_mpi biotsavart_spherical_mpi ewald_mpi
@@ -56,13 +56,13 @@ ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/Lapl
 ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 
 run_laplace_cartesian_mpi: laplace_cartesian_mpi
-	$(MPIRUN) -n 2 ./$< -Dgmovx
+	$(MPIRUN) -n 2 ./$< -Dgmovx -r 3
 run_laplace_spherical_mpi: laplace_spherical_mpi
-	$(MPIRUN) -n 2 ./$< -Dgmovx
+	$(MPIRUN) -n 2 ./$< -Dgmovx -r 3
 run_helmholtz_spherical_mpi: helmholtz_spherical_mpi
-	$(MPIRUN) -n 2 ./$< -Dgv -n 100000
+	$(MPIRUN) -n 2 ./$< -Dgv -n 100000 -r 3
 run_biotsavart_spherical_mpi: biotsavart_spherical_mpi
-	$(MPIRUN) -n 2 ./$< -Dgv -n 100000
+	$(MPIRUN) -n 2 ./$< -Dgv -n 100000 -r 3
 run_ewald_mpi: ewald_mpi
-	$(MPIRUN) -n 2 ./$< -Dgmovx
+	$(MPIRUN) -n 2 ./$< -Dgmovx -r 3
 endif

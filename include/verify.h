@@ -5,6 +5,9 @@
 namespace exafmm {
   //! Verify results
   class Verify {
+    typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
+    typedef Record::iterator R_iter;                            //!< Iterator of regression map
+
   public:
     //! Get sum of scalar component of a vector of target bodies
     double getSumScalar(Bodies & bodies) {
@@ -96,6 +99,35 @@ namespace exafmm {
 		  << title << " : " << std::setprecision(logger::decimal) << std::scientific // Set title
 		  << v << std::endl;                            //  Print potential error
       }                                                         // End if for verbose flag
+    }
+
+    //! Compare data for regression
+    bool regression(uint64_t key, double value, int iteration) {
+      bool pass = false;                                        // Flag for regression test
+      Record record;                                            // Map for regression value
+      std::fstream file;                                        // File id for regression
+      file.open("regression.dat",std::fstream::in);             //  Open time file
+      int numKeys;                                              // Number of keys stored in file
+      if (file.good()) {                                        // If file exists
+        file >> numKeys;                                        //  Read number of keys
+        for (int i=0; i<numKeys; i++) {                         //  Loop over regression values
+          uint64_t readKey;                                     //   Read key buffer
+          file >> readKey;                                      //   Read key
+          file >> record[readKey];                              //   Read value
+        }                                                       //  End loop over regression values
+      }                                                         // End if for file existence
+      file.close();                                             // Close regression file
+      if (record[key] == 0 || value < record[key]*(1+iteration*.01)) { // If new record
+        pass = true;                                            //  Change flag to pass
+        record[key] = value;                                    //  Add key value pair
+      }                                                         // Endif for better value
+      file.open("regression.dat",std::fstream::out);            // Open regression file
+      file << record.size() << std::endl;                       // Write number of keys
+      for (R_iter R=record.begin(); R!=record.end(); R++) {     // Loop over regression values
+        file << R->first << " " << R->second << std::endl;      //  Write key value pair
+      }                                                         // End loop over regression values
+      file.close();                                             // Close regression file
+      return pass;                                              // Return flag for regression test
     }
   };
 }
