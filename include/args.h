@@ -163,6 +163,7 @@ namespace exafmm {
 #elif EXAFMM_EQUIVALENT
       key |= 3 << 3;
 #endif
+      return key;
     }
 
   public:
