@@ -34,13 +34,13 @@ biotsavart_spherical_kernel_SOURCES = kernel.cxx ../kernels/BiotSavartSphericalC
 biotsavart_spherical_kernel_CPPFLAGS = $(biotsavart_spherical_CPPFLAGS)
 
 run_laplace_cartesian_kernel: laplace_cartesian_kernel
-	./$< -v -r 3
+	./$< -v
 run_laplace_spherical_kernel: laplace_spherical_kernel
-	./$< -v -r 3
+	./$< -v
 run_helmholtz_spherical_kernel: helmholtz_spherical_kernel
-	./$< -v -r 3
+	./$< -v
 run_biotsavart_spherical_kernel: biotsavart_spherical_kernel
-	./$< -v -r 3
+	./$< -v
 
 if EXAFMM_HAVE_MPI
 bin_PROGRAMS += laplace_cartesian_mpi laplace_spherical_mpi helmholtz_spherical_mpi biotsavart_spherical_mpi ewald_mpi

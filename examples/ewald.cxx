@@ -55,7 +55,9 @@ int main(int argc, char ** argv) {
   }
   buffer.reserve(bodies.size());
   //data.writeSources(bodies, baseMPI.mpirank);
-  for (int t=0; t<args.repeat; t++) {
+  bool pass;
+  int t;
+  for (t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
@@ -94,7 +96,7 @@ int main(int argc, char ** argv) {
     int numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     logger::stopPAPI();
-    logger::stopTimer("Total FMM");
+    double totalFMM = logger::stopTimer("Total FMM");
 #if 1
     bodies2 = bodies;
     data.initTarget(bodies);
@@ -159,6 +161,25 @@ int main(int argc, char ** argv) {
     traversal.printTraversalData();
     logger::printPAPI();
     data.initTarget(bodies);
+    double totalFMMGlob;
+    MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    totalFMMGlob /= baseMPI.mpisize;
+    if (!baseMPI.mpirank) {
+      pass = true;
+      uint64_t key = args.getKey(0, baseMPI.mpisize);
+      pass &= verify.regression(key, std::sqrt(potDifGlob/potNrmGlob), t);
+      key = args.getKey(1, baseMPI.mpisize);
+      pass &= verify.regression(key, totalFMMGlob, t);
+    }
+    MPI_Bcast(&pass, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (pass) break;
+  }
+  if (args.verbose) {
+    if (pass) std::cout << "passed regression at iteration: " << t << std::endl;
+    else {
+      std::cout << "failed regression" << std::endl;
+      abort();
+    }
   }
   return 0;
 }

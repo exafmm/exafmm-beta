@@ -52,7 +52,9 @@ int main(int argc, char ** argv) {
       B->X[0] *= 0.5;
     }
   }
-  for (int t=0; t<args.repeat; t++) {
+  bool pass;
+  int t;
+  for (t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
@@ -132,7 +134,7 @@ int main(int argc, char ** argv) {
     upDownPass.downwardPass(cells);
 
     logger::stopPAPI();
-    logger::stopTimer("Total FMM", 0);
+    double totalFMM = logger::stopTimer("Total FMM", 0);
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
@@ -172,6 +174,25 @@ int main(int argc, char ** argv) {
       logger::writeTime(baseMPI.mpirank);
     }
     traversal.writeList(cells, baseMPI.mpirank);
+    double totalFMMGlob;
+    MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    totalFMMGlob /= baseMPI.mpisize;
+    if (!baseMPI.mpirank) {
+      pass = true;
+      uint64_t key = args.getKey(0, baseMPI.mpisize);
+      pass &= verify.regression(key, std::sqrt(potDifGlob/potNrmGlob), t);
+      key = args.getKey(1, baseMPI.mpisize);
+      pass &= verify.regression(key, totalFMMGlob, t);
+    }
+    MPI_Bcast(&pass, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (pass) break;
+  }
+  if (args.verbose) {
+    if (pass) std::cout << "passed regression at iteration: " << t << std::endl;
+    else {
+      std::cout << "failed regression" << std::endl;
+      abort();
+    }
   }
   return 0;
 }

@@ -92,22 +92,24 @@ int main(int argc, char ** argv) {
     logger::printTitle("FMM vs. direct");
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+    buildTree.printTreeData(cells);
+    traversal.printTraversalData();
+    logger::printPAPI();
+    bodies = buffer;
+    data.initTarget(bodies);
     pass = true;
     uint64_t key = args.getKey(0);
     pass &= verify.regression(key, std::sqrt(potDif/potNrm), t);
     key = args.getKey(1);
     pass &= verify.regression(key, totalFMM, t);
     if (pass) break;
-    buildTree.printTreeData(cells);
-    traversal.printTraversalData();
-    logger::printPAPI();
-    bodies = buffer;
-    data.initTarget(bodies);
   }
-  if (pass) std::cout << "passed regression at iteration: " << t << std::endl;
-  else {
-    std::cout << "failed regression" << std::endl;
-    abort();
+  if (args.verbose) {
+    if (pass) std::cout << "passed regression at iteration: " << t << std::endl;
+    else {
+      std::cout << "failed regression" << std::endl;
+      abort();
+    }
   }
   if (args.getMatrix) {
     traversal.writeMatrix(bodies, jbodies);
