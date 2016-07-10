@@ -264,7 +264,7 @@ namespace exafmm {
       }
     }
 
-    uint64_t getKey(int type, int mpisize=1) {
+    uint64_t getKey(int mpisize=1) {
       uint64_t key = 0;
       key |= uint64_t(log(ncrit)/log(2)); assert(key <= 1 << 4);
       key |= getDistNum(distribution) << 4; assert(key <= 1 << 7);
@@ -281,8 +281,7 @@ namespace exafmm {
       key |= uint64_t(log(threads)/log(2)) << 30; assert(key <= uint64_t(1) << 33);
       key |= uint64_t(useRmax) << 33; assert(key <= uint64_t(1) << 34);
       key |= getKernelNum() << 34; assert(key <= uint64_t(1) << 40);
-      key |= uint64_t(type) << 40; assert(key <= uint64_t(1) << 41);
-      key |= uint64_t(log(mpisize)/log(2)) << 41; 
+      key |= uint64_t(log(mpisize)/log(2)) << 40;
       return key;
     }
 

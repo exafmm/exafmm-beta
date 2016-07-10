@@ -102,11 +102,16 @@ namespace exafmm {
     }
 
     //! Compare data for regression
-    bool regression(uint64_t key, double value, int iteration) {
+    bool regression(uint64_t key, double value, bool time, int iteration) {
       bool pass = false;                                        // Flag for regression test
       Record record;                                            // Map for regression value
+      char host[HOST_NAME_MAX];                                 // Hostname
+      gethostname(host, HOST_NAME_MAX);                         // Get hostname
+      std::stringstream name;                                   // File name for regression
+      if (time) name << "time_" << host << ".reg";              // If time regression
+      else name << "accuracy.reg";                              // Else if accuracy regression
       std::fstream file;                                        // File id for regression
-      file.open("regression.dat",std::fstream::in);             //  Open time file
+      file.open(name.str().c_str(),std::fstream::in);           //  Open regression file
       int numKeys;                                              // Number of keys stored in file
       if (file.good()) {                                        // If file exists
         file >> numKeys;                                        //  Read number of keys
@@ -121,7 +126,7 @@ namespace exafmm {
         pass = true;                                            //  Change flag to pass
         record[key] = value;                                    //  Add key value pair
       }                                                         // Endif for better value
-      file.open("regression.dat",std::fstream::out);            // Open regression file
+      file.open(name.str().c_str(),std::fstream::out);          // Open regression file
       file << record.size() << std::endl;                       // Write number of keys
       for (R_iter R=record.begin(); R!=record.end(); R++) {     // Loop over regression values
         file << R->first << " " << R->second << std::endl;      //  Write key value pair

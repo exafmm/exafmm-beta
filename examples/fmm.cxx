@@ -98,10 +98,8 @@ int main(int argc, char ** argv) {
     bodies = buffer;
     data.initTarget(bodies);
     pass = true;
-    uint64_t key = args.getKey(0);
-    pass &= verify.regression(key, std::sqrt(potDif/potNrm), t);
-    key = args.getKey(1);
-    pass &= verify.regression(key, totalFMM, t);
+    pass &= verify.regression(args.getKey(), std::sqrt(potDif/potNrm), false, t);
+    pass &= verify.regression(args.getKey(), totalFMM, true, t);
     if (pass) break;
   }
   if (args.verbose) {
