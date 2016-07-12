@@ -3,7 +3,6 @@
 #include "kernel.h"
 #include "logger.h"
 #include "sort.h"
-#include "build_tree.h"
 #include <set>
 #include <queue>
 
@@ -570,26 +569,19 @@ protected:
   }
 
   template<typename BoundsArr>
-  NeighborList setNeighbors(BoundsArr minBounds, BoundsArr maxBounds) {
+  NeighborList setNeighbors(BoundsArr minBounds, BoundsArr maxBounds, Bounds globalBounds) {
     NeighborList neighbors(mpisize);
-    const int leeway = 0.01;
+    const real_t leeway[3] = {0.01*(globalBounds.Xmax[0] - globalBounds.Xmin[0]), 0.01*(globalBounds.Xmax[1] - globalBounds.Xmin[1]),0.01*(globalBounds.Xmax[2] - globalBounds.Xmin[2])};
     for (int i = 0; i < mpisize; ++i) {
       real_t* localXmin = minBounds[i];
       real_t* localXmax = maxBounds[i];    
       for (int irank = 0; irank < mpisize; ++irank) {
          if(i!=irank) {
-          for (int dim = 0; dim < 3; ++dim) {
-            int dim1 = (dim+1)%3;
-            int dim2 = (dim+2)%3;
-            real_t inc = minBounds[irank][dim] - localXmax[dim];
-            real_t dec = localXmin[dim] - maxBounds[irank][dim];
-            if((abs(inc) <= leeway || abs(dec) <= leeway) &&
-              ((minBounds[irank][dim1] <= localXmax[dim1]+leeway && maxBounds[irank][dim1]+leeway>=localXmax[dim1]) || (localXmin[dim1] <= maxBounds[irank][dim1]+leeway && localXmax[dim1]+leeway>=maxBounds[irank][dim1])) &&
-              ((minBounds[irank][dim2] <= localXmax[dim2]+leeway && maxBounds[irank][dim2]+leeway>=localXmax[dim2]) || (localXmin[dim2] <= maxBounds[irank][dim2]+leeway && localXmax[dim2]+leeway>=maxBounds[irank][dim2]))) {                                     
-              neighbors[i].push_back(irank);
-              break;     
-            }          
-          }          
+          int dim;
+          for (dim = 0; dim < 3; ++dim) {
+            if((localXmin[dim] - leeway[dim] > maxBounds[irank][dim]) || (minBounds[irank][dim] - leeway[dim] > localXmax[dim])) break;
+          }
+          if(dim == 3) neighbors[i].push_back(irank);
         }
       }      
     }  
@@ -632,8 +624,8 @@ protected:
           for (int i = 0; i < treeLevel.size(); ++i) {  
             GraphNode node = treeLevel[i];
             if(node.source == mpirank) {
-              if(sendList.find(node.source) == sendList.end()) 
-                sendList[node.source] = TreeLevel();          
+              if(sendList.find(irank) == sendList.end()) 
+                sendList[irank] = TreeLevel();          
               sendList[irank].push_back(node);
             }          
           }
@@ -653,7 +645,7 @@ protected:
       bool visit = false;
       while(!traversalQ.empty() && traversedSet.size() < mpisize){
         GraphNode current = traversalQ.front();   
-        traversalQ.pop();         
+        traversalQ.pop();        
         visit = false;
         if(traversedSet.find(current.id) == traversedSet.end()) {
           visit = true;
@@ -671,14 +663,14 @@ protected:
           for (int i = 0; i < r_neighbors.size(); ++i) {    
               traversalQ.push(GraphNode(current.id, r_neighbors[i],(currentDepth>1)?current.source:current.id));
           }        
-        } 
-        nextElemToDepthInc += neighbors[current.id].size();
+          nextElemToDepthInc += neighbors[current.id].size();   
+        }
         elemToDepthInc--;
         if(elemToDepthInc == 0) {
           currentDepth++;
           elemToDepthInc = nextElemToDepthInc;
           nextElemToDepthInc = 0;
-        }      
+        }
       }
       graph[source] = output;
     }        
@@ -773,7 +765,6 @@ public:
   template<typename Cycle>
   void commDistGraph(Cells& cells, Cycle cycle, Bounds globalBounds) {
     logger::startTimer("Comm LET");
-    real_t leeway = 0.1f;
     real_t* localXmin = allBoundsXmin[mpirank];
     real_t* localXmax = allBoundsXmax[mpirank];        
     alltoall(sendBodies);
@@ -786,7 +777,7 @@ public:
     int cellWord = sizeof(sendCells[0]) / 4;    
     Bodies tempBodies;
     Cells tempCells;
-    NeighborList neighbors = setNeighbors(allBoundsXmin, allBoundsXmax);         
+    NeighborList neighbors = setNeighbors(allBoundsXmin, allBoundsXmax, globalBounds);         
     CommGraph res = setFMMTreeCommunicationGraph(neighbors);  
     int* sources;
     int* destinations;
@@ -821,16 +812,18 @@ public:
     int* recvBodyDisplNeighbor = new int[indegree];
     int* recvCellCountNeighbor = new int[indegree];
     int* recvCellDisplNeighbor = new int[indegree];
+    std::vector<int> receivedLevelTrees;
+    int receivedTreesCount = indegree;
     for (int i = 0; i < indegree; ++i) {
+      int irank = sources[i];                
       recvBodyCountNeighbor[i] = recvBodyCount[sources[i]] * bodyWord; 
       recvBodyDisplNeighbor[i] = recvBodyDispl[sources[i]] * bodyWord; 
       recvCellCountNeighbor[i] = recvCellCount[sources[i]] * cellWord; 
-      recvCellDisplNeighbor[i] = recvCellDispl[sources[i]] * cellWord; 
+      recvCellDisplNeighbor[i] = recvCellDispl[sources[i]] * cellWord;       
+      receivedLevelTrees.push_back(irank);
     }
     MPI_Neighbor_alltoallv((int*)&sendBodies[0], sendBodyCountNeighbor, sendBodyDisplNeighbor, MPI_INT, (int*)&recvBodies[0],recvBodyCountNeighbor,recvBodyDisplNeighbor,MPI_INT,graphComm);
-    MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&recvCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);              
-    std::vector<int> receivedTrees;
-
+    MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&recvCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);                  
     typedef std::map<int, TreeLevel> nodemap;
     typedef nodemap::iterator map_iterator;
     int* sendCountB = new int[outdegree];
@@ -875,7 +868,7 @@ public:
         }
       }
       for (int i = 0; i < indegree; ++i) {
-        int irank = sources[i];
+        int irank = sources[i];                
         recvLETs.push_back(std::vector<int>());
         if(recvList.find(irank) != recvList.end()) {
           TreeLevel tLevel = recvList[irank];
@@ -885,8 +878,10 @@ public:
           }
         }
       }
-      if(sendList.size() > 0) 
+      if(sendList.size() > 0) {
+        linkLET(receivedLevelTrees);
         setLET(sendLETs, cycle, sendRanks, cellCounts, bodyCounts);
+      }
       std::vector<int> flatSendCellCounts;
       std::vector<int> flatSendBodyCounts;
       std::vector<int> flatRecvCellCounts;
@@ -955,8 +950,8 @@ public:
       tempBodies.resize(bodyDataSize/bodyWord);
       tempCells.resize(cellDataSize/cellWord);
       MPI_Neighbor_alltoallv((int*)&sendBodies[0], sendBodyCountNeighbor, sendBodyDisplNeighbor, MPI_INT, (int*)&tempBodies[0],recvBodyCountNeighbor,recvBodyDisplNeighbor,MPI_INT,graphComm);
-      MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&tempCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);                    
-      receivedTrees.clear();
+      MPI_Neighbor_alltoallv((int*)&sendCells[0], sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&tempCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);                    
+      receivedLevelTrees.clear();
       for (int i = 0; i < indegree; ++i) {
         int cDispl = 0;
         int bDispl = 0;
@@ -966,28 +961,32 @@ public:
           int irank = recvLETs[i][j];                    
           int cCount = flatRecvCellCounts[recvDisplC[i] + j];
           int bCount = flatRecvBodyCounts[recvDisplB[i] + j];
-          receivedTrees.push_back(irank);
+          receivedLevelTrees.push_back(irank);
+          receivedTreesCount++;
           std::copy(tempBodies.begin() + recvBodyDisplNeighbor[i] + bDispl, tempBodies.begin() + recvBodyDisplNeighbor[i] + bDispl + bCount, recvBodies.begin() + recvBodyDispl[irank]);
           recvBodyCount[irank] = bCount;          
-          C_iter CC  = tempCells.begin() + recvCellDisplNeighbor[i] + cDispl;
-          C_iter CR0 = recvCells.begin() + recvCellDispl[irank];
+          C_iter const& CC  = tempCells.begin() + recvCellDisplNeighbor[i] + cDispl;
+          C_iter const& CR0 = recvCells.begin() + recvCellDispl[irank];
           for (int k = 0; k < cCount; ++k) {
             C_iter recvIter = CR0 + k;
             *recvIter = *(CC+k);
             if(recvIter->NBODY > 0)
               recvIter->IBODY  = recvIter->IBODY - bDispl;
-            recvIter->ICHILD = recvIter->ICHILD - cDispl;
+            if(recvIter->NCHILD > 0)
+              recvIter->ICHILD = recvIter->ICHILD - cDispl;
             if(recvIter->IPARENT > 0)
               recvIter->IPARENT= recvIter->IPARENT - cDispl;
           }            
+          assert(cCount<=recvCellCount[irank]);
+          assert(bCount<=recvBodyCount[irank]);
           recvCellCount[irank] = cCount;
           recvBodyCount[irank] = bCount;
           cDispl+=cCount;
           bDispl+=bCount;
         }
-      }
+      }    
     }
-
+    assert(receivedTreesCount == mpisize - 1);     
     delete[] sources;
     delete[] destinations;
     delete[] inWeights;
@@ -1009,6 +1008,7 @@ public:
     delete[] recvCountC;
     delete[] recvDisplC;
     logger::stopTimer("Comm LET");
+    logger::printTime("Link LET");                           
   }
 
   //! Set local essential tree to send to each process
@@ -1033,7 +1033,7 @@ public:
         if (C0->NCHILD == 0) {                                //   If root cell is leaf
           addSendBody(C0, irank, ibody, icell - 1, false);    //    Add bodies to send
         }                                                     //   End if for root cell leaf
-        traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, 0, false); // Traverse tree to set LET
+        traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, icell - 1, false); // Traverse tree to set LET
         sendBodyCount[irank] = ibody;                         //   Send body count for current rank
         sendCellCount[irank] = icell;                         //   Send cell count for current rank
       }                                                       //  Endif for current rank
@@ -1060,7 +1060,7 @@ public:
         if (C0->NCHILD == 0) {                                //   If root cell is leaf
           addSendBody(C0, irank, ibody, icell - 1, true);     //    Add bodies to send
         }                                                     //   End if for root cell leaf
-        traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, 0, true); // Traverse tree to set LET
+        traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, icell - 1, true); // Traverse tree to set LET
       }                                                       //  Endif for current rank
     }                                                         // End loop over ranks
     logger::stopTimer("Set LET");                             // Stop timer
@@ -1115,7 +1115,6 @@ public:
     int numSendCells = sendCellDispl[lastRank] + sendCellCount[lastRank]; // Total number of send cells
     sendBodies.resize(numSendBodies);                         // Clear send buffer for bodies
     sendCells.resize(numSendCells);                           // Clear send buffer for cells
-    //MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < size; ++i) {
       int irank = ranks[i];
       for (int d = 0; d < 3; d++) {                         //   Loop over dimensions
@@ -1186,7 +1185,7 @@ public:
         }                                                     //   End if for bodies
       }                                                       //  End loop over receive cells
     }                                                         // End loop over ranks
-    logger::stopTimer("Link LET");                            // End timer
+    logger::stopTimer("Link LET",0);                          // End timer
   }
 
   //! Sets local essential tree size
@@ -1223,25 +1222,6 @@ public:
     Bodies bodies;                                            // Bodies to contain remote root coordinates
     bodies.reserve(mpisize - 1);                              // Reserve size of body vector
     for (int irank = 0; irank < mpisize; irank++) {           // Loop over ranks
-      if (irank != mpirank) {                                 //  If not current rank
-        C_iter C0 = recvCells.begin() + recvCellDispl[irank]; //   Root cell iterator for irank
-        Body body;                                            //   Body to contain remote root coordinates
-        body.X = C0->X;                                       //   Copy remote root coordinates
-        body.IBODY = recvCellDispl[irank];                    //   Copy remote root displacement in vector
-        bodies.push_back(body);                               //   Push this root cell to body vector
-      }                                                       //  End if for not current rank
-    }                                                         // End loop over ranks
-    logger::stopTimer("Root to body");                        // Stop timer
-    return bodies;                                            // Return body vector
-  }
-
-  //! Copy a subset of remote root cells to body structs (for building global tree)
-  Bodies root2body(std::vector<int> iranks) {
-    logger::startTimer("Root to body");                       // Start timer
-    Bodies bodies;                                            // Bodies to contain remote root coordinates
-    bodies.reserve(iranks.size());                            // Reserve size of body vector
-    for (int i = 0; i < iranks.size(); i++) {                 // Loop over ranks
-      int irank = iranks[i];                                  //  index the the current rank
       if (irank != mpirank) {                                 //  If not current rank
         C_iter C0 = recvCells.begin() + recvCellDispl[irank]; //   Root cell iterator for irank
         Body body;                                            //   Body to contain remote root coordinates
