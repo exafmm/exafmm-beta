@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
   kernel::setup();
-  args.numBodies /= baseMPI.mpisize;  
+  //args.numBodies /= baseMPI.mpisize;  
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
@@ -99,25 +99,26 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jcells, localBounds);
       upDownPass.upwardPass(jcells);
     }
-#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
-        treeMPI->allgatherBounds(localBounds);
-        if (args.IneJ) {
-          treeMPI->setLET(jcells, cycle);
-        } else {
-          treeMPI->setLET(cells, cycle);
-        }
+#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree      
+      Cells letCells; 
+      if (args.IneJ) {
+        letCells = jcells;
+      } else {
+        letCells = cells;
+      }
 #pragma omp parallel sections
         {
 #pragma omp section
           {
+      treeMPI->allgatherBounds(localBounds);            
+      treeMPI->setLET(letCells, cycle);
 #if EXAFMM_USE_DISTGRAPH     
-      treeMPI->commDistGraph(cells, cycle, globalBounds);   
+      treeMPI->commDistGraph(cycle, globalBounds);   
 #else
       treeMPI->commBodies();
       treeMPI->commCells();
-#endif
-          
-	}
+#endif          
+	        }
 #pragma omp section
           {
       traversal.initListCount(cells);
@@ -159,7 +160,7 @@ int main(int argc, char ** argv) {
         upDownPass.downwardPass(cells);
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
-#if 1 
+#if 0 
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;

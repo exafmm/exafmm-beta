@@ -571,14 +571,18 @@ protected:
   template<typename BoundsArr>
   NeighborList setNeighbors(BoundsArr minBounds, BoundsArr maxBounds, Bounds globalBounds) {
     NeighborList neighbors(mpisize);
-    const real_t leeway[3] = {0.01*(globalBounds.Xmax[0] - globalBounds.Xmin[0]), 0.01*(globalBounds.Xmax[1] - globalBounds.Xmin[1]),0.01*(globalBounds.Xmax[2] - globalBounds.Xmin[2])};
+    real_t const leeway[3] = {
+      0.001*(globalBounds.Xmax[0] - globalBounds.Xmin[0]), 
+      0.001*(globalBounds.Xmax[1] - globalBounds.Xmin[1]),
+      0.001*(globalBounds.Xmax[2] - globalBounds.Xmin[2])
+    };
     for (int i = 0; i < mpisize; ++i) {
       real_t* localXmin = minBounds[i];
       real_t* localXmax = maxBounds[i];    
       for (int irank = 0; irank < mpisize; ++irank) {
          if(i!=irank) {
           int dim;
-          for (dim = 0; dim < 3; ++dim) {
+          for (dim = 0; dim < 3; ++dim) {            
             if((localXmin[dim] - leeway[dim] > maxBounds[irank][dim]) || (minBounds[irank][dim] - leeway[dim] > localXmax[dim])) break;
           }
           if(dim == 3) neighbors[i].push_back(irank);
@@ -762,8 +766,12 @@ public:
     }
   }
 
+  NeighborList getAllNeighbors(Bounds globalBounds){
+    return setNeighbors(allBoundsXmin, allBoundsXmax, globalBounds);       
+  }
+
   template<typename Cycle>
-  void commDistGraph(Cells& cells, Cycle cycle, Bounds globalBounds) {
+  void commDistGraph(Cycle cycle, Bounds globalBounds) {
     logger::startTimer("Comm LET");
     real_t* localXmin = allBoundsXmin[mpirank];
     real_t* localXmax = allBoundsXmax[mpirank];        
