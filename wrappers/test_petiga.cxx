@@ -5,29 +5,39 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <complex>
+//using namespace exafmm;
+
+#if EXAFMM_SINGLE
+  typedef float real_t;                                         //!< Floating point type is single precision
+#else
+  typedef double real_t;                                        //!< Floating point type is double precision
+#endif
+  typedef std::complex<real_t> complex_t;                       //!< Complex type
+
 
 extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads,
-                         int nb, double * xb, double * yb, double * zb, double * vb,
-                         int nv, double * xv, double * yv, double * zv, double * vv);
+                         int nb, double * xb, double * yb, double * zb, complex_t * vb,
+                         int nv, double * xv, double * yv, double * zv, complex_t * vv);
 extern "C" void FMM_Finalize();
-extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
-			      int & nv, double * xv, double * yv, double * zv, double * vv);
+extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, complex_t * vb,
+                              int & nv, double * xv, double * yv, double * zv, complex_t * vv);
 extern "C" void FMM_BuildTree();
-extern "C" void FMM_B2B(double * vi, double * vb, bool verbose);
-extern "C" void FMM_V2B(double * vb, double * vv, bool verbose);
-extern "C" void FMM_B2V(double * vv, double * vb, bool verbose);
-extern "C" void FMM_V2V(double * vi, double * vv, bool verbose);
-extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
-		       int nv, double * xv, double * yv, double * zv, double * vv);
+extern "C" void FMM_B2B(complex_t * vi, complex_t * vb, bool verbose);
+extern "C" void FMM_V2B(complex_t * vb, complex_t * vv, bool verbose);
+extern "C" void FMM_B2V(complex_t * vv, complex_t * vb, bool verbose);
+extern "C" void FMM_V2V(complex_t * vi, complex_t * vv, bool verbose);
+extern "C" void Direct(int nb, double * xb, double * yb, double * zb, complex_t * vb,
+                       int nv, double * xv, double * yv, double * zv, complex_t * vv);
 
-void Validate(int n, double * vb, double * vd, int verbose) {
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+void Validate(int n, complex_t * vb, complex_t * vd, int verbose) {
+  complex_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   for (int i=0; i<n; i++) {
     diff1 += (vb[i] - vd[i]) * (vb[i] - vd[i]);
     norm1 += vd[i] * vd[i];
   }
-  MPI_Reduce(&diff1, &diff2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm1, &norm2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&diff1, &diff2, 1, MPI_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm1, &norm2, 1, MPI_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD);
   if (verbose) {
     std::cout << "--- FMM vs. direct ---------------" << std::endl;
     std::cout << std::setw(20) << std::left << std::scientific
@@ -45,13 +55,13 @@ int main(int argc, char ** argv) {
   double * xb = new double [Nmax];
   double * yb = new double [Nmax];
   double * zb = new double [Nmax];
-  double * vb = new double [Nmax];
+  complex_t * vb = new complex_t [Nmax];
   double * xv = new double [Nmax];
   double * yv = new double [Nmax];
   double * zv = new double [Nmax];
-  double * vv = new double [Nmax];
-  double * vd = new double [Nmax];
-  double * vi = new double [Nmax];
+  complex_t * vv = new complex_t [Nmax];
+  complex_t * vd = new complex_t [Nmax];
+  complex_t * vi = new complex_t [Nmax];
 
   int mpisize, mpirank;
   MPI_Init(&argc, &argv);
