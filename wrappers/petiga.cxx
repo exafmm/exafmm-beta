@@ -44,8 +44,8 @@ void log_finalize() {
 }
 
 extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads,
-                         int nb, double * xb, double * yb, double * zb, complex_t * vb,
-                         int nv, double * xv, double * yv, double * zv, complex_t * vv) {
+			 int nb, double * xb, double * yb, double * zb, double * vb,
+			 int nv, double * xv, double * yv, double * zv, double * vv) {
   const int nspawn = 1000;
   const int images = 0;
   const real_t theta = 0.4;
@@ -114,8 +114,8 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, complex_t * vb,
-                              int & nv, double * xv, double * yv, double * zv, complex_t * vv) {
+extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
+			      int & nv, double * xv, double * yv, double * zv, double * vv) {
   logger::printTitle("Partition Profiling");
   Bounds localBounds = boundBox->getBounds(bbodies);
   localBounds = boundBox->getBounds(vbodies, localBounds);
@@ -133,11 +133,11 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, c
     xb[i] = B->X[0];
     yb[i] = B->X[1];
     zb[i] = B->X[2];
-//#if EXAFMM_HELMHOLTZ
-//    vb[i] = std::real(B->SRC);
-//#else
+#if EXAFMM_HELMHOLTZ
+    vb[i] = std::real(B->SRC);
+#else
     vb[i] = B->SRC;
-//#endif
+#endif
     B->IBODY = i;
   }
   nv = vbodies.size();
@@ -146,11 +146,11 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, c
     xv[i] = B->X[0];
     yv[i] = B->X[1];
     zv[i] = B->X[2];
-//#if EXAFMM_HELMHOLTZ
-//    vv[i] = std::real(B->SRC);
-//#else
+#if EXAFMM_HELMHOLTZ
+    vv[i] = std::real(B->SRC);
+#else
     vv[i] = B->SRC;
-//#endif
+#endif
     B->IBODY = i;
   }
 }
@@ -162,7 +162,7 @@ extern "C" void FMM_BuildTree() {
   vcells = localTree->buildTree(vbodies, buffer, localBoundsV);
 }
 
-extern "C" void FMM_B2B(complex_t * vi, complex_t * vb, bool verbose) {
+extern "C" void FMM_B2B(double * vi, double * vb, bool verbose) {
   args->verbose = verbose;
   log_initialize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
@@ -186,23 +186,23 @@ extern "C" void FMM_B2B(complex_t * vi, complex_t * vb, bool verbose) {
       traversal->traverse(bcells, jcells, cycles, args->dual, false);
     } else {
       for (int irank=0; irank<baseMPI->mpisize; irank++) {
-        treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-        traversal->traverse(bcells, jcells, cycles, args->dual, false);
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(bcells, jcells, cycles, args->dual, false);
       }
     }
   }
   upDownPass->downwardPass(bcells);
   log_finalize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-//#if EXAFMM_HELMHOLTZ
-//    vi[B->IBODY] += std::real(B->TRG[0]);
-//#else
+#if EXAFMM_HELMHOLTZ
+    vi[B->IBODY] += std::real(B->TRG[0]);
+#else
     vi[B->IBODY] += B->TRG[0];
-//#endif
+#endif
   }
 }
 
-extern "C" void FMM_V2B(complex_t * vb, complex_t * vv, bool verbose) {
+extern "C" void FMM_V2B(double * vb, double * vv, bool verbose) {
   args->verbose = verbose;
   log_initialize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
@@ -230,24 +230,24 @@ extern "C" void FMM_V2B(complex_t * vb, complex_t * vv, bool verbose) {
       traversal->traverse(bcells, jcells, cycles, args->dual, false);
     } else {
       for (int irank=0; irank<baseMPI->mpisize; irank++) {
-        Cells jcells;
-        treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-        traversal->traverse(bcells, jcells, cycles, args->dual, false);
+	Cells jcells;
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(bcells, jcells, cycles, args->dual, false);
       }
     }
   }
   upDownPass->downwardPass(bcells);
   log_finalize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-//#if EXAFMM_HELMHOLTZ
-//    vb[B->IBODY] += std::real(B->TRG[0]);
-//#else
+#if EXAFMM_HELMHOLTZ
+    vb[B->IBODY] += std::real(B->TRG[0]);
+#else
     vb[B->IBODY] += B->TRG[0];
-//#endif
+#endif
   }
 }
 
-extern "C" void FMM_B2V(complex_t * vv, complex_t * vb, bool verbose) {
+extern "C" void FMM_B2V(double * vv, double * vb, bool verbose) {
   args->verbose = verbose;
   log_initialize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
@@ -275,24 +275,24 @@ extern "C" void FMM_B2V(complex_t * vv, complex_t * vb, bool verbose) {
       traversal->traverse(vcells, jcells, cycles, args->dual, false);
     } else {
       for (int irank=0; irank<baseMPI->mpisize; irank++) {
-        Cells jcells;
-        treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-        traversal->traverse(vcells, jcells, cycles, args->dual, false);
+	Cells jcells;
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(vcells, jcells, cycles, args->dual, false);
       }
     }
   }
   upDownPass->downwardPass(vcells);
   log_finalize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
-//#if EXAFMM_HELMHOLTZ
-//    vv[B->IBODY] += std::real(B->TRG[0]);
-//#else
+#if EXAFMM_HELMHOLTZ
+    vv[B->IBODY] += std::real(B->TRG[0]);
+#else
     vv[B->IBODY] += B->TRG[0];
-//#endif
+#endif
   }
 }
 
-extern "C" void FMM_V2V(complex_t * vi, complex_t * vv, bool verbose) {
+extern "C" void FMM_V2V(double * vi, double * vv, bool verbose) {
   args->verbose = verbose;
   log_initialize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
@@ -316,24 +316,24 @@ extern "C" void FMM_V2V(complex_t * vi, complex_t * vv, bool verbose) {
       traversal->traverse(vcells, jcells, cycles, args->dual, false);
     } else {
       for (int irank=0; irank<baseMPI->mpisize; irank++) {
-        treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-        traversal->traverse(vcells, jcells, cycles, args->dual, false);
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(vcells, jcells, cycles, args->dual, false);
       }
     }
   }
   upDownPass->downwardPass(vcells);
   log_finalize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
-//#if EXAFMM_HELMHOLTZ
-//    vi[B->IBODY] += std::real(B->TRG[0]);
-//#else
+#if EXAFMM_HELMHOLTZ
+    vi[B->IBODY] += std::real(B->TRG[0]);
+#else
     vi[B->IBODY] += B->TRG[0];
-//#endif
+#endif
   }
 }
 
-extern "C" void Direct(int ni, double * xi, double * yi, double * zi, complex_t * vi,
-                       int nj, double * xj, double * yj, double * zj, complex_t * vj) {
+extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * vi,
+		       int nj, double * xj, double * yj, double * zj, double * vj) {
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
@@ -343,7 +343,6 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, complex_t 
     B->TRG  = 0;
     B->SRC  = 1;
   }
-
   Bodies jbodies(nj);
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     int i = B-jbodies.begin();
@@ -351,7 +350,7 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, complex_t 
     B->X[1] = yj[i];
     B->X[2] = zj[i];
     B->SRC  = vj[i];
-  }
+  }  
   for (int irank=0; irank<baseMPI->mpisize; irank++) {
     if (args->verbose) std::cout << "Direct loop          : " << irank+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
@@ -359,10 +358,10 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, complex_t 
   }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-//#if EXAFMM_HELMHOLTZ
-//    vi[i] += std::real(B->TRG[0]);
-//#else
+#if EXAFMM_HELMHOLTZ
+    vi[i] += std::real(B->TRG[0]);
+#else
     vi[i] += B->TRG[0];
-//#endif
+#endif
   }
 }
