@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
       B->X[0] *= 0.5;
     }
   }
-  bool pass;
+  bool passError, passTime;
   int t;
   for (t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
@@ -97,15 +97,15 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
-    pass = true;
-    pass &= verify.regression(args.getKey(), std::sqrt(potDif/potNrm), false, t);
-    pass &= verify.regression(args.getKey(), totalFMM, true, t);
-    if (pass) break;
+    passError = passTime = true;
+    passError &= verify.regression(args.getKey(), std::sqrt(potDif/potNrm), false, t);
+    passTime &= verify.regression(args.getKey(), totalFMM, true, t);
+    if (passError && passTime) break;
   }
   if (args.verbose) {
-    if (pass) std::cout << "passed regression at iteration: " << t << std::endl;
+    if (passError && passTime) std::cout << "passed regression at iteration: " << t << std::endl;
     else {
-      std::cout << "failed regression" << std::endl;
+      std::cout << "failed regression: error = " << passError << ": time = " << passTime << std::endl;
       abort();
     }
   }
