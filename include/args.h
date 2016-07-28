@@ -166,6 +166,16 @@ namespace exafmm {
       return key;
     }
 
+    uint64_t getConfigNum() {
+      uint64_t key = 0;
+#if EXAFMM_SINGLE
+      key |= 1;
+#endif
+#if EXAFMM_USE_SIMD
+      key |= 2;
+#endif
+    }
+
   public:
     Args(int argc=0, char ** argv=NULL) :
       ncrit(64),
@@ -265,23 +275,23 @@ namespace exafmm {
     }
 
     uint64_t getKey(int mpisize=1) {
-      uint64_t key = 0;
-      key |= uint64_t(log(ncrit)/log(2)); assert(key <= 1 << 4);
-      key |= getDistNum(distribution) << 4; assert(key <= 1 << 7);
-      key |= dual << 7; assert(key <= 1 << 8);
-      key |= graft << 8; assert(key <= 1 << 9);
-      key |= images << 9; assert(key <= 1 << 11);
-      key |= IneJ << 11; assert(key <= 1 << 12);
-      key |= mutual << 12; assert(key <= 1 << 13);
-      key |= uint64_t(log(numBodies)/log(10)) << 13; assert(key <= 1 << 17);
-      key |= useRopt << 17; assert(key <= 1 << 8);
-      key |= PP << 18; assert(key <= 1 << 24);
-      key |= uint64_t(log(nspawn)/log(10)) << 24; assert(key <= 1 << 27);
-      key |= uint64_t(theta*14) << 27; assert(key <= 1 << 30);
-      key |= uint64_t(log(threads)/log(2)) << 30; assert(key <= uint64_t(1) << 33);
-      key |= uint64_t(useRmax) << 33; assert(key <= uint64_t(1) << 34);
-      key |= getKernelNum() << 34; assert(key <= uint64_t(1) << 40);
-      key |= uint64_t(log(mpisize)/log(2)) << 40;
+      uint64_t key = 0;                             // Feature      : Speed
+      key |= uint64_t(log(ncrit)/log(2));           // 64           : independent
+      key |= getDistNum(distribution) << 4;         // plummer      : independent
+      key |= dual << 7;                             // independent  : independent
+      key |= graft << 8;                            // on           : on
+      key |= images << 9;                           // independent  : independent
+      key |= IneJ << 11;                            // independent  : independent
+      key |= mutual << 12;                          // on           : independent
+      key |= uint64_t(log(numBodies)/log(10)) << 13;// independent  : independent
+      key |= useRopt << 17;                         // off          : independent
+      key |= PP << 18;                              // dependent    : dependent 
+      key |= uint64_t(log(nspawn)/log(10)) << 24;   // 5000         : independent
+      key |= uint64_t(theta*14) << 27;              // lower bound  : upper bound
+      key |= uint64_t(log(threads)/log(2)) << 30;   // upper bound  : upper bound
+      key |= uint64_t(useRmax) << 33;               // off          : independent
+      key |= getKernelNum() << 34;                  // dependent    : Laplace
+      key |= uint64_t(log(mpisize)/log(2)) << 40;   // upper bound  : upper bound
       return key;
     }
 
