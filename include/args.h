@@ -1,6 +1,6 @@
 #ifndef args_h
 #define args_h
-#include <cassert>
+#include <assert.h>                                             // Some compilers don't have cassert
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -141,6 +141,7 @@ namespace exafmm {
         fprintf(stderr, "invalid distribution %s\n", distribution);
         abort();
       }
+      return 0;
     }
 
     uint64_t getKernelNum() {
