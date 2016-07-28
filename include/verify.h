@@ -1,6 +1,7 @@
 #ifndef verify_h
 #define verify_h
 #include "logger.h"
+#include <unistd.h>
 
 namespace exafmm {
   //! Verify results

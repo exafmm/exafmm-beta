@@ -3,7 +3,7 @@
 #ifndef _SX
 #include "align.h"
 #endif
-#include <cassert>
+#include <assert.h>                                             // Some compilers don't have cassert
 #include <complex>
 #include "kahan.h"
 #include "macros.h"

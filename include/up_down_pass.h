@@ -20,7 +20,7 @@ namespace exafmm {
       real_t theta;                                             //!< Multipole acceptance criteria
       SetRopt(C_iter _C, C_iter _C0, real_t _c, real_t _theta) :// Constructor
 	C(_C), C0(_C0), c(_c), theta(_theta) {}                 // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	  SetRopt setRopt(CC, C0, c, theta);                    //   Initialize recusive functor
@@ -48,7 +48,7 @@ namespace exafmm {
       C_iter C0;                                                //!< Iterator of first cell
       SetScaleFromRadius(C_iter _C, C_iter _C0) :               // Constructor
 	C(_C), C0(_C0) {}                                       // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	C->SCALE = 2 * C->R;                                    //  Set cell scale
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
@@ -66,7 +66,7 @@ namespace exafmm {
       real_t theta;                                             //!< Multipole acceptance criteria
       bool useRmax;                                             //!< Use maximum distance for MAC
       //! Redefine cell radius R based on maximum distance
-      void setRmax() {
+      void setRmax() const {
 	real_t Rmax = 0;                                        // Initialize Rmax
 	if (C->NCHILD == 0) {                                   // If leaf cell
 	  for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {    //  Loop over bodies in cell
@@ -85,7 +85,7 @@ namespace exafmm {
       }
       PostOrderTraversal(C_iter _C, C_iter _C0, real_t _theta, bool _useRmax) : // Constructor
 	C(_C), C0(_C0), theta(_theta), useRmax(_useRmax) {}     // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	  PostOrderTraversal postOrderTraversal(CC, C0, theta, useRmax); // Instantiate recursive functor
@@ -107,7 +107,7 @@ namespace exafmm {
       C_iter C0;                                                //!< Iterator of first cell
       PreOrderTraversal(C_iter _C, C_iter _C0) :                // Constructor
 	C(_C), C0(_C0) {}                                       // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	kernel::L2L(C, C0);                                     //  L2L kernel
 	if (C->NCHILD==0) kernel::L2P(C);                       //  L2P kernel
 #if EXAFMM_USE_WEIGHT
