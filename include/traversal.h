@@ -290,7 +290,7 @@ namespace exafmm {
 		    bool _mutual, real_t _remote) :
 	traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),// Initialize variables
 	CjBegin(_CjBegin), CjEnd(_CjEnd), mutual(_mutual), remote(_remote) {}
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	Tracer tracer;                                          //  Instantiate tracer
 	logger::startTracer(tracer);                            //  Start tracer
 	if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {     //  If only one cell in range
@@ -529,7 +529,7 @@ namespace exafmm {
       C_iter Cj;                                                //!< Iterator of source cell
       DirectRecursion(C_iter _Ci, C_iter _Cj) :                 // Constructor
 	Ci(_Ci), Cj(_Cj) {}                                     // Initialize variables
-      void operator() () {                                      // Overload operator
+      void operator() () const {                                // Overload operator
 	if (Ci->NBODY < 25) {                                   // If number of target bodies is less than threshold
 	  kernel::P2P(Ci, Cj, false);                           //  Evaluate P2P kernel
 	} else {                                                // If number of target bodies is more than threshold

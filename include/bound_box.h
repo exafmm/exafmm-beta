@@ -17,7 +17,7 @@ namespace exafmm {
       int nspawn;                                               //!< Threshold of NBODY for spawning new threads
       BodiesRecursion(B_iter _BiBegin, B_iter _BiEnd, Bounds & _bounds, int _nspawn) : // Constructor
 	BiBegin(_BiBegin), BiEnd(_BiEnd), bounds(_bounds), nspawn(_nspawn) {}// Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	assert(BiEnd - BiBegin > 0);                            //  Validate range
 	if (BiEnd - BiBegin < nspawn) {                         //  If number of elements is small enough
 	  for (B_iter B=BiBegin; B!=BiEnd; B++) {               //   Loop over range of bodies
@@ -47,7 +47,7 @@ namespace exafmm {
       int nspawn;                                               //!< Threshold of NBODY for spawning new threads
       CellsRecursion(C_iter _CiBegin, C_iter _CiEnd, Bounds & _bounds, int _nspawn) : // Constructor
 	CiBegin(_CiBegin), CiEnd(_CiEnd), bounds(_bounds), nspawn(_nspawn) {}// Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	assert(CiEnd - CiBegin > 0);                            //  Validate range
 	if (CiEnd - CiBegin < nspawn) {                         //  If number of elements is small enough
 	  for (C_iter C=CiBegin; C!=CiEnd; C++) {               //   Loop over range of cells
