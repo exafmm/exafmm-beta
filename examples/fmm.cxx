@@ -101,6 +101,7 @@ int main(int argc, char ** argv) {
     passError &= verify.regression(args.getKey(), std::sqrt(potDif/potNrm), false, t);
     passTime &= verify.regression(args.getKey(), totalFMM, true, t);
     if (passError && passTime) break;
+    else std::cout << "failed regression: error = " << passError << ": time = " << passTime << std::endl;
   }
   if (args.verbose) {
     if (passError && passTime) std::cout << "passed regression at iteration: " << t << std::endl;

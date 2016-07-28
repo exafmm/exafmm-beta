@@ -126,7 +126,8 @@ namespace exafmm {
       if (record[key] == 0 || value < record[key]*(1+iteration*.01)) { // If new record
         pass = true;                                            //  Change flag to pass
         record[key] = value;                                    //  Add key value pair
-      }                                                         // Endif for better value
+      } else                                                    // Endif for better value
+        std::cout << "new file" << std::endl;
       file.open(name.str().c_str(),std::fstream::out);          // Open regression file
       file << record.size() << std::endl;                       // Write number of keys
       for (R_iter R=record.begin(); R!=record.end(); R++) {     // Loop over regression values
