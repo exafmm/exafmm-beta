@@ -102,7 +102,7 @@ int main(int argc, char ** argv) {
       pass = verify.regression(args.getKey(), std::sqrt(potDif/potNrm), time, t);
       if (pass) {
         if (args.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
-        t = 0;
+        t = -1;
         time = true;
       }
     } else {
