@@ -43,7 +43,8 @@ int main(int argc, char ** argv) {
       B->X[0] *= 0.5;
     }
   }
-  bool passError, passTime;
+  bool pass = true;
+  bool time = false;
   int t;
   for (t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
@@ -97,18 +98,27 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
-    passError = passTime = true;
-    passError &= verify.regression(args.getKey(), std::sqrt(potDif/potNrm), false, t);
-    passTime &= verify.regression(args.getKey(), totalFMM, true, t);
-    if (passError && passTime) break;
-    else std::cout << "failed regression: error = " << passError << ": time = " << passTime << std::endl;
-  }
-  if (args.verbose) {
-    if (passError && passTime) std::cout << "passed regression at iteration: " << t << std::endl;
-    else {
-      std::cout << "failed regression: error = " << passError << ": time = " << passTime << std::endl;
-      abort();
+    if (!time) {
+      pass = verify.regression(args.getKey(), std::sqrt(potDif/potNrm), time, t);
+      if (pass) {
+        if (args.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+        t = 0;
+        time = true;
+      }
+    } else {
+      pass = verify.regression(args.getKey(), totalFMM, time, t);
+      if (pass) {
+        if (args.verbose) std::cout << "passed time regression at t: " << t << std::endl;
+        break;
+      }
     }
+  }
+  if (!pass) {
+    if (args.verbose) {
+      if(!time) std::cout << "failed accuracy regression" << std::endl;
+      else std::cout << "failed time regression" << std::endl;
+    }
+    abort();
   }
   if (args.getMatrix) {
     traversal.writeMatrix(bodies, jbodies);
