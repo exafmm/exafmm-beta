@@ -45,8 +45,7 @@ int main(int argc, char ** argv) {
   }
   bool pass = true;
   bool time = false;
-  int t;
-  for (t=0; t<args.repeat; t++) {
+  for (int t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
@@ -98,16 +97,16 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
-    if (!time) {
+    if (!time)
       pass = verify.regression(args.getKey(), std::sqrt(potDif/potNrm), time, t);
-      if (pass) {
+    else
+      pass = verify.regression(args.getKey(), totalFMM, time, t);
+    if (pass) {
+      if (!time) {
         if (args.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
         t = -1;
-        time = true;
-      }
-    } else {
-      pass = verify.regression(args.getKey(), totalFMM, time, t);
-      if (pass) {
+        time = true;        
+      } else {
         if (args.verbose) std::cout << "passed time regression at t: " << t << std::endl;
         break;
       }
