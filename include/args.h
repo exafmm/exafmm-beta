@@ -127,17 +127,18 @@ namespace exafmm {
     }
 
     uint64_t getDistNum(const char * distribution) {
-      if (distribution == "cube")
+      switch (distribution[0]) {
+      case 'c':
         return 0;
-      else if (distribution == "lattice")
+      case 'l':
         return 1;
-      else if (distribution == "octant")
+      case 'o':
         return 2;
-      else if (distribution == "plummer")
+      case 'p':
         return 3;
-      else if (distribution == "sphere")
+      case 's':
         return 4;
-      else {
+      default:
         fprintf(stderr, "invalid distribution %s\n", distribution);
         abort();
       }
@@ -175,6 +176,7 @@ namespace exafmm {
 #if EXAFMM_USE_SIMD
       key |= 2;
 #endif
+      return key;
     }
 
   public:
