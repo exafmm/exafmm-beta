@@ -1638,6 +1638,8 @@ cleandat:
 	@make -C .. cleandat
 cleanlib:
 	@make -C .. cleanlib
+cleanreg:
+	@make -C .. cleanreg
 cleanall:
 	@make -C .. cleanall
 revert:
