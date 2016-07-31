@@ -106,8 +106,7 @@ namespace exafmm {
     bool regression(uint64_t key, double value, bool time, int iteration) {
       bool pass = false;                                        // Flag for regression test
       Record record;                                            // Map for regression value
-      char host[HOST_NAME_MAX];                                 // Hostname
-      gethostname(host, HOST_NAME_MAX);                         // Get hostname
+      const char * host = getenv("SLAVENAME");                  // Get slavename
       std::stringstream name;                                   // File name for regression
       if (time) name << "time_" << host << ".reg";              // If time regression
       else name << "accuracy.reg";                              // Else if accuracy regression
