@@ -29,7 +29,7 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void fmm_init_(int & images, double & theta, int & verbose, const char * path, size_t *) {
+extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, const char * path, size_t *) {
   const int ncrit = 16;
   const int nspawn = 1000;
   const bool useRmax = true;

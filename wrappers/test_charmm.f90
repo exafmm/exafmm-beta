@@ -828,7 +828,7 @@ program main
      icpumap(i) = 1
   enddo
   if (mpirank == 0) print*,'FMM init'
-  call fmm_init(images,theta,verbose,trim(path))
+  call fmm_init(images,theta,verbose,nglobal,trim(path))
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
   if (mpirank == 0) print*,'FMM Coulomb'
