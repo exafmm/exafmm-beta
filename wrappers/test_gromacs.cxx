@@ -144,12 +144,14 @@ int main(int argc, char ** argv) {
   MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
   double potNrmGlob = potSumGlob * potSumGlob;
+  double potRel = std::sqrt(potDifGlob/potNrmGlob);
+  double accRel = std::sqrt(accDifGlob/accNrmGlob);
   if (mpirank == 0) {
     std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
     std::cout << std::setw(stringLength) << std::left << std::scientific
-  	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(potDifGlob/potNrmGlob) << std::endl;
+  	      << "Rel. L2 Error (pot)" << " : " << potRel << std::endl;
     std::cout << std::setw(stringLength) << std::left
-	      << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
+	      << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
   }
 
   delete[] ibody;

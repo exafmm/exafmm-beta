@@ -90,9 +90,11 @@ int main(int argc, char ** argv) {
     double potNrm = verify.getNrmScalar(bodies);
     double accDif = verify.getDifVector(bodies, bodies2);
     double accNrm = verify.getNrmVector(bodies);
+    double potRel = std::sqrt(potDif/potNrm);
+    double accRel = std::sqrt(accDif/accNrm);
     logger::printTitle("FMM vs. direct");
-    verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
-    verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+    verify.print("Rel. L2 Error (pot)",potRel);
+    verify.print("Rel. L2 Error (acc)",accRel);
     buildTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();

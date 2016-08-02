@@ -162,9 +162,11 @@ int main(int argc, char ** argv) {
     MPI_Reduce(&potNrm, &potNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&accDif, &accDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&accNrm, &accNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double potRel = std::sqrt(potDifGlob/potNrmGlob);
+    double accRel = std::sqrt(accDifGlob/accNrmGlob);
     logger::printTitle("FMM vs. direct");
-    verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
-    verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
+    verify.print("Rel. L2 Error (pot)",potRel);
+    verify.print("Rel. L2 Error (acc)",accRel);
     localTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();

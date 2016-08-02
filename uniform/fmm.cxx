@@ -191,8 +191,10 @@ int main(int argc, char ** argv) {
     MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
     double potNrmGlob = potSumGlob * potSumGlob;
-    verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
-    verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
+    double potRel = std::sqrt(potDifGlob/potNrmGlob);
+    double accRel = std::sqrt(accDifGlob/accNrmGlob); 
+    verify.print("Rel. L2 Error (pot)",potRel);
+    verify.print("Rel. L2 Error (acc)",accRel);
 #endif
 #endif
   }
