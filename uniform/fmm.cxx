@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal traversal(args.nspawn, args.images);
+  Traversal traversal(args.nspawn, args.images, args.path);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
