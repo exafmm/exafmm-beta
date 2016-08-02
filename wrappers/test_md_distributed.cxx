@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, int verbose);
+extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, int verbose, const char * path);
 extern "C" void FMM_Finalize();
 extern "C" void Set_Index(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle);
 extern "C" void FMM_Partition(int * ni, int nimax, int * res_index, double * x, double * q, double * v, double * cycle);
@@ -25,6 +25,7 @@ int main(int argc, char ** argv) {
   int ksize = 11;
   int threads = 16;
   int verbose = 1;
+  const char * path = "./";
   double theta = 0.5;
   double cycle[3] = {2*M_PI, 2*M_PI, 2*M_PI};
   double alpha = 10 / cycle[0];
@@ -46,7 +47,6 @@ int main(int argc, char ** argv) {
 
   srand48(mpirank);
   double average = 0;
-  int ic = 0, id = 0;
   for (int i=0; i<ni; i++) {
     x[3*i+0] = drand48() * cycle[0] - cycle[0] / 2;
     x[3*i+1] = drand48() * cycle[1] - cycle[1] / 2;
@@ -63,7 +63,7 @@ int main(int argc, char ** argv) {
     q[i] -= average;
   }
 
-  FMM_Init(images, threads, theta, cutoff, verbose);
+  FMM_Init(images, threads, theta, cutoff, verbose, path);
   Set_Index(&ni, nimax, res_index, x, q, v, cycle);
   for (int i=0; i<ni; i++) {
     std::cout << i << " "<< res_index[i] << std::endl;

@@ -79,7 +79,7 @@ namespace exafmm {
 	      " --mutual (-m)                 : Use mutual interaction (%d)\n"
 	      " --numBodies (-n)              : Number of bodies (%d)\n"
 	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
-	      " --path (-p)                   : Path to save files (%d)\n"
+	      " --path (-p)                   : Path to save files (%s)\n"
 	      " --P (-P) not working          : Order of expansion (%d)\n"
 	      " --repeat (-r)                 : Number of iteration loops (%d)\n"
 	      " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
