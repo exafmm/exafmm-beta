@@ -17,9 +17,9 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
   Dataset data;
-  Traversal traversal(args.nspawn, args.images);
+  Traversal traversal(args.nspawn, args.images, args.path);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify;
+  Verify verify(args.path);
   num_threads(args.threads);
 
   kernel::eps2 = 0.0;
@@ -28,6 +28,7 @@ int main(int argc, char ** argv) {
 #endif
   kernel::setup();
   logger::verbose = args.verbose;
+  logger::path = args.path;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);

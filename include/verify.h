@@ -6,10 +6,18 @@
 namespace exafmm {
   //! Verify results
   class Verify {
+  private:
     typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
     typedef Record::iterator R_iter;                            //!< Iterator of regression map
+    const char * path;                                          //!< Path to save files
 
   public:
+    //! Constructor
+    Verify() : path("./") {} 
+
+    //! Constructor with argument
+    Verify(const char * _path) : path(_path) {} 
+
     //! Get sum of scalar component of a vector of target bodies
     double getSumScalar(Bodies & bodies) {
       double v = 0;                                             // Initialize difference
@@ -108,6 +116,7 @@ namespace exafmm {
       Record record;                                            // Map for regression value
       const char * host = getenv("SLAVENAME");                  // Get slavename
       std::stringstream name;                                   // File name for regression
+      name << path;                                             // Append path to file name
       if (time) name << "time_" << host << ".reg";              // If time regression
       else name << "accuracy.reg";                              // Else if accuracy regression
       std::fstream file;                                        // File id for regression

@@ -37,15 +37,16 @@ int main(int argc, char ** argv) {
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
+  Traversal traversal(args.nspawn, args.images, args.path);
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify;
+  Verify verify(args.path);
   num_threads(args.threads);
 
   kernel::eps2 = 0.0;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
+  logger::path = args.path;
   logger::printTitle("Ewald Parameters");
   args.print(logger::stringLength, P);
   ewald.print(logger::stringLength);

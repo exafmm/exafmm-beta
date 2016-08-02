@@ -26,6 +26,7 @@ namespace exafmm {
     {"mutual",       no_argument,       0, 'm'},
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
+    {"path",         required_argument, 0, 'p'},
     {"PP",           required_argument, 0, 'P'},
     {"repeat",       required_argument, 0, 'r'},
     {"nspawn",       required_argument, 0, 's'},
@@ -51,6 +52,7 @@ namespace exafmm {
     int mutual;
     int numBodies;
     int useRopt;
+    const char * path;
     int PP;
     int repeat;
     int nspawn;
@@ -77,6 +79,7 @@ namespace exafmm {
 	      " --mutual (-m)                 : Use mutual interaction (%d)\n"
 	      " --numBodies (-n)              : Number of bodies (%d)\n"
 	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
+	      " --path (-p)                   : Path to save files (%d)\n"
 	      " --P (-P) not working          : Order of expansion (%d)\n"
 	      " --repeat (-r)                 : Number of iteration loops (%d)\n"
 	      " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
@@ -97,6 +100,7 @@ namespace exafmm {
 	      mutual,
 	      numBodies,
 	      useRopt,
+              path,
 	      PP,
 	      repeat,
 	      nspawn,
@@ -192,6 +196,7 @@ namespace exafmm {
       mutual(0),
       numBodies(1000000),
       useRopt(0),
+      path("./"),
       PP(4),
       repeat(1),
       nspawn(5000),
@@ -203,10 +208,10 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "c:d:DgGhi:jmn:op:P:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
@@ -246,6 +251,9 @@ namespace exafmm {
 	case 'o':
 	  useRopt = 1;
 	  break;
+        case 'p':
+          path = optarg;
+          break;
 	case 'P':
 	  PP = atoi(optarg);
 	  break;
@@ -322,6 +330,8 @@ namespace exafmm {
 		  << "numBodies" << " : " << numBodies << std::endl
 		  << std::setw(stringLength)
 		  << "useRopt" << " : " << useRopt << std::endl
+		  << std::setw(stringLength)
+		  << "path" << " : " << path << std::endl
 		  << std::setw(stringLength)
 		  << "P" << " : " << PP << std::endl
 		  << std::setw(stringLength)

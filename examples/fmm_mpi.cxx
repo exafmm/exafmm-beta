@@ -23,10 +23,10 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
+  Traversal traversal(args.nspawn, args.images, args.path);
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify;
+  Verify verify(args.path);
   num_threads(args.threads);
 
   kernel::eps2 = 0.0;
@@ -37,6 +37,7 @@ int main(int argc, char ** argv) {
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
+  logger::path = args.path;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);

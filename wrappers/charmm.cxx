@@ -29,7 +29,7 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
+extern "C" void fmm_init_(int & images, double & theta, int & verbose, const char * path) {
   const int ncrit = 16;
   const int nspawn = 1000;
   const bool useRmax = true;
@@ -37,13 +37,14 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   kernel::eps2 = 0.0;
   kernel::setup();
 
+  std::cout << "path: " << path << std::endl;
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
+  traversal = new Traversal(nspawn, images, path);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
@@ -54,12 +55,14 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->images = images;
   args->mutual = 0;
   args->numBodies = 0;
+  args->path = path;
   args->useRopt = useRopt;
   args->nspawn = nspawn;
   args->theta = theta;
   args->verbose = verbose & (baseMPI->mpirank == 0);
   args->useRmax = useRmax;
   logger::verbose = args->verbose;
+  logger::path = args->path;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
 }

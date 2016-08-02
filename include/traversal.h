@@ -15,6 +15,7 @@ namespace exafmm {
   private:
     const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
     const int images;                                           //!< Number of periodic image sublevels
+    const char * path;                                          //!< Path to save files
     int (* listOffset)[3];                                      //!< Offset in interaction lists
     int (* lists)[3];                                           //!< Interaction lists
 #if EXAFMM_COUNT_KERNEL
@@ -449,8 +450,8 @@ namespace exafmm {
 
   public:
     //! Constructor
-    Traversal(int _nspawn, int _images) :                       // Constructor
-      nspawn(_nspawn), images(_images)                          // Initialize variables
+    Traversal(int _nspawn, int _images, const char * _path) :   // Constructor
+      nspawn(_nspawn), images(_images), path(_path)             // Initialize variables
 #if EXAFMM_COUNT_KERNEL
       , numP2P(0), numM2L(0)
 #endif
@@ -584,7 +585,9 @@ namespace exafmm {
 
     //! Write G matrix to file
     void writeMatrix(Bodies & bodies, Bodies & jbodies) {
-      std::ofstream matrixFile("matrix.dat");                   // Open matrix data file
+      std::stringstream name;                                   // File name
+      name << path << "matrix.dat";                             // Create file name for matrix
+      std::ofstream matrixFile(name.str().c_str());             // Open matrix log file
       for (B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {  // Loop over target bodies
 	for (B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {//  Loop over source bodies
 	  vec3 dX = Bi->X - Bj->X;                              //   Distance vector
@@ -615,7 +618,7 @@ namespace exafmm {
 #if EXAFMM_COUNT_LIST
     void writeList(Cells cells, int mpirank) {
       std::stringstream name;                                   // File name
-      name << "list" << std::setfill('0') << std::setw(6)       // Set format
+      name << path << "list" << std::setfill('0') << std::setw(6) // Set format
 	   << mpirank << ".dat";                                // Create file name for list
       std::ofstream listFile(name.str().c_str());               // Open list log file
       for (C_iter C=cells.begin(); C!=cells.end(); C++) {       // Loop over all lists
