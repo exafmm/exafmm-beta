@@ -29,7 +29,7 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void fmm_init_(int & images, double & theta, int & verbose, const char * path) {
+extern "C" void fmm_init_(int & images, double & theta, int & verbose, const char * path, size_t *) {
   const int ncrit = 16;
   const int nspawn = 1000;
   const bool useRmax = true;
@@ -37,7 +37,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, const cha
   kernel::eps2 = 0.0;
   kernel::setup();
 
-  std::cout << "path: " << path << std::endl;
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);

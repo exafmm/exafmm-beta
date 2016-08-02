@@ -29,6 +29,7 @@ UpDownPass * upDownPass;
 void log_initialize() {
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
+  logger::path = args->path;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
@@ -43,7 +44,7 @@ void log_finalize() {
   logger::printTime("Total FMM");
 }
 
-extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads,
+extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads, const char * path,
 			 int nb, double * xb, double * yb, double * zb, double * vb,
 			 int nv, double * xv, double * yv, double * zv, double * vv) {
   const int nspawn = 1000;
@@ -64,7 +65,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
+  traversal = new Traversal(nspawn, images, path);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
   num_threads(threads);
@@ -78,6 +79,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   args->numBodies = 0;
   args->useRopt = useRopt;
   args->nspawn = nspawn;
+  args->path = path;
   args->theta = theta;
   args->verbose = verbose & (baseMPI->mpirank == 0);
   args->useRmax = useRmax;

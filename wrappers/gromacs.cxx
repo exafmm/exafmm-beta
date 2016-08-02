@@ -30,7 +30,7 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void FMM_Init(int images, int threads, bool verbose) {
+extern "C" void FMM_Init(int images, int threads, bool verbose, const char * path) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const real_t theta = 0.5;
@@ -46,7 +46,7 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
+  traversal = new Traversal(nspawn, images, path);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
@@ -62,8 +62,10 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   args->theta = theta;
   args->threads = threads;
   args->verbose = verbose & (baseMPI->mpirank == 0);
+  args->path = path;
   args->useRmax = useRmax;
   logger::verbose = args->verbose;
+  logger::path = args->path;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
 }

@@ -726,7 +726,7 @@ program main
   implicit none
   include 'mpif.h'
   logical test_force
-  character(len=128) infile,outfile,nstp
+  character(len=128) path,infile,outfile,nstp
   integer dynsteps
   integer i,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
@@ -756,8 +756,13 @@ program main
   nat = 16
   time = 100. ! first 100ps was equilibration with standard CHARMM
   charmmio: if (command_argument_count() > 1) then
-     call get_command_argument(1,infile,lnam,istat)
-     call get_command_argument(2,outfile,lnam,istat)
+     call get_command_argument(1,path,lnam,istat)
+     call get_command_argument(2,infile,lnam,istat)
+     call get_command_argument(3,outfile,lnam,istat)
+     infile = trim(path) // trim(infile) 
+     outfile = trim(path) // trim(outfile) 
+     print*,'infile: ',infile
+     print*,'outfile: ',outfile
      call charmm_cor_read(nglobal,x,q,pcycle,infile,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,nres,ires,time)
@@ -823,7 +828,7 @@ program main
      icpumap(i) = 1
   enddo
   if (mpirank == 0) print*,'FMM init'
-  call fmm_init(images,theta,verbose,nglobal)
+  call fmm_init(images,theta,verbose,trim(path))
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
   if (mpirank == 0) print*,'FMM Coulomb'
@@ -883,9 +888,9 @@ program main
      print "(a,f15.4)",'GRMS (Direct)        : ',grmse
   endif
 
-  ! run dynamics if second command line argument specified
-  if (command_argument_count() > 2) then
-     call get_command_argument(3,nstp,lnam,istat)
+  ! run dynamics if third command line argument specified
+  if (command_argument_count() > 3) then
+     call get_command_argument(4,nstp,lnam,istat)
      read(nstp,*)dynsteps
      if(mpirank == 0) write(*,*)'will run dynamics for ',dynsteps,' steps'
      ! for pure water systems there is no need for nbadd14() :-)
@@ -904,9 +909,9 @@ program main
              xc,p,p2,f,f2,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
              ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires,time)
      endif
-     call charmm_cor_write(nglobal,x,q,pcycle,trim(outfile),numex,natex,nat,atype,&
-          rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
-          aangle,cangle,mass,xc,v,time)
+     call charmm_cor_write(nglobal,x,q,pcycle,trim(outfile),&
+          numex,natex,nat,atype,rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,&
+          rbond,cbond,aangle,cangle,mass,xc,v,time)
   endif
 
   deallocate( x,q,v,p,f,p2,f2,icpumap )

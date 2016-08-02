@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads,
+extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads, const char * path,
                          int nb, double * xb, double * yb, double * zb, double * vb,
                          int nv, double * xv, double * yv, double * zv, double * vv);
 extern "C" void FMM_Finalize();
@@ -42,6 +42,7 @@ int main(int argc, char ** argv) {
   const double eps2 = 0.0;
   const double kreal = 1.0;
   const double kimag = 0.1;
+  const char * path = "./";
   double * xb = new double [Nmax];
   double * yb = new double [Nmax];
   double * zb = new double [Nmax];
@@ -72,7 +73,7 @@ int main(int argc, char ** argv) {
     zv[i] = drand48() - .5;
   }
 
-  FMM_Init(eps2, kreal, kimag, ncrit, threads, nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
+  FMM_Init(eps2, kreal, kimag, ncrit, threads, path, nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
   FMM_Partition(nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
   FMM_BuildTree();
 
