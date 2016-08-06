@@ -36,6 +36,7 @@ int main(int argc, char ** argv) {
   kernel::setup();
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
+  verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
   logger::printTitle("FMM Parameters");

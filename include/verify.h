@@ -12,6 +12,8 @@ namespace exafmm {
     const char * path;                                          //!< Path to save files
 
   public:
+    bool verbose;                                               //!< Print to screen
+
     //! Constructor
     Verify() : path("./") {} 
 
@@ -141,6 +143,12 @@ namespace exafmm {
         file << R->first << " " << R->second << std::endl;      //  Write key value pair
       }                                                         // End loop over regression values
       file.close();                                             // Close regression file
+      if (!pass && verbose) {                                   // If regression failed
+        if (time) std::cout << "Time regression failed: " <<    //  Print message for time regression
+                    value << " / " << record[key] << std::endl; //  Print value and record
+        else std::cout << "Accuracy regression failed: " <<     //  Print message for accuracy regression
+                    value << " / " << record[key] << std::endl; //  Print value and record
+      }                                                         // Endif for failed regression
       return pass;                                              // Return flag for regression test
     }
   };

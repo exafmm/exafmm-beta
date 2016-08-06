@@ -45,6 +45,7 @@ int main(int argc, char ** argv) {
 
   kernel::eps2 = 0.0;
   args.verbose &= baseMPI.mpirank == 0;
+  verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
   logger::printTitle("Ewald Parameters");

@@ -172,7 +172,8 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Total Direct");
     logger::resetTimer("Total Direct");
 #endif
-    Verify verify;
+    Verify verify(args.path);
+    verify.verbose = args.verbose;
     double potSum = verify.getSumScalar(bodies);
     double potSum2 = verify.getSumScalar(bodies2);
     double accDif = verify.getDifVector(bodies, bodies2);

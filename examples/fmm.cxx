@@ -27,6 +27,7 @@ int main(int argc, char ** argv) {
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
   kernel::setup();
+  verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
   logger::printTitle("FMM Parameters");
@@ -101,7 +102,7 @@ int main(int argc, char ** argv) {
     bodies = buffer;
     data.initTarget(bodies);
     if (!time)
-      pass = verify.regression(args.getKey(), std::sqrt(potDif/potNrm), time, t);
+      pass = verify.regression(args.getKey(), potRel, time, t);
     else
       pass = verify.regression(args.getKey(), totalFMM, time, t);
     if (pass) {
