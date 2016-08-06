@@ -13,6 +13,7 @@ namespace exafmm {
 
   public:
     bool verbose;                                               //!< Print to screen
+    double average;                                             //!< Average for regression
 
     //! Constructor
     Verify() : path("./") {} 
@@ -133,9 +134,10 @@ namespace exafmm {
         }                                                       //  End loop over regression values
       }                                                         // End if for file existence
       file.close();                                             // Close regression file
-      if (record[key] == 0 || value < record[key]*(1+iteration*.01)) { // If new record
+      average = average * iteration + value;                    // Average of all iterations
+      if (record[key] == 0 || average < record[key]*(1+iteration*.01)) { // If new record
         pass = true;                                            //  Change flag to pass
-        record[key] = value;                                    //  Add key value pair
+        record[key] = average;                                  //  Add key value pair
       }                                                         // Endif for better value
       file.open(name.str().c_str(),std::fstream::out);          // Open regression file
       file << record.size() << std::endl;                       // Write number of keys
@@ -145,9 +147,9 @@ namespace exafmm {
       file.close();                                             // Close regression file
       if (!pass && verbose) {                                   // If regression failed
         if (time) std::cout << "Time regression failed: " <<    //  Print message for time regression
-                    value << " / " << record[key] << std::endl; //  Print value and record
+                    average << " / " << record[key] << std::endl; //  Print value and record
         else std::cout << "Accuracy regression failed: " <<     //  Print message for accuracy regression
-                    value << " / " << record[key] << std::endl; //  Print value and record
+               average << " / " << record[key] << std::endl;    //  Print value and record
       }                                                         // Endif for failed regression
       return pass;                                              // Return flag for regression test
     }
