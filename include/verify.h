@@ -134,7 +134,7 @@ namespace exafmm {
         }                                                       //  End loop over regression values
       }                                                         // End if for file existence
       file.close();                                             // Close regression file
-      average = average * iteration + value;                    // Average of all iterations
+      average = (average * iteration + value) / (iteration + 1);// Average of all iterations
       if (record[key] == 0 || average < record[key]*(1+iteration*.01)) { // If new record
         pass = true;                                            //  Change flag to pass
         record[key] = average;                                  //  Add key value pair

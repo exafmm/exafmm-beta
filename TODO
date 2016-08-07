@@ -1,6 +1,7 @@
 -- Immediate --
-- Use average for regression
+- Add acceleration regression
 - Add regression to wrappers
+- Add all regression tests according to args.h
 
 -- MPI --
 - benchmark against uniform on kyoto

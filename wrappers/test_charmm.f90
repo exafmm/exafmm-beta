@@ -761,8 +761,6 @@ program main
      call get_command_argument(3,outfile,lnam,istat)
      infile = trim(path) // trim(infile) 
      outfile = trim(path) // trim(outfile) 
-     print*,'infile: ',infile
-     print*,'outfile: ',outfile
      call charmm_cor_read(nglobal,x,q,pcycle,infile,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,nres,ires,time)
