@@ -102,9 +102,9 @@ int main(int argc, char ** argv) {
     bodies = buffer;
     data.initTarget(bodies);
     if (!time)
-      pass = verify.regression(args.getKey(), potRel, time, t);
+      pass = verify.regression(args.getKey(), time, t, potRel);
     else
-      pass = verify.regression(args.getKey(), totalFMM, time, t);
+      pass = verify.regression(args.getKey(), time, t, totalFMM);
     if (pass) {
       if (!time) {
         if (args.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 

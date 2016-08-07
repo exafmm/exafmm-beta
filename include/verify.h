@@ -114,7 +114,7 @@ namespace exafmm {
     }
 
     //! Compare data for regression
-    bool regression(uint64_t key, double value, bool time, int iteration) {
+    bool regression(uint64_t key, bool time, int iteration, double value) {
       bool pass = false;                                        // Flag for regression test
       Record record;                                            // Map for regression value
       const char * host = getenv("SLAVENAME");                  // Get slavename

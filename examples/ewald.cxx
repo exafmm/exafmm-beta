@@ -170,9 +170,9 @@ int main(int argc, char ** argv) {
     totalFMMGlob /= baseMPI.mpisize;
     if (!baseMPI.mpirank) {
       if (!time)
-        pass = verify.regression(args.getKey(baseMPI.mpisize), std::sqrt(potDifGlob/potNrmGlob), time, t);
+        pass = verify.regression(args.getKey(baseMPI.mpisize), time, t, potRel);
       else
-        pass = verify.regression(args.getKey(baseMPI.mpisize), totalFMMGlob, time, t);
+        pass = verify.regression(args.getKey(baseMPI.mpisize), time, t, totalFMMGlob);
     }
     MPI_Bcast(&pass, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (pass) {
