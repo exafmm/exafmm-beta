@@ -13,13 +13,13 @@ namespace exafmm {
 
   public:
     bool verbose;                                               //!< Print to screen
-    double average;                                             //!< Average for regression
+    double average, average2;                                   //!< Average for regression
 
     //! Constructor
-    Verify() : path("./") {} 
+    Verify() : path("./"), average(0), average2(0) {} 
 
     //! Constructor with argument
-    Verify(const char * _path) : path(_path) {} 
+    Verify(const char * _path) : path(_path), average(0), average2(0) {} 
 
     //! Get sum of scalar component of a vector of target bodies
     double getSumScalar(Bodies & bodies) {
@@ -114,9 +114,11 @@ namespace exafmm {
     }
 
     //! Compare data for regression
-    bool regression(uint64_t key, bool time, int iteration, double value) {
+    bool regression(uint64_t key, bool time, int iteration, double value, double value2=0) {
       bool pass = false;                                        // Flag for regression test
-      Record record;                                            // Map for regression value
+      bool secondValue = false;                                 // Whether there is a second value
+      if (value2 != 0) secondValue = true;                      // If there is a second value
+      Record record, record2;                                   // Map for regression value
       const char * host = getenv("SLAVENAME");                  // Get slavename
       std::stringstream name;                                   // File name for regression
       name << path;                                             // Append path to file name
@@ -131,25 +133,42 @@ namespace exafmm {
           uint64_t readKey;                                     //   Read key buffer
           file >> readKey;                                      //   Read key
           file >> record[readKey];                              //   Read value
+          if (secondValue) file >> record2[readKey];            //   Read value2
         }                                                       //  End loop over regression values
       }                                                         // End if for file existence
       file.close();                                             // Close regression file
       average = (average * iteration + value) / (iteration + 1);// Average of all iterations
-      if (record[key] == 0 || average < record[key]*(1+iteration*.01)) { // If new record
+      if (secondValue) average2 = (average2 * iteration + value2) / (iteration + 1);// Average of all iterations
+      if (record[key] == 0 || average < record[key]*(1+iteration*.01)) {// If new record or pass
         pass = true;                                            //  Change flag to pass
         record[key] = average;                                  //  Add key value pair
       }                                                         // Endif for better value
+      if (secondValue) {                                        // If second value
+        if (record2[key] == 0 || average2 < record2[key]*(1+iteration*.01)) { // If new record2 or pass
+          pass &= true;                                         //  Change flag to pass
+          record2[key] = average2;                              //  Add key value pair
+        }                                                       // Endif for second value
+      }                                                         // Endif for better value
       file.open(name.str().c_str(),std::fstream::out);          // Open regression file
       file << record.size() << std::endl;                       // Write number of keys
-      for (R_iter R=record.begin(); R!=record.end(); R++) {     // Loop over regression values
-        file << R->first << " " << R->second << std::endl;      //  Write key value pair
+      R_iter R2 = record.begin();                               // Dummy iterator for record2
+      if (secondValue) R2 = record2.begin();                    // Iterator for record2
+      for (R_iter R=record.begin(); R!=record.end(); R++,R2++) {// Loop over regression values
+        file << R->first << " " << R->second;                   // Write key value pair 
+        if (secondValue) file << " " << R2->second;             // Write second value
+        file << std::endl;                                      // End line
       }                                                         // End loop over regression values
       file.close();                                             // Close regression file
       if (!pass && verbose) {                                   // If regression failed
         if (time) std::cout << "Time regression failed: " <<    //  Print message for time regression
-                    average << " / " << record[key] << std::endl; //  Print value and record
-        else std::cout << "Accuracy regression failed: " <<     //  Print message for accuracy regression
-               average << " / " << record[key] << std::endl;    //  Print value and record
+                    average << " / " << record[key] << std::endl;//  Print value and record
+        else {                                                  // If accuracy regression 
+          std::cout << "Accuracy regression failed: " <<        //  Print message for accuracy regression
+            average << " / " << record[key];                    //  Print value and record 
+          if (secondValue) std::cout << " " << average2         //  Print value2
+                                     << " / " << record2[key];  //  Print record2 
+          std::cout << std::endl;                               //  End line
+        }                                                       // Endif accuracy regression
       }                                                         // Endif for failed regression
       return pass;                                              // Return flag for regression test
     }

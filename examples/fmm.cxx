@@ -102,7 +102,7 @@ int main(int argc, char ** argv) {
     bodies = buffer;
     data.initTarget(bodies);
     if (!time)
-      pass = verify.regression(args.getKey(), time, t, potRel);
+      pass = verify.regression(args.getKey(), time, t, potRel, accRel);
     else
       pass = verify.regression(args.getKey(), time, t, totalFMM);
     if (pass) {

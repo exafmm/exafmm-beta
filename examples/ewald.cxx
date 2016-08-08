@@ -170,7 +170,7 @@ int main(int argc, char ** argv) {
     totalFMMGlob /= baseMPI.mpisize;
     if (!baseMPI.mpirank) {
       if (!time)
-        pass = verify.regression(args.getKey(baseMPI.mpisize), time, t, potRel);
+        pass = verify.regression(args.getKey(baseMPI.mpisize), time, t, potRel, accRel);
       else
         pass = verify.regression(args.getKey(baseMPI.mpisize), time, t, totalFMMGlob);
     }
