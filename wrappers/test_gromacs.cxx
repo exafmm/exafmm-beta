@@ -48,7 +48,6 @@ int main(int argc, char ** argv) {
     x[3*i+0] = drand48() * cycle - cycle / 2;
     x[3*i+1] = drand48() * cycle - cycle / 2;
     x[3*i+2] = drand48() * cycle - cycle / 2;
-    p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     ibody[i] = i + mpirank*Ni;
     icell[i] = ibody[i];
   }
@@ -119,39 +118,42 @@ int main(int argc, char ** argv) {
 #endif
   FMM_Init(images, threads, verbose, path);
   FMM_Partition(Ni, ibody, icell, x, q, cycle);
-  FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
-  for (int i=0; i<Ni; i++) {
-    p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
-  }
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<Ni; i++) {
+      p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+      p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
+    }
+    FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
 #if 1
-  Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
+    Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
-  Direct_Coulomb(Ni, x, q, p2, f2, cycle);
+    Direct_Coulomb(Ni, x, q, p2, f2, cycle);
 #endif
-  double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
-  for (int i=0; i<Ni; i++) {
-    potSum  += p[i]  * q[i];
-    potSum2 += p2[i] * q[i];
-    accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
-      + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
-      + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
-    accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
-  }
-  double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
-  MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
-  double potNrmGlob = potSumGlob * potSumGlob;
-  double potRel = std::sqrt(potDifGlob/potNrmGlob);
-  double accRel = std::sqrt(accDifGlob/accNrmGlob);
-  if (mpirank == 0) {
-    std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
-    std::cout << std::setw(stringLength) << std::left << std::scientific
-  	      << "Rel. L2 Error (pot)" << " : " << potRel << std::endl;
-    std::cout << std::setw(stringLength) << std::left
-	      << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
+    double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
+    for (int i=0; i<Ni; i++) {
+      potSum  += p[i]  * q[i];
+      potSum2 += p2[i] * q[i];
+      accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
+        + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
+        + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
+      accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
+    }
+    double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
+    MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+    double potNrmGlob = potSumGlob * potSumGlob;
+    double potRel = std::sqrt(potDifGlob/potNrmGlob);
+    double accRel = std::sqrt(accDifGlob/accNrmGlob);
+    if (mpirank == 0) {
+      std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
+      std::cout << std::setw(stringLength) << std::left << std::scientific
+                << "Rel. L2 Error (pot)" << " : " << potRel << std::endl;
+      std::cout << std::setw(stringLength) << std::left
+                << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
+    }
   }
 
   delete[] ibody;

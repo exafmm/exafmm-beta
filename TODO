@@ -1,5 +1,4 @@
 -- Immediate --
-- NO_P2P regression
 - Add regression to wrappers
 - Add all regression tests according to args.h
 

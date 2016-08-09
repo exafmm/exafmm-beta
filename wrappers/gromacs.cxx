@@ -239,8 +239,8 @@ extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
   for (int i=0; i<baseMPI->mpisize; i++) {
     if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
-    localBounds = boundBox->getBounds(jbodies);
-    Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
+    Bounds jlocalBounds = boundBox->getBounds(jbodies);
+    Cells jcells = localTree->buildTree(jbodies, buffer, jlocalBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }
