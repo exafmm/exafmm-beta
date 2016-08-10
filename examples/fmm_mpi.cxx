@@ -55,7 +55,7 @@ int main(int argc, char ** argv) {
     }
   }
   bool pass = true;
-  bool time = false;
+  bool isTime = false;
   for (int t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
@@ -182,17 +182,17 @@ int main(int argc, char ** argv) {
     MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     totalFMMGlob /= baseMPI.mpisize;
     if (!baseMPI.mpirank) {
-      if (!time)
-        pass = verify.regression(args.getKey(baseMPI.mpisize), time, t, potRel, accRel);
+      if (!isTime)
+        pass = verify.regression(args.getKey(baseMPI.mpisize), isTime, t, potRel, accRel);
       else
-        pass = verify.regression(args.getKey(baseMPI.mpisize), time, t, totalFMMGlob);
+        pass = verify.regression(args.getKey(baseMPI.mpisize), isTime, t, totalFMMGlob);
     }
     MPI_Bcast(&pass, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (pass) {
-      if (!time) {
+      if (!isTime) {
         if (args.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
         t = -1;
-        time = true;        
+        isTime = true;        
       } else {
         if (args.verbose) std::cout << "passed time regression at t: " << t << std::endl;
         break;
@@ -201,7 +201,7 @@ int main(int argc, char ** argv) {
   }
   if (!pass) {
     if (args.verbose) {
-      if(!time) std::cout << "failed accuracy regression" << std::endl;
+      if(!isTime) std::cout << "failed accuracy regression" << std::endl;
       else std::cout << "failed time regression" << std::endl;
     }
     abort();

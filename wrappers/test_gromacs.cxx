@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <sys/time.h>
 
 extern "C" void FMM_Init(int images, int threads, int verbose, const char * path);
 extern "C" void FMM_Finalize();
@@ -13,6 +14,14 @@ extern "C" void FMM_Coulomb(int n, int * icell, float * x, float * q, float * p,
 extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle);
 extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
+extern "C" void FMM_Verify_Step(int & t, double totalFMM, double potRel, double accRel);
+extern "C" void FMM_Verify_End();
+
+double get_time() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return double(tv.tv_sec+tv.tv_usec*1e-6);
+}
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
@@ -123,7 +132,9 @@ int main(int argc, char ** argv) {
       p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
       p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
     }
+    double tic = get_time();
     FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+    double toc = get_time();
 #if 1
     Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
@@ -154,7 +165,9 @@ int main(int argc, char ** argv) {
       std::cout << std::setw(stringLength) << std::left
                 << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
     }
+    FMM_Verify_Step(t, toc-tic, potRel, accRel);
   }
+  FMM_Verify_End();
 
   delete[] ibody;
   delete[] icell;

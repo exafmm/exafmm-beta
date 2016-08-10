@@ -142,6 +142,8 @@ namespace exafmm {
         return 3;
       case 's':
         return 4;
+      case 'e':
+        return 7;
       default:
         fprintf(stderr, "invalid distribution %s\n", distribution);
         abort();
@@ -173,12 +175,24 @@ namespace exafmm {
     }
 
     uint64_t getConfigNum() {
-      uint64_t key = 0;
+      uint64_t key = 0;                             // Feature      : Speed
 #if EXAFMM_SINGLE
-      key |= 1;
+      key |= 1;                                     // dependent    : dependent
 #endif
 #if EXAFMM_USE_SIMD
-      key |= 2;
+      key |= 2;                                     // dependent    : dependent
+#endif
+#if EXAFMM_USE_KAHAN
+      key |= 4;                                     // dependent    : dependent
+#endif
+#if EXAFMM_WITH_TBB
+      key |= 0 << 3;                                // independent  : independent
+#elif EXAFMM_WITH_MTHREAD
+      key |= 1 << 3;
+#elif EXAFMM_WITH_CILK
+      key |= 2 << 3;
+#else
+      key |= 3 << 3;
 #endif
       return key;
     }

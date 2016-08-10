@@ -61,9 +61,6 @@ endif
 if EXAFMM_WITH_MTHREAD
 LIBS += -lmyth-native
 endif
-if EXAFMM_WITH_QTHREAD
-LIBS += -lqthread
-endif
 
 ### Floating point precision
 if EXAFMM_SINGLE
