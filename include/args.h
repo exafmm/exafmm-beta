@@ -1,6 +1,6 @@
 #ifndef args_h
 #define args_h
-#include <assert.h>                                             // Some compilers don't have cassert
+#include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -316,7 +316,9 @@ namespace exafmm {
       key |= uint64_t(log(threads)/log(2)) << 30;   // upper bound  : upper bound
       key |= uint64_t(useRmax) << 33;               // off          : independent
       key |= getKernelNum() << 34;                  // dependent    : Laplace
-      key |= uint64_t(log(mpisize)/log(2)) << 40;   // upper bound  : upper bound
+      key |= getConfigNum() << 40;                  // see inside   : see inside
+      key |= uint64_t(log(mpisize)/log(2)) << 45;   // upper bound  : upper bound
+      assert( uint64_t(log(mpisize)/log(2)) < 18 ); // Check for overflow 
       return key;
     }
 
