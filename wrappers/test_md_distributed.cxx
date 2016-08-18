@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <sys/time.h>
 
 extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, int verbose, const char * path);
 extern "C" void FMM_Finalize();
@@ -15,6 +16,14 @@ extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f
 			  int ksize, double alpha, double sigma, double cutoff, double * cycle);
 extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
 extern "C" void Dipole_Correction(int ni, double * x, double * q, double * p, double * f, double * cycle);
+extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double accRel);
+extern "C" void FMM_Verify_End();
+
+double get_time() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return double(tv.tv_sec+tv.tv_usec*1e-6);
+}
 
 int main(int argc, char ** argv) {
   const int nimax = 1000000;
@@ -51,7 +60,6 @@ int main(int argc, char ** argv) {
     x[3*i+0] = drand48() * cycle[0] - cycle[0] / 2;
     x[3*i+1] = drand48() * cycle[1] - cycle[1] / 2;
     x[3*i+2] = drand48() * cycle[2] - cycle[2] / 2;
-    p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     res_index[i] = 0;
   }
   for (int i=0; i<ni; i++) {
@@ -62,46 +70,52 @@ int main(int argc, char ** argv) {
   for (int i=0; i<ni; i++) {
     q[i] -= average;
   }
-
   FMM_Init(images, threads, theta, cutoff, verbose, path);
   Set_Index(&ni, nimax, res_index, x, q, v, cycle);
-  for (int i=0; i<ni; i++) {
-    std::cout << i << " "<< res_index[i] << std::endl;
-  }
   FMM_Partition(&ni, nimax, res_index, x, q, v, cycle);
-  FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
-  for (int i=0; i<ni; i++) {
-    p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
-  }
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<ni; i++) {
+      p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+      p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
+    }
+    double tic = get_time();
+    FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
+    double toc = get_time();
 #if 1
-  FMM_Ewald(ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
+    FMM_Ewald(ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
-  FMM_Cutoff(ni, x, q, p2, f2, cutoff, cycle);
-  Dipole_Correction(ni, x, q, p2, f2, cycle);
+    FMM_Cutoff(ni, x, q, p2, f2, cutoff, cycle);
+    Dipole_Correction(ni, x, q, p2, f2, cycle);
 #endif
-  double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
-  for (int i=0; i<ni; i++) {
-    potSum  += p[i]  * q[i];
-    potSum2 += p2[i] * q[i];
-    accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
-      + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
-      + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
-    accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
+    double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
+    for (int i=0; i<ni; i++) {
+      potSum  += p[i]  * q[i];
+      potSum2 += p2[i] * q[i];
+      accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
+        + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
+        + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
+      accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
+    }
+    double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
+    MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+    double potNrmGlob = potSumGlob * potSumGlob;
+    double potRel = std::sqrt(potDifGlob/potNrmGlob);
+    double accRel = std::sqrt(accDifGlob/accNrmGlob);
+    if (verbose && mpirank == 0) {
+      std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
+      std::cout << std::setw(stringLength) << std::left << std::scientific
+                << "Rel. L2 Error (pot)" << " : " << potRel << std::endl;
+      std::cout << std::setw(stringLength) << std::left
+                << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
+    }
+    FMM_Verify_Step(t, toc-tic, potRel, accRel);
   }
-  double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
-  MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
-  double potNrmGlob = potSumGlob * potSumGlob;
-  if (mpirank == 0) {
-    std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
-    std::cout << std::setw(stringLength) << std::left << std::scientific
-  	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(potDifGlob/potNrmGlob) << std::endl;
-    std::cout << std::setw(stringLength) << std::left
-	      << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
-  }
+  FMM_Verify_End();
+
   for (int i=0; i<ni; i++) {
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
@@ -130,7 +144,7 @@ int main(int argc, char ** argv) {
     f[3*i+2] -= fz;
   }
   FMM_Cutoff(ni, x, q, p2, f2, cutoff, cycle);
-  potSum = potSum2 = accDif = accNrm = 0;
+  double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<ni; i++) {
     potSum  += p[i]  * q[i];
     potSum2 += p2[i] * q[i];
@@ -139,18 +153,21 @@ int main(int argc, char ** argv) {
       + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
     accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
   }
+  double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
   MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
-  potNrmGlob = potSumGlob * potSumGlob;
-  if (mpirank == 0) {
+  double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+  double potNrmGlob = potSumGlob * potSumGlob;
+  double potRel = std::sqrt(potDifGlob/potNrmGlob);
+  double accRel = std::sqrt(accDifGlob/accNrmGlob);
+  if (verbose && mpirank == 0) {
     std::cout << "--- FMM_Cutoff vs. Cutoff  -------" << std::endl;
     std::cout << std::setw(stringLength) << std::left << std::scientific
-              << "Rel. L2 Error (pot)" << " : " << std::sqrt(potDifGlob/potNrmGlob) << std::endl;
+              << "Rel. L2 Error (pot)" << " : " << potRel << std::endl;
     std::cout << std::setw(stringLength) << std::left
-              << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
+              << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
   }
 
   delete[] res_index;

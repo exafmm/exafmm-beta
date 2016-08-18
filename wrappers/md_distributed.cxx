@@ -8,6 +8,7 @@
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
+#include "verify.h"
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
@@ -22,7 +23,10 @@ Partition * partition;
 Traversal * traversal;
 TreeMPI * treeMPI;
 UpDownPass * upDownPass;
+Verify * verify;
 
+bool isTime;
+bool pass;
 Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
@@ -45,6 +49,7 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, b
   traversal = new Traversal(nspawn, images, path);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  verify = new Verify(path);
 
   args->ncrit = ncrit;
   args->cutoff = cutoff;
@@ -65,6 +70,9 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, b
   logger::path = args->path;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
+
+  pass = true;
+  isTime = false;
 }
 
 extern "C" void FMM_Finalize() {
@@ -333,8 +341,8 @@ extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f
   for (int i=0; i<baseMPI->mpisize; i++) {
     if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
-    localBounds = boundBox->getBounds(jbodies);
-    Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
+    Bounds jlocalBounds = boundBox->getBounds(jbodies);
+    Cells jcells = localTree->buildTree(jbodies, buffer, jlocalBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }
@@ -453,4 +461,37 @@ extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * 
   }
   delete[] x2;
   delete[] q2;
+}
+
+extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double accRel) {
+  double totalFMMGlob;
+  MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  totalFMMGlob /= baseMPI->mpisize;
+  if (!baseMPI->mpirank) {
+    if (!isTime)
+      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
+    else
+      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, totalFMMGlob);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (!isTime) {
+      if (args->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+      t = -1;
+      isTime = true;        
+    } else {
+      if (args->verbose) std::cout << "passed time regression at t: " << t << std::endl;
+      t = 10;
+    }
+  }
+}
+
+extern "C" void FMM_Verify_End() {
+  if (!pass) {
+    if (args->verbose) {
+      if(!isTime) std::cout << "failed accuracy regression" << std::endl;
+      else std::cout << "failed time regression" << std::endl;
+    }
+    abort();
+  }
 }
