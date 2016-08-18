@@ -158,7 +158,7 @@ int main(int argc, char ** argv) {
     double potNrmGlob = potSumGlob * potSumGlob;
     double potRel = std::sqrt(potDifGlob/potNrmGlob);
     double accRel = std::sqrt(accDifGlob/accNrmGlob);
-    if (mpirank == 0) {
+    if (verbose && mpirank == 0) {
       std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
       std::cout << std::setw(stringLength) << std::left << std::scientific
                 << "Rel. L2 Error (pot)" << " : " << potRel << std::endl;

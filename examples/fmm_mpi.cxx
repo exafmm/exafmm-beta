@@ -187,7 +187,7 @@ int main(int argc, char ** argv) {
       else
         pass = verify.regression(args.getKey(baseMPI.mpisize), isTime, t, totalFMMGlob);
     }
-    MPI_Bcast(&pass, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
     if (pass) {
       if (!isTime) {
         if (args.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
