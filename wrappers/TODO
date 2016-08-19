@@ -1,5 +1,3 @@
-Regression for test charmm
-
 [gromacs]
 calcualte energy + virial
 parallel

@@ -728,9 +728,9 @@ program main
   logical test_force
   character(len=128) path,infile,outfile,nstp
   integer dynsteps
-  integer i,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
+  integer i,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
-  real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time
+  real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time,tic,toc
   real(8) pl2err,fl2err,enerf,enere,grmsf,grmse
   integer,dimension (128) :: iseed
   integer,allocatable,dimension(:) :: icpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
@@ -829,32 +829,40 @@ program main
   call fmm_init(images,theta,verbose,nglobal,trim(path))
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
-  if (mpirank == 0) print*,'FMM Coulomb'
-  call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
-  do i = 1,nglobal
-     p2(i) = 0
-     f2(3*i-2) = 0
-     f2(3*i-1) = 0
-     f2(3*i-0) = 0
+  do itr = 1,10
+     do i = 1,nglobal
+        p(i) = 0
+        f(3*i-2) = 0
+        f(3*i-1) = 0
+        f(3*i-0) = 0
+        p2(i) = 0
+        f2(3*i-2) = 0
+        f2(3*i-1) = 0
+        f2(3*i-0) = 0
+     enddo
+     if (mpirank == 0) print*,'FMM Coulomb'
+     tic = mpi_wtime()
+     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
+     toc = mpi_wtime()
+     if (mpirank == 0) print*,'Ewald Coulomb'
+     call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
+     !  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
+     if(mpirank == 0) print*,'Coulomb exclusion'
+     call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
+     call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
+     call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
+     if (mpirank == 0) then
+        print "(a)",'--- Coulomb FMM vs. Ewald -------'
+        print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
+        print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
+        print "(a,f15.4)",'Energy (FMM)         : ',enerf
+        print "(a,f15.4)",'Energy (Ewald)       : ',enere
+        print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
+        print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
+     endif
+     call fmm_verify_step(itr,pl2err,fl2err,toc-tic)
   enddo
-  if (mpirank == 0) print*,'Ewald Coulomb'
-  call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
-!  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
-  if(mpirank == 0) print*,'Coulomb exclusion'
-  call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
-  call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
-
-
-  call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
-  if (mpirank == 0) then
-     print "(a)",'--- Coulomb FMM vs. Ewald -------'
-     print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
-     print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
-     print "(a,f15.4)",'Energy (FMM)         : ',enerf
-     print "(a,f15.4)",'Energy (Ewald)       : ',enere
-     print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
-     print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
-  endif
+  call fmm_verify_end()
 
   do i = 1,nglobal
      p(i) = 0
