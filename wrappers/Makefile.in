@@ -1457,9 +1457,9 @@ save:
 	@make -C .. save
 
 @EXAFMM_HAVE_MPI_TRUE@run_charmm_mpi: charmm_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< water_32.fmm water.out 0
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< ./ water_32.fmm water.out 0
 @EXAFMM_HAVE_MPI_TRUE@run_charmm2_mpi: charmm2_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< water_32.fmm water.out 0
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< ./ water_32.fmm water.out 0
 @EXAFMM_HAVE_MPI_TRUE@run_gromacs_mpi: gromacs_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$<
 @EXAFMM_HAVE_MPI_TRUE@run_petiga_laplace_mpi: petiga_laplace_mpi
