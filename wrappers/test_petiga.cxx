@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <sys/time.h>
 
 extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads, const char * path,
                          int nb, double * xb, double * yb, double * zb, double * vb,
@@ -19,20 +20,31 @@ extern "C" void FMM_B2V(double * vv, double * vb, bool verbose);
 extern "C" void FMM_V2V(double * vi, double * vv, bool verbose);
 extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
 		       int nv, double * xv, double * yv, double * zv, double * vv);
+extern "C" void FMM_Verify_Step(int & t, double totalFMM, double potRel, double accRel);
+extern "C" void FMM_Verify_End();
 
-void Validate(int n, double * vb, double * vd, int verbose) {
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+double get_time() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return double(tv.tv_sec+tv.tv_usec*1e-6);
+}
+
+void Validate(int n, double * vb, double * vd, int &t, double totalFMM, int verbose) {
+  double potDif = 0, potNrm = 0;
   for (int i=0; i<n; i++) {
-    diff1 += (vb[i] - vd[i]) * (vb[i] - vd[i]);
-    norm1 += vd[i] * vd[i];
+    potDif += (vb[i] - vd[i]) * (vb[i] - vd[i]);
+    potNrm += vd[i] * vd[i];
   }
-  MPI_Reduce(&diff1, &diff2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm1, &norm2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  double potDifGlob = 0, potNrmGlob = 0;
+  MPI_Reduce(&potDif, &potDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&potNrm, &potNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  double potRel = std::sqrt(potDifGlob/potNrmGlob);
   if (verbose) {
     std::cout << "--- FMM vs. direct ---------------" << std::endl;
     std::cout << std::setw(20) << std::left << std::scientific
-              << "Rel. L2 Error" << " : " << std::sqrt(diff2/norm2) << std::endl;
+              << "Rel. L2 Error" << " : " << potRel << std::endl;
   }
+  FMM_Verify_Step(t, totalFMM, potRel, 0);
 }
 
 int main(int argc, char ** argv) {
@@ -77,45 +89,65 @@ int main(int argc, char ** argv) {
   FMM_Partition(nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
   FMM_BuildTree();
 
-  for (int i=0; i<nb; i++) {
-    vb[i] = 1.0 / nb;
-    vi[i] = 0;
-    vd[i] = 0;
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<nb; i++) {
+      vb[i] = 1.0 / nb;
+      vi[i] = 0;
+      vd[i] = 0;
+    }
+    double tic = get_time();
+    FMM_B2B(vi, vb, 1);
+    double toc = get_time();
+    Direct(100, xb, yb, zb, vd, nb, xb, yb, zb, vb);
+    Validate(100, vi, vd, t, toc-tic, mpirank == 0);
   }
-  FMM_B2B(vi, vb, 1);
-  Direct(100, xb, yb, zb, vd, nb, xb, yb, zb, vb);
-  Validate(100, vi, vd, mpirank == 0);
+  FMM_Verify_End();
 
-  for (int i=0; i<nb; i++) {
-    vb[i] = 0;
-    vd[i] = 0;
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<nb; i++) {
+      vb[i] = 0;
+      vd[i] = 0;
+    }
+    for (int i=0; i<nv; i++) {
+      vv[i] = 1.0 / nv;
+    }
+    double tic = get_time();
+    FMM_V2B(vb, vv, 1);
+    double toc = get_time();
+    Direct(100, xb, yb, zb, vd, nv, xv, yv, zv, vv);
+    Validate(100, vb, vd, t, toc-tic, mpirank == 0);
   }
-  for (int i=0; i<nv; i++) {
-    vv[i] = 1.0 / nv;
-  }
-  FMM_V2B(vb, vv, 1);
-  Direct(100, xb, yb, zb, vd, nv, xv, yv, zv, vv);
-  Validate(100, vb, vd, mpirank == 0);
+  FMM_Verify_End();
 
-  for (int i=0; i<nb; i++) {
-    vb[i] = 1.0 / nb;
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<nb; i++) {
+      vb[i] = 1.0 / nb;
+    }
+    for (int i=0; i<nv; i++) {
+      vv[i] = 0;
+      vd[i] = 0;
+    }
+    double tic = get_time();
+    FMM_B2V(vv, vb, 1);
+    double toc = get_time();
+    Direct(100, xv, yv, zv, vd, nb, xb, yb, zb, vb);
+    Validate(100, vv, vd, t, toc-tic, mpirank == 0);
   }
-  for (int i=0; i<nv; i++) {
-    vv[i] = 0;
-    vd[i] = 0;
-  }
-  FMM_B2V(vv, vb, 1);
-  Direct(100, xv, yv, zv, vd, nb, xb, yb, zb, vb);
-  Validate(100, vv, vd, mpirank == 0);
+  FMM_Verify_End();
 
-  for (int i=0; i<nv; i++) {
-    vv[i] = 1.0 / nv;
-    vi[i] = 0;
-    vd[i] = 0;
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<nv; i++) {
+      vv[i] = 1.0 / nv;
+      vi[i] = 0;
+      vd[i] = 0;
+    }
+    double tic = get_time();
+    FMM_V2V(vi, vv, 1);
+    double toc = get_time();
+    Direct(100, xv, yv, zv, vd, nv, xv, yv, zv, vv);
+    Validate(100, vi, vd, t, toc-tic, mpirank == 0);
   }
-  FMM_V2V(vi, vv, 1);
-  Direct(100, xv, yv, zv, vd, nv, xv, yv, zv, vv);
-  Validate(100, vi, vd, mpirank == 0);
+  FMM_Verify_End();
 
   FMM_Finalize();
   MPI_Finalize();
