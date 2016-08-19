@@ -9,6 +9,7 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "van_der_waals.h"
+#include "verify.h"
 #if EXAFMM_SERIAL
 #include "../uniform/serialfmm.h"
 #else
@@ -29,6 +30,7 @@ Partition * partition;
 Traversal * traversal;
 TreeMPI * treeMPI;
 UpDownPass * upDownPass;
+Verify * verify;
 
 #if EXAFMM_SERIAL
 SerialFMM * FMM;
@@ -36,6 +38,8 @@ SerialFMM * FMM;
 ParallelFMM * FMM;
 #endif
 
+bool isTime;
+bool pass;
 Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
@@ -57,6 +61,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   traversal = new Traversal(nspawn, images, path);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  verify = new Verify(path);
 #if EXAFMM_SERIAL
   FMM = new SerialFMM;
 #else
@@ -93,6 +98,9 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   const int gatherLevel = 1;
   FMM->allocate(numBodies, maxLevel, args->images);
   FMM->partitioner(gatherLevel);
+
+  pass = true;
+  isTime = false;
 }
 
 extern "C" void fmm_finalize_() {
@@ -683,4 +691,37 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
     }
   }
   logger::stopTimer("VdW Exclusion");
+}
+
+extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, double & accRel) {
+  double totalFMMGlob;
+  MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  totalFMMGlob /= baseMPI->mpisize;
+  if (!baseMPI->mpirank) {
+    if (!isTime)
+      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
+    else
+      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, totalFMMGlob);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (!isTime) {
+      if (baseMPI->mpirank == 0) std::cout << "passed accuracy regression at t: " << t-1 << std::endl; 
+      t = 0;
+      isTime = true;        
+    } else {
+      if (baseMPI->mpirank == 0) std::cout << "passed time regression at t: " << t-1 << std::endl;
+      t = 11;
+    }
+  }
+}
+
+extern "C" void fmm_verify_end_() {
+  if (!pass) {
+    if (baseMPI->mpirank == 0) {
+      if(!isTime) std::cout << "failed accuracy regression" << std::endl;
+      else std::cout << "failed time regression" << std::endl;
+    }
+    abort();
+  }
 }
