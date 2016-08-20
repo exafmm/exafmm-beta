@@ -33,16 +33,6 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-void removeSpaces(char * source) {
-  char * i = source;
-  char * j = source;
-  while(*j != 0) {
-    *i = *j++;
-    if(*i != ' ') i++;
-  }
-  *i = 0;
-}
-
 extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, char * path, size_t *) {
   const int ncrit = 16;
   const int nspawn = 1000;
@@ -51,7 +41,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, ch
   kernel::eps2 = 0.0;
   kernel::setup();
 
-  removeSpaces(path);
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
@@ -61,6 +50,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, ch
   traversal = new Traversal(nspawn, images, path);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  if(baseMPI->mpirank==0) std::cout << "path: " << path << std::endl;
   verify = new Verify(path);
 
   args->ncrit = ncrit;
