@@ -14,4 +14,4 @@ cleanall:
 	make cleanbin
 	make cleandat
 	make cleanlib
-
+	make cleanreg
