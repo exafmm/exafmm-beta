@@ -364,19 +364,18 @@ contains
        alpha,sigma,cutoff,cuton,pcycle,xold,&
        x,p,p2,f,f2,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
        ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
-       pl2err,fl2err,ftotf,ftote,istep)
+       pl2err,fl2err,ftotf,ftote)
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize,i
     real(8) alpha,sigma,cutoff,cuton,etot,eb,et,efmm,evdw,pcycle
     real(8) pl2err,fl2err,enerf,enere,grmsf,grmse,ftotf,ftote
-    integer,optional :: istep
     integer,allocatable,dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     real(8),allocatable,dimension(:) :: xold,x,p,p2,f,f2,q,gscale,fgscale,rscale
     real(8),allocatable,dimension(:,:) :: rbond,cbond
     real(8),allocatable,dimension(:,:,:) :: aangle,cangle
 
     call fmm_partition(nglobal,icpumap,x,q,xold,pcycle)
-    p(1:nglobal)=0.0*istep
+    p(1:nglobal)=0.0
     p2(1:nglobal)=0.0
     f(1:3*nglobal)=0.0
     f2(1:3*nglobal)=0.0
@@ -563,7 +562,7 @@ contains
             alpha,sigma,cutoff,cuton,pcycle,xold,&
             x,p,p2,f,f2,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
             ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
-            pl2err,fl2err,ftotf,ftote,istep)
+            pl2err,fl2err,ftotf,ftote)
 
        do i = 1,nglobal
           if(icpumap(i) /= 1)cycle
