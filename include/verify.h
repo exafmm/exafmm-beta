@@ -126,8 +126,10 @@ namespace exafmm {
       else name << "accuracy.reg";                              // Else if accuracy regression
       std::fstream file;                                        // File id for regression
       file.open(name.str().c_str(),std::fstream::in);           //  Open regression file
+      std::cout << "opening: " << name.str() << std::endl;
       int numKeys;                                              // Number of keys stored in file
       if (file.good()) {                                        // If file exists
+        std::cout << "file exists" << std::endl;
         file >> numKeys;                                        //  Read number of keys
         for (int i=0; i<numKeys; i++) {                         //  Loop over regression values
           uint64_t readKey;                                     //   Read key buffer

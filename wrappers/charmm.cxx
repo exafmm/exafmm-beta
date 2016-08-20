@@ -561,7 +561,6 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 
 extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, double & accRel) {
   double totalFMMGlob;
-  if(baseMPI->mpirank==1) std::cout << totalFMM << std::endl;
   MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   totalFMMGlob /= baseMPI->mpisize;
   if (!baseMPI->mpirank) {
