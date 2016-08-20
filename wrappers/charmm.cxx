@@ -65,6 +65,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, co
   args->theta = theta;
   args->verbose = verbose & (baseMPI->mpirank == 0);
   args->useRmax = useRmax;
+  verify->verbose = baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
   logger::path = args->path;
   logger::printTitle("Initial Parameters");
@@ -560,6 +561,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 
 extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, double & accRel) {
   double totalFMMGlob;
+  if(baseMPI->mpirank==1) std::cout << totalFMM << std::endl;
   MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   totalFMMGlob /= baseMPI->mpisize;
   if (!baseMPI->mpirank) {
@@ -571,11 +573,11 @@ extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, dou
   MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
   if (pass) {
     if (!isTime) {
-      if (baseMPI->mpirank == 0) std::cout << "passed accuracy regression at t: " << t-1 << std::endl; 
+      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t-1 << std::endl; 
       t = 0;
       isTime = true;        
     } else {
-      if (baseMPI->mpirank == 0) std::cout << "passed time regression at t: " << t-1 << std::endl;
+      if (verify->verbose) std::cout << "passed time regression at t: " << t-1 << std::endl;
       t = 10;
     }
   }
@@ -583,7 +585,7 @@ extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, dou
 
 extern "C" void fmm_verify_end_() {
   if (!pass) {
-    if (baseMPI->mpirank == 0) {
+    if (verify->verbose) {
       if(!isTime) std::cout << "failed accuracy regression" << std::endl;
       else std::cout << "failed time regression" << std::endl;
     }

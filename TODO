@@ -1,5 +1,4 @@
 -- Immediate --
-- Add regression to wrappers
 - Add all regression tests according to args.h
 
 -- MPI --

@@ -859,7 +859,7 @@ program main
         print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
         print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
      endif
-     call fmm_verify_step(itr,pl2err,fl2err,toc-tic)
+     call fmm_verify_step(itr,toc-tic,pl2err,fl2err)
   enddo
   call fmm_verify_end()
 

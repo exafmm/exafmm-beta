@@ -32,6 +32,7 @@ UpDownPass * upDownPass;
 
 void log_initialize() {
   args->verbose &= baseMPI->mpirank == 0;
+  verify->verbose = args->verbose;
   logger::verbose = args->verbose;
   logger::path = args->path;
   logger::printTitle("FMM Parameters");
@@ -392,11 +393,11 @@ extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double a
   MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
   if (pass) {
     if (!isTime) {
-      if (args->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
       t = -1;
       isTime = true;        
     } else {
-      if (args->verbose) std::cout << "passed time regression at t: " << t << std::endl;
+      if (verify->verbose) std::cout << "passed time regression at t: " << t << std::endl;
       t = 10;
     }
   }
@@ -404,7 +405,7 @@ extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double a
 
 extern "C" void FMM_Verify_End() {
   if (!pass) {
-    if (args->verbose) {
+    if (verify->verbose) {
       if(!isTime) std::cout << "failed accuracy regression" << std::endl;
       else std::cout << "failed time regression" << std::endl;
     }

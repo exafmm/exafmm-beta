@@ -107,17 +107,17 @@ int main(int argc, char ** argv) {
       pass = verify.regression(args.getKey(), isTime, t, totalFMM);
     if (pass) {
       if (!isTime) {
-        if (args.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+        if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
         t = -1;
         isTime = true;        
       } else {
-        if (args.verbose) std::cout << "passed time regression at t: " << t << std::endl;
+        if (verify.verbose) std::cout << "passed time regression at t: " << t << std::endl;
         break;
       }
     }
   }
   if (!pass) {
-    if (args.verbose) {
+    if (verify.verbose) {
       if(!isTime) std::cout << "failed accuracy regression" << std::endl;
       else std::cout << "failed time regression" << std::endl;
     }
