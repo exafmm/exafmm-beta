@@ -1,3 +1,7 @@
+regression key is 0 in some cases
+tk can't read water file
+ya why is time regression failing when there should be no file?
+
 [gromacs]
 calcualte energy + virial
 parallel
