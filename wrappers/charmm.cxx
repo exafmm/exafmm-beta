@@ -576,7 +576,7 @@ extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, dou
       isTime = true;        
     } else {
       if (baseMPI->mpirank == 0) std::cout << "passed time regression at t: " << t-1 << std::endl;
-      t = 11;
+      t = 10;
     }
   }
 }

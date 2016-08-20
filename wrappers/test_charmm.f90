@@ -376,7 +376,7 @@ contains
     real(8),allocatable,dimension(:,:,:) :: aangle,cangle
 
     call fmm_partition(nglobal,icpumap,x,q,xold,pcycle)
-    p(1:nglobal)=0.0
+    p(1:nglobal)=0.0*istep
     p2(1:nglobal)=0.0
     f(1:3*nglobal)=0.0
     f2(1:3*nglobal)=0.0

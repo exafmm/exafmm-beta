@@ -61,7 +61,6 @@ namespace exafmm {
       C_iter Ci;                                                //!< Iterator of current target cell
       C_iter Cj;                                                //!< Iterator of current source cell
       C_iter C0;                                                //!< Iterator of first source cell
-      vec3 Xperiodic;                                           //!< Coordinate offset for periodic B.C.
       Neighbor(VanDerWaals * _VdW, C_iter _Ci, C_iter _Cj, C_iter _C0) :// Constructor
 	VdW(_VdW), Ci(_Ci), Cj(_Cj), C0(_C0) {}                 // Initialize variables
       void operator() () const {                                // Overload operator()
