@@ -865,6 +865,7 @@ program main
         print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
      endif
      call fmm_verify_step(itr,toc-tic,pl2err,fl2err)
+     if(itr == 10) exit
   enddo
   call fmm_verify_end()
 
