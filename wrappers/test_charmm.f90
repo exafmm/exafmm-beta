@@ -727,12 +727,11 @@ program main
   include 'mpif.h'
   logical test_force
   character(len=128) path,infile,outfile,nstp
-  integer dynsteps,nchars
+  integer dynsteps
   integer i,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
   real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time,tic,toc
   real(8) pl2err,fl2err,enerf,enere,grmsf,grmse
-  character(len=:),allocatable :: cpath
   integer,dimension (128) :: iseed
   integer,allocatable,dimension(:) :: icpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
   real(8),parameter :: pi=3.14159265358979312d0
@@ -827,10 +826,8 @@ program main
      icpumap(i) = 1
   enddo
   if (mpirank == 0) print*,'FMM init'
-  nchars = len_trim(path)
-  allocate(character(len=nchars) :: cpath)
-  cpath = trim(path)//c_null_char
-  call fmm_init(images,theta,verbose,nglobal,cpath)
+  path = trim(path)//c_null_char
+  call fmm_init(images,theta,verbose,nglobal,path)
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
   do itr = 1,10
