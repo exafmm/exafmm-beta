@@ -80,9 +80,11 @@ int main(int argc, char ** argv) {
     // if(baseMPI.mpirank == 0) {
     // std::ofstream pfile("particles.txt");
     // for (int i = 0; i < args.numBodies; ++i) 
-    //   pfile<< bodies[i].X <<","<<bodies[i].IRANK<< std::endl;      
+    //   pfile<<bodies[i].X[0] <<","<<bodies[i].X[1] <<","<<bodies[i].X[2] <<","<< bodies[i].ICELL<<","<<bodies[i].IRANK<< std::endl;
+    //   //pfile<< bodies[i].X << ","<<bodies[i].IRANK<< std::endl;      
     //   pfile.close();      
     // }  
+    // return 0;
     bodies = treeMPI->commBodies(bodies);
     if (args.IneJ) {
       partition.partition(jbodies, globalBounds, args.partitioning);      
@@ -106,14 +108,15 @@ int main(int argc, char ** argv) {
       } else {
         letCells = cells;
       }
+      treeMPI->allgatherBounds(localBounds);        
 #pragma omp parallel sections
         {
 #pragma omp section
-          {
-      treeMPI->allgatherBounds(localBounds);            
+          {              
       treeMPI->setLET(letCells, cycle);
-#if EXAFMM_USE_DISTGRAPH     
-      treeMPI->commDistGraph(cycle, globalBounds);   
+#if EXAFMM_USE_DISTGRAPH 
+      treeMPI->initDistGraph(globalBounds);       
+      treeMPI->commDistGraph(cycle);   
 #else
       treeMPI->commBodies();
       treeMPI->commCells();
@@ -160,7 +163,7 @@ int main(int argc, char ** argv) {
         upDownPass.downwardPass(cells);
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
-#if 0 
+#if 1 
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;

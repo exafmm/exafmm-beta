@@ -29,20 +29,35 @@ protected:
   int * recvCellCount;                                        //!< Receive count
   int * recvCellDispl;                                        //!< Receive displacement  
   C_iter Ci0;                                                 //!< Iterator of first target cell
-  C_iter Cj0;                                                 //!< Iterator of first source cell
-  typedef std::vector<std::vector<int> > NeighborList;        //!< Type of Neighbor list  
-  struct GraphNode
-  {
+  C_iter Cj0;                                                 //!< Iterator of first source cell  
+  bool distGraphInitialized;                                  //!< Is distributed graph initialized     
+  struct DistGraphInfo {
+  public:
+    int * sources;                                            //!< Array of sources in a distributed graph node
+    int * destinations;                                       //!< Array of destinations in a distributed graph node
+    int indegree;                                             //!< Number of incoming edges 
+    int outdegree;                                            //!< Number of outgoing edges     
+    MPI_Comm graphComm;                                       //!< The distributed graph communicator
+    ~DistGraphInfo() {
+      delete[] sources;
+      delete[] destinations;
+      MPI_Comm_free(&graphComm);
+    }
+  };  
+  struct GraphNode {
   public:
     GraphNode(int p, int number, int src)
     :parent(p),id(number),source(src){ }
     int parent;
     int id;
     int source;
-  };
-  typedef std::vector<GraphNode> TreeLevel;                  //! The FMM communication tree level 
-  typedef std::vector<TreeLevel> CommTree;                   //! The FMM communication tree
-  typedef std::vector<CommTree> CommGraph;                   //! The Hierarchical communication tree
+  };  
+  typedef std::vector<std::vector<int> > NeighborList;        //!< Type of Neighbor list  
+  typedef std::vector<GraphNode> TreeLevel;                   //! The FMM communication tree level 
+  typedef std::vector<TreeLevel> CommTree;                    //! The FMM communication tree
+  typedef std::vector<CommTree> CommGraph;                    //! The Hierarchical communication tree  
+  DistGraphInfo distGraphInfo;                                //!< The distributed graph info 
+  CommGraph commGraph;                                        //!< The FMM communication graph  
   
 private:
   //! Exchange send count for bodies
@@ -679,13 +694,13 @@ protected:
       graph[source] = output;
     }        
     return graph;
-  }
+  }  
   
 public:
   //! Constructor
   TreeMPI(int _mpirank, int _mpisize, int _images) :
     mpirank(_mpirank), mpisize(_mpisize), images(_images),
-    granularity(1)   
+    granularity(1),distGraphInitialized(false)   
     {                            // Initialize variables
     allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
     allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
@@ -702,7 +717,7 @@ public:
   //! Temporary constructor added to prevent breaking compatibility with other kernels using this class
   TreeMPI(int _mpirank, int _mpisize, int _images, int _grainSize) :
     mpirank(_mpirank), mpisize(_mpisize), images(_images),
-    granularity(_grainSize)
+    granularity(_grainSize),distGraphInitialized(false)
   {                                                           // Initialize variables
     allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
     allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
@@ -751,8 +766,7 @@ public:
     std::vector<int> outwardNeighbors;
     for (int i = 0; i < neighbors.size(); ++i) {
       if(i != rank) {
-        for (int j = 0; j < neighbors[i].size(); ++j)
-        {
+        for (int j = 0; j < neighbors[i].size(); ++j) {
           if(neighbors[i][j] == rank){
             outwardNeighbors.push_back(i);
           }
@@ -766,15 +780,34 @@ public:
     }
   }
 
-  NeighborList getAllNeighbors(Bounds globalBounds){
-    return setNeighbors(allBoundsXmin, allBoundsXmax, globalBounds);       
+  void initDistGraph(Bounds globalBounds) {
+    logger::startTimer("Init Dist Graph");
+    if(!distGraphInitialized) {
+      NeighborList neighbors = setNeighbors(allBoundsXmin, allBoundsXmax, globalBounds);         
+      commGraph = setFMMTreeCommunicationGraph(neighbors);      
+      setSourcesNDestinations(neighbors,mpirank,distGraphInfo.sources,distGraphInfo.destinations,distGraphInfo.indegree,distGraphInfo.outdegree);
+      int indegree = distGraphInfo.indegree;
+      int outdegree = distGraphInfo.outdegree;    
+      int* inWeights = new int[indegree];    
+      int* outWeights = new int[outdegree];
+      for (int i = 0; i < indegree; ++i)  inWeights[i] = 0;
+      for (int i = 0; i < outdegree; ++i) outWeights[i] = 0;    
+      MPI_Dist_graph_create_adjacent(MPI_COMM_WORLD, indegree, distGraphInfo.sources,inWeights,outdegree, distGraphInfo.destinations, outWeights, MPI_INFO_NULL, 0, &distGraphInfo.graphComm);
+      int topo_type;
+      MPI_Topo_test(distGraphInfo.graphComm, &topo_type ); // Get the type of Toplogy we are using.
+      assert(topo_type==MPI_DIST_GRAPH);    
+      MPI_Dist_graph_neighbors(distGraphInfo.graphComm, indegree, distGraphInfo.sources, inWeights,outdegree,distGraphInfo.destinations,outWeights);
+      delete[] inWeights;
+      delete[] outWeights;
+    }
+    distGraphInitialized = true;
+    logger::stopTimer("Init Dist Graph");
+    logger::resetTimer("Init Dist Graph");
   }
 
   template<typename Cycle>
-  void commDistGraph(Cycle cycle, Bounds globalBounds) {
-    logger::startTimer("Comm LET");
-    real_t* localXmin = allBoundsXmin[mpirank];
-    real_t* localXmax = allBoundsXmax[mpirank];        
+  void commDistGraph(Cycle cycle) {
+    logger::startTimer("Comm LET");    
     alltoall(sendBodies);
     alltoall(sendCells);
     int bodyDataSize = recvBodyDispl[mpisize - 1] + recvBodyCount[mpisize - 1];    
@@ -784,28 +817,15 @@ public:
     int bodyWord = sizeof(sendBodies[0]) / 4;    
     int cellWord = sizeof(sendCells[0]) / 4;    
     Bodies tempBodies;
-    Cells tempCells;
-    NeighborList neighbors = setNeighbors(allBoundsXmin, allBoundsXmax, globalBounds);         
-    CommGraph res = setFMMTreeCommunicationGraph(neighbors);  
-    int* sources;
-    int* destinations;
-    int indegree;
-    int outdegree;
-    MPI_Comm graphComm;
-    setSourcesNDestinations(neighbors,mpirank,sources,destinations,indegree, outdegree);
-    int* inWeights = new int[indegree];
-    int* outWeights = new int[outdegree];
-    for (int i = 0; i < indegree; ++i)  inWeights[i] = 0;
-    for (int i = 0; i < outdegree; ++i) outWeights[i] = 0;    
-    MPI_Dist_graph_create_adjacent(MPI_COMM_WORLD, indegree, sources,inWeights,outdegree, destinations, outWeights, MPI_INFO_NULL, 0, &graphComm);
-    int topo_type;
-    MPI_Topo_test(graphComm, &topo_type ); // Get the type of Toplogy we are using.
-    assert(topo_type==MPI_DIST_GRAPH);    
-    MPI_Dist_graph_neighbors(graphComm, indegree, sources, inWeights,outdegree,destinations,outWeights);
+    Cells tempCells;    
+    int* sources = distGraphInfo.sources;
+    int* destinations = distGraphInfo.destinations;
+    int indegree = distGraphInfo.indegree;
+    int outdegree = distGraphInfo.outdegree;
+    MPI_Comm graphComm = distGraphInfo.graphComm;
     std::map<int,int> ranktoindex; 
     for (int i = 0; i < outdegree; ++i)
-      ranktoindex[destinations[i]] = i;        
-    
+      ranktoindex[destinations[i]] = i;            
     int* sendBodyCountNeighbor = new int[outdegree];
     int* sendBodyDisplNeighbor = new int[outdegree];
     int* sendCellCountNeighbor = new int[outdegree];
@@ -831,23 +851,22 @@ public:
       receivedLevelTrees.push_back(irank);
     }
     MPI_Neighbor_alltoallv((int*)&sendBodies[0], sendBodyCountNeighbor, sendBodyDisplNeighbor, MPI_INT, (int*)&recvBodies[0],recvBodyCountNeighbor,recvBodyDisplNeighbor,MPI_INT,graphComm);
-    MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&recvCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);                  
+    MPI_Neighbor_alltoallv((int*)&sendCells[0] , sendCellCountNeighbor, sendCellDisplNeighbor, MPI_INT, (int*)&recvCells[0],recvCellCountNeighbor,recvCellDisplNeighbor,MPI_INT,graphComm);                      
     typedef std::map<int, TreeLevel> nodemap;
-    typedef nodemap::iterator map_iterator;
+    typedef nodemap::iterator map_iterator;    
     int* sendCountB = new int[outdegree];
     int* sendDisplB = new int[outdegree];
     int* sendCountC = new int[outdegree];
-    int* sendDisplC = new int[outdegree];
-    
+    int* sendDisplC = new int[outdegree];    
     int* recvCountB = new int[indegree];
     int* recvDisplB = new int[indegree];
     int* recvCountC = new int[indegree];
     int* recvDisplC = new int[indegree];
     int isend;
     int maxLevels = 0; 
-    for (int i = 0; i < res.size(); ++i) {
-      if(res[i].size() > maxLevels)
-        maxLevels = res[i].size();
+    for (int i = 0; i < commGraph.size(); ++i) {
+      if(commGraph[i].size() > maxLevels)
+        maxLevels = commGraph[i].size();
     }
     for (int level = 2; level < maxLevels; ++level) {      
       for (int i = 0; i < outdegree; ++i) {
@@ -856,7 +875,7 @@ public:
       }
       
       std::map<int, TreeLevel> sendList, recvList;       
-      setSendRecvTrees(res, level, sendList, recvList);  
+      setSendRecvTrees(commGraph, level, sendList, recvList);  
       std::vector<int> sendRanks;    
       std::vector<std::vector<int> > sendLETs;
       std::vector<std::vector<int> > recvLETs;
@@ -995,10 +1014,6 @@ public:
       }    
     }
     assert(receivedTreesCount == mpisize - 1);     
-    delete[] sources;
-    delete[] destinations;
-    delete[] inWeights;
-    delete[] outWeights;
     delete[] sendBodyCountNeighbor;
     delete[] sendBodyDisplNeighbor;
     delete[] sendCellCountNeighbor;
