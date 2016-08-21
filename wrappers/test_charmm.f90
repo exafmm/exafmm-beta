@@ -728,7 +728,7 @@ program main
   logical test_force
   character(len=128) path,infile,outfile,nstp
   integer dynsteps
-  integer i,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
+  integer i,itry,nitr,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
   real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time,tic,toc
   real(8) pl2err,fl2err,enerf,enere,grmsf,grmse
@@ -830,22 +830,30 @@ program main
   call fmm_init(images,theta,verbose,nglobal,path)
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
-  do itr = 1,10
+  nitr = 1
+  do itry = 1,10
+     if (mpirank == 0) then
+        print "(a,i2,a)",'--- FMM loop ',itry,' -----------------'
+        print*,'FMM Coulomb'
+     endif
+     tic = mpi_wtime()
+     do itr = 1,nitr
+        do i = 1,nglobal
+           p(i) = 0
+           f(3*i-2) = 0
+           f(3*i-1) = 0
+           f(3*i-0) = 0
+        enddo
+        call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
+     enddo
+     toc = mpi_wtime()
+     if (mpirank == 0) print*,'Ewald Coulomb'
      do i = 1,nglobal
-        p(i) = 0
-        f(3*i-2) = 0
-        f(3*i-1) = 0
-        f(3*i-0) = 0
         p2(i) = 0
         f2(3*i-2) = 0
         f2(3*i-1) = 0
         f2(3*i-0) = 0
      enddo
-     if (mpirank == 0) print*,'FMM Coulomb'
-     tic = mpi_wtime()
-     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
-     toc = mpi_wtime()
-     if (mpirank == 0) print*,'Ewald Coulomb'
      call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
      !  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
      if(mpirank == 0) print*,'Coulomb exclusion'
@@ -860,9 +868,15 @@ program main
         print "(a,f15.4)",'Energy (Ewald)       : ',enere
         print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
         print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
+        if (nitr==1) then
+           print "(a)",'--- Accuracy regression ---------'
+        else
+           print "(a)",'--- Time regression -------------'
+        endif
      endif
-     call fmm_verify_step(itr,toc-tic,pl2err,fl2err)
-     if(itr == 10) exit
+     call fmm_verify_step(itry,toc-tic,pl2err,fl2err)
+     if(itry == 0) nitr = 10
+     if(itry == 10) exit
   enddo
   call fmm_verify_end()
 

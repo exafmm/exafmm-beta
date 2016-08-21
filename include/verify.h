@@ -126,10 +126,10 @@ namespace exafmm {
       else name << "accuracy.reg";                              // Else if accuracy regression
       std::fstream file;                                        // File id for regression
       file.open(name.str().c_str(),std::fstream::in);           //  Open regression file
-      std::cout << "opening: " << name.str() << std::endl;
+      if (verbose) std::cout << "opening: " << name.str() << std::endl;// Print file name
       int numKeys;                                              // Number of keys stored in file
       if (file.good()) {                                        // If file exists
-        std::cout << "file exists" << std::endl;
+        if (verbose) std::cout << "file exists" << std::endl;   //  Print if file exists
         file >> numKeys;                                        //  Read number of keys
         for (int i=0; i<numKeys; i++) {                         //  Loop over regression values
           uint64_t readKey;                                     //   Read key buffer
@@ -141,12 +141,13 @@ namespace exafmm {
       file.close();                                             // Close regression file
       average = (average * iteration + value) / (iteration + 1);// Average of all iterations
       if (secondValue) average2 = (average2 * iteration + value2) / (iteration + 1);// Average of all iterations
-      if (record[key] == 0 || average < record[key]*(1+iteration*.01)) {// If new record or pass
+      if (record[key] != 0 && verbose) std::cout << "entry exists" << std::endl;// Print if entry exits
+      if (record[key] == 0 || average <= record[key]*(1+EPS+iteration*.01)) {// If new record or pass
         pass = true;                                            //  Change flag to pass
         record[key] = average;                                  //  Add key value pair
       }                                                         // Endif for better value
       if (secondValue) {                                        // If second value
-        if (record2[key] == 0 || average2 < record2[key]*(1+iteration*.01)) { // If new record2 or pass
+        if (record2[key] == 0 || average2 <= record2[key]*(1+EPS+iteration*.01)) { // If new record2 or pass
           pass &= true;                                         //  Change flag to pass
           record2[key] = average2;                              //  Add key value pair
         }                                                       // Endif for second value
@@ -166,8 +167,8 @@ namespace exafmm {
                     average << " / " << record[key] << std::endl;//  Print value and record
         else {                                                  // If accuracy regression 
           std::cout << "Accuracy regression failed: " <<        //  Print message for accuracy regression
-            average << " / " << record[key];                    //  Print value and record 
-          if (secondValue) std::cout << " " << average2         //  Print value2
+            average << " / " << record[key] << std::endl;       //  Print value and record 
+          if (secondValue) std::cout << "                            " << average2 //  Print value2
                                      << " / " << record2[key];  //  Print record2 
           std::cout << std::endl;                               //  End line
         }                                                       // Endif accuracy regression

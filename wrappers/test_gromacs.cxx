@@ -127,14 +127,19 @@ int main(int argc, char ** argv) {
 #endif
   FMM_Init(images, threads, verbose, path);
   FMM_Partition(Ni, ibody, icell, x, q, cycle);
-  for (int t=0; t<10; t++) {
+  int nit = 1;
+  for (int t=0; t<20; t++) {
+    double tic = get_time();
+    for (int it=0; it<nit; it++) {
+      for (int i=0; i<Ni; i++) {
+        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+      }
+      FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+    }
+    double toc = get_time();
     for (int i=0; i<Ni; i++) {
-      p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
       p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
     }
-    double tic = get_time();
-    FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
-    double toc = get_time();
 #if 1
     Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
@@ -166,6 +171,7 @@ int main(int argc, char ** argv) {
                 << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
     }
     FMM_Verify_Step(t, toc-tic, potRel, accRel);
+    if (t == -1) nit = 10;
   }
   FMM_Verify_End();
 

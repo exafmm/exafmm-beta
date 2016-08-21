@@ -74,13 +74,17 @@ int main(int argc, char ** argv) {
   Set_Index(&ni, nimax, res_index, x, q, v, cycle);
   FMM_Partition(&ni, nimax, res_index, x, q, v, cycle);
   for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<10; it++) {
+      for (int i=0; i<ni; i++) {
+        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+      }
+      FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
+    }
+    double toc = get_time();
     for (int i=0; i<ni; i++) {
-      p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
       p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
     }
-    double tic = get_time();
-    FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
-    double toc = get_time();
 #if 1
     FMM_Ewald(ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else

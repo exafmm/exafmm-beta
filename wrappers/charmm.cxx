@@ -565,9 +565,9 @@ extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, dou
   totalFMMGlob /= baseMPI->mpisize;
   if (!baseMPI->mpirank) {
     if (!isTime)
-      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
+      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t-1, potRel, accRel);
     else
-      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, totalFMMGlob);
+      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t-1, totalFMMGlob);
   }
   MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
   if (pass) {

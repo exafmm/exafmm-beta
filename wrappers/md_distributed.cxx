@@ -465,6 +465,8 @@ extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * 
 }
 
 extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double accRel) {
+  if (!isTime) logger::printTitle("Accuracy regression");
+  else logger::printTitle("Time regression");
   double totalFMMGlob;
   MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   totalFMMGlob /= baseMPI->mpisize;
