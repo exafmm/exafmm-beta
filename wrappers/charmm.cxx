@@ -50,7 +50,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, ch
   traversal = new Traversal(nspawn, images, path);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
-  if(baseMPI->mpirank==0) std::cout << "path: " << path << std::endl;
   verify = new Verify(path);
 
   args->ncrit = ncrit;
