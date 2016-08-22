@@ -45,14 +45,14 @@ void Verify(int n, double * vb, double * vd, int & t, int verbose) {
     std::cout << std::setw(20) << std::left << std::scientific
               << "Rel. L2 Error" << " : " << potRel << std::endl;
   }
-  FMM_Verify_Accuracy(t, potRel, 0);
+  FMM_Verify_Accuracy(t, potRel, potRel);
 }
 
 int main(int argc, char ** argv) {
   const int Nmax = 10000000;
   const int ncrit = 1000;
   const int threads = 16;
-  const int verbose = 1;
+  const int verbose = 0;
   const double eps2 = 0.0;
   const double kreal = 1.0;
   const double kimag = 0.1;

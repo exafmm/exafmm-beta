@@ -562,6 +562,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 extern "C" void fmm_verify_accuracy_(int &t, double & potRel, double & accRel) {
   isTime = false;
   if (!baseMPI->mpirank) {
+    std::cout << "key: " << args->getKey(baseMPI->mpisize) << std::endl;
     pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t-1, potRel, accRel);
   }
   MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
