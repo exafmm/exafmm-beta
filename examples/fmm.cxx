@@ -85,6 +85,7 @@ int main(int argc, char ** argv) {
       logger::writeTime();
     }
     traversal.writeList(cells, 0);
+
     if (!isTime) {
       const int numTargets = 1000;
       buffer = bodies;
