@@ -830,23 +830,19 @@ program main
   call fmm_init(images,theta,verbose,nglobal,path)
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
-  nitr = 1
+
   do itry = 1,10
      if (mpirank == 0) then
-        print "(a,i2,a)",'--- FMM loop ',itry,' -----------------'
+        print "(a,i2,a)",'--- Accuracy regression loop ',itry,' -'
         print*,'FMM Coulomb'
      endif
-     tic = mpi_wtime()
-     do itr = 1,nitr
-        do i = 1,nglobal
-           p(i) = 0
-           f(3*i-2) = 0
-           f(3*i-1) = 0
-           f(3*i-0) = 0
-        enddo
-        call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
+     do i = 1,nglobal
+        p(i) = 0
+        f(3*i-2) = 0
+        f(3*i-1) = 0
+        f(3*i-0) = 0
      enddo
-     toc = mpi_wtime()
+     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
      if (mpirank == 0) print*,'Ewald Coulomb'
      do i = 1,nglobal
         p2(i) = 0
@@ -868,14 +864,33 @@ program main
         print "(a,f15.4)",'Energy (Ewald)       : ',enere
         print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
         print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
-        if (nitr==1) then
-           print "(a)",'--- Accuracy regression ---------'
-        else
-           print "(a)",'--- Time regression -------------'
-        endif
+        print "(a)",'--- Accuracy regression ---------'
      endif
-     call fmm_verify_step(itry,toc-tic,pl2err,fl2err)
-     if(itry == 0) nitr = 10
+     call fmm_verify_accuracy(itry,pl2err,fl2err)
+     if(itry == 10) exit
+  enddo
+  call fmm_verify_end()
+
+  do itry = 1,10
+     if (mpirank == 0) then
+        print "(a,i2,a)",'--- Time regression loop ',itry,' -----'
+        print*,'FMM Coulomb'
+     endif
+     tic = mpi_wtime()
+     do itr = 1,10
+        do i = 1,nglobal
+           p(i) = 0
+           f(3*i-2) = 0
+           f(3*i-1) = 0
+           f(3*i-0) = 0
+        enddo
+        call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
+     enddo
+     toc = mpi_wtime()
+     if (mpirank == 0) then
+        print "(a)",'--- Time regression -------------'
+     endif
+     call fmm_verify_time(itry,toc-tic)
      if(itry == 10) exit
   enddo
   call fmm_verify_end()
