@@ -66,6 +66,7 @@ int main(int argc, char ** argv) {
       std::stringstream title;
       title << "Time average loop " << it;
       logger::printTitle(title.str());
+      data.initTarget(bodies);
       localBounds = boundBox.getBounds(bodies);
       if (args.IneJ) {
         localBounds = boundBox.getBounds(jbodies, localBounds);

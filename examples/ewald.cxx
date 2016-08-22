@@ -63,128 +63,139 @@ int main(int argc, char ** argv) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
-    localBounds = boundBox.getBounds(bodies);
-    globalBounds = baseMPI.allreduceBounds(localBounds);
-    localBounds = partition.octsection(bodies, globalBounds);
-    bodies = treeMPI.commBodies(bodies);
+    int numIteration = 1;
+    if (isTime) numIteration = 10;
+    for (int it=0; it<numIteration; it++) {
+      std::stringstream title;
+      title << "Time average loop " << it;
+      logger::printTitle(title.str());
+      data.initTarget(bodies);
+      localBounds = boundBox.getBounds(bodies);
+      globalBounds = baseMPI.allreduceBounds(localBounds);
+      localBounds = partition.octsection(bodies, globalBounds);
+      bodies = treeMPI.commBodies(bodies);
 
-    cells = localTree.buildTree(bodies, buffer, localBounds);
-    upDownPass.upwardPass(cells);
-    treeMPI.allgatherBounds(localBounds);
-    treeMPI.setLET(cells, cycle);
-    treeMPI.commBodies();
-    treeMPI.commCells();
+      cells = localTree.buildTree(bodies, buffer, localBounds);
+      upDownPass.upwardPass(cells);
+      treeMPI.allgatherBounds(localBounds);
+      treeMPI.setLET(cells, cycle);
+      treeMPI.commBodies();
+      treeMPI.commCells();
 
-    traversal.initListCount(cells);
-    traversal.initWeight(cells);
-    traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
-    if (baseMPI.mpisize > 1) {
-      if (args.graft) {
-	treeMPI.linkLET();
-	gbodies = treeMPI.root2body();
-	jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
-	treeMPI.attachRoot(jcells);
-	traversal.traverse(cells, jcells, cycle, args.dual, false);
-      } else {
-	for (int irank=0; irank<baseMPI.mpisize; irank++) {
-	  treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
-	  traversal.traverse(cells, jcells, cycle, args.dual, false);
-	}
+      traversal.initListCount(cells);
+      traversal.initWeight(cells);
+      traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+      if (baseMPI.mpisize > 1) {
+        if (args.graft) {
+          treeMPI.linkLET();
+          gbodies = treeMPI.root2body();
+          jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
+          treeMPI.attachRoot(jcells);
+          traversal.traverse(cells, jcells, cycle, args.dual, false);
+        } else {
+          for (int irank=0; irank<baseMPI.mpisize; irank++) {
+            treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
+            traversal.traverse(cells, jcells, cycle, args.dual, false);
+          }
+        }
       }
+      upDownPass.downwardPass(cells);
+      vec3 localDipole = upDownPass.getDipole(bodies,0);
+      vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
+      int numBodies = baseMPI.allreduceInt(bodies.size());
+      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     }
-    upDownPass.downwardPass(cells);
-    vec3 localDipole = upDownPass.getDipole(bodies,0);
-    vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
-    int numBodies = baseMPI.allreduceInt(bodies.size());
-    upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     logger::stopPAPI();
     double totalFMM = logger::stopTimer("Total FMM");
+    if (!isTime) {
 #if 1
-    bodies2 = bodies;
-    data.initTarget(bodies);
-    logger::printTitle("Ewald Profiling");
-    logger::startTimer("Total Ewald");
+      bodies2 = bodies;
+      data.initTarget(bodies);
+      logger::printTitle("Ewald Profiling");
+      logger::startTimer("Total Ewald");
 #if 1
-    jbodies = bodies;
-    for (int i=0; i<baseMPI.mpisize; i++) {
-      if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
-      treeMPI.shiftBodies(jbodies);
-      localBounds = boundBox.getBounds(jbodies);
-      jcells = localTree.buildTree(jbodies, buffer, localBounds);
+      jbodies = bodies;
+      for (int i=0; i<baseMPI.mpisize; i++) {
+        if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
+        treeMPI.shiftBodies(jbodies);
+        localBounds = boundBox.getBounds(jbodies);
+        jcells = localTree.buildTree(jbodies, buffer, localBounds);
+        ewald.wavePart(bodies, jbodies);
+        ewald.realPart(cells, jcells);
+      }
+#else
+      jbodies = treeMPI.allgatherBodies(bodies);
+      jcells = localTree.buildTree(jbodies, buffer, globalBounds);
       ewald.wavePart(bodies, jbodies);
       ewald.realPart(cells, jcells);
-    }
-#else
-    jbodies = treeMPI.allgatherBodies(bodies);
-    jcells = localTree.buildTree(jbodies, buffer, globalBounds);
-    ewald.wavePart(bodies, jbodies);
-    ewald.realPart(cells, jcells);
 #endif
 
-    ewald.selfTerm(bodies);
-    logger::printTitle("Total runtime");
-    logger::printTime("Total FMM");
-    logger::stopTimer("Total Ewald");
+      ewald.selfTerm(bodies);
+      logger::printTitle("Total runtime");
+      logger::printTime("Total FMM");
+      logger::stopTimer("Total Ewald");
 #else
-    jbodies = bodies;
-    const int numTargets = 100;
-    buffer = bodies;
-    data.sampleBodies(bodies, numTargets);
-    bodies2 = bodies;
-    data.initTarget(bodies);
-    logger::startTimer("Total Direct");
-    for (int i=0; i<baseMPI.mpisize; i++) {
-      treeMPI.shiftBodies(jbodies);
-      traversal.direct(bodies, jbodies, cycle);
-      if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
-    }
-    traversal.normalize(bodies);
-    upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
-    logger::printTitle("Total runtime");
-    logger::printTime("Total FMM");
-    logger::stopTimer("Total Direct");
-    bodies = buffer;
+      jbodies = bodies;
+      const int numTargets = 100;
+      buffer = bodies;
+      data.sampleBodies(bodies, numTargets);
+      bodies2 = bodies;
+      data.initTarget(bodies);
+      logger::startTimer("Total Direct");
+      for (int i=0; i<baseMPI.mpisize; i++) {
+        treeMPI.shiftBodies(jbodies);
+        traversal.direct(bodies, jbodies, cycle);
+        if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
+      }
+      traversal.normalize(bodies);
+      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+      logger::printTitle("Total runtime");
+      logger::printTime("Total FMM");
+      logger::stopTimer("Total Direct");
+      bodies = buffer;
 #endif
-    double potSum = verify.getSumScalar(bodies);
-    double potSum2 = verify.getSumScalar(bodies2);
-    double accDif = verify.getDifVector(bodies, bodies2);
-    double accNrm = verify.getNrmVector(bodies);
-    double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
-    MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
-    double potNrmGlob = potSumGlob * potSumGlob;
-    double potRel = std::sqrt(potDifGlob/potNrmGlob);
-    double accRel = std::sqrt(accDifGlob/accNrmGlob);
-    logger::printTitle("FMM vs. Ewald");
-    verify.print("Rel. L2 Error (pot)",potRel);
-    verify.print("Rel. L2 Error (acc)",accRel);
-    localTree.printTreeData(cells);
-    traversal.printTraversalData();
-    logger::printPAPI();
-    data.initTarget(bodies);
-    double totalFMMGlob;
-    MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    totalFMMGlob /= baseMPI.mpisize;
-    if (!baseMPI.mpirank) {
-      if (!isTime)
+      double potSum = verify.getSumScalar(bodies);
+      double potSum2 = verify.getSumScalar(bodies2);
+      double accDif = verify.getDifVector(bodies, bodies2);
+      double accNrm = verify.getNrmVector(bodies);
+      double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
+      MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+      double potNrmGlob = potSumGlob * potSumGlob;
+      double potRel = std::sqrt(potDifGlob/potNrmGlob);
+      double accRel = std::sqrt(accDifGlob/accNrmGlob);
+      logger::printTitle("FMM vs. Ewald");
+      verify.print("Rel. L2 Error (pot)",potRel);
+      verify.print("Rel. L2 Error (acc)",accRel);
+      localTree.printTreeData(cells);
+      traversal.printTraversalData();
+      logger::printPAPI();
+      if (!baseMPI.mpirank) {
         pass = verify.regression(args.getKey(baseMPI.mpisize), isTime, t, potRel, accRel);
-      else
-        pass = verify.regression(args.getKey(baseMPI.mpisize), isTime, t, totalFMMGlob);
-    }
-    MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
-    if (pass) {
-      if (!isTime) {
+      }
+      MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+      if (pass) {
         if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
         t = -1;
         isTime = true;        
-      } else {
+      }
+    } else {
+      double totalFMMGlob;
+      MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      totalFMMGlob /= baseMPI.mpisize;
+      if (!baseMPI.mpirank) {
+        pass = verify.regression(args.getKey(baseMPI.mpisize), isTime, t, totalFMMGlob);
+      }
+      MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+      if (pass) {
         if (verify.verbose) std::cout << "passed time regression at t: " << t << std::endl;
         break;
       }
     }
+    data.initTarget(bodies);
   }
   if (!pass) {
     if (verify.verbose) {
