@@ -1,6 +1,9 @@
 separate time and accuracy regression
 regression key is 0 in some cases
 
+[charmm]
+charmm2 returns nan
+
 [gromacs]
 calcualte energy + virial
 parallel

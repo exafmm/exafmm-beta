@@ -14,7 +14,8 @@ extern "C" void FMM_Coulomb(int n, int * icell, float * x, float * q, float * p,
 extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle);
 extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
-extern "C" void FMM_Verify_Step(int & t, double totalFMM, double potRel, double accRel);
+extern "C" void FMM_Verify_Accuracy(int & t, double potRel, double accRel);
+extern "C" void FMM_Verify_Time(int & t, double totalFMM);
 extern "C" void FMM_Verify_End();
 
 double get_time() {
@@ -127,16 +128,11 @@ int main(int argc, char ** argv) {
 #endif
   FMM_Init(images, threads, verbose, path);
   FMM_Partition(Ni, ibody, icell, x, q, cycle);
-  int nit = 1;
-  for (int t=0; t<20; t++) {
-    double tic = get_time();
-    for (int it=0; it<nit; it++) {
-      for (int i=0; i<Ni; i++) {
-        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
-      }
-      FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<Ni; i++) {
+      p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     }
-    double toc = get_time();
+    FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
     for (int i=0; i<Ni; i++) {
       p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
     }
@@ -170,8 +166,22 @@ int main(int argc, char ** argv) {
       std::cout << std::setw(stringLength) << std::left
                 << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
     }
-    FMM_Verify_Step(t, toc-tic, potRel, accRel);
-    if (t == -1) nit = 10;
+    FMM_Verify_Accuracy(t, potRel, accRel);
+    if (t == -1) break;
+  }
+  FMM_Verify_End();
+
+  for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<10; it++) {
+      for (int i=0; i<Ni; i++) {
+        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+      }
+      FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+    }
+    double toc = get_time();
+    FMM_Verify_Time(t, toc-tic);
+    if (t == -1) break;
   }
   FMM_Verify_End();
 

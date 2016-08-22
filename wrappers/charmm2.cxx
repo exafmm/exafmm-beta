@@ -693,32 +693,36 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
   logger::stopTimer("VdW Exclusion");
 }
 
-extern "C" void fmm_verify_step_(int &t, double & totalFMM, double & potRel, double & accRel) {
+extern "C" void fmm_verify_accuracy_(int &t, double & potRel, double & accRel) {
+  isTime = false;
+  if (!baseMPI->mpirank) {
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t-1, potRel, accRel);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (verify->verbose) std::cout << "passed accuracy regression at t: " << t-1 << std::endl; 
+    t = -1;
+  }
+}
+
+extern "C" void fmm_verify_time_(int &t, double & totalFMM) {
+  isTime = true;
   double totalFMMGlob;
   MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   totalFMMGlob /= baseMPI->mpisize;
   if (!baseMPI->mpirank) {
-    if (!isTime)
-      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
-    else
-      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, totalFMMGlob);
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t-1, totalFMMGlob);
   }
   MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
   if (pass) {
-    if (!isTime) {
-      if (baseMPI->mpirank == 0) std::cout << "passed accuracy regression at t: " << t-1 << std::endl; 
-      t = 0;
-      isTime = true;        
-    } else {
-      if (baseMPI->mpirank == 0) std::cout << "passed time regression at t: " << t-1 << std::endl;
-      t = 11;
-    }
+    if (verify->verbose) std::cout << "passed time regression at t: " << t-1 << std::endl;
+    t = -1;
   }
 }
 
 extern "C" void fmm_verify_end_() {
   if (!pass) {
-    if (baseMPI->mpirank == 0) {
+    if (verify->verbose) {
       if(!isTime) std::cout << "failed accuracy regression" << std::endl;
       else std::cout << "failed time regression" << std::endl;
     }

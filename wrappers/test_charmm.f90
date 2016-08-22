@@ -867,7 +867,7 @@ program main
         print "(a)",'--- Accuracy regression ---------'
      endif
      call fmm_verify_accuracy(itry,pl2err,fl2err)
-     if(itry == 10) exit
+     if(itry == -1) exit
   enddo
   call fmm_verify_end()
 
@@ -891,7 +891,7 @@ program main
         print "(a)",'--- Time regression -------------'
      endif
      call fmm_verify_time(itry,toc-tic)
-     if(itry == 10) exit
+     if(itry == -1) exit
   enddo
   call fmm_verify_end()
 

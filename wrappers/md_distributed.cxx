@@ -464,6 +464,19 @@ extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * 
   delete[] q2;
 }
 
+extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel) {
+  isTime = false;
+  logger::printTitle("Accuracy regression");
+  if (!baseMPI->mpirank) {
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+    t = 10;
+  }
+}
+
 extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double accRel) {
   if (!isTime) logger::printTitle("Accuracy regression");
   else logger::printTitle("Time regression");
