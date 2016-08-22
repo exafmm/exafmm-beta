@@ -52,23 +52,30 @@ int main(int argc, char ** argv) {
     logger::startTimer("Total FMM");
     logger::startPAPI();
     logger::startDAG();
-    bounds = boundBox.getBounds(bodies);
-    if (args.IneJ) {
-      bounds = boundBox.getBounds(jbodies, bounds);
+    int numIteration = 1;
+    if (isTime) numIteration = 10;
+    for (int it=0; it<numIteration; it++) {
+      std::stringstream title;
+      title << "Time average loop " << it;
+      logger::printTitle(title.str());
+      bounds = boundBox.getBounds(bodies);
+      if (args.IneJ) {
+        bounds = boundBox.getBounds(jbodies, bounds);
+      }
+      cells = buildTree.buildTree(bodies, buffer, bounds);
+      upDownPass.upwardPass(cells);
+      traversal.initListCount(cells);
+      traversal.initWeight(cells);
+      if (args.IneJ) {
+        jcells = buildTree.buildTree(jbodies, buffer, bounds);
+        upDownPass.upwardPass(jcells);
+        traversal.traverse(cells, jcells, cycle, args.dual, false);
+      } else {
+        traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+        jbodies = bodies;
+      }
+      upDownPass.downwardPass(cells);
     }
-    cells = buildTree.buildTree(bodies, buffer, bounds);
-    upDownPass.upwardPass(cells);
-    traversal.initListCount(cells);
-    traversal.initWeight(cells);
-    if (args.IneJ) {
-      jcells = buildTree.buildTree(jbodies, buffer, bounds);
-      upDownPass.upwardPass(jcells);
-      traversal.traverse(cells, jcells, cycle, args.dual, false);
-    } else {
-      traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
-      jbodies = bodies;
-    }
-    upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
     logger::stopDAG();
     logger::stopPAPI();
@@ -78,43 +85,43 @@ int main(int argc, char ** argv) {
       logger::writeTime();
     }
     traversal.writeList(cells, 0);
-    const int numTargets = 1000;
-    buffer = bodies;
-    data.sampleBodies(bodies, numTargets);
-    bodies2 = bodies;
-    data.initTarget(bodies);
-    logger::startTimer("Total Direct");
-    traversal.direct(bodies, jbodies, cycle);
-    traversal.normalize(bodies);
-    logger::stopTimer("Total Direct");
-    double potDif = verify.getDifScalar(bodies, bodies2);
-    double potNrm = verify.getNrmScalar(bodies);
-    double accDif = verify.getDifVector(bodies, bodies2);
-    double accNrm = verify.getNrmVector(bodies);
-    double potRel = std::sqrt(potDif/potNrm);
-    double accRel = std::sqrt(accDif/accNrm);
-    logger::printTitle("FMM vs. direct");
-    verify.print("Rel. L2 Error (pot)",potRel);
-    verify.print("Rel. L2 Error (acc)",accRel);
-    buildTree.printTreeData(cells);
-    traversal.printTraversalData();
-    logger::printPAPI();
-    bodies = buffer;
-    data.initTarget(bodies);
-    if (!isTime)
+    if (!isTime) {
+      const int numTargets = 1000;
+      buffer = bodies;
+      data.sampleBodies(bodies, numTargets);
+      bodies2 = bodies;
+      data.initTarget(bodies);
+      logger::startTimer("Total Direct");
+      traversal.direct(bodies, jbodies, cycle);
+      traversal.normalize(bodies);
+      logger::stopTimer("Total Direct");
+      double potDif = verify.getDifScalar(bodies, bodies2);
+      double potNrm = verify.getNrmScalar(bodies);
+      double accDif = verify.getDifVector(bodies, bodies2);
+      double accNrm = verify.getNrmVector(bodies);
+      double potRel = std::sqrt(potDif/potNrm);
+      double accRel = std::sqrt(accDif/accNrm);
+      logger::printTitle("FMM vs. direct");
+      verify.print("Rel. L2 Error (pot)",potRel);
+      verify.print("Rel. L2 Error (acc)",accRel);
+      buildTree.printTreeData(cells);
+      traversal.printTraversalData();
+      logger::printPAPI();
+      bodies = buffer;
       pass = verify.regression(args.getKey(), isTime, t, potRel, accRel);
-    else
-      pass = verify.regression(args.getKey(), isTime, t, totalFMM);
-    if (pass) {
-      if (!isTime) {
+      if (pass) {
         if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
         t = -1;
-        isTime = true;        
-      } else {
+        isTime = true;
+      }
+    } else {
+      pass = verify.regression(args.getKey(), isTime, t, totalFMM);
+      if (pass) {
         if (verify.verbose) std::cout << "passed time regression at t: " << t << std::endl;
         break;
       }
     }
+    data.initTarget(bodies);
   }
   if (!pass) {
     if (verify.verbose) {
