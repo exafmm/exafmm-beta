@@ -380,26 +380,32 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * v
   }
 }
 
-extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double accRel) {
+extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel) {
+  isTime = false;
+  logger::printTitle("Accuracy regression");
+  if (!baseMPI->mpirank) {
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+    t = -1;
+  }
+}
+
+extern "C" void FMM_Verify_Time(int &t, double totalFMM) {
+  isTime = true;
+  logger::printTitle("Time regression");
   double totalFMMGlob;
   MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   totalFMMGlob /= baseMPI->mpisize;
   if (!baseMPI->mpirank) {
-    if (!isTime)
-      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
-    else
-      pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, totalFMMGlob);
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, totalFMMGlob);
   }
   MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
   if (pass) {
-    if (!isTime) {
-      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
-      t = -1;
-      isTime = true;        
-    } else {
-      if (verify->verbose) std::cout << "passed time regression at t: " << t << std::endl;
-      t = 10;
-    }
+    if (verify->verbose) std::cout << "passed time regression at t: " << t << std::endl;
+    t = -1;
   }
 }
 
@@ -411,6 +417,4 @@ extern "C" void FMM_Verify_End() {
     }
     abort();
   }
-  pass = true;
-  isTime = false;
 }

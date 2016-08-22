@@ -20,7 +20,8 @@ extern "C" void FMM_B2V(double * vv, double * vb, bool verbose);
 extern "C" void FMM_V2V(double * vi, double * vv, bool verbose);
 extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
 		       int nv, double * xv, double * yv, double * zv, double * vv);
-extern "C" void FMM_Verify_Step(int & t, double totalFMM, double potRel, double accRel);
+extern "C" void FMM_Verify_Accuracy(int & t, double potRel, double accRel);
+extern "C" void FMM_Verify_Time(int & t, double totalFMM);
 extern "C" void FMM_Verify_End();
 
 double get_time() {
@@ -29,7 +30,7 @@ double get_time() {
   return double(tv.tv_sec+tv.tv_usec*1e-6);
 }
 
-void Validate(int n, double * vb, double * vd, int &t, double totalFMM, int verbose) {
+void Verify(int n, double * vb, double * vd, int & t, int verbose) {
   double potDif = 0, potNrm = 0;
   for (int i=0; i<n; i++) {
     potDif += (vb[i] - vd[i]) * (vb[i] - vd[i]);
@@ -44,13 +45,14 @@ void Validate(int n, double * vb, double * vd, int &t, double totalFMM, int verb
     std::cout << std::setw(20) << std::left << std::scientific
               << "Rel. L2 Error" << " : " << potRel << std::endl;
   }
-  FMM_Verify_Step(t, totalFMM, potRel, 0);
+  FMM_Verify_Accuracy(t, potRel, 0);
 }
 
 int main(int argc, char ** argv) {
   const int Nmax = 10000000;
   const int ncrit = 1000;
   const int threads = 16;
+  const int verbose = 1;
   const double eps2 = 0.0;
   const double kreal = 1.0;
   const double kimag = 0.1;
@@ -95,11 +97,26 @@ int main(int argc, char ** argv) {
       vi[i] = 0;
       vd[i] = 0;
     }
-    double tic = get_time();
-    FMM_B2B(vi, vb, 1);
-    double toc = get_time();
+    FMM_B2B(vi, vb, verbose);
     Direct(100, xb, yb, zb, vd, nb, xb, yb, zb, vb);
-    Validate(100, vi, vd, t, toc-tic, mpirank == 0);
+    Verify(100, vi, vd, t, mpirank == 0);
+    if (t == -1) break;
+  }
+  FMM_Verify_End();
+
+  for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<10; it++) {
+      for (int i=0; i<nb; i++) {
+        vb[i] = 1.0 / nb;
+        vi[i] = 0;
+        vd[i] = 0;
+      }
+      FMM_B2B(vi, vb, verbose);
+    }
+    double toc = get_time();
+    FMM_Verify_Time(t, toc-tic);
+    if (t == -1) break;
   }
   FMM_Verify_End();
 
@@ -111,11 +128,28 @@ int main(int argc, char ** argv) {
     for (int i=0; i<nv; i++) {
       vv[i] = 1.0 / nv;
     }
-    double tic = get_time();
-    FMM_V2B(vb, vv, 1);
-    double toc = get_time();
+    FMM_V2B(vb, vv, verbose);
     Direct(100, xb, yb, zb, vd, nv, xv, yv, zv, vv);
-    Validate(100, vb, vd, t, toc-tic, mpirank == 0);
+    Verify(100, vb, vd, t, mpirank == 0);
+    if (t == -1) break;
+  }
+  FMM_Verify_End();
+
+  for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<10; it++) {
+      for (int i=0; i<nb; i++) {
+        vb[i] = 0;
+        vd[i] = 0;
+      }
+      for (int i=0; i<nv; i++) {
+        vv[i] = 1.0 / nv;
+      }
+      FMM_V2B(vb, vv, verbose);
+    }
+    double toc = get_time();
+    FMM_Verify_Time(t, toc-tic);
+    if (t == -1) break;
   }
   FMM_Verify_End();
 
@@ -127,11 +161,28 @@ int main(int argc, char ** argv) {
       vv[i] = 0;
       vd[i] = 0;
     }
-    double tic = get_time();
-    FMM_B2V(vv, vb, 1);
-    double toc = get_time();
+    FMM_B2V(vv, vb, verbose);
     Direct(100, xv, yv, zv, vd, nb, xb, yb, zb, vb);
-    Validate(100, vv, vd, t, toc-tic, mpirank == 0);
+    Verify(100, vv, vd, t, mpirank == 0);
+    if (t == -1) break;
+  }
+  FMM_Verify_End();
+
+  for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<10; it++) {    
+      for (int i=0; i<nb; i++) {
+        vb[i] = 1.0 / nb;
+      }
+      for (int i=0; i<nv; i++) {
+        vv[i] = 0;
+        vd[i] = 0;
+      }
+      FMM_B2V(vv, vb, verbose);
+    }
+    double toc = get_time();
+    FMM_Verify_Time(t, toc-tic);
+    if (t == -1) break;
   }
   FMM_Verify_End();
 
@@ -141,11 +192,26 @@ int main(int argc, char ** argv) {
       vi[i] = 0;
       vd[i] = 0;
     }
-    double tic = get_time();
-    FMM_V2V(vi, vv, 1);
-    double toc = get_time();
+    FMM_V2V(vi, vv, verbose);
     Direct(100, xv, yv, zv, vd, nv, xv, yv, zv, vv);
-    Validate(100, vi, vd, t, toc-tic, mpirank == 0);
+    Verify(100, vi, vd, t, mpirank == 0);
+    if (t == -1) break;
+  }
+  FMM_Verify_End();
+
+  for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<10; it++) {    
+      for (int i=0; i<nv; i++) {
+        vv[i] = 1.0 / nv;
+        vi[i] = 0;
+        vd[i] = 0;
+      }
+      FMM_V2V(vi, vv, verbose);
+    }
+    double toc = get_time();
+    FMM_Verify_Time(t, toc-tic);
+    if (t == -1) break;
   }
   FMM_Verify_End();
 
