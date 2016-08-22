@@ -16,7 +16,8 @@ extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f
 			  int ksize, double alpha, double sigma, double cutoff, double * cycle);
 extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
 extern "C" void Dipole_Correction(int ni, double * x, double * q, double * p, double * f, double * cycle);
-extern "C" void FMM_Verify_Step(int &t, double totalFMM, double potRel, double accRel);
+extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel);
+extern "C" void FMM_Verify_Time(int &t, double totalFMM);
 extern "C" void FMM_Verify_End();
 
 double get_time() {
@@ -74,14 +75,10 @@ int main(int argc, char ** argv) {
   Set_Index(&ni, nimax, res_index, x, q, v, cycle);
   FMM_Partition(&ni, nimax, res_index, x, q, v, cycle);
   for (int t=0; t<10; t++) {
-    double tic = get_time();
-    for (int it=0; it<10; it++) {
-      for (int i=0; i<ni; i++) {
-        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
-      }
-      FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
+    for (int i=0; i<ni; i++) {
+      p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     }
-    double toc = get_time();
+    FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
     for (int i=0; i<ni; i++) {
       p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
     }
@@ -116,7 +113,22 @@ int main(int argc, char ** argv) {
       std::cout << std::setw(stringLength) << std::left
                 << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
     }
-    FMM_Verify_Step(t, toc-tic, potRel, accRel);
+    FMM_Verify_Accuracy(t, potRel, accRel);
+    if (t == -1) break;
+  }
+  FMM_Verify_End();
+
+  for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<10; it++) {
+      for (int i=0; i<ni; i++) {
+        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+      }
+      FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
+    }
+    double toc = get_time();
+    FMM_Verify_Time(t, toc-tic);
+    if (t == -1) break;
   }
   FMM_Verify_End();
 
