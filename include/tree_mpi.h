@@ -229,18 +229,6 @@ private:
     return path;
   }
 
-  int getTag(int source, int destination, int const& shift) {
-    int tag = source;
-    tag<<=shift;
-    tag|=destination;
-    return tag;
-  }
-
-  void getOriginNDestination(int tag, int const& mask, int const& shift, int& origin, int& dest) {
-    dest = tag&mask;
-    origin = tag>>shift;
-  }
-
   //! Exchange bodies in a point-to-point manner following hypercube pattern    
   template<typename T>  
   void alltoallv_p2p_hypercube(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
@@ -607,25 +595,6 @@ protected:
     return neighbors;
   }
 
-  template <typename TraversedSet>
-  void updateNeighbors(NeighborList const& neighbors, int parent, int depth, TraversedSet& traversedSet, NeighborList& output) {
-    if(traversedSet.find(parent) == traversedSet.end()) {
-      traversedSet.insert(parent);
-      if(output.size() > depth) {
-        output[depth].push_back(parent);
-      }
-      else {
-        output.push_back(std::vector<int>());
-        output[depth].push_back(parent);
-      }
-      std::vector<int> r_neighbors = neighbors[parent];
-      for (int i = 0; i < r_neighbors.size(); ++i) {      
-        updateNeighbors(neighbors, r_neighbors[i], depth+1 , traversedSet, output);          
-      }
-    }
-  }
-
-
   void setSendRecvTrees(CommGraph const& graph, int const& level, std::map<int, TreeLevel>& sendList, std::map<int, TreeLevel>& recvList) {
     assert(level >= 2);    
     if(level < graph[mpirank].size()) {
@@ -695,6 +664,30 @@ protected:
     }        
     return graph;
   }  
+
+  void setSourcesNDestinations(NeighborList const& neighbors, int rank, int*& sources, int*& destinations,int& indegree,int& outdegree) {
+    std::vector<int> inwardNeighbors = neighbors[rank];
+    indegree = inwardNeighbors.size();
+    sources = new int[indegree];
+    for (int i = 0; i < indegree; ++i) {      
+      sources[i] = inwardNeighbors[i];
+    }
+    std::vector<int> outwardNeighbors;
+    for (int i = 0; i < neighbors.size(); ++i) {
+      if(i != rank) {
+        for (int j = 0; j < neighbors[i].size(); ++j) {
+          if(neighbors[i][j] == rank){
+            outwardNeighbors.push_back(i);
+          }
+        }
+      }
+    }
+    outdegree = outwardNeighbors.size();
+    destinations = new int[outdegree];
+    for (int i = 0; i < outdegree; ++i) {
+      destinations[i] = outwardNeighbors[i];
+    }
+  }
   
 public:
   //! Constructor
@@ -755,30 +748,6 @@ public:
     MPI_Allgather(Xmax, 3, MPI_FLOAT, allBoundsXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
   }
 
-
-  void setSourcesNDestinations(NeighborList const& neighbors, int rank, int*& sources, int*& destinations,int& indegree,int& outdegree) {
-    std::vector<int> inwardNeighbors = neighbors[rank];
-    indegree = inwardNeighbors.size();
-    sources = new int[indegree];
-    for (int i = 0; i < indegree; ++i) {      
-      sources[i] = inwardNeighbors[i];
-    }
-    std::vector<int> outwardNeighbors;
-    for (int i = 0; i < neighbors.size(); ++i) {
-      if(i != rank) {
-        for (int j = 0; j < neighbors[i].size(); ++j) {
-          if(neighbors[i][j] == rank){
-            outwardNeighbors.push_back(i);
-          }
-        }
-      }
-    }
-    outdegree = outwardNeighbors.size();
-    destinations = new int[outdegree];
-    for (int i = 0; i < outdegree; ++i) {
-      destinations[i] = outwardNeighbors[i];
-    }
-  }
 
   void initDistGraph(Bounds globalBounds) {
     logger::startTimer("Init Dist Graph");
