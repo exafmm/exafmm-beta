@@ -14,6 +14,7 @@
 namespace exafmm {
 #ifndef _SX
   static struct option long_options[] = {
+    {"accuracy",     no_argument,       0, 'a'},
     {"ncrit",        required_argument, 0, 'c'},
     {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
@@ -41,6 +42,7 @@ namespace exafmm {
 
   class Args {
   public:
+    int accuracy;
     int ncrit;
     double cutoff;
     const char * distribution;
@@ -67,6 +69,7 @@ namespace exafmm {
       fprintf(stderr,
 	      "Usage: %s [options]\n"
 	      "Long option (short option)     : Description (Default value)\n"
+	      " --accuracy (-a)               : Regression for accuracy only (%d)\n"
 	      " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
 	      " --cutoff (-C)                 : Cutoff distance of interaction (%f)\n"
 	      " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
@@ -89,6 +92,7 @@ namespace exafmm {
 	      " --write (-w)                  : Write timings to file (%d)\n"
 	      " --useRmax (-x)                : Use maximum distance for MAC (%d)\n",
 	      name,
+              accuracy,
 	      ncrit,
 	      cutoff,
 	      distribution,
@@ -199,6 +203,7 @@ namespace exafmm {
 
   public:
     Args(int argc=0, char ** argv=NULL) :
+      accuracy(0),
       ncrit(64),
       cutoff(.0),
       distribution("cube"),
@@ -222,13 +227,16 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "c:d:DgGhi:jmn:op:P:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
+	case 'a':
+	  accuracy = atoi(optarg);
+	  break;
 	case 'c':
 	  ncrit = atoi(optarg);
 	  break;
@@ -325,6 +333,8 @@ namespace exafmm {
     void print(int stringLength, int PP) {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
+		  << "accuracy" << " : " << accuracy << std::endl
+		  << std::setw(stringLength)
 		  << "ncrit" << " : " << ncrit << std::endl
 		  << std::setw(stringLength)
 		  << "cutoff" << " : " << cutoff << std::endl
