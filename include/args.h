@@ -179,18 +179,18 @@ namespace exafmm {
     }
 
     uint64_t getConfigNum() {
-      uint64_t key = 0;                             // Feature      : Speed
+      uint64_t key = 0;                                         // Accuracy     : Time
 #if EXAFMM_SINGLE
-      key |= 1;                                     // dependent    : dependent
+      key |= 1;                                                 // dependent    : dependent
 #endif
 #if EXAFMM_USE_SIMD
-      key |= 2;                                     // dependent    : dependent
+      key |= 2;                                                 // dependent    : dependent
 #endif
 #if EXAFMM_USE_KAHAN
-      key |= 4;                                     // dependent    : dependent
+      key |= 4;                                                 // dependent    : dependent
 #endif
 #if EXAFMM_WITH_TBB
-      key |= 0 << 3;                                // independent  : independent
+      key |= 0 << 3;                                            // independent  : independent
 #elif EXAFMM_WITH_MTHREAD
       key |= 1 << 3;
 #elif EXAFMM_WITH_CILK
@@ -308,25 +308,25 @@ namespace exafmm {
     }
 
     uint64_t getKey(int mpisize=1) {
-      uint64_t key = 0;                             // Feature      : Speed
-      key |= uint64_t(log(ncrit)/log(2));           // 64           : independent
-      key |= getDistNum(distribution) << 4;         // plummer      : independent
-      key |= dual << 7;                             // independent  : independent
-      key |= graft << 8;                            // on           : on
-      key |= images << 9;                           // independent  : independent
-      key |= IneJ << 11;                            // independent  : independent
-      key |= mutual << 12;                          // on           : independent
-      key |= uint64_t(log(numBodies)/log(10)) << 13;// independent  : independent
-      key |= useRopt << 17;                         // off          : independent
-      key |= PP << 18;                              // dependent    : dependent 
-      key |= uint64_t(log(nspawn)/log(10)) << 24;   // 5000         : independent
-      key |= uint64_t(theta*14) << 27;              // lower bound  : upper bound
-      key |= uint64_t(log(threads)/log(2)) << 30;   // upper bound  : upper bound
-      key |= uint64_t(useRmax) << 33;               // off          : independent
-      key |= getKernelNum() << 34;                  // dependent    : Laplace
-      key |= getConfigNum() << 40;                  // see inside   : see inside
-      key |= uint64_t(log(mpisize)/log(2)) << 45;   // upper bound  : upper bound
-      assert( uint64_t(log(mpisize)/log(2)) < 18 ); // Check for overflow 
+      uint64_t key = 0;                                         // Accuracy     : Time
+      key |= uint64_t(log(ncrit)/log(2));                       // 64           : independent
+      key |= getDistNum(distribution) << 4;                     // plummer      : independent
+      key |= dual << 7;                                         // independent  : independent
+      key |= graft << 8;                                        // independent  : on
+      key |= images << 9;                                       // independent  : independent
+      key |= IneJ << 11;                                        // independent  : independent
+      key |= mutual << 12;                                      // independent  : on
+      key |= uint64_t(log(numBodies)/log(10)) << 13;            // independent  : independent
+      key |= useRopt << 17;                                     // independent  : independent
+      key |= PP << 18;                                          // dependent    : dependent 
+      key |= uint64_t(log(nspawn)/log(10)) << 24;               // 5000         : independent
+      key |= uint64_t(theta*14) << 27;                          // lower bound  : upper bound
+      key |= uint64_t(log(threads)/log(2)) << 30;               // upper bound  : upper bound
+      key |= uint64_t(useRmax) << 33;                           // independent  : independent
+      key |= getKernelNum() << 34;                              // dependent    : Laplace
+      key |= getConfigNum() << 40;                              // see inside   : see inside
+      key |= uint64_t(log(mpisize)/log(2)) << 45;               // upper bound  : upper bound
+      assert( uint64_t(log(mpisize)/log(2)) < 18 );             // Check for overflow 
       return key;
     }
 
