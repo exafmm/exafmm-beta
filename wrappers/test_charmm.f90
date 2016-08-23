@@ -891,7 +891,7 @@ program main
      if (mpirank == 0) then
         print "(a)",'--- Time regression -------------'
      endif
-     call fmm_verify_time(itry,(toc-tic)/nit)
+     call fmm_verify_time(itry,(toc-tic)/nitr)
      if(itry == -1) exit
   enddo
   call fmm_verify_end()

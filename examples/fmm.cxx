@@ -112,7 +112,8 @@ int main(int argc, char ** argv) {
       bodies = buffer;
       pass = verify.regression(args.getKey(), isTime, t, potRel, accRel);
       if (pass) {
-        if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+        if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl;
+        if (args.accuracy) break;
         t = -1;
         isTime = true;
       }

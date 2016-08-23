@@ -235,7 +235,7 @@ namespace exafmm {
 	if (c == -1) break;
 	switch (c) {
 	case 'a':
-	  accuracy = atoi(optarg);
+	  accuracy = 1;
 	  break;
 	case 'c':
 	  ncrit = atoi(optarg);
