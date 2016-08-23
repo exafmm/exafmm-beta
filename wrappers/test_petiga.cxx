@@ -74,6 +74,7 @@ int main(int argc, char ** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
   int nb = 50000 / mpisize;
   int nv = 100000 / mpisize;
+  int nit = 10;
 
   srand48(mpirank);
   for (int i=0; i<nb; i++) {
@@ -106,7 +107,7 @@ int main(int argc, char ** argv) {
 
   for (int t=0; t<10; t++) {
     double tic = get_time();
-    for (int it=0; it<10; it++) {
+    for (int it=0; it<nit; it++) {
       for (int i=0; i<nb; i++) {
         vb[i] = 1.0 / nb;
         vi[i] = 0;
@@ -115,7 +116,7 @@ int main(int argc, char ** argv) {
       FMM_B2B(vi, vb, verbose);
     }
     double toc = get_time();
-    FMM_Verify_Time(t, toc-tic);
+    FMM_Verify_Time(t, (toc-tic)/nit);
     if (t == -1) break;
   }
   FMM_Verify_End();
@@ -137,7 +138,7 @@ int main(int argc, char ** argv) {
 
   for (int t=0; t<10; t++) {
     double tic = get_time();
-    for (int it=0; it<10; it++) {
+    for (int it=0; it<nit; it++) {
       for (int i=0; i<nb; i++) {
         vb[i] = 0;
         vd[i] = 0;
@@ -148,7 +149,7 @@ int main(int argc, char ** argv) {
       FMM_V2B(vb, vv, verbose);
     }
     double toc = get_time();
-    FMM_Verify_Time(t, toc-tic);
+    FMM_Verify_Time(t, (toc-tic)/nit);
     if (t == -1) break;
   }
   FMM_Verify_End();
@@ -170,7 +171,7 @@ int main(int argc, char ** argv) {
 
   for (int t=0; t<10; t++) {
     double tic = get_time();
-    for (int it=0; it<10; it++) {    
+    for (int it=0; it<nit; it++) {    
       for (int i=0; i<nb; i++) {
         vb[i] = 1.0 / nb;
       }
@@ -181,7 +182,7 @@ int main(int argc, char ** argv) {
       FMM_B2V(vv, vb, verbose);
     }
     double toc = get_time();
-    FMM_Verify_Time(t, toc-tic);
+    FMM_Verify_Time(t, (toc-tic)/nit);
     if (t == -1) break;
   }
   FMM_Verify_End();
@@ -201,7 +202,7 @@ int main(int argc, char ** argv) {
 
   for (int t=0; t<10; t++) {
     double tic = get_time();
-    for (int it=0; it<10; it++) {    
+    for (int it=0; it<nit; it++) {    
       for (int i=0; i<nv; i++) {
         vv[i] = 1.0 / nv;
         vi[i] = 0;
@@ -210,7 +211,7 @@ int main(int argc, char ** argv) {
       FMM_V2V(vi, vv, verbose);
     }
     double toc = get_time();
-    FMM_Verify_Time(t, toc-tic);
+    FMM_Verify_Time(t, (toc-tic)/nit);
     if (t == -1) break;
   }
   FMM_Verify_End();

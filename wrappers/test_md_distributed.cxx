@@ -118,16 +118,17 @@ int main(int argc, char ** argv) {
   }
   FMM_Verify_End();
 
+  int nit = 10;
   for (int t=0; t<10; t++) {
     double tic = get_time();
-    for (int it=0; it<10; it++) {
+    for (int it=0; it<nit; it++) {
       for (int i=0; i<ni; i++) {
         p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
       }
       FMM_FMM(ni, &nj, res_index, x, q, p, f, cycle);
     }
     double toc = get_time();
-    FMM_Verify_Time(t, toc-tic);
+    FMM_Verify_Time(t, (toc-tic)/nit);
     if (t == -1) break;
   }
   FMM_Verify_End();

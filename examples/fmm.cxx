@@ -80,6 +80,7 @@ int main(int argc, char ** argv) {
     logger::stopDAG();
     logger::stopPAPI();
     double totalFMM = logger::stopTimer("Total FMM");
+    totalFMM /= numIteration;
     logger::resetTimer("Total FMM");
     if (args.write) {
       logger::writeTime();

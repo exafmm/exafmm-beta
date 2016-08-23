@@ -107,6 +107,8 @@ int main(int argc, char ** argv) {
     }
     logger::stopPAPI();
     double totalFMM = logger::stopTimer("Total FMM");
+    totalFMM /= numIteration;
+
     if (!isTime) {
 #if 1
       bodies2 = bodies;

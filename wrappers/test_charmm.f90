@@ -871,13 +871,14 @@ program main
   enddo
   call fmm_verify_end()
 
+  nitr = 10
   do itry = 1,10
      if (mpirank == 0) then
         print "(a,i2,a)",'--- Time regression loop ',itry,' -----'
         print*,'FMM Coulomb'
      endif
      tic = mpi_wtime()
-     do itr = 1,10
+     do itr = 1,nitr
         do i = 1,nglobal
            p(i) = 0
            f(3*i-2) = 0
@@ -890,7 +891,7 @@ program main
      if (mpirank == 0) then
         print "(a)",'--- Time regression -------------'
      endif
-     call fmm_verify_time(itry,toc-tic)
+     call fmm_verify_time(itry,(toc-tic)/nit)
      if(itry == -1) exit
   enddo
   call fmm_verify_end()

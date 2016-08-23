@@ -1,5 +1,4 @@
 -- Immediate --
-- Use time average instead of sum
 - Flag for accuracy only regression
 - Add all regression tests according to args.h
 
@@ -17,7 +16,6 @@ non-orthogonal recursive bisection
 -- automake --
 - Add m4/ax_mpi variants from PVFMM
 - Theoretical error bound using kernel.cxx
-- performance regression, see Chromium project for details
 move contents of macros.h to configure.ac
 examples/Makefile options to args
 unit test for each header file in /unit_test

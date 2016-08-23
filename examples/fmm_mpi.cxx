@@ -144,6 +144,7 @@ int main(int argc, char ** argv) {
     }
     logger::stopPAPI();
     double totalFMM = logger::stopTimer("Total FMM", 0);
+    totalFMM /= numIteration;
     logger::resetTimer("Total FMM");
     if (args.write) {
       logger::writeTime(baseMPI.mpirank);
