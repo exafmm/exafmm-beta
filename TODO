@@ -1,5 +1,4 @@
 -- Immediate --
-- Flag for accuracy only regression
 - Add all regression tests according to args.h
 
 -- MPI --

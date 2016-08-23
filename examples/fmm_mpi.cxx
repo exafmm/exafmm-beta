@@ -193,6 +193,7 @@ int main(int argc, char ** argv) {
       MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
       if (pass) {
         if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+        if (args.accuracy) break;
         t = -1;
         isTime = true;        
       }
