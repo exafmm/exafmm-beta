@@ -574,14 +574,14 @@ protected:
   template<typename BoundsArr>
   NeighborList setNeighbors(BoundsArr minBounds, BoundsArr maxBounds, Bounds globalBounds) {
     NeighborList neighbors(mpisize);
-    real_t const leeway[3] = {
+    float const leeway[3] = {
       0.001*(globalBounds.Xmax[0] - globalBounds.Xmin[0]), 
       0.001*(globalBounds.Xmax[1] - globalBounds.Xmin[1]),
       0.001*(globalBounds.Xmax[2] - globalBounds.Xmin[2])
     };
     for (int i = 0; i < mpisize; ++i) {
-      real_t* localXmin = minBounds[i];
-      real_t* localXmax = maxBounds[i];    
+      float* localXmin = minBounds[i];
+      float* localXmax = maxBounds[i];    
       for (int irank = 0; irank < mpisize; ++irank) {
          if(i!=irank) {
           int dim;
