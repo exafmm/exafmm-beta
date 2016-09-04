@@ -309,24 +309,24 @@ namespace exafmm {
 
     uint64_t getKey(int mpisize=1) {
       uint64_t key = 0;                                         // Accuracy     : Time
-      key |= uint64_t(log(ncrit)/log(2));                       // 64           : independent
+      key |= uint64_t(round(log(ncrit)/log(2)));                // 64           : independent
       key |= getDistNum(distribution) << 4;                     // plummer      : independent
       key |= dual << 7;                                         // independent  : independent
       key |= graft << 8;                                        // independent  : on
       key |= images << 9;                                       // independent  : independent
       key |= IneJ << 11;                                        // independent  : independent
       key |= mutual << 12;                                      // independent  : on
-      key |= uint64_t(log(numBodies)/log(10)) << 13;            // independent  : independent
+      key |= uint64_t(round(log(numBodies)/log(10))) << 13;     // independent  : independent
       key |= useRopt << 17;                                     // independent  : independent
       key |= PP << 18;                                          // dependent    : dependent 
-      key |= uint64_t(log(nspawn)/log(10)) << 24;               // 5000         : independent
+      key |= uint64_t(round(log(nspawn)/log(10))) << 24;        // 5000         : independent
       key |= uint64_t(theta*14) << 27;                          // lower bound  : upper bound
-      key |= uint64_t(log(threads)/log(2)) << 30;               // upper bound  : upper bound
+      key |= uint64_t(round(log(threads)/log(2))) << 30;        // upper bound  : upper bound
       key |= uint64_t(useRmax) << 33;                           // independent  : independent
       key |= getKernelNum() << 34;                              // dependent    : Laplace
       key |= getConfigNum() << 40;                              // see inside   : see inside
-      key |= uint64_t(log(mpisize)/log(2)) << 45;               // upper bound  : upper bound
-      assert( uint64_t(log(mpisize)/log(2)) < 18 );             // Check for overflow 
+      key |= uint64_t(round(log(mpisize)/log(2))) << 45;        // upper bound  : upper bound
+      assert( uint64_t(round(log(mpisize)/log(2))) < 18 );      // Check for overflow 
       return key;
     }
 
