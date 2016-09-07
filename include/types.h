@@ -81,7 +81,7 @@ namespace exafmm {
 #elif EXAFMM_BIOTSAVART
     vec4      SRC;                                              //!< Vector source values
 #endif
-  } __attribute__((aligned (SIMD_BYTES)));
+  };
 
   //! Structure of bodies
   struct Body : public Source {
