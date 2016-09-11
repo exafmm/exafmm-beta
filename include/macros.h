@@ -23,6 +23,9 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 #endif
 #endif
 
+// Suppress Intel compiler warnings
+#pragma warning disable 68 111
+
 // Check for equation and basis
 #ifndef EXAFMM_EXPANSION
 #error EXAFMM_EXPANSION undefined

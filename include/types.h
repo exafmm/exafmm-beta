@@ -85,14 +85,14 @@ namespace exafmm {
 
   //! Structure of bodies
   struct Body : public Source {
-    int      IBODY;                                             //!< Initial body numbering for sorting back
-    int      IRANK;                                             //!< Initial rank numbering for partitioning back
-    uint64_t ICELL;                                             //!< Cell index   
-    real_t   WEIGHT;                                            //!< Weight for partitioning
+    int     IBODY;                                              //!< Initial body numbering for sorting back
+    int     IRANK;                                              //!< Initial rank numbering for partitioning back
+    int64_t ICELL;                                              //!< Cell index
+    real_t  WEIGHT;                                             //!< Weight for partitioning
 #if EXAFMM_LAPLACE | EXAFMM_BIOTSAVART
-    kvec4    TRG;                                               //!< Scalar+vector3 target values
+    kvec4   TRG;                                                //!< Scalar+vector3 target values
 #elif EXAFMM_HELMHOLTZ
-    kcvec4   TRG;                                               //!< Scalar+vector3 target values
+    kcvec4  TRG;                                                //!< Scalar+vector3 target values
 #endif
   };
 #if _SX

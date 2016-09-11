@@ -130,14 +130,13 @@ int main(int argc, char ** argv) {
         }
       }
 #else
-      jbodies = bodies;
       for (int irank=0; irank<baseMPI.mpisize; irank++) {
         treeMPI.shiftBodies(jbodies);
         jcells.clear();
         localBounds = boundBox.getBounds(jbodies);
         jcells = localTree.buildTree(jbodies, buffer, localBounds);
         upDownPass.upwardPass(jcells);
-        traversal.traverse(cells, jcells, cycle, args.dual, args.mutual);
+        traversal.traverse(cells, jcells, cycle, args.dual, false);
       }
 #endif
       upDownPass.downwardPass(cells);

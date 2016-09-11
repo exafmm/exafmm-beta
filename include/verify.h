@@ -119,7 +119,7 @@ namespace exafmm {
       bool secondValue = false;                                 // Whether there is a second value
       if (value2 != 0) secondValue = true;                      // If there is a second value
       Record record, record2;                                   // Map for regression value
-      const char * host = getenv("SLAVENAME");                  // Get slavename
+      const char * host = getenv("WORKERNAME");                 // Get workername
       std::stringstream name;                                   // File name for regression
       name << path;                                             // Append path to file name
       if (time) name << "time_" << host << ".reg";              // If time regression
@@ -142,12 +142,14 @@ namespace exafmm {
       average = (average * iteration + value) / (iteration + 1);// Average of all iterations
       if (secondValue) average2 = (average2 * iteration + value2) / (iteration + 1);// Average of all iterations
       if (record[key] != 0 && verbose) std::cout << "entry exists" << std::endl;// Print if entry exits
-      if (record[key] == 0 || average <= record[key]*(1+EPS+iteration*.01)) {// If new record or pass
+      double threshold = record[key]*(1+EPS+iteration*.01);     // Accuracy threshold
+      if ((record[key] == 0 || average <= threshold) && average < 1e-2) { // If new record or pass
         pass = true;                                            //  Change flag to pass
         record[key] = average;                                  //  Add key value pair
       }                                                         // Endif for better value
       if (secondValue) {                                        // If second value
-        if (record2[key] == 0 || average2 <= record2[key]*(1+EPS+iteration*.01)) { // If new record2 or pass
+        threshold = record2[key]*(1+EPS+iteration*.01);         // Accuracy threshold
+        if ((record2[key] == 0 || average2 <= threshold) && average2 < 1e-1) { // If new record2 or pass
           pass &= true;                                         //  Change flag to pass
           record2[key] = average2;                              //  Add key value pair
         }                                                       // Endif for second value

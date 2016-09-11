@@ -88,7 +88,7 @@ int main(int argc, char ** argv) {
     traversal.writeList(cells, 0);
 
     if (!isTime) {
-      const int numTargets = 1000;
+      const int numTargets = 100;
       buffer = bodies;
       data.sampleBodies(bodies, numTargets);
       bodies2 = bodies;

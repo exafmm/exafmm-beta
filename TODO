@@ -1,14 +1,9 @@
 -- Immediate --
-- Set default parameters according to args.h
-- Setup build for nightly test
-- Setup Python loop code for tests
-- Add independent accuracy tests
-- Add independent time tests
-- Add dependent accuracy tests
-- Add dependent time tests
 - Wash out all corner case bugs
 - Representative case plot generator
 - Remove make cleanall from build
+- Merge git branches
+- Remove branches from master.cfg
 
 -- MPI --
 - benchmark against uniform on kyoto

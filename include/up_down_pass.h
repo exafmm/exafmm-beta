@@ -27,9 +27,6 @@ namespace exafmm {
 	  create_taskc(setRopt);                                //   Create new task for recursive call
 	}                                                       //  End loop over child cells
 	wait_tasks;                                             //  Synchronize tasks
-#if EXAFMM_MASS
-	for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];         //  Normalize multipole expansion coefficients
-#endif
 	real_t x = 1.0 / theta;                                 //  Inverse of theta
 	assert(theta != 1.0);                                   //  Newton-Raphson won't work for theta==1
 	real_t a = c * powf(std::abs(C->M[0]),1.0/3);           //  Cell coefficient
@@ -87,7 +84,7 @@ namespace exafmm {
 	C(_C), C0(_C0), theta(_theta), useRmax(_useRmax) {}     // Initialize variables
       void operator() () const {                                // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
-	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+        for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
 	  PostOrderTraversal postOrderTraversal(CC, C0, theta, useRmax); // Instantiate recursive functor
 	  create_taskc(postOrderTraversal);                     //    Create new task for recursive call
 	}                                                       //   End loop over child cells
@@ -95,7 +92,9 @@ namespace exafmm {
 	C->M = 0;                                               //  Initialize multipole expansion coefficients
 	C->L = 0;                                               //  Initialize local expansion coefficients
 	if(C->NCHILD==0) kernel::P2M(C);                        //  P2M kernel
-	else kernel::M2M(C, C0);                                //  M2M kernel
+	else {                                                  //  If not leaf cell
+          kernel::M2M(C, C0);                                   //   M2M kernel
+        }                                                       //  End if for non leaf cell
 	if (useRmax) setRmax();                                 //  Redefine cell radius R based on maximum distance
 	C->R /= theta;                                          //  Divide R by theta
       }                                                         // End overload operator()
@@ -109,7 +108,9 @@ namespace exafmm {
 	C(_C), C0(_C0) {}                                       // Initialize variables
       void operator() () const {                                // Overload operator()
 	kernel::L2L(C, C0);                                     //  L2L kernel
-	if (C->NCHILD==0) kernel::L2P(C);                       //  L2P kernel
+	if (C->NCHILD==0) {                                     //  If leaf cell
+          kernel::L2P(C);                                       //  L2P kernel
+        }                                                       // End if for leaf cell
 #if EXAFMM_USE_WEIGHT
 	C_iter CP = C0 + C->IPARENT;                            // Parent cell
 	C->WEIGHT += CP->WEIGHT;                                // Add parent's weight

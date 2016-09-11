@@ -134,8 +134,8 @@ namespace exafmm {
       return "";
     }
 
-    uint64_t getDistNum(const char * distribution) {
-      switch (distribution[0]) {
+    uint64_t getDistNum(const char * _distribution) {
+      switch (_distribution[0]) {
       case 'c':
         return 0;
       case 'l':
@@ -149,7 +149,7 @@ namespace exafmm {
       case 'e':
         return 7;
       default:
-        fprintf(stderr, "invalid distribution %s\n", distribution);
+        fprintf(stderr, "invalid distribution %s\n", _distribution);
         abort();
       }
       return 0;
@@ -330,7 +330,7 @@ namespace exafmm {
       return key;
     }
 
-    void print(int stringLength, int PP) {
+    void print(int stringLength, int _PP) {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
 		  << "accuracy" << " : " << accuracy << std::endl
@@ -359,7 +359,7 @@ namespace exafmm {
 		  << std::setw(stringLength)
 		  << "path" << " : " << path << std::endl
 		  << std::setw(stringLength)
-		  << "P" << " : " << PP << std::endl
+		  << "P" << " : " << _PP << std::endl
 		  << std::setw(stringLength)
 		  << "repeat" << " : " << repeat << std::endl
 		  << std::setw(stringLength)
