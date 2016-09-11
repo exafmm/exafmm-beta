@@ -243,9 +243,6 @@ namespace exafmm {
 
     void L2P(C_iter Ci) {
       complex_t Ynm[P*P], YnmTheta[P*P];
-#if EXAFMM_MASS
-      Ci->L /= Ci->M[0];
-#endif
       for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
 	vec3 dX = B->X - Ci->X + EPS;
 	vec3 spherical = 0;

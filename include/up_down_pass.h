@@ -158,7 +158,12 @@ namespace exafmm {
       logger::startTimer("Downward pass");                      // Start timer
       if (!cells.empty()) {                                     // If cell vector is not empty
 	C_iter C0 = cells.begin();                              //  Root cell
-	if (C0->NCHILD == 0) kernel::L2P(C0);                   //  If root is the only cell do L2P
+	if (C0->NCHILD == 0) {                                  //  If root is the only cell
+#if EXAFMM_MASS
+          C0->L /= C0->M[0];                                    //   Denormalize local expansions
+#endif
+          kernel::L2P(C0);                                      //   L2P kernel
+        }                                                       //  End if root is the only cell
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
 	  PreOrderTraversal preOrderTraversal(CC, C0);          //    Instantiate recursive functor
