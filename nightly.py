@@ -11,16 +11,15 @@ tList = ['.5','.4','.3']
 TList = ['1','2','4']
 for kernel in kernelList:
   if 'mpi' in kernel:
-    argList = ['D','g','j','m','o','x']
+    argList = ['g','j','m','o','x']
     npList = ['1','2','4','8','16']
   else:
-    argList = ['D','j','m','o','x']
+    argList = ['j','m','o','x']
     npList = ['1']
   for np in npList:
+    exe = ' '.join([''.join(['./examples/',kernel]),'-aDv','-p','./examples/','-r','10'])
     if 'mpi' in kernel:
-      exe = ' '.join(['mpirun','-np',np,''.join(['./examples/',kernel]),'-av','-p','./examples/','-r','10'])
-    else:
-      exe = ' '.join([''.join(['./examples/',kernel]),'-av','-p','./examples/','-r','10'])
+      exe = ' '.join(['mpirun','-np',np,exe])
     for n in nList:
       for numArgs in range(0, len(argList)+1):
         for args in itertools.combinations(argList, numArgs):

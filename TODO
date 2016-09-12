@@ -4,6 +4,8 @@
 - Remove make cleanall from build
 - Merge git branches
 - Remove branches from master.cfg
+- Extend list based traversal to adaptive tree (UVWX-list)
+- Separate different algorithms into different files (create folder for build tree, partition, etc.)
 
 -- MPI --
 - define mpisize, mpirank in types.h

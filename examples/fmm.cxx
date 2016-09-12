@@ -63,10 +63,6 @@ int main(int argc, char ** argv) {
         bounds = boundBox.getBounds(jbodies, bounds);
       }
       cells = buildTree.buildTree(bodies, buffer, bounds);
-      //for (B_iter B=bodies.begin(); B!=bodies.end(); B++)
-      //  std::cout << B->X << std::endl;
-      //for (C_iter C=cells.begin(); C!=cells.end(); C++)
-      //  std::cout << C->ICELL << " " << C->X << std::endl;
       upDownPass.upwardPass(cells);
       traversal.initListCount(cells);
       traversal.initWeight(cells);
