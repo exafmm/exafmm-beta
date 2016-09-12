@@ -130,12 +130,21 @@ AM_CPPFLAGS += -DEXAFMM_COUNT_LIST
 endif
 
 if EXAFMM_ASSERT
+else
 AM_CPPFLAGS += -DNDEBUG
 endif
 
 if EXAFMM_DEBUG
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
-AM_CXXFLAGS += -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+AM_CXXFLAGS += -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -traceback
+AM_FCFLAGS += -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -traceback -check all -debug all
+if EXAFMM_HAVE_INTEL
+AM_CXXFLAGS += -ftrapuv -diag-disable remark
+AM_FCFLAGS += -ftrapuv -diag-disable remark
+else
+AM_CXXFLAGS += -ftrapv
+AM_FCFLAGS += -ftrapv
+endif
 endif
 
 AM_MAKEFLAGS = -s

@@ -6,6 +6,7 @@
 - Remove branches from master.cfg
 
 -- MPI --
+- define mpisize, mpirank in types.h
 - benchmark against uniform on kyoto
 - match performance of uniform with non-uniform
 - merge partition and treeMPI
