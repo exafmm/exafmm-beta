@@ -2,10 +2,10 @@ import itertools
 import subprocess
 kernelList = ['laplace_cartesian','laplace_spherical','helmholtz_spherical','biotsavart_spherical','laplace_cartesian_mpi','laplace_spherical_mpi','helmholtz_spherical_mpi','biotsavart_spherical_mpi','ewald_mpi']
 nList = ['2','10','100','1000','10000','100000']
-tList = ['.5','.4','.3']
+tList = ['.45','.35']
 TList = ['1','2','4']
-cList = ['1','8','64','512']
-dList = ['c','l','s','o','p']
+cList = ['1','8','64']
+dList = ['c','s','o','p']
 for kernel in kernelList:
   if 'mpi' in kernel:
     argList = ['g','j','m','o','x']
@@ -16,9 +16,9 @@ for kernel in kernelList:
   if 'ewald' in kernel:
     iList = ['3']
   else:
-    iList = ['0','1','2','3']
+    iList = ['0']
   for np in npList:
-    exe = ' '.join([''.join(['./examples/',kernel]),'-aDv','-p','./examples/','-r','10'])
+    exe = ' '.join([''.join(['./examples/',kernel]),'-aDv','-p','./examples/','-r','1'])
     if 'mpi' in kernel:
       exe = ' '.join(['mpirun','-np',np,exe])
     for n in nList:
