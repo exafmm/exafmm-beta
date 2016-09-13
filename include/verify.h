@@ -143,7 +143,7 @@ namespace exafmm {
       if (secondValue) average2 = (average2 * iteration + value2) / (iteration + 1);// Average of all iterations
       if (record[key] != 0 && verbose) std::cout << "entry exists" << std::endl;// Print if entry exits
       double threshold = record[key]*(1+EPS+iteration*.01);     // Accuracy threshold
-      if ((record[key] == 0 || average <= threshold) && (average < 1e-4 || time)) { // If new record or pass
+      if ((record[key] == 0 || average <= threshold) && (average < 5e-4 || time)) { // If new record or pass
         pass = true;                                            //  Change flag to pass
         record[key] = average;                                  //  Add key value pair
       }                                                         // Endif for better value
