@@ -2,7 +2,11 @@ include ../Makefile.am.include
 
 bin_PROGRAMS = laplace_cartesian laplace_spherical helmholtz_spherical biotsavart_spherical tree
 laplace_cartesian_SOURCES = fmm.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+if EXAFMM_HAVE_FX
+laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_MASS -DEXAFMM_EXPANSION=7
+else
 laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_MASS -DEXAFMM_EXPANSION=10
+endif
 laplace_spherical_SOURCES = fmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 helmholtz_spherical_SOURCES = fmm.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
