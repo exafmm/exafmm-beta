@@ -573,8 +573,8 @@ extern "C" void fmm_verify_accuracy_(int &t, double & potRel, double & accRel) {
   }
 }
 
-extern "C" bool fmm_only_accuracy_() {
-  return args->accuracy;
+extern "C" bool fmm_only_accuracy_(int &value) {
+  int value =  args->accuracy;
 }
 
 extern "C" void fmm_verify_time_(int &t, double & totalFMM) {

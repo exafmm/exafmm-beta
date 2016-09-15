@@ -727,7 +727,7 @@ program main
   include 'mpif.h'
   logical test_force
   character(len=128) path,infile,outfile,nstp
-  integer dynsteps
+  integer dynsteps,accuracy
   integer i,itry,nitr,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
   real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time,tic,toc
@@ -871,7 +871,8 @@ program main
   enddo
   call fmm_verify_end()
 
-  if (fmm_only_accuracy()) then
+  call fmm_only_accuracy(accuracy)
+  if (accuracy) then
      nitr = 10
      do itry = 1,10
         if (mpirank == 0) then
