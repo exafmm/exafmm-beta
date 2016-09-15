@@ -646,7 +646,7 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_SOURCES = charmm2.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 @EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_SOURCES = md_distributed.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+@EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=15
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_SOURCES = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_CPPFLAGS = $(libpetiga_laplace_a_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_LDADD = libpetiga_exafmm_laplace.a
