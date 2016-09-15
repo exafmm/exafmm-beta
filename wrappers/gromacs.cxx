@@ -55,6 +55,7 @@ extern "C" void FMM_Init(int images, int threads, bool verbose, const char * pat
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
   verify = new Verify(path);
 
+  args->accuracy = 1;
   args->ncrit = ncrit;
   args->distribution = "external";
   args->dual = 1;

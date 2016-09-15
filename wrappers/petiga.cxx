@@ -76,6 +76,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   verify = new Verify(path);
   num_threads(threads);
 
+  args->accuracy = 1;
   args->ncrit = ncrit;
   args->distribution = "external";
   args->dual = 1;

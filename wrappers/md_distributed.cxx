@@ -51,6 +51,7 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, b
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
   verify = new Verify(path);
 
+  args->accuracy = 1;
   args->ncrit = ncrit;
   args->cutoff = cutoff;
   args->distribution = "external";

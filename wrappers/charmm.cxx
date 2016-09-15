@@ -53,6 +53,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, ch
   verify = new Verify(path);
 
   args->ncrit = ncrit;
+  args->accuracy = 1;
   args->distribution = "external";
   args->dual = 1;
   args->graft = 0;
