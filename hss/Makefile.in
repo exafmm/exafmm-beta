@@ -130,11 +130,11 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
 @EXAFMM_DEBUG_TRUE@am__append_28 = -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
-@EXAFMM_DEBUG_TRUE@am__append_29 = -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+@EXAFMM_DEBUG_TRUE@am__append_29 = -O0 -g
 @EXAFMM_DEBUG_TRUE@@EXAFMM_HAVE_INTEL_TRUE@am__append_30 = -traceback -ftrapuv -diag-disable remark
 @EXAFMM_DEBUG_TRUE@@EXAFMM_HAVE_INTEL_TRUE@am__append_31 = -traceback -ftrapuv -diag-disable remark -check all -debug all
-@EXAFMM_DEBUG_TRUE@@EXAFMM_HAVE_INTEL_FALSE@am__append_32 = -ftrapv
-@EXAFMM_DEBUG_TRUE@@EXAFMM_HAVE_INTEL_FALSE@am__append_33 = -ftrapv
+@EXAFMM_DEBUG_TRUE@@EXAFMM_HAVE_INTEL_FALSE@am__append_32 = -Wextra -Winit-self -ftrapv
+@EXAFMM_DEBUG_TRUE@@EXAFMM_HAVE_INTEL_FALSE@am__append_33 = -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -ftrapv
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@bin_PROGRAMS = laplace$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@	helmholtz$(EXEEXT)
 subdir = hss

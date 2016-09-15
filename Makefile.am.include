@@ -137,13 +137,13 @@ endif
 if EXAFMM_DEBUG
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
 AM_CXXFLAGS += -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
-AM_FCFLAGS += -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+AM_FCFLAGS += -O0 -g
 if EXAFMM_HAVE_INTEL
 AM_CXXFLAGS += -traceback -ftrapuv -diag-disable remark
 AM_FCFLAGS += -traceback -ftrapuv -diag-disable remark -check all -debug all
 else
-AM_CXXFLAGS += -ftrapv
-AM_FCFLAGS += -ftrapv
+AM_CXXFLAGS += -Wextra -Winit-self -ftrapv
+AM_FCFLAGS += -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -ftrapv
 endif
 endif
 
