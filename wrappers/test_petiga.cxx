@@ -21,7 +21,7 @@ extern "C" void FMM_V2V(double * vi, double * vv, bool verbose);
 extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
 		       int nv, double * xv, double * yv, double * zv, double * vv);
 extern "C" void FMM_Verify_Accuracy(int & t, double potRel, double accRel);
-extern "C" void FMM_Only_Accuracy();
+extern "C" bool FMM_Only_Accuracy();
 extern "C" void FMM_Verify_Time(int & t, double totalFMM);
 extern "C" void FMM_Verify_End();
 

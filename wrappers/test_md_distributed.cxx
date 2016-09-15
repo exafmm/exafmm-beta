@@ -17,7 +17,7 @@ extern "C" void FMM_Ewald(int ni, double * x, double * q, double * p, double * f
 extern "C" void FMM_Cutoff(int ni, double * x, double * q, double * p, double * f, double cutoff, double * cycle);
 extern "C" void Dipole_Correction(int ni, double * x, double * q, double * p, double * f, double * cycle);
 extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel);
-extern "C" void FMM_Only_Accuracy();
+extern "C" bool FMM_Only_Accuracy();
 extern "C" void FMM_Verify_Time(int &t, double totalFMM);
 extern "C" void FMM_Verify_End();
 

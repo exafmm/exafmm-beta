@@ -15,7 +15,7 @@ extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle);
 extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
 extern "C" void FMM_Verify_Accuracy(int & t, double potRel, double accRel);
-extern "C" void FMM_Only_Accuracy();
+extern "C" bool FMM_Only_Accuracy();
 extern "C" void FMM_Verify_Time(int & t, double totalFMM);
 extern "C" void FMM_Verify_End();
 
