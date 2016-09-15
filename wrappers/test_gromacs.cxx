@@ -15,6 +15,7 @@ extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle);
 extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
 extern "C" void FMM_Verify_Accuracy(int & t, double potRel, double accRel);
+extern "C" void FMM_Only_Accuracy();
 extern "C" void FMM_Verify_Time(int & t, double totalFMM);
 extern "C" void FMM_Verify_End();
 
@@ -171,20 +172,22 @@ int main(int argc, char ** argv) {
   }
   FMM_Verify_End();
 
-  int nit = 10;
-  for (int t=0; t<10; t++) {
-    double tic = get_time();
-    for (int it=0; it<nit; it++) {
-      for (int i=0; i<Ni; i++) {
-        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+  if (!FMM_Only_Accuracy()) {
+    int nit = 10;
+    for (int t=0; t<10; t++) {
+      double tic = get_time();
+      for (int it=0; it<nit; it++) {
+        for (int i=0; i<Ni; i++) {
+          p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+        }
+        FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
       }
-      FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+      double toc = get_time();
+      FMM_Verify_Time(t, (toc-tic)/nit);
+      if (t == -1) break;
     }
-    double toc = get_time();
-    FMM_Verify_Time(t, (toc-tic)/nit);
-    if (t == -1) break;
+    FMM_Verify_End();
   }
-  FMM_Verify_End();
 
   delete[] ibody;
   delete[] icell;

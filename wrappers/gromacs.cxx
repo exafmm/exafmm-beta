@@ -379,6 +379,10 @@ extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel) {
   }
 }
 
+extern "C" bool FMM_Only_Accuracy() {
+  return args->accuracy;
+}
+
 extern "C" void FMM_Verify_Time(int &t, double totalFMM) {
   isTime = true;
   logger::printTitle("Time regression");

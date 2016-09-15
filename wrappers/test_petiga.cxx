@@ -21,6 +21,7 @@ extern "C" void FMM_V2V(double * vi, double * vv, bool verbose);
 extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
 		       int nv, double * xv, double * yv, double * zv, double * vv);
 extern "C" void FMM_Verify_Accuracy(int & t, double potRel, double accRel);
+extern "C" void FMM_Only_Accuracy();
 extern "C" void FMM_Verify_Time(int & t, double totalFMM);
 extern "C" void FMM_Verify_End();
 
@@ -105,21 +106,23 @@ int main(int argc, char ** argv) {
   }
   FMM_Verify_End();
 
-  for (int t=0; t<10; t++) {
-    double tic = get_time();
-    for (int it=0; it<nit; it++) {
-      for (int i=0; i<nb; i++) {
-        vb[i] = 1.0 / nb;
-        vi[i] = 0;
-        vd[i] = 0;
+  if (!FMM_Only_Accuracy) {
+    for (int t=0; t<10; t++) {
+      double tic = get_time();
+      for (int it=0; it<nit; it++) {
+        for (int i=0; i<nb; i++) {
+          vb[i] = 1.0 / nb;
+          vi[i] = 0;
+          vd[i] = 0;
+        }
+        FMM_B2B(vi, vb, verbose);
       }
-      FMM_B2B(vi, vb, verbose);
+      double toc = get_time();
+      FMM_Verify_Time(t, (toc-tic)/nit);
+      if (t == -1) break;
     }
-    double toc = get_time();
-    FMM_Verify_Time(t, (toc-tic)/nit);
-    if (t == -1) break;
+    FMM_Verify_End();
   }
-  FMM_Verify_End();
 
   for (int t=0; t<10; t++) {
     for (int i=0; i<nb; i++) {
@@ -136,23 +139,25 @@ int main(int argc, char ** argv) {
   }
   FMM_Verify_End();
 
-  for (int t=0; t<10; t++) {
-    double tic = get_time();
-    for (int it=0; it<nit; it++) {
-      for (int i=0; i<nb; i++) {
-        vb[i] = 0;
-        vd[i] = 0;
+  if (!FMM_Only_Accuracy) {
+    for (int t=0; t<10; t++) {
+      double tic = get_time();
+      for (int it=0; it<nit; it++) {
+        for (int i=0; i<nb; i++) {
+          vb[i] = 0;
+          vd[i] = 0;
+        }
+        for (int i=0; i<nv; i++) {
+          vv[i] = 1.0 / nv;
+        }
+        FMM_V2B(vb, vv, verbose);
       }
-      for (int i=0; i<nv; i++) {
-        vv[i] = 1.0 / nv;
-      }
-      FMM_V2B(vb, vv, verbose);
+      double toc = get_time();
+      FMM_Verify_Time(t, (toc-tic)/nit);
+      if (t == -1) break;
     }
-    double toc = get_time();
-    FMM_Verify_Time(t, (toc-tic)/nit);
-    if (t == -1) break;
+    FMM_Verify_End();
   }
-  FMM_Verify_End();
 
   for (int t=0; t<10; t++) {
     for (int i=0; i<nb; i++) {
@@ -169,23 +174,25 @@ int main(int argc, char ** argv) {
   }
   FMM_Verify_End();
 
-  for (int t=0; t<10; t++) {
-    double tic = get_time();
-    for (int it=0; it<nit; it++) {    
-      for (int i=0; i<nb; i++) {
-        vb[i] = 1.0 / nb;
+  if (!FMM_Only_Accuracy) {
+    for (int t=0; t<10; t++) {
+      double tic = get_time();
+      for (int it=0; it<nit; it++) {    
+        for (int i=0; i<nb; i++) {
+          vb[i] = 1.0 / nb;
+        }
+        for (int i=0; i<nv; i++) {
+          vv[i] = 0;
+          vd[i] = 0;
+        }
+        FMM_B2V(vv, vb, verbose);
       }
-      for (int i=0; i<nv; i++) {
-        vv[i] = 0;
-        vd[i] = 0;
-      }
-      FMM_B2V(vv, vb, verbose);
+      double toc = get_time();
+      FMM_Verify_Time(t, (toc-tic)/nit);
+      if (t == -1) break;
     }
-    double toc = get_time();
-    FMM_Verify_Time(t, (toc-tic)/nit);
-    if (t == -1) break;
+    FMM_Verify_End();
   }
-  FMM_Verify_End();
 
   for (int t=0; t<10; t++) {
     for (int i=0; i<nv; i++) {
@@ -200,21 +207,23 @@ int main(int argc, char ** argv) {
   }
   FMM_Verify_End();
 
-  for (int t=0; t<10; t++) {
-    double tic = get_time();
-    for (int it=0; it<nit; it++) {    
-      for (int i=0; i<nv; i++) {
-        vv[i] = 1.0 / nv;
-        vi[i] = 0;
-        vd[i] = 0;
+  if (!FMM_Only_Accuracy) {
+    for (int t=0; t<10; t++) {
+      double tic = get_time();
+      for (int it=0; it<nit; it++) {    
+        for (int i=0; i<nv; i++) {
+          vv[i] = 1.0 / nv;
+          vi[i] = 0;
+          vd[i] = 0;
+        }
+        FMM_V2V(vi, vv, verbose);
       }
-      FMM_V2V(vi, vv, verbose);
+      double toc = get_time();
+      FMM_Verify_Time(t, (toc-tic)/nit);
+      if (t == -1) break;
     }
-    double toc = get_time();
-    FMM_Verify_Time(t, (toc-tic)/nit);
-    if (t == -1) break;
+    FMM_Verify_End();
   }
-  FMM_Verify_End();
 
   FMM_Finalize();
   MPI_Finalize();
