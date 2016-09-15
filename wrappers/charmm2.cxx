@@ -44,7 +44,7 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & nglobal, const char * path, size_t * len) {
+extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & nglobal, const char * path, size_t *) {
   int ncrit = 32;
   const int nspawn = 1000;
   const bool useRmax = true;
@@ -176,7 +176,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   FMM->partitionComm();
   bodies.resize(FMM->numBodies);
   b = 0;
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
     B->X[0] = FMM->Jbodies[b][0] - FMM->RGlob[0];
     B->X[1] = FMM->Jbodies[b][1] - FMM->RGlob[1];
     B->X[2] = FMM->Jbodies[b][2] - FMM->RGlob[2];
@@ -192,9 +192,9 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    int iwrap = unsigned(B->IBODY) >> shift;
+    iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycles, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
@@ -312,7 +312,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 
 #if 1
   b = 0;
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
     B->X[0] = FMM->Jbodies[b][0] - FMM->RGlob[0];
     B->X[1] = FMM->Jbodies[b][1] - FMM->RGlob[1];
     B->X[2] = FMM->Jbodies[b][2] - FMM->RGlob[2];
@@ -335,7 +335,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   logger::printTime("Total FMM");
 
   b = 0;
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
@@ -343,9 +343,9 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
   bodies = treeMPI->getRecvBodies();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    int iwrap = unsigned(B->IBODY) >> shift;
+    iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycles, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
@@ -414,7 +414,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   logger::printTitle("Total runtime");
   logger::printTime("Total Ewald");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
@@ -574,7 +574,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   logger::printTitle("Total runtime");
   logger::printTime("Total VdW");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0];
     f[3*i+0] += B->TRG[1];

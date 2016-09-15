@@ -120,7 +120,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     int iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycles, iwrap);
@@ -203,7 +203,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
@@ -211,7 +211,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
   bodies = treeMPI->getRecvBodies();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     int iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycles, iwrap);
@@ -275,7 +275,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   logger::printTitle("Total runtime");
   logger::printTime("Total Ewald");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
@@ -286,7 +286,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   treeMPI->setLET(cells, cycles);
   treeMPI->commBodies();
   bodies = treeMPI->getRecvBodies();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     int iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycles, iwrap);
@@ -442,7 +442,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   logger::printTitle("Total runtime");
   logger::printTime("Total VdW");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0];
     f[3*i+0] += B->TRG[1];
