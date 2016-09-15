@@ -1,9 +1,12 @@
 #ifndef args_h
 #define args_h
+#include <cassert>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <stdint.h>
 #ifndef _SX
 #include <getopt.h>
 #endif
@@ -11,6 +14,7 @@
 namespace exafmm {
 #ifndef _SX
   static struct option long_options[] = {
+    {"accuracy",     no_argument,       0, 'a'},
     {"ncrit",        required_argument, 0, 'c'},
     {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
@@ -23,6 +27,7 @@ namespace exafmm {
     {"mutual",       no_argument,       0, 'm'},
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
+    {"path",         required_argument, 0, 'p'},
     {"PP",           required_argument, 0, 'P'},
     {"repeat",       required_argument, 0, 'r'},
     {"nspawn",       required_argument, 0, 's'},
@@ -37,6 +42,7 @@ namespace exafmm {
 
   class Args {
   public:
+    int accuracy;
     int ncrit;
     double cutoff;
     const char * distribution;
@@ -48,6 +54,7 @@ namespace exafmm {
     int mutual;
     int numBodies;
     int useRopt;
+    const char * path;
     int PP;
     int repeat;
     int nspawn;
@@ -62,6 +69,7 @@ namespace exafmm {
       fprintf(stderr,
 	      "Usage: %s [options]\n"
 	      "Long option (short option)     : Description (Default value)\n"
+	      " --accuracy (-a)               : Regression for accuracy only (%d)\n"
 	      " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
 	      " --cutoff (-C)                 : Cutoff distance of interaction (%f)\n"
 	      " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
@@ -74,6 +82,7 @@ namespace exafmm {
 	      " --mutual (-m)                 : Use mutual interaction (%d)\n"
 	      " --numBodies (-n)              : Number of bodies (%d)\n"
 	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
+	      " --path (-p)                   : Path to save files (%s)\n"
 	      " --P (-P) not working          : Order of expansion (%d)\n"
 	      " --repeat (-r)                 : Number of iteration loops (%d)\n"
 	      " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
@@ -83,6 +92,7 @@ namespace exafmm {
 	      " --write (-w)                  : Write timings to file (%d)\n"
 	      " --useRmax (-x)                : Use maximum distance for MAC (%d)\n",
 	      name,
+              accuracy,
 	      ncrit,
 	      cutoff,
 	      distribution,
@@ -94,6 +104,7 @@ namespace exafmm {
 	      mutual,
 	      numBodies,
 	      useRopt,
+              path,
 	      PP,
 	      repeat,
 	      nspawn,
@@ -118,13 +129,81 @@ namespace exafmm {
 	return "sphere";
       default:
 	fprintf(stderr, "invalid distribution %s\n", arg);
-	exit(0);
+	abort();
       }
       return "";
     }
 
+    uint64_t getDistNum(const char * _distribution) {
+      switch (_distribution[0]) {
+      case 'c':
+        return 0;
+      case 'l':
+        return 1;
+      case 'o':
+        return 2;
+      case 'p':
+        return 3;
+      case 's':
+        return 4;
+      case 'e':
+        return 7;
+      default:
+        fprintf(stderr, "invalid distribution %s\n", _distribution);
+        abort();
+      }
+      return 0;
+    }
+
+    uint64_t getKernelNum() {
+      uint64_t key = 0;
+#if EXAFMM_LAPLACE
+      key |= 0;
+#elif EXAFMM_HELMHOLTZ
+      key |= 1;
+#elif EXAFMM_STOKES
+      key |= 2;
+#elif EXAFMM_BIOTSAVART
+      key |= 3;
+#endif
+#if EXAFMM_CARTESIAN
+      key |= 0 << 3;
+#elif EXAFMM_SPHERICAL
+      key |= 1 << 3;
+#elif EXAFMM_PLANEWAVE
+      key |= 2 << 3;
+#elif EXAFMM_EQUIVALENT
+      key |= 3 << 3;
+#endif
+      return key;
+    }
+
+    uint64_t getConfigNum() {
+      uint64_t key = 0;                                         // Accuracy     : Time
+#if EXAFMM_SINGLE
+      key |= 1;                                                 // dependent    : dependent
+#endif
+#if EXAFMM_USE_SIMD
+      key |= 2;                                                 // dependent    : dependent
+#endif
+#if EXAFMM_USE_KAHAN
+      key |= 4;                                                 // dependent    : dependent
+#endif
+#if EXAFMM_WITH_TBB
+      key |= 0 << 3;                                            // independent  : independent
+#elif EXAFMM_WITH_MTHREAD
+      key |= 1 << 3;
+#elif EXAFMM_WITH_CILK
+      key |= 2 << 3;
+#else
+      key |= 3 << 3;
+#endif
+      return key;
+    }
+
   public:
     Args(int argc=0, char ** argv=NULL) :
+      accuracy(0),
       ncrit(64),
       cutoff(.0),
       distribution("cube"),
@@ -136,6 +215,7 @@ namespace exafmm {
       mutual(0),
       numBodies(1000000),
       useRopt(0),
+      path("./"),
       PP(4),
       repeat(1),
       nspawn(5000),
@@ -147,13 +227,16 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:oP:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
+	case 'a':
+	  accuracy = 1;
+	  break;
 	case 'c':
 	  ncrit = atoi(optarg);
 	  break;
@@ -174,7 +257,7 @@ namespace exafmm {
 	  break;
 	case 'h':
 	  usage(argv[0]);
-	  exit(0);
+	  abort();
 	case 'i':
 	  images = atoi(optarg);
 	  break;
@@ -190,6 +273,9 @@ namespace exafmm {
 	case 'o':
 	  useRopt = 1;
 	  break;
+        case 'p':
+          path = optarg;
+          break;
 	case 'P':
 	  PP = atoi(optarg);
 	  break;
@@ -216,14 +302,39 @@ namespace exafmm {
 	  break;
 	default:
 	  usage(argv[0]);
-	  exit(0);
+	  abort();
 	}
       }
     }
 
-    void print(int stringLength, int PP) {
+    uint64_t getKey(int mpisize=1) {
+      uint64_t key = 0;                                         // Accuracy     : Time
+      key |= uint64_t(round(log(ncrit)/log(2)));                // 64           : independent
+      key |= getDistNum(distribution) << 4;                     // plummer      : independent
+      key |= dual << 7;                                         // independent  : independent
+      key |= graft << 8;                                        // independent  : on
+      key |= images << 9;                                       // independent  : independent
+      key |= IneJ << 11;                                        // independent  : independent
+      key |= mutual << 12;                                      // independent  : on
+      key |= uint64_t(round(log(numBodies)/log(10))) << 13;     // independent  : independent
+      key |= useRopt << 17;                                     // independent  : independent
+      key |= PP << 18;                                          // dependent    : dependent 
+      key |= uint64_t(round(log(nspawn)/log(10))) << 24;        // 5000         : independent
+      key |= uint64_t(theta*14) << 27;                          // lower bound  : upper bound
+      key |= uint64_t(round(log(threads)/log(2))) << 30;        // upper bound  : upper bound
+      key |= uint64_t(useRmax) << 33;                           // independent  : independent
+      key |= getKernelNum() << 34;                              // dependent    : Laplace
+      key |= getConfigNum() << 40;                              // see inside   : see inside
+      key |= uint64_t(round(log(mpisize)/log(2))) << 45;        // upper bound  : upper bound
+      assert( uint64_t(round(log(mpisize)/log(2))) < 18 );      // Check for overflow 
+      return key;
+    }
+
+    void print(int stringLength, int _PP) {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
+		  << "accuracy" << " : " << accuracy << std::endl
+		  << std::setw(stringLength)
 		  << "ncrit" << " : " << ncrit << std::endl
 		  << std::setw(stringLength)
 		  << "cutoff" << " : " << cutoff << std::endl
@@ -246,7 +357,9 @@ namespace exafmm {
 		  << std::setw(stringLength)
 		  << "useRopt" << " : " << useRopt << std::endl
 		  << std::setw(stringLength)
-		  << "P" << " : " << PP << std::endl
+		  << "path" << " : " << path << std::endl
+		  << std::setw(stringLength)
+		  << "P" << " : " << _PP << std::endl
 		  << std::setw(stringLength)
 		  << "repeat" << " : " << repeat << std::endl
 		  << std::setw(stringLength)

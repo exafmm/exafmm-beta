@@ -93,8 +93,10 @@ int main() {
   double accDif = verify.getDifVector(bodies, bodies2);
   double accNrm = verify.getNrmVector(bodies);
   std::cout << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
-  verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
-  verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+  double potRel = std::sqrt(potDif/potNrm);
+  double accRel = std::sqrt(accDif/accNrm);
+  verify.print("Rel. L2 Error (pot)",potRel);
+  verify.print("Rel. L2 Error (acc)",accRel);
   file << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
   return 0;

@@ -7,7 +7,7 @@ libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_C
 libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 libgromacs_exafmm_a_SOURCES = gromacs.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9 -DEXAFMM_NO_P2P
+libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 libcharmm_exafmm_a_SOURCES = charmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 libcharmm2_exafmm_a_SOURCES = charmm2.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
@@ -58,9 +58,9 @@ md_distributed_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 md_distributed_mpi_LDADD = libmd_distributed.a
 
 run_charmm_mpi: charmm_mpi
-	$(MPIRUN) -n 2 ./$< water_32.fmm water.out 0
+	$(MPIRUN) -n 2 ./$< ./ water_32.fmm water.out 0
 run_charmm2_mpi: charmm2_mpi
-	$(MPIRUN) -n 2 ./$< water_32.fmm water.out 0
+	$(MPIRUN) -n 2 ./$< ./ water_32.fmm water.out 0
 run_gromacs_mpi: gromacs_mpi
 	$(MPIRUN) -n 2 ./$<
 run_petiga_laplace_mpi: petiga_laplace_mpi

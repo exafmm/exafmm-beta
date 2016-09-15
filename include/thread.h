@@ -30,13 +30,6 @@ using namespace tbb;
 #define TO_MTHREAD_NATIVE 1
 #include <tpswitch/tpswitch.h>
 
-#elif EXAFMM_WITH_QTHREAD
-/* Qthreads (TBB-like interface on top of MassiveThreads).
-   make sure you set QTHREAD_STACK_SIZE large enough (e.g., 131072) */
-#define num_threads(E)		      do { char n[30]; sprintf(n, "%d", E); setenv("QTHREAD_STACK_SIZE", "65536", 0); setenv("QTHREAD_NUM_SHEPHERDS", n, 0); setenv("QTHREAD_NUM_WORKERS_PER_SHEPHERD", "1", 0); qthread_initialize(); } while(0)
-#define TO_QTHREAD 1
-#include <tpswitch/tpswitch.h>
-
 #elif EXAFMM_WITH_CILK
 #define num_threads(E)                char nworkers[32]; sprintf(nworkers,"%d",E); __cilkrts_set_param("nworkers",nworkers)
 #define mk_task_group
