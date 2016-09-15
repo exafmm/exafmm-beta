@@ -72,7 +72,7 @@ int main(int argc, char ** argv) {
     q[i] -= average;
   }
   FMM_Init(images, threads, theta, cutoff, verbose, path);
-  Set_Index(&ni, nimax, res_index, x, q, v, cycle);
+  //Set_Index(&ni, nimax, res_index, x, q, v, cycle);
   FMM_Partition(&ni, nimax, res_index, x, q, v, cycle);
   for (int t=0; t<10; t++) {
     for (int i=0; i<ni; i++) {
