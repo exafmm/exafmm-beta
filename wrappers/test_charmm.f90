@@ -872,7 +872,7 @@ program main
   call fmm_verify_end()
 
   call fmm_only_accuracy(accuracy)
-  if (accuracy) then
+  if (accuracy == 1) then
      nitr = 10
      do itry = 1,10
         if (mpirank == 0) then

@@ -395,7 +395,7 @@ extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel) {
 }
 
 extern "C" void FMM_Only_Accuracy() {
-  return args->accuracy;
+  return args->accuracy == 1;
 }
 
 extern "C" void FMM_Verify_Time(int &t, double totalFMM) {
