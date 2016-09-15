@@ -897,7 +897,7 @@ program main
         if(itry == -1) exit
      enddo
      call fmm_verify_end()
-  enddo
+  endif
 
   do i = 1,nglobal
      p(i) = 0
