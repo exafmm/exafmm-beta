@@ -394,7 +394,7 @@ extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel) {
   }
 }
 
-extern "C" void FMM_Only_Accuracy() {
+extern "C" bool FMM_Only_Accuracy() {
   return args->accuracy == 1;
 }
 
