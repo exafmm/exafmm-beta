@@ -643,6 +643,9 @@ namespace exafmm {
 	Kernels<0,0,P-1>::power(M, dX);
 	for (int i=0; i<NTERM; i++) C->M[i] += M[i];
       }
+#if EXAFMM_MASS
+      for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];
+#endif
     }
 
     void M2M(C_iter Ci, C_iter C0) {
@@ -652,10 +655,19 @@ namespace exafmm {
 	vecP C;
 	C[0] = 1;
 	Kernels<0,0,P-1>::power(C, dX);
+#if EXAFMM_MASS
+        for (int i=1; i<NTERM; i++) Cj->M[i] *= Cj->M[0];
+#endif
 	M = Cj->M;
+#if EXAFMM_MASS
+        for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
+#endif
 	for (int i=0; i<NTERM; i++) Ci->M[i] += C[i] * M[0];
 	Kernels<0,0,P-1>::M2M(Ci->M, C, M);
       }
+#if EXAFMM_MASS
+      for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];
+#endif
     }
 
     void M2L(C_iter Ci, C_iter Cj, bool mutual) {

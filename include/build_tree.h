@@ -5,13 +5,13 @@
 
 #ifdef EXAFMM_WITH_CILK
 
-#if defined EXAFMM_WITH_TBB || defined EXAFMM_WITH_MTHREAD || defined EXAFMM_WITH_QTHREAD
+#if defined EXAFMM_WITH_TBB || defined EXAFMM_WITH_MTHREAD
 #include "build_tree_cilk.h"
 #else
 #include "build_tree_tbb.h"
 #endif
 
-#elif defined EXAFMM_WITH_TBB || defined EXAFMM_WITH_MTHREAD || defined EXAFMM_WITH_QTHREAD
+#elif defined EXAFMM_WITH_TBB || defined EXAFMM_WITH_MTHREAD
 #include "build_tree_tbb.h"
 
 #else

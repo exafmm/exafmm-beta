@@ -124,6 +124,9 @@ namespace exafmm {
 	  }
 	}
       }
+#if EXAFMM_MASS
+      for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];
+#endif
     }
 
     void M2M(C_iter Ci, C_iter C0) {
@@ -133,6 +136,9 @@ namespace exafmm {
 	real_t rho, alpha, beta;
 	cart2sph(rho, alpha, beta, dX);
 	evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
+#if EXAFMM_MASS
+        for (int i=1; i<NTERM; i++) Cj->M[i] *= Cj->M[0];
+#endif
 	for (int j=0; j<P; j++) {
 	  for (int k=0; k<=j; k++) {
 	    int jks = j * (j + 1) / 2 + k;
@@ -153,6 +159,9 @@ namespace exafmm {
 	  }
 	}
       }
+#if EXAFMM_MASS
+      for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];
+#endif
     }
 
     void M2L(C_iter Ci, C_iter Cj, bool mutual) {

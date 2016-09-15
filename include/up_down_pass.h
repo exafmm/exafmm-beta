@@ -20,16 +20,13 @@ namespace exafmm {
       real_t theta;                                             //!< Multipole acceptance criteria
       SetRopt(C_iter _C, C_iter _C0, real_t _c, real_t _theta) :// Constructor
 	C(_C), C0(_C0), c(_c), theta(_theta) {}                 // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	  SetRopt setRopt(CC, C0, c, theta);                    //   Initialize recusive functor
 	  create_taskc(setRopt);                                //   Create new task for recursive call
 	}                                                       //  End loop over child cells
 	wait_tasks;                                             //  Synchronize tasks
-#if EXAFMM_MASS
-	for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];         //  Normalize multipole expansion coefficients
-#endif
 	real_t x = 1.0 / theta;                                 //  Inverse of theta
 	assert(theta != 1.0);                                   //  Newton-Raphson won't work for theta==1
 	real_t a = c * powf(std::abs(C->M[0]),1.0/3);           //  Cell coefficient
@@ -48,7 +45,7 @@ namespace exafmm {
       C_iter C0;                                                //!< Iterator of first cell
       SetScaleFromRadius(C_iter _C, C_iter _C0) :               // Constructor
 	C(_C), C0(_C0) {}                                       // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	C->SCALE = 2 * C->R;                                    //  Set cell scale
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
@@ -66,7 +63,7 @@ namespace exafmm {
       real_t theta;                                             //!< Multipole acceptance criteria
       bool useRmax;                                             //!< Use maximum distance for MAC
       //! Redefine cell radius R based on maximum distance
-      void setRmax() {
+      void setRmax() const {
 	real_t Rmax = 0;                                        // Initialize Rmax
 	if (C->NCHILD == 0) {                                   // If leaf cell
 	  for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {    //  Loop over bodies in cell
@@ -85,9 +82,9 @@ namespace exafmm {
       }
       PostOrderTraversal(C_iter _C, C_iter _C0, real_t _theta, bool _useRmax) : // Constructor
 	C(_C), C0(_C0), theta(_theta), useRmax(_useRmax) {}     // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
-	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+        for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
 	  PostOrderTraversal postOrderTraversal(CC, C0, theta, useRmax); // Instantiate recursive functor
 	  create_taskc(postOrderTraversal);                     //    Create new task for recursive call
 	}                                                       //   End loop over child cells
@@ -95,7 +92,9 @@ namespace exafmm {
 	C->M = 0;                                               //  Initialize multipole expansion coefficients
 	C->L = 0;                                               //  Initialize local expansion coefficients
 	if(C->NCHILD==0) kernel::P2M(C);                        //  P2M kernel
-	else kernel::M2M(C, C0);                                //  M2M kernel
+	else {                                                  //  If not leaf cell
+          kernel::M2M(C, C0);                                   //   M2M kernel
+        }                                                       //  End if for non leaf cell
 	if (useRmax) setRmax();                                 //  Redefine cell radius R based on maximum distance
 	C->R /= theta;                                          //  Divide R by theta
       }                                                         // End overload operator()
@@ -107,9 +106,11 @@ namespace exafmm {
       C_iter C0;                                                //!< Iterator of first cell
       PreOrderTraversal(C_iter _C, C_iter _C0) :                // Constructor
 	C(_C), C0(_C0) {}                                       // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	kernel::L2L(C, C0);                                     //  L2L kernel
-	if (C->NCHILD==0) kernel::L2P(C);                       //  L2P kernel
+	if (C->NCHILD==0) {                                     //  If leaf cell
+          kernel::L2P(C);                                       //  L2P kernel
+        }                                                       // End if for leaf cell
 #if EXAFMM_USE_WEIGHT
 	C_iter CP = C0 + C->IPARENT;                            // Parent cell
 	C->WEIGHT += CP->WEIGHT;                                // Add parent's weight
@@ -157,7 +158,12 @@ namespace exafmm {
       logger::startTimer("Downward pass");                      // Start timer
       if (!cells.empty()) {                                     // If cell vector is not empty
 	C_iter C0 = cells.begin();                              //  Root cell
-	if (C0->NCHILD == 0) kernel::L2P(C0);                   //  If root is the only cell do L2P
+	if (C0->NCHILD == 0) {                                  //  If root is the only cell
+#if EXAFMM_MASS
+          C0->L /= C0->M[0];                                    //   Denormalize local expansions
+#endif
+          kernel::L2P(C0);                                      //   L2P kernel
+        }                                                       //  End if root is the only cell
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
 	  PreOrderTraversal preOrderTraversal(CC, C0);          //    Instantiate recursive functor

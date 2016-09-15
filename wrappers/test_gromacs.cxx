@@ -5,14 +5,24 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <sys/time.h>
 
-extern "C" void FMM_Init(int images, int threads, int verbose);
+extern "C" void FMM_Init(int images, int threads, int verbose, const char * path);
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, float * q, float cycle);
 extern "C" void FMM_Coulomb(int n, int * icell, float * x, float * q, float * p, float * f, float cycle);
 extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle);
 extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
+extern "C" void FMM_Verify_Accuracy(int & t, double potRel, double accRel);
+extern "C" void FMM_Verify_Time(int & t, double totalFMM);
+extern "C" void FMM_Verify_End();
+
+double get_time() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return double(tv.tv_sec+tv.tv_usec*1e-6);
+}
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
@@ -22,6 +32,7 @@ int main(int argc, char ** argv) {
   int ksize = 11;
   int threads = 16;
   int verbose = 1;
+  const char * path = "./";
   float cycle = 2 * M_PI;
   float alpha = 10 / cycle;
   float sigma = .25 / M_PI;
@@ -47,7 +58,6 @@ int main(int argc, char ** argv) {
     x[3*i+0] = drand48() * cycle - cycle / 2;
     x[3*i+1] = drand48() * cycle - cycle / 2;
     x[3*i+2] = drand48() * cycle - cycle / 2;
-    p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
     ibody[i] = i + mpirank*Ni;
     icell[i] = ibody[i];
   }
@@ -116,40 +126,65 @@ int main(int argc, char ** argv) {
     icell[i] = key;
   }
 #endif
-  FMM_Init(images, threads, verbose);
+  FMM_Init(images, threads, verbose, path);
   FMM_Partition(Ni, ibody, icell, x, q, cycle);
-  FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
-  for (int i=0; i<Ni; i++) {
-    p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
-  }
+  for (int t=0; t<10; t++) {
+    for (int i=0; i<Ni; i++) {
+      p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+    }
+    FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+    for (int i=0; i<Ni; i++) {
+      p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
+    }
 #if 1
-  Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
+    Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
-  Direct_Coulomb(Ni, x, q, p2, f2, cycle);
+    Direct_Coulomb(Ni, x, q, p2, f2, cycle);
 #endif
-  double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
-  for (int i=0; i<Ni; i++) {
-    potSum  += p[i]  * q[i];
-    potSum2 += p2[i] * q[i];
-    accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
-      + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
-      + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
-    accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
+    double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
+    for (int i=0; i<Ni; i++) {
+      potSum  += p[i]  * q[i];
+      potSum2 += p2[i] * q[i];
+      accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
+        + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
+        + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
+      accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
+    }
+    double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
+    MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+    double potNrmGlob = potSumGlob * potSumGlob;
+    double potRel = std::sqrt(potDifGlob/potNrmGlob);
+    double accRel = std::sqrt(accDifGlob/accNrmGlob);
+    if (verbose && mpirank == 0) {
+      std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
+      std::cout << std::setw(stringLength) << std::left << std::scientific
+                << "Rel. L2 Error (pot)" << " : " << potRel << std::endl;
+      std::cout << std::setw(stringLength) << std::left
+                << "Rel. L2 Error (acc)" << " : " << accRel << std::endl;
+    }
+    FMM_Verify_Accuracy(t, potRel, accRel);
+    if (t == -1) break;
   }
-  double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
-  MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
-  double potNrmGlob = potSumGlob * potSumGlob;
-  if (mpirank == 0) {
-    std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
-    std::cout << std::setw(stringLength) << std::left << std::scientific
-  	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(potDifGlob/potNrmGlob) << std::endl;
-    std::cout << std::setw(stringLength) << std::left
-	      << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
+  FMM_Verify_End();
+
+  int nit = 10;
+  for (int t=0; t<10; t++) {
+    double tic = get_time();
+    for (int it=0; it<nit; it++) {
+      for (int i=0; i<Ni; i++) {
+        p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+      }
+      FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+    }
+    double toc = get_time();
+    FMM_Verify_Time(t, (toc-tic)/nit);
+    if (t == -1) break;
   }
+  FMM_Verify_End();
 
   delete[] ibody;
   delete[] icell;

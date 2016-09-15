@@ -15,6 +15,7 @@ namespace exafmm {
   private:
     const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
     const int images;                                           //!< Number of periodic image sublevels
+    const char * path;                                          //!< Path to save files
     int (* listOffset)[3];                                      //!< Offset in interaction lists
     int (* lists)[3];                                           //!< Interaction lists
 #if EXAFMM_COUNT_KERNEL
@@ -290,7 +291,7 @@ namespace exafmm {
 		    bool _mutual, real_t _remote) :
 	traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),// Initialize variables
 	CjBegin(_CjBegin), CjEnd(_CjEnd), mutual(_mutual), remote(_remote) {}
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	Tracer tracer;                                          //  Instantiate tracer
 	logger::startTracer(tracer);                            //  Start tracer
 	if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {     //  If only one cell in range
@@ -415,9 +416,6 @@ namespace exafmm {
 	    }                                                   //    End loop over z periodic direction
 	  }                                                     //   End loop over y periodic direction
 	}                                                       //  End loop over x periodic direction
-#if EXAFMM_MASS
-	for (int i=1; i<NTERM; i++) Ci->M[i] *= Ci->M[0];       //  Normalize multipole expansion coefficients
-#endif
 	Cj0 = pcells.begin();                                   //  Redefine Cj0 for M2M
 	C_iter Cj = Cj0;                                        //  Iterator of periodic neighbor cells
 	for (int ix=-1; ix<=1; ix++) {                          //  Loop over x periodic direction
@@ -435,22 +433,16 @@ namespace exafmm {
 	}                                                       //  End loop over x periodic direction
 	Ci->M = 0;                                              //  Reset multipoles of periodic parent
 	kernel::M2M(Ci,Cj0);                                    //  Evaluate periodic M2M kernels for this sublevel
-#if EXAFMM_MASS
-	for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];       //  Normalize multipole expansion coefficients
-#endif
 	cycle *= 3;                                             //  Increase center cell size three times
 	Cj0 = C0;                                               //  Reset Cj0 back
       }                                                         // End loop over sublevels of tree
-#if EXAFMM_MASS
-      Ci0->L /= Ci0->M[0];                                      // Normalize local expansion coefficients
-#endif
       logger::stopTimer("Traverse periodic");                   // Stop timer
     }
 
   public:
     //! Constructor
-    Traversal(int _nspawn, int _images) :                       // Constructor
-      nspawn(_nspawn), images(_images)                          // Initialize variables
+    Traversal(int _nspawn, int _images, const char * _path) :   // Constructor
+      nspawn(_nspawn), images(_images), path(_path)             // Initialize variables
 #if EXAFMM_COUNT_KERNEL
       , numP2P(0), numM2L(0)
 #endif
@@ -529,7 +521,7 @@ namespace exafmm {
       C_iter Cj;                                                //!< Iterator of source cell
       DirectRecursion(C_iter _Ci, C_iter _Cj) :                 // Constructor
 	Ci(_Ci), Cj(_Cj) {}                                     // Initialize variables
-      void operator() () {                                      // Overload operator
+      void operator() () const {                                // Overload operator
 	if (Ci->NBODY < 25) {                                   // If number of target bodies is less than threshold
 	  kernel::P2P(Ci, Cj, false);                           //  Evaluate P2P kernel
 	} else {                                                // If number of target bodies is more than threshold
@@ -584,7 +576,9 @@ namespace exafmm {
 
     //! Write G matrix to file
     void writeMatrix(Bodies & bodies, Bodies & jbodies) {
-      std::ofstream matrixFile("matrix.dat");                   // Open matrix data file
+      std::stringstream name;                                   // File name
+      name << path << "matrix.dat";                             // Create file name for matrix
+      std::ofstream matrixFile(name.str().c_str());             // Open matrix log file
       for (B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {  // Loop over target bodies
 	for (B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {//  Loop over source bodies
 	  vec3 dX = Bi->X - Bj->X;                              //   Distance vector
@@ -615,7 +609,7 @@ namespace exafmm {
 #if EXAFMM_COUNT_LIST
     void writeList(Cells cells, int mpirank) {
       std::stringstream name;                                   // File name
-      name << "list" << std::setfill('0') << std::setw(6)       // Set format
+      name << path << "list" << std::setfill('0') << std::setw(6) // Set format
 	   << mpirank << ".dat";                                // Create file name for list
       std::ofstream listFile(name.str().c_str());               // Open list log file
       for (C_iter C=cells.begin(); C!=cells.end(); C++) {       // Loop over all lists

@@ -1,4 +1,14 @@
+-- Immediate --
+- Wash out all corner case bugs
+- Representative case plot generator
+- Remove make cleanall from build
+- Merge git branches
+- Remove branches from master.cfg
+- Extend list based traversal to adaptive tree (UVWX-list)
+- Separate different algorithms into different files (create folder for build tree, partition, etc.)
+
 -- MPI --
+- define mpisize, mpirank in types.h
 - benchmark against uniform on kyoto
 - match performance of uniform with non-uniform
 - merge partition and treeMPI
@@ -12,8 +22,6 @@ non-orthogonal recursive bisection
 -- automake --
 - Add m4/ax_mpi variants from PVFMM
 - Theoretical error bound using kernel.cxx
-- Accuracy check in examples
-- performance regression, see Chromium project for details
 move contents of macros.h to configure.ac
 examples/Makefile options to args
 unit test for each header file in /unit_test
@@ -45,6 +53,7 @@ Cycle counter kernel timer
 FX10 sin, cos, exp intrinsic
 
 -- driver --
+- System benchmarking, HPCC, SPEC, for CPU, GPU, MPI performance
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
 TBB -> OpenMP with atomics -> flush
 splitRange defined in both dataset.h and partition.h

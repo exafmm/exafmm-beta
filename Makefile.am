@@ -8,8 +8,10 @@ cleandat:
 	@find . -name "*.dat" -o -name "*.pdb" -o -name "*.svg" -o -name "*_restart" | xargs rm -f
 cleanlib:
 	@find . -name "*.a" -o -name "*.so" | xargs rm -f
+cleanreg:
+	@find . -name "*.reg" | xargs rm -f
 cleanall:
 	make cleanbin
 	make cleandat
 	make cleanlib
-
+	make cleanreg

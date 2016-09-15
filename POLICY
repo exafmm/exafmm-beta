@@ -15,12 +15,12 @@ Premature optimization <-> Restructuring code later on
 Documentation <-> Publication
 
 [Variable name convention]
-Use all captial for
+Use all capital for
  - Macro variables
  - Environtment values
  - Makefile variables
  - Struct elements
-Start with captial for
+Start with capital for
  - Class & Struct names
  - User defined types
 Start with small case for
