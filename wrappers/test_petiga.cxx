@@ -106,7 +106,7 @@ int main(int argc, char ** argv) {
   }
   FMM_Verify_End();
 
-  if (!FMM_Only_Accuracy) {
+  if (!FMM_Only_Accuracy()) {
     for (int t=0; t<10; t++) {
       double tic = get_time();
       for (int it=0; it<nit; it++) {

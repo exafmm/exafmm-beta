@@ -191,10 +191,11 @@ namespace exafmm {
       int numBodies = bodies.size();                            // Number of bodies
       Cells cells;                                              // Cell vector
       if (numBodies == 0) return cells;                         // Return if bodies array is empty
-      int (* nodes)[10] = new int [2*numBodies][10]();          // Allocate nodes array
+      int (* nodes)[10] = new int [2*numBodies+10][10]();       // Allocate nodes array
       int * permutation = new int [numBodies];                  // Allocate permutation array
       Box box = bounds2box(bounds);                             // Bounding box
       growTree(bodies, nodes, numCells, permutation, box);      // Grow tree as link between node structures
+      assert(numCells <= 2*numBodies+10);
       cells = linkTree(bodies, buffer, nodes, numCells, permutation, box);// Convert nodes to cells
       delete[] permutation;                                     // Deallocate permutation array
       delete[] nodes;                                           // Deallocate nodes array

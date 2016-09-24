@@ -1,4 +1,5 @@
 -- Immediate --
+- Debug nightly for preconditioner branch
 - Use EXAFMM_CLUSTER
 - Configure on OSX
 - Wash out all corner case bugs
