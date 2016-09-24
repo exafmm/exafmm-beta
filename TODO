@@ -1,4 +1,6 @@
 -- Immediate --
+- Use EXAFMM_CLUSTER
+- Configure on OSX
 - Wash out all corner case bugs
 - Representative case plot generator
 - Remove make cleanall from build
@@ -6,6 +8,7 @@
 - Remove branches from master.cfg
 - Extend list based traversal to adaptive tree (UVWX-list)
 - Separate different algorithms into different files (create folder for build tree, partition, etc.)
+- Add kernel.cxx to nightly test
 
 -- MPI --
 - define mpisize, mpirank in types.h
@@ -33,6 +36,7 @@ bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
 Remove M, L from Cell struct
+Improve vec.h - vectorclass interface
 
 -- tree build --
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)

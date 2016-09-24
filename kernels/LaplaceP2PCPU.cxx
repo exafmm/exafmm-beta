@@ -116,6 +116,7 @@ namespace exafmm {
 #if EXAFMM_USE_SIMD
       for ( ; i<=n-NSIMD; i+=NSIMD) {
 	simdvec zero = 0;
+        simdvec one = 1;
 	ksimdvec pot = zero;
 	ksimdvec ax = zero;
 	ksimdvec ay = zero;
@@ -142,7 +143,10 @@ namespace exafmm {
 	  R2 += dy * dy;
 	  simdvec zj = dz;
 	  R2 += dz * dz;
-	  simdvec invR = rsqrt(R2);
+	  simdvec invR = one;
+          invR &= R2 > zero;
+          R2 += one - invR;
+          invR = rsqrt(R2);
 	  invR &= index < j;
 	  invR &= R2 > zero;
 
