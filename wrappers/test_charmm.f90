@@ -727,7 +727,7 @@ program main
   include 'mpif.h'
   logical test_force
   character(len=128) path,infile,outfile,nstp
-  integer dynsteps
+  integer dynsteps,accuracy
   integer i,itry,nitr,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
   real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time,tic,toc
@@ -871,30 +871,33 @@ program main
   enddo
   call fmm_verify_end()
 
-  nitr = 10
-  do itry = 1,10
-     if (mpirank == 0) then
-        print "(a,i2,a)",'--- Time regression loop ',itry,' -----'
-        print*,'FMM Coulomb'
-     endif
-     tic = mpi_wtime()
-     do itr = 1,nitr
-        do i = 1,nglobal
-           p(i) = 0
-           f(3*i-2) = 0
-           f(3*i-1) = 0
-           f(3*i-0) = 0
+  call fmm_only_accuracy(accuracy)
+  if (accuracy == 1) then
+     nitr = 10
+     do itry = 1,10
+        if (mpirank == 0) then
+           print "(a,i2,a)",'--- Time regression loop ',itry,' -----'
+           print*,'FMM Coulomb'
+        endif
+        tic = mpi_wtime()
+        do itr = 1,nitr
+           do i = 1,nglobal
+              p(i) = 0
+              f(3*i-2) = 0
+              f(3*i-1) = 0
+              f(3*i-0) = 0
+           enddo
+           call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
         enddo
-        call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
+        toc = mpi_wtime()
+        if (mpirank == 0) then
+           print "(a)",'--- Time regression -------------'
+        endif
+        call fmm_verify_time(itry,(toc-tic)/nitr)
+        if(itry == -1) exit
      enddo
-     toc = mpi_wtime()
-     if (mpirank == 0) then
-        print "(a)",'--- Time regression -------------'
-     endif
-     call fmm_verify_time(itry,(toc-tic)/nitr)
-     if(itry == -1) exit
-  enddo
-  call fmm_verify_end()
+     call fmm_verify_end()
+  endif
 
   do i = 1,nglobal
      p(i) = 0

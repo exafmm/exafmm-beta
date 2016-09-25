@@ -53,6 +53,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, ch
   verify = new Verify(path);
 
   args->ncrit = ncrit;
+  args->accuracy = 1;
   args->distribution = "external";
   args->dual = 1;
   args->graft = 0;
@@ -559,7 +560,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
   logger::stopTimer("VdW Exclusion");
 }
 
-extern "C" void fmm_verify_accuracy_(int &t, double & potRel, double & accRel) {
+extern "C" void fmm_verify_accuracy_(int & t, double & potRel, double & accRel) {
   isTime = false;
   if (!baseMPI->mpirank) {
     std::cout << "key: " << args->getKey(baseMPI->mpisize) << std::endl;
@@ -572,7 +573,11 @@ extern "C" void fmm_verify_accuracy_(int &t, double & potRel, double & accRel) {
   }
 }
 
-extern "C" void fmm_verify_time_(int &t, double & totalFMM) {
+extern "C" void fmm_only_accuracy_(int & accuracy) {
+  accuracy = args->accuracy;
+}
+
+extern "C" void fmm_verify_time_(int & t, double & totalFMM) {
   isTime = true;
   double totalFMMGlob;
   MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);

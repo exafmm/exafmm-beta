@@ -51,6 +51,7 @@ extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, b
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
   verify = new Verify(path);
 
+  args->accuracy = 1;
   args->ncrit = ncrit;
   args->cutoff = cutoff;
   args->distribution = "external";
@@ -475,6 +476,10 @@ extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel) {
     if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
     t = -1;
   }
+}
+
+extern "C" bool FMM_Only_Accuracy() {
+  return args->accuracy == 1;
 }
 
 extern "C" void FMM_Verify_Time(int &t, double totalFMM) {
