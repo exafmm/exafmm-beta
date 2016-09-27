@@ -3,14 +3,12 @@
 #ifndef _SX
 #include "align.h"
 #endif
-#include <cassert>
+#include <assert.h>                                             // Some compilers don't have cassert
 #include <complex>
 #include "kahan.h"
 #include "macros.h"
 #include <stdint.h>
 #include <vector>
-#include <map>
-#include <algorithm>
 #include "vec.h"
 
 namespace exafmm {
@@ -83,18 +81,18 @@ namespace exafmm {
 #elif EXAFMM_BIOTSAVART
     vec4      SRC;                                              //!< Vector source values
 #endif
-  } __attribute__((aligned (16)));
+  };
 
   //! Structure of bodies
   struct DefaultBody : public Source {
-    int      IBODY;                                             //!< Initial body numbering for sorting back
-    int      IRANK;                                             //!< Initial rank numbering for partitioning back
-    int64_t  ICELL;                                             //!< Cell index   
-    real_t   WEIGHT;                                            //!< Weight for partitioning
+    int     IBODY;                                              //!< Initial body numbering for sorting back
+    int     IRANK;                                              //!< Initial rank numbering for partitioning back
+    int64_t ICELL;                                              //!< Cell index   
+    real_t  WEIGHT;                                             //!< Weight for partitioning
 #if EXAFMM_LAPLACE | EXAFMM_BIOTSAVART
-    kvec4    TRG;                                               //!< Scalar+vector3 target values
+    kvec4   TRG;                                                //!< Scalar+vector3 target values
 #elif EXAFMM_HELMHOLTZ
-    kcvec4   TRG;                                               //!< Scalar+vector3 target values
+    kcvec4  TRG;                                                //!< Scalar+vector3 target values
 #endif
   };
 
@@ -125,24 +123,19 @@ namespace exafmm {
     int      numM2L;                                            //!< Size of M2L interaction list per cell
 #endif
     B_iter   BODY;                                              //!< Iterator of first body
-    int64_t  ICELL;                                             //!< Cell index
+    uint64_t ICELL;                                             //!< Cell index
     real_t   WEIGHT;                                            //!< Weight for partitioning
     real_t   SCALE;                                             //!< Scale for Helmholtz kernel
     vec3     X;                                                 //!< Cell center
     real_t   R;                                                 //!< Cell radius
     vecP     M;                                                 //!< Multipole coefficients
     vecP     L;                                                 //!< Local coefficients
-    uint16_t LEVEL;                                             //!< Level at which cell is located
   };
-  
 
-#define MAKE_CELL_TYPES(Cell, typename_keyword)                                         \
-  typedef typename_keyword Cell::BodyType Body;\
+#define MAKE_CELL_TYPES(Cell, typename_keyword) \
+  typedef typename_keyword Cell::BodyType Body; \
   MAKE_BODY_TYPES(Body, typename_keyword) \
-  typedef std::vector<Cell> Cells;            \
+  typedef std::vector<Cell> Cells; \
   typedef typename_keyword Cells::iterator C_iter;
-
-  //MAKE_CELL_TYPES(DefaultCell<> )
-  //MAKE_CELL_TYPES(Cell)
 }
 #endif

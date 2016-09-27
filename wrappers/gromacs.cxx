@@ -8,6 +8,7 @@
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
+#include "verify.h"
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
@@ -30,12 +31,15 @@ Partition<kernel::Body> * partition;
 Traversal<kernel> * traversal;
 TreeMPI<kernel> * treeMPI;
 UpDownPass<kernel> * upDownPass;
+Verify<kernel::Cell> * verify;
 
+bool isTime;
+bool pass;
 Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void FMM_Init(int images, int threads, bool verbose) {
+extern "C" void FMM_Init(int images, int threads, bool verbose, const char * path) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const real_t theta = 0.5;
@@ -50,10 +54,12 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   localTree = new BuildTree<kernel::Cell>(ncrit, nspawn);
   globalTree = new BuildTree<kernel::Cell>(1, nspawn);
   partition = new Partition<kernel::Body>(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal<kernel>(nspawn, images);
+  traversal = new Traversal<kernel>(nspawn, images, path);
   treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
+  verify = new Verify<kernel::Cell>(path);
 
+  args->accuracy = 1;
   args->ncrit = ncrit;
   args->distribution = "external";
   args->dual = 1;
@@ -66,10 +72,16 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   args->theta = theta;
   args->threads = threads;
   args->verbose = verbose & (baseMPI->mpirank == 0);
+  args->path = path;
   args->useRmax = useRmax;
+  verify->verbose = args->verbose;
   logger::verbose = args->verbose;
+  logger::path = args->path;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
+
+  pass = true;
+  isTime = false;
 }
 
 extern "C" void FMM_Finalize() {
@@ -241,8 +253,8 @@ extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
   for (int i=0; i<baseMPI->mpisize; i++) {
     if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
-    localBounds = boundBox->getBounds(jbodies);
-    Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
+    Bounds jlocalBounds = boundBox->getBounds(jbodies);
+    Cells jcells = localTree->buildTree(jbodies, buffer, jlocalBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }
@@ -357,4 +369,46 @@ extern "C" void Direct_Coulomb(int Ni, float * x, float * q, float * p, float * 
   delete[] x2;
   delete[] q2;
 }
+
+extern "C" void FMM_Verify_Accuracy(int &t, double potRel, double accRel) {
+  isTime = false;
+  logger::printTitle("Accuracy regression");
+  if (!baseMPI->mpirank) {
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, potRel, accRel);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+    t = -1;
+  }
+}
+
+extern "C" bool FMM_Only_Accuracy() {
+  return args->accuracy == 1;
+}
+
+extern "C" void FMM_Verify_Time(int &t, double totalFMM) {
+  isTime = true;
+  logger::printTitle("Time regression");
+  double totalFMMGlob;
+  MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  totalFMMGlob /= baseMPI->mpisize;
+  if (!baseMPI->mpirank) {
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t, totalFMMGlob);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (verify->verbose) std::cout << "passed time regression at t: " << t << std::endl;
+    t = -1;
+  }
+}
+
+extern "C" void FMM_Verify_End() {
+  if (!pass) {
+    if (verify->verbose) {
+      if(!isTime) std::cout << "failed accuracy regression" << std::endl;
+      else std::cout << "failed time regression" << std::endl;
+    }
+    abort();
+  }
 }

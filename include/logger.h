@@ -49,6 +49,7 @@ namespace exafmm {
     int stringLength = 20;                                      //!< Max length of event name
     int decimal = 7;                                            //!< Decimal precision
     bool verbose = false;                                       //!< Print to screen
+    const char * path = "./";                                   //!< Path to save files
 
     //! Timer function
     double get_time() {
@@ -113,7 +114,7 @@ namespace exafmm {
     //! Write timings of all events
     inline void writeTime(int mpirank=0) {
       std::stringstream name;                                   // File name
-      name << "time" << std::setfill('0') << std::setw(6)       // Set format
+      name << path << "time" << std::setfill('0') << std::setw(6) // Set format
 	   << mpirank << ".dat";                                // Create file name for timer
       std::ofstream timerFile(name.str().c_str());              // Open timer log file
       for (T_iter E=timer.begin(); E!=timer.end(); E++) {       // Loop over all events
@@ -212,7 +213,7 @@ namespace exafmm {
     inline void writeTracer(int mpirank=0) {
       startTimer("Write tracer");                               // Start timer
       std::stringstream name;                                   // File name
-      name << "trace" << std::setfill('0') << std::setw(6)      // Set format
+      name << path << "trace" << std::setfill('0') << std::setw(6) // Set format
 	   << mpirank << ".svg";                                // Create file name for tracer
       std::ofstream traceFile(name.str().c_str());              // Open tracer log file
       traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for tracer log file

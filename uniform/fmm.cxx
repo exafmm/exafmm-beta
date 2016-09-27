@@ -35,7 +35,7 @@ int main(int argc, char ** argv) {
   BuildTree<kernel::Cell> buildTree(args.ncrit, args.nspawn);
   Dataset<kernel::Cell> data;
   Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal<kernel> traversal(args.nspawn, args.images);
+  Traversal<kernel> traversal(args.nspawn, args.images, args.path);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
@@ -44,8 +44,8 @@ int main(int argc, char ** argv) {
 #endif
   TreeMPI<kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
 
-  //args.numBodies /= FMM.MPISIZE;
-  const int numBodies = args.numBodies;
+  args.numBodies /= FMM.MPISIZE;
+  int numBodies = args.numBodies;
   const int ncrit = 100;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int gatherLevel = 1;
@@ -139,7 +139,7 @@ int main(int argc, char ** argv) {
     Bodies jbodies = bodies;
     vec3 localDipole = upDownPass.getDipole(bodies, FMM.RGlob[0]);
     vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
-    int numBodies = baseMPI.allreduceInt(bodies.size());
+    numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
 #ifndef EXAFMM_IJHPCA
 #if 1
@@ -177,7 +177,8 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Total Direct");
     logger::resetTimer("Total Direct");
 #endif
-    Verify<kernel::Cell> verify;
+    Verify<kernel::Cell> verify(args.path);
+    verify.verbose = args.verbose;
     double potSum = verify.getSumScalar(bodies);
     double potSum2 = verify.getSumScalar(bodies2);
     double accDif = verify.getDifVector(bodies, bodies2);
@@ -196,8 +197,10 @@ int main(int argc, char ** argv) {
     MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
     double potNrmGlob = potSumGlob * potSumGlob;
-    verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
-    verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
+    double potRel = std::sqrt(potDifGlob/potNrmGlob);
+    double accRel = std::sqrt(accDifGlob/accNrmGlob); 
+    verify.print("Rel. L2 Error (pot)",potRel);
+    verify.print("Rel. L2 Error (acc)",accRel);
 #endif
 #endif
   }

@@ -44,13 +44,6 @@ if test "$with_mthread" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_WITH_MTHREAD, test "$with_mthread" = "yes")
 
-# QThreads
-AC_ARG_WITH(qthread, [AC_HELP_STRING([--with-qthread],[use QThreads])], with_qthread=$withval, with_qthread=no)
-if test "$with_qthread" = "yes"; then
-   AC_DEFINE(EXAFMM_WITH_QTHREAD,1,[Use QThreads])
-fi
-AM_CONDITIONAL(EXAFMM_WITH_QTHREAD, test "$with_qthread" = "yes")
-
 # Strumpack
 AC_ARG_WITH(strumpack, [AC_HELP_STRING([--with-strumpack],[use Strumpack])], with_strumpack=$withval, with_strumpack=no)
 if test "$with_strumpack" = "yes"; then

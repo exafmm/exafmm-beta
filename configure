@@ -644,8 +644,6 @@ EXAFMM_SINGLE_FALSE
 EXAFMM_SINGLE_TRUE
 EXAFMM_WITH_STRUMPACK_FALSE
 EXAFMM_WITH_STRUMPACK_TRUE
-EXAFMM_WITH_QTHREAD_FALSE
-EXAFMM_WITH_QTHREAD_TRUE
 EXAFMM_WITH_MTHREAD_FALSE
 EXAFMM_WITH_MTHREAD_TRUE
 EXAFMM_WITH_CILK_FALSE
@@ -763,7 +761,6 @@ enable_openmp
 with_tbb
 with_cilk
 with_mthread
-with_qthread
 with_strumpack
 enable_single
 enable_float
@@ -1446,7 +1443,6 @@ Optional Packages:
   --with-tbb              use Intel TBB
   --with-cilk             use Intel Cilk
   --with-mthread          use MassiveThreads
-  --with-qthread          use QThreads
   --with-strumpack        use Strumpack
 
 Some influential environment variables:
@@ -4923,29 +4919,6 @@ else
 fi
 
 
-# QThreads
-
-# Check whether --with-qthread was given.
-if test "${with_qthread+set}" = set; then :
-  withval=$with_qthread; with_qthread=$withval
-else
-  with_qthread=no
-fi
-
-if test "$with_qthread" = "yes"; then
-
-$as_echo "#define EXAFMM_WITH_QTHREAD 1" >>confdefs.h
-
-fi
- if test "$with_qthread" = "yes"; then
-  EXAFMM_WITH_QTHREAD_TRUE=
-  EXAFMM_WITH_QTHREAD_FALSE='#'
-else
-  EXAFMM_WITH_QTHREAD_TRUE='#'
-  EXAFMM_WITH_QTHREAD_FALSE=
-fi
-
-
 # Strumpack
 
 # Check whether --with-strumpack was given.
@@ -6037,10 +6010,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_WITH_MTHREAD_TRUE}" && test -z "${EXAFMM_WITH_MTHREAD_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_WITH_MTHREAD\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_WITH_QTHREAD_TRUE}" && test -z "${EXAFMM_WITH_QTHREAD_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_WITH_QTHREAD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_WITH_STRUMPACK_TRUE}" && test -z "${EXAFMM_WITH_STRUMPACK_FALSE}"; then

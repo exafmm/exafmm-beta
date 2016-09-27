@@ -1,4 +1,18 @@
+-- Immediate --
+- Debug nightly for preconditioner branch
+- Use EXAFMM_CLUSTER
+- Configure on OSX
+- Wash out all corner case bugs
+- Representative case plot generator
+- Remove make cleanall from build
+- Merge git branches
+- Remove branches from master.cfg
+- Extend list based traversal to adaptive tree (UVWX-list)
+- Separate different algorithms into different files (create folder for build tree, partition, etc.)
+- Add kernel.cxx to nightly test
+
 -- MPI --
+- define mpisize, mpirank in types.h
 - benchmark against uniform on kyoto
 - match performance of uniform with non-uniform
 - merge partition and treeMPI
@@ -12,8 +26,6 @@ non-orthogonal recursive bisection
 -- automake --
 - Add m4/ax_mpi variants from PVFMM
 - Theoretical error bound using kernel.cxx
-- Accuracy check in examples
-- performance regression, see Chromium project for details
 move contents of macros.h to configure.ac
 examples/Makefile options to args
 unit test for each header file in /unit_test
@@ -25,6 +37,7 @@ bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
 Remove M, L from Cell struct
+Improve vec.h - vectorclass interface
 
 -- tree build --
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)
@@ -45,6 +58,7 @@ Cycle counter kernel timer
 FX10 sin, cos, exp intrinsic
 
 -- driver --
+- System benchmarking, HPCC, SPEC, for CPU, GPU, MPI performance
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
 TBB -> OpenMP with atomics -> flush
 splitRange defined in both dataset.h and partition.h

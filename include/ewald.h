@@ -120,7 +120,7 @@ namespace exafmm {
       C_iter C0;                                                //!< Iterator of first source cell
       Neighbor(Ewald * _ewald, C_iter _Ci, C_iter _Cj, C_iter _C0) :// Constructor
 	ewald(_ewald), Ci(_Ci), Cj(_Cj), C0(_C0) {}             // Initialize variables
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	vec3 dX = Ci->X - Cj->X;                                //  Distance vector from source to target
 	wrap(dX, ewald->cycle);                                 //  Wrap around periodic domain
 	vec3 Xperiodic = Ci->X - Cj->X - dX;                    //  Coordinate offset for periodic B.C.

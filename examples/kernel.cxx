@@ -30,7 +30,6 @@ int main() {
   C_iter Cj = cells.begin();
   Cj->X = 1;
   Cj->X[0] = 3;
-  Cj->SCALE = 2;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M = 0;
@@ -42,14 +41,12 @@ int main() {
   CJ->NCHILD = 1;
   CJ->X = 0;
   CJ->X[0] = 4;
-  CJ->SCALE = 4;
   CJ->M = 0;
   kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;
   CI->X[0] = -4;
-  CI->SCALE = 4;
   CI->M = 1;
   CI->L = 0;
 #if EXAFMM_MASS
@@ -60,7 +57,6 @@ int main() {
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
-  Ci->SCALE = 2;
   Ci->IPARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
@@ -69,7 +65,6 @@ int main() {
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
-  Ci->SCALE = 2;
   Ci->M = 1;
   Ci->L = 0;
 #if EXAFMM_MASS
@@ -104,8 +99,11 @@ int main() {
   double potNrm = verify.getNrmScalar(bodies);
   double accDif = verify.getDifVector(bodies, bodies2);
   double accNrm = verify.getNrmVector(bodies);
-  verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
-  verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+  std::cout << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
+  double potRel = std::sqrt(potDif/potNrm);
+  double accRel = std::sqrt(accDif/accNrm);
+  verify.print("Rel. L2 Error (pot)",potRel);
+  verify.print("Rel. L2 Error (acc)",accRel);
   file << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
   return 0;

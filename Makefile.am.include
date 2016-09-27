@@ -61,9 +61,6 @@ endif
 if EXAFMM_WITH_MTHREAD
 LIBS += -lmyth-native
 endif
-if EXAFMM_WITH_QTHREAD
-LIBS += -lqthread
-endif
 
 ### Floating point precision
 if EXAFMM_SINGLE
@@ -132,13 +129,22 @@ if EXAFMM_COUNT_LIST
 AM_CPPFLAGS += -DEXAFMM_COUNT_LIST
 endif
 
-if !EXAFMM_ASSERT
+if EXAFMM_ASSERT
+else
 AM_CPPFLAGS += -DNDEBUG
 endif
 
 if EXAFMM_DEBUG
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
-AM_CXXFLAGS += -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+AM_CXXFLAGS += -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+AM_FCFLAGS += -O0 -g
+if EXAFMM_HAVE_INTEL
+AM_CXXFLAGS += -traceback -ftrapuv -diag-disable remark
+AM_FCFLAGS += -traceback -ftrapuv -diag-disable remark -check all -debug all
+else
+AM_CXXFLAGS += -Wextra -Winit-self -ftrapv
+AM_FCFLAGS += -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -ftrapv
+endif
 endif
 
 AM_MAKEFLAGS = -s
@@ -153,6 +159,8 @@ cleandat:
 	@make -C .. cleandat
 cleanlib:
 	@make -C .. cleanlib
+cleanreg:
+	@make -C .. cleanreg
 cleanall:
 	@make -C .. cleanall
 revert:

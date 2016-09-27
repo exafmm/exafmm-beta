@@ -3,7 +3,6 @@
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
-#include "morton_key.h"
 
 namespace exafmm {
   template<typename Cell = DefaultCell<> >
@@ -53,7 +52,7 @@ namespace exafmm {
 	if (n <= nspawn) return 1;                              // If less then threshold, use only one node
 	else return 4 * ((n - 1) / nspawn) - 1;                 // Else estimate number of binary tree nodes
       }
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	assert(getNumBinNode(end - begin) <= binNode->END - binNode->BEGIN + 1);
 	if (end - begin <= nspawn) {                            //  If number of bodies is less than threshold
 	  for (int i=0; i<8; i++) binNode->NBODY[i] = 0;        //   Initialize number of bodies in octant
@@ -95,13 +94,13 @@ namespace exafmm {
       int begin;                                                //!< Body begin index
       int end;                                                  //!< Body end index
       BinaryTreeNode * binNode;                                 //!< Pointer to binary tree node
-      ivec8 octantOffset;                                       //!< Offset of octant
+      mutable ivec8 octantOffset;                               //!< Offset of octant
       vec3 X;                                                   //!< Coordinates of node center
       MoveBodies(Bodies & _bodies, Bodies & _buffer, int _begin, int _end,// Constructor
 		 BinaryTreeNode * _binNode, ivec8 _octantOffset, vec3 _X) :
 	bodies(_bodies), buffer(_buffer), begin(_begin), end(_end),// Initialize variables
 	binNode(_binNode), octantOffset(_octantOffset), X(_X) {}
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	if (binNode->LEFT == NULL) {                            //  If there are no more child nodes
 	  for (int i=begin; i<end; i++) {                       //   Loop over bodies
 	    vec3 x = bodies[i].X;                               //    Coordinates of body
@@ -172,7 +171,7 @@ namespace exafmm {
       inline int getMaxBinNode(int n) const {
 	return (4 * n) / nspawn;                                // Conservative estimate of number of binary tree nodes
       }
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	double tic = logger::get_time();
 	assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);// Bounds checking for node range
 	if (begin == end) {                                     //  If no bodies are left
@@ -234,7 +233,7 @@ namespace exafmm {
       B_iter B0;                                                //!< Iterator of first body
       C_iter C;                                                 //!< Iterator of current cell
       C_iter C0;                                                //!< Iterator of first cell
-      C_iter CN;                                                //!< Iterator of cell counter
+      mutable C_iter CN;                                        //!< Iterator of cell counter
       vec3 X0;                                                  //!< Coordinate of root cell center
       real_t R0;                                                //!< Radius of root cell
       int nspawn;                                               //!< Threshold of NNODE for spawning new threads
@@ -247,12 +246,17 @@ namespace exafmm {
 	octNode(_octNode), B0(_B0), C(_C), C0(_C0), CN(_CN),    // Initialize variables
 	X0(_X0), R0(_R0), nspawn(_nspawn), numLevels(_numLevels), level(_level), iparent(_iparent) {}
       //! Get cell index
-      uint64_t getKey(vec3 X, vec3 Xmin, real_t diameter) {
+      uint64_t getKey(vec3 X, vec3 Xmin, real_t diameter) const {
 	int iX[3] = {0, 0, 0};                                  // Initialize 3-D index
 	for (int d=0; d<3; d++) iX[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
-	return morton::getKey(iX, level);                       // Return Morton key
+	uint64_t index = ((1 << 3 * level) - 1) / 7;            // Levelwise offset
+	for (int l=0; l<level; l++) {                           // Loop over levels
+	  for (int d=0; d<3; d++) index += (iX[d] & 1) << (3 * l + d); // Interleave bits into Morton key
+	  for (int d=0; d<3; d++) iX[d] >>= 1;                  //  Bitshift 3-D index
+	}                                                       // End loop over levels
+	return index;                                           // Return Morton key
       }
-      void operator() () {                                      // Overload operator()
+      void operator() () const {                                // Overload operator()
 	C->IPARENT = iparent;                                   //  Index of parent cell
 	C->R       = R0 / (1 << level);                         //  Cell radius
 	C->X       = octNode->X;                                //  Cell center

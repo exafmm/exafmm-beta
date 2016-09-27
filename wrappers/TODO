@@ -1,6 +1,9 @@
+[charmm]
+charmm2 returns nan
+
 [gromacs]
 calcualte energy + virial
 parallel
 
 [md_distributed]
-debug res_index
+res_index based partitioning

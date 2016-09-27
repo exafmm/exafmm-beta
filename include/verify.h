@@ -1,13 +1,28 @@
 #ifndef verify_h
 #define verify_h
 #include "logger.h"
+#include <unistd.h>
 
 namespace exafmm {
   //! Verify results
   template<typename Cell = DefaultCell<> >
   class Verify {
     MAKE_CELL_TYPES(Cell, typename)
+  private:
+    typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
+    typedef Record::iterator R_iter;                            //!< Iterator of regression map
+    const char * path;                                          //!< Path to save files
+
   public:
+    bool verbose;                                               //!< Print to screen
+    double average, average2;                                   //!< Average for regression
+
+    //! Constructor
+    Verify() : path("./"), average(0), average2(0) {} 
+
+    //! Constructor with argument
+    Verify(const char * _path) : path(_path), average(0), average2(0) {} 
+
     //! Get sum of scalar component of a vector of target bodies
     double getSumScalar(Bodies & bodies) {
       double v = 0;                                             // Initialize difference
@@ -98,6 +113,73 @@ namespace exafmm {
 		  << title << " : " << std::setprecision(logger::decimal) << std::scientific // Set title
 		  << v << std::endl;                            //  Print potential error
       }                                                         // End if for verbose flag
+    }
+
+    //! Compare data for regression
+    bool regression(uint64_t key, bool time, int iteration, double value, double value2=0) {
+      bool pass = false;                                        // Flag for regression test
+      bool secondValue = false;                                 // Whether there is a second value
+      if (value2 != 0) secondValue = true;                      // If there is a second value
+      Record record, record2;                                   // Map for regression value
+      const char * host = getenv("WORKERNAME");                 // Get workername
+      std::stringstream name;                                   // File name for regression
+      name << path;                                             // Append path to file name
+      if (time) name << "time_" << host << ".reg";              // If time regression
+      else name << "accuracy.reg";                              // Else if accuracy regression
+      std::fstream file;                                        // File id for regression
+      file.open(name.str().c_str(),std::fstream::in);           //  Open regression file
+      if (verbose) std::cout << "opening: " << name.str() << std::endl;// Print file name
+      int numKeys;                                              // Number of keys stored in file
+      if (file.good()) {                                        // If file exists
+        if (verbose) std::cout << "file exists" << std::endl;   //  Print if file exists
+        file >> numKeys;                                        //  Read number of keys
+        for (int i=0; i<numKeys; i++) {                         //  Loop over regression values
+          uint64_t readKey;                                     //   Read key buffer
+          file >> readKey;                                      //   Read key
+          file >> record[readKey];                              //   Read value
+          if (secondValue) file >> record2[readKey];            //   Read value2
+        }                                                       //  End loop over regression values
+      }                                                         // End if for file existence
+      file.close();                                             // Close regression file
+      average = (average * iteration + value) / (iteration + 1);// Average of all iterations
+      if (secondValue) average2 = (average2 * iteration + value2) / (iteration + 1);// Average of all iterations
+      if (record[key] != 0 && verbose) std::cout << "entry exists" << std::endl;// Print if entry exits
+      double threshold = record[key]*(1+EPS+iteration*.01);     // Accuracy threshold
+      if ((record[key] == 0 || average <= threshold) && (average < 5e-4 || time)) { // If new record or pass
+        pass = true;                                            //  Change flag to pass
+        record[key] = average;                                  //  Add key value pair
+      }                                                         // Endif for better value
+      if (secondValue) {                                        // If second value
+        threshold = record2[key]*(1+EPS+iteration*.01);         // Accuracy threshold
+        if ((record2[key] == 0 || average2 <= threshold) && (average2 < 5e-3 || time)) { // If new record2 or pass
+          pass &= true;                                         //  Change flag to pass
+          record2[key] = average2;                              //  Add key value pair
+        } else {                                                // Else if fail
+          pass = false;                                         //  Change flag to fail
+        }                                                       // Endif for second value
+      }                                                         // Endif for better value
+      file.open(name.str().c_str(),std::fstream::out);          // Open regression file
+      file << record.size() << std::endl;                       // Write number of keys
+      R_iter R2 = record.begin();                               // Dummy iterator for record2
+      if (secondValue) R2 = record2.begin();                    // Iterator for record2
+      for (R_iter R=record.begin(); R!=record.end(); R++,R2++) {// Loop over regression values
+        file << R->first << " " << R->second;                   // Write key value pair 
+        if (secondValue) file << " " << R2->second;             // Write second value
+        file << std::endl;                                      // End line
+      }                                                         // End loop over regression values
+      file.close();                                             // Close regression file
+      if (!pass && verbose) {                                   // If regression failed
+        if (time) std::cout << "Time regression failed: " <<    //  Print message for time regression
+                    average << " / " << record[key] << std::endl;//  Print value and record
+        else {                                                  // If accuracy regression 
+          std::cout << "Accuracy regression failed: " <<        //  Print message for accuracy regression
+            average << " / " << record[key] << std::endl;       //  Print value and record 
+          if (secondValue) std::cout << "                            " << average2 //  Print value2
+                                     << " / " << record2[key];  //  Print record2 
+          std::cout << std::endl;                               //  End line
+        }                                                       // Endif accuracy regression
+      }                                                         // Endif for failed regression
+      return pass;                                              // Return flag for regression test
     }
   };
 }

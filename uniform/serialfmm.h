@@ -122,7 +122,7 @@ namespace exafmm {
       for_3d ix[d] = ix[d] % numPartition[maxGlobLevel][d];
     }
 
-    void sort(real_t (*bodies)[4], float (*buffer)[4], int *Index, int *Index2, int *key) const {
+    void sort(real_t (*bodies)[4], float (*buffer)[4], int *index, int *ibuffer, int *key) const {
       int Imax = key[0];
       int Imin = key[0];
       for( int i=0; i<numBodies; i++ ) {
@@ -137,7 +137,7 @@ namespace exafmm {
       for( int i=numBodies-1; i>=0; --i ) {
 	bucket[key[i]-Imin]--;
 	int inew = bucket[key[i]-Imin];
-	Index2[inew] = Index[i];
+	ibuffer[inew] = index[i];
 	for_4d buffer[inew][d] = bodies[i][d];
       }
       delete[] bucket;

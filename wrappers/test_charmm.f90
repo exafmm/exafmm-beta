@@ -364,12 +364,11 @@ contains
        alpha,sigma,cutoff,cuton,pcycle,xold,&
        x,p,p2,f,f2,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
        ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
-       pl2err,fl2err,ftotf,ftote,istep)
+       pl2err,fl2err,ftotf,ftote)
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize,i
     real(8) alpha,sigma,cutoff,cuton,etot,eb,et,efmm,evdw,pcycle
     real(8) pl2err,fl2err,enerf,enere,grmsf,grmse,ftotf,ftote
-    integer,optional :: istep
     integer,allocatable,dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     real(8),allocatable,dimension(:) :: xold,x,p,p2,f,f2,q,gscale,fgscale,rscale
     real(8),allocatable,dimension(:,:) :: rbond,cbond
@@ -563,7 +562,7 @@ contains
             alpha,sigma,cutoff,cuton,pcycle,xold,&
             x,p,p2,f,f2,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
             ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
-            pl2err,fl2err,ftotf,ftote,istep)
+            pl2err,fl2err,ftotf,ftote)
 
        do i = 1,nglobal
           if(icpumap(i) /= 1)cycle
@@ -723,14 +722,15 @@ end subroutine split_range
 
 program main
   use charmm_io
+  use iso_c_binding
   implicit none
   include 'mpif.h'
   logical test_force
-  character(len=128) infile,outfile,nstp
-  integer dynsteps
-  integer i,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
+  character(len=128) path,infile,outfile,nstp
+  integer dynsteps,accuracy
+  integer i,itry,nitr,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
-  real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time
+  real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time,tic,toc
   real(8) pl2err,fl2err,enerf,enere,grmsf,grmse
   integer,dimension (128) :: iseed
   integer,allocatable,dimension(:) :: icpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
@@ -756,8 +756,11 @@ program main
   nat = 16
   time = 100. ! first 100ps was equilibration with standard CHARMM
   charmmio: if (command_argument_count() > 1) then
-     call get_command_argument(1,infile,lnam,istat)
-     call get_command_argument(2,outfile,lnam,istat)
+     call get_command_argument(1,path,lnam,istat)
+     call get_command_argument(2,infile,lnam,istat)
+     call get_command_argument(3,outfile,lnam,istat)
+     infile = trim(path) // trim(infile)
+     outfile = trim(path) // trim(outfile)
      call charmm_cor_read(nglobal,x,q,pcycle,infile,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,nres,ires,time)
@@ -823,34 +826,77 @@ program main
      icpumap(i) = 1
   enddo
   if (mpirank == 0) print*,'FMM init'
-  call fmm_init(images,theta,verbose,nglobal)
+  path = trim(path)//c_null_char
+  call fmm_init(images,theta,verbose,nglobal,path)
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
-  if (mpirank == 0) print*,'FMM Coulomb'
-  call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
-  do i = 1,nglobal
-     p2(i) = 0
-     f2(3*i-2) = 0
-     f2(3*i-1) = 0
-     f2(3*i-0) = 0
+
+  do itry = 1,10
+     if (mpirank == 0) then
+        print "(a,i2,a)",'--- Accuracy regression loop ',itry,' -'
+        print*,'FMM Coulomb'
+     endif
+     do i = 1,nglobal
+        p(i) = 0
+        f(3*i-2) = 0
+        f(3*i-1) = 0
+        f(3*i-0) = 0
+     enddo
+     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
+     if (mpirank == 0) print*,'Ewald Coulomb'
+     do i = 1,nglobal
+        p2(i) = 0
+        f2(3*i-2) = 0
+        f2(3*i-1) = 0
+        f2(3*i-0) = 0
+     enddo
+     call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
+     !  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
+     if(mpirank == 0) print*,'Coulomb exclusion'
+     call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
+     call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
+     call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
+     if (mpirank == 0) then
+        print "(a)",'--- Coulomb FMM vs. Ewald -------'
+        print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
+        print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
+        print "(a,f15.4)",'Energy (FMM)         : ',enerf
+        print "(a,f15.4)",'Energy (Ewald)       : ',enere
+        print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
+        print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
+        print "(a)",'--- Accuracy regression ---------'
+     endif
+     call fmm_verify_accuracy(itry,pl2err,fl2err)
+     if(itry == -1) exit
   enddo
-  if (mpirank == 0) print*,'Ewald Coulomb'
-  call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
-!  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
-  if(mpirank == 0) print*,'Coulomb exclusion'
-  call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
-  call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
+  call fmm_verify_end()
 
-
-  call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
-  if (mpirank == 0) then
-     print "(a)",'--- Coulomb FMM vs. Ewald -------'
-     print "(a,f9.6)",'Rel. L2 Error (pot)  : ',pl2err
-     print "(a,f9.6)",'Rel. L2 Error (acc)  : ',fl2err
-     print "(a,f15.4)",'Energy (FMM)         : ',enerf
-     print "(a,f15.4)",'Energy (Ewald)       : ',enere
-     print "(a,f15.4)",'GRMS (FMM)           : ',grmsf
-     print "(a,f15.4)",'GRMS (Ewald)         : ',grmse
+  call fmm_only_accuracy(accuracy)
+  if (accuracy == 1) then
+     nitr = 10
+     do itry = 1,10
+        if (mpirank == 0) then
+           print "(a,i2,a)",'--- Time regression loop ',itry,' -----'
+           print*,'FMM Coulomb'
+        endif
+        tic = mpi_wtime()
+        do itr = 1,nitr
+           do i = 1,nglobal
+              p(i) = 0
+              f(3*i-2) = 0
+              f(3*i-1) = 0
+              f(3*i-0) = 0
+           enddo
+           call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
+        enddo
+        toc = mpi_wtime()
+        if (mpirank == 0) then
+           print "(a)",'--- Time regression -------------'
+        endif
+        call fmm_verify_time(itry,(toc-tic)/nitr)
+        if(itry == -1) exit
+     enddo
+     call fmm_verify_end()
   endif
 
   do i = 1,nglobal
@@ -883,9 +929,9 @@ program main
      print "(a,f15.4)",'GRMS (Direct)        : ',grmse
   endif
 
-  ! run dynamics if second command line argument specified
-  if (command_argument_count() > 2) then
-     call get_command_argument(3,nstp,lnam,istat)
+  ! run dynamics if third command line argument specified
+  if (command_argument_count() > 3) then
+     call get_command_argument(4,nstp,lnam,istat)
      read(nstp,*)dynsteps
      if(mpirank == 0) write(*,*)'will run dynamics for ',dynsteps,' steps'
      ! for pure water systems there is no need for nbadd14() :-)
@@ -904,9 +950,9 @@ program main
              xc,p,p2,f,f2,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
              ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires,time)
      endif
-     call charmm_cor_write(nglobal,x,q,pcycle,trim(outfile),numex,natex,nat,atype,&
-          rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
-          aangle,cangle,mass,xc,v,time)
+     call charmm_cor_write(nglobal,x,q,pcycle,trim(outfile),&
+          numex,natex,nat,atype,rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,&
+          rbond,cbond,aangle,cangle,mass,xc,v,time)
   endif
 
   deallocate( x,q,v,p,f,p2,f2,icpumap )

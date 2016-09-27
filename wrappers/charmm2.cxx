@@ -9,6 +9,7 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "van_der_waals.h"
+#include "verify.h"
 #if EXAFMM_SERIAL
 #include "../uniform/serialfmm.h"
 #else
@@ -35,6 +36,7 @@ Partition<Body> * partition;
 Traversal<kernel> * traversal;
 TreeMPI<kernel> * treeMPI;
 UpDownPass<kernel> * upDownPass;
+Verify<Cell> * verify;
 
 #if EXAFMM_SERIAL
 SerialFMM * FMM;
@@ -42,11 +44,13 @@ SerialFMM * FMM;
 ParallelFMM * FMM;
 #endif
 
+bool isTime;
+bool pass;
 Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & nglobal) {
+extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & nglobal, const char * path, size_t *) {
   int ncrit = 32;
   const int nspawn = 1000;
   const bool useRmax = true;
@@ -58,9 +62,10 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   localTree = new BuildTree<Cell>(ncrit, nspawn);
   globalTree = new BuildTree<Cell>(1, nspawn);
   partition = new Partition<Body>(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal<kernel>(nspawn, images);
+  traversal = new Traversal<kernel>(nspawn, images, path);
   treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
+  verify = new Verify<Cell>(path);
 #if EXAFMM_SERIAL
   FMM = new SerialFMM;
 #else
@@ -76,10 +81,12 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   args->numBodies = 0;
   args->useRopt = useRopt;
   args->nspawn = nspawn;
+  args->path = path;
   args->theta = theta;
   args->verbose = verbose & (baseMPI->mpirank == 0);
   args->useRmax = useRmax;
   logger::verbose = args->verbose;
+  logger::path = args->path;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
   if (baseMPI->mpirank == 0) {
@@ -95,6 +102,9 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   const int gatherLevel = 1;
   FMM->allocate(numBodies, maxLevel, args->images);
   FMM->partitioner(gatherLevel);
+
+  pass = true;
+  isTime = false;
 }
 
 extern "C" void fmm_finalize_() {
@@ -170,7 +180,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   FMM->partitionComm();
   bodies.resize(FMM->numBodies);
   b = 0;
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
     B->X[0] = FMM->Jbodies[b][0] - FMM->RGlob[0];
     B->X[1] = FMM->Jbodies[b][1] - FMM->RGlob[1];
     B->X[2] = FMM->Jbodies[b][2] - FMM->RGlob[2];
@@ -186,9 +196,9 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    int iwrap = unsigned(B->IBODY) >> shift;
+    iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycles, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
@@ -306,7 +316,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 
 #if 1
   b = 0;
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
     B->X[0] = FMM->Jbodies[b][0] - FMM->RGlob[0];
     B->X[1] = FMM->Jbodies[b][1] - FMM->RGlob[1];
     B->X[2] = FMM->Jbodies[b][2] - FMM->RGlob[2];
@@ -329,7 +339,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   logger::printTime("Total FMM");
 
   b = 0;
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
@@ -337,9 +347,9 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
   bodies = treeMPI->getRecvBodies();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    int iwrap = unsigned(B->IBODY) >> shift;
+    iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycles, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
@@ -408,7 +418,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   logger::printTitle("Total runtime");
   logger::printTime("Total Ewald");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
@@ -568,7 +578,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   logger::printTitle("Total runtime");
   logger::printTime("Total VdW");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0];
     f[3*i+0] += B->TRG[1];
@@ -686,4 +696,44 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
   }
   logger::stopTimer("VdW Exclusion");
 }
+
+extern "C" void fmm_verify_accuracy_(int &t, double & potRel, double & accRel) {
+  isTime = false;
+  if (!baseMPI->mpirank) {
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t-1, potRel, accRel);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (verify->verbose) std::cout << "passed accuracy regression at t: " << t-1 << std::endl; 
+    t = -1;
+  }
+}
+
+extern "C" void fmm_only_accuracy_(int & accuracy) {
+  accuracy = args->accuracy;
+}
+
+extern "C" void fmm_verify_time_(int &t, double & totalFMM) {
+  isTime = true;
+  double totalFMMGlob;
+  MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  totalFMMGlob /= baseMPI->mpisize;
+  if (!baseMPI->mpirank) {
+    pass = verify->regression(args->getKey(baseMPI->mpisize), isTime, t-1, totalFMMGlob);
+  }
+  MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
+  if (pass) {
+    if (verify->verbose) std::cout << "passed time regression at t: " << t-1 << std::endl;
+    t = -1;
+  }
+}
+
+extern "C" void fmm_verify_end_() {
+  if (!pass) {
+    if (verify->verbose) {
+      if(!isTime) std::cout << "failed accuracy regression" << std::endl;
+      else std::cout << "failed time regression" << std::endl;
+    }
+    abort();
+  }
 }

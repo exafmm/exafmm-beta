@@ -437,7 +437,7 @@ namespace exafmm {
 	  get_Ynm(P, xquad2[l], Ynm);
 	  for (int m=-P+1; m<P; m++) {
 	    int mabs = abs(m);
-	    complex_t z = phitemp[P+m] * wquad2[l] * real_t(.5);
+	    z = phitemp[P+m] * wquad2[l] * real_t(.5);
 	    for (int n=mabs; n<P; n++) {
 	      int nm = n * n + n + m;
 	      int nms = n * (n + 1) / 2 + mabs;
@@ -553,7 +553,7 @@ namespace exafmm {
 	get_Ynm(Popt, xquad[l], Ynm);
 	for (int m=-Popt+1; m<Popt; m++) {
 	  int mabs = abs(m);
-	  complex_t z = phitemp[Popt+m] * wquad[l] * real_t(.5);
+	  z = phitemp[Popt+m] * wquad[l] * real_t(.5);
 	  for (int n=mabs; n<Popt; n++) {
 	    int nm = n * n + n + m;
 	    int nms = n * (n + 1) / 2 + mabs;
@@ -574,7 +574,7 @@ namespace exafmm {
 	  int nm = n * n + n + m;
 	  complex_t zh = jn[n];
 	  complex_t zhn = jnd[n] * wavek;
-	  complex_t z = zh * zh + zhn * zhn;
+	  z = zh * zh + zhn * zhn;
 	  Lnm[nm] = (zh * Lnm[nm] + zhn * Lnmd[nm]) / z;
 	}
       }
@@ -671,7 +671,7 @@ namespace exafmm {
 	get_Ynm(P, xquad[l], Ynm);
 	for (int m=-P+1; m<P; m++) {
 	  int mabs = abs(m);
-	  complex_t z = phitemp[P+m] * wquad[l] * real_t(.5);
+	  z = phitemp[P+m] * wquad[l] * real_t(.5);
 	  for (int n=mabs; n<P; n++) {
 	    int nm = n * n + n + m;
 	    int nms = n * (n + 1) / 2 + mabs;
@@ -692,7 +692,7 @@ namespace exafmm {
 	  int nm = n * n + n + m;
 	  complex_t zh = jn[n];
 	  complex_t zhn = jnd[n] * wavek;
-	  complex_t z = zh * zh + zhn * zhn;
+	  z = zh * zh + zhn * zhn;
 	  Lnm[nm] = (zh * Lnm[nm] + zhn * Lnmd[nm]) / z;
 	}
       }
@@ -755,7 +755,7 @@ namespace exafmm {
 	  for (int m=1; m<=n; m++) {
 	    int npm = n * n + n + m;
 	    int nmm = n * n + n - m;
-	    int nms = n * (n + 1) / 2 + m;
+	    nms = n * (n + 1) / 2 + m;
 	    complex_t ztmp1 = jn[n] * Ynm[nms] * stheta;
 	    complex_t ztmp2 = Lj[npm] * ephi[m];
 	    complex_t ztmp3 = Lj[nmm] * conj(ephi[m]);

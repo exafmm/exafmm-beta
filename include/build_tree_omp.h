@@ -3,7 +3,6 @@
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
-#include "morton_key.h"
 
 namespace exafmm {
   template<typename Cell = DefaultCell<> >
@@ -16,7 +15,7 @@ namespace exafmm {
   private:
     //! Get permutation index for reordering bodies
     void reorder(Box box, int level, int * iX, vec3 * Xj,
-		 int * permutation, int n, int * iwork, int * nbody) {
+		 int * permutation, int ibody, int n, int * iwork, int * nbody) {
       int offset[9];                                            // Offset of bodies per octant
       vec3 X;                                                   // Declare temporary coordinates
       real_t R = box.R / (1 << level);                          // Current cell radius
@@ -45,6 +44,28 @@ namespace exafmm {
       }                                                         // End loop over bodies
     }
 
+    //! Get Morton key
+    uint64_t getKey(ivec3 iX, int level) {
+      uint64_t index = ((1 << 3 * level) - 1) / 7;              // Level offset
+      for (int l=0; l<level; l++) {                             // Loop over levels
+	for (int d=0; d<3; d++) {                               //  Loop over dimensions
+	  index += (iX[d] & 1) << (3 * l + d);                  //   Interleave bits for each dimension
+	  iX[d] >>= 1;                                          //   Shift bits for each dimension
+	}                                                       //  End loop over dimensions
+      }                                                         // End loop over levels
+      return index;                                             // Return Morton key
+    }
+
+    //! Get level from Morton key
+    int getLevel(uint64_t key) {
+      int level = -1;                                           // Initialize level
+      while( int(key) >= 0 ) {                                  // Loop while key has level offsets to subtract
+	level++;                                                //  Increment level
+	key -= 1 << 3*level;                                    //  Subtract level offset from key
+      }                                                         // End while loop for level offsets to subtract
+      return level;                                             // Return level
+    }
+
     //! Transform Xmin & Xmax to X (center) & R (radius)
     Box bounds2box(Bounds bounds) {
       vec3 Xmin = bounds.Xmin;                                  // Set local Xmin
@@ -62,7 +83,7 @@ namespace exafmm {
 
     //! Grow tree as link between node structures
     void growTree(Bodies & bodies, int (* nodes)[10], int & numCells,
-		  int * permutation, int & numLevels, Box box) {
+		  int * permutation, Box box) {
       logger::startTimer("Grow tree");                          // Start timer
       const int maxLevel = 30;                                  // Maximum levels in tree
       const int numBodies = bodies.size();                      // Number of bodies
@@ -92,24 +113,26 @@ namespace exafmm {
 	  int nbody = nodes[iparent][8];                        //   Number of bodies in current cell
 	  if (nbody > ncrit) {                                  //   If number of bodies is larger than threshold
 	    int ibody = nodes[iparent][7];                      //    Index of first body in cell
-	    reorder(box, level, &nodes[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);// Sort bodies
+	    reorder(box, level, &nodes[iparent][1], Xj, &permutation[ibody], ibody, nbody, iwork, nbody8);// Sort bodies
 	    int nchild = 0;                                     //    Initialize number of child cells
 	    int offset = ibody;                                 //    Initialize offset
 	    nodes[iparent][5] = numCells;                       //    Store cell counter as ichild
 	    for (int i=0; i<8; i++) {                           //    Loop over octants
-	      nodes[numCells][0] = level + 1;                   //     Store level
-	      nodes[numCells][1] = nodes[iparent][1] * 2 + i % 2;//    Store ix
-	      nodes[numCells][2] = nodes[iparent][2] * 2 + (i / 2) % 2;// Store iy
-	      nodes[numCells][3] = nodes[iparent][3] * 2 + i / 4;//    Store iz
-	      nodes[numCells][4] = iparent;                     //     Store iparent
-	      nodes[numCells][5] = 0;                           //     Initialize ichild
-	      nodes[numCells][6] = 0;                           //     Initialize nchild
-	      nodes[numCells][7] = offset;                      //     Store ibody
-	      nodes[numCells][8] = nbody8[i];                   //     Store nbody
-	      nchild++;                                         //     Increment number of child cells
-	      offset += nbody8[i];                              //     Increment octant offset
-	      numCells++;                                       //     Increment number of cells
-	      numLevels=level+1;                                //     Update number of levels
+              if (nbody8[i] != 0) {                             //     If octant is not empty
+                nodes[numCells][0] = level + 1;                 //     Store level
+                nodes[numCells][1] = nodes[iparent][1] * 2 + i % 2;//    Store ix
+                nodes[numCells][2] = nodes[iparent][2] * 2 + (i / 2) % 2;// Store iy
+                nodes[numCells][3] = nodes[iparent][3] * 2 + i / 4;//    Store iz
+                nodes[numCells][4] = iparent;                   //     Store iparent
+                nodes[numCells][5] = 0;                         //     Initialize ichild
+                nodes[numCells][6] = 0;                         //     Initialize nchild
+                nodes[numCells][7] = offset;                    //     Store ibody
+                nodes[numCells][8] = nbody8[i];                 //     Store nbody
+                nchild++;                                       //     Increment number of child cells
+                offset += nbody8[i];                            //     Increment octant offset
+                numCells++;                                     //     Increment number of cells
+                numLevels=level + 1;                            //     Update number of levels
+              }                                                 //     End if for non-empty octant
 	    }                                                   //    End loop over octants
 	    nodes[iparent][6] = nchild;                         //    Store nchild
 	  }                                                     //   End if for number of bodies threshold
@@ -136,7 +159,7 @@ namespace exafmm {
 	iX[0]      = nodes[i][1];                               //  3-D index x component
 	iX[1]      = nodes[i][2];                               //  3-D index y component
 	iX[2]      = nodes[i][3];                               //  3-D index z component
-	C->ICELL   = morton::getKey(iX, level);                 //  Copy Morton key as icell
+	C->ICELL   = getKey(iX, level);                         //  Copy Morton key as icell
 	C->IPARENT = nodes[i][4];                               //  Copy iparent
 	C->ICHILD  = nodes[i][5];                               //  Copy ichild
 	C->NCHILD  = nodes[i][6];                               //  Copy nchild
@@ -154,7 +177,7 @@ namespace exafmm {
       }                                                         // End loop over bodies
       bodies = buffer;                                          // Copy back to bodies
       B_iter B = bodies.begin();                                // Iterator of first body
-      for (C_iter C=cells.begin(); C!=cells.end(); C++) {       // Loop over cells
+      for (C=cells.begin(); C!=cells.end(); C++) {              // Loop over cells
 	C->BODY = B + C->IBODY;                                 //  Store iterator of first body in cell
       }                                                         // End loop over cells
       logger::stopTimer("Link tree");                           // Stop timer
@@ -168,11 +191,14 @@ namespace exafmm {
     Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
       int numCells;                                             // Number of cells
       int numBodies = bodies.size();                            // Number of bodies
-      int (* nodes)[10] = new int [numBodies][10]();            // Allocate nodes array
+      Cells cells;                                              // Cell vector
+      if (numBodies == 0) return cells;                         // Return if bodies array is empty
+      int (* nodes)[10] = new int [2*numBodies+10][10]();       // Allocate nodes array
       int * permutation = new int [numBodies];                  // Allocate permutation array
       Box box = bounds2box(bounds);                             // Bounding box
-      growTree(bodies, nodes, numCells, permutation, numLevels, box);// Grow tree as link between node structures
-      Cells cells = linkTree(bodies, buffer, nodes, numCells, permutation, box);// Convert nodes to cells
+      growTree(bodies, nodes, numCells, permutation, box);      // Grow tree as link between node structures
+      assert(numCells <= 2*numBodies+10);
+      cells = linkTree(bodies, buffer, nodes, numCells, permutation, box);// Convert nodes to cells
       delete[] permutation;                                     // Deallocate permutation array
       delete[] nodes;                                           // Deallocate nodes array
       return cells;                                             // Return cells
