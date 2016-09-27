@@ -240,41 +240,6 @@ namespace exafmm {
       return local;
     }
 
-    void partitionHilbert(Bodies& bodies, Bounds const& bounds) {
-      if (mpisize == 1) return;
-      logger::startTimer("Partition");                          // Start timer
-      uint32_t depth;
-      KeyPair localHilbertBounds = assignSFCtoBodies(bodies, bounds, depth);
-      logger::startTimer("Hilbert bounds");
-      int64_t min, max;
-      MPI_Allreduce(&localHilbertBounds.first,  &min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
-      MPI_Allreduce(&localHilbertBounds.second, &max, 1, MPI_UNSIGNED_LONG_LONG, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-      globalBounds = std::make_pair(min, max);
-      logger::stopTimer("Hilbert bounds");
-      int64_t lbound = globalBounds.first;
-      int64_t rbound = globalBounds.second;
-      VHilbert rq;
-      rq.reserve(mpisize + 1);
-      rq.push_back(lbound); rq.push_back(rbound);
-      int64_t startPivot = lbound + ((rbound - lbound) >> 1);
-      VHilbert keys(bodies.size());
-      int index = 0;
-      for (B_iter B = bodies.begin(); B != bodies.end(); ++B)
-	keys[index++] = B->ICELL;
-      hilbertPartitionSort(keys, lbound, rbound, rq, startPivot);
-      std::sort(rq.begin(), rq.end());
-      updateRangeParameters(rq);
-      for (B_iter B = bodies.begin(); B != bodies.end(); ++B) {
-	B->IRANK = getPartitionNumber(B->ICELL);                  // Get partition
-	assert(B->IRANK >= 0 && B->IRANK < mpisize);              // Make sure rank is within communication size
-      }
-      logger::stopTimer("Partition");                             // Stop timer
-      logger::startTimer("Sort");
-      Sort<Body> sort;
-      bodies = sort.irank(bodies);
-      logger::stopTimer("Sort");
-    }
-
     //! Send bodies back to where they came from
     void unpartition(Bodies & bodies) {
       logger::startTimer("Sort");                                 // Start timer
