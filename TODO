@@ -1,6 +1,7 @@
 -- Immediate --
 - Fix all buildbot errors
 - Fix all nightly errors
+- Fix charmm2
 - Remove MAKE_CELL_TYPES
 - Don't template bodies & cells
 - Defalut* > *
