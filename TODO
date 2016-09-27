@@ -1,12 +1,18 @@
 -- Immediate --
-- Debug nightly for preconditioner branch
+- Fix all buildbot errors
+- Fix all nightly errors
+- Remove MAKE_CELL_TYPES
+- Don't template bodies & cells
+- Defalut* > *
+- Template* > *
+- EmptyKernel?
+- #include alphabetical order
+
 - Use EXAFMM_CLUSTER
 - Configure on OSX
-- Wash out all corner case bugs
 - Representative case plot generator
 - Remove make cleanall from build
-- Merge git branches
-- Remove branches from master.cfg
+- Remove sc16 from master.cfg
 - Extend list based traversal to adaptive tree (UVWX-list)
 - Separate different algorithms into different files (create folder for build tree, partition, etc.)
 - Add kernel.cxx to nightly test
@@ -24,6 +30,7 @@ cycle counter based weights
 non-orthogonal recursive bisection
 
 -- automake --
+- Do we need -fabi-version=6?
 - Add m4/ax_mpi variants from PVFMM
 - Theoretical error bound using kernel.cxx
 move contents of macros.h to configure.ac
