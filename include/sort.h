@@ -6,7 +6,9 @@ namespace exafmm {
   //! Custom radix sort for body and structures
   template<typename Body = DefaultBody >
   class Sort {
-  MAKE_BODY_TYPES(Body, typename) \
+    typedef std::vector<Body> Bodies;                           //!< Vector of bodies
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+
   private:
     Bodies output;                                              //!< Output buffer
 

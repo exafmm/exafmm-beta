@@ -1,13 +1,14 @@
 -- Immediate --
-- Fix all buildbot errors
-- Fix all nightly errors
-- Fix charmm2
 - Remove MAKE_CELL_TYPES
 - Don't template bodies & cells
 - Defalut* > *
 - Template* > *
 - EmptyKernel?
 - #include alphabetical order
+- ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
+- Fix all buildbot errors
+- Fix all nightly errors
+- Fix charmm2
 
 - Use EXAFMM_CLUSTER
 - Configure on OSX
@@ -46,6 +47,7 @@ AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
 Remove M, L from Cell struct
 Improve vec.h - vectorclass interface
+Calculate EPS from test
 
 -- tree build --
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)

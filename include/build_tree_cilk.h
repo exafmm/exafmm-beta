@@ -290,7 +290,7 @@ void permute(int numBodies, float * bodies, float * buffer, uint32_t * index) {
 
 template<typename Cell = DefaultCell<> >
 class BuildTree {
-  MAKE_CELL_TYPES(Cell, typename)
+  MAKE_CELL_TYPES(Cell,)
 private:
   const int ncrit;
   int numLevels;

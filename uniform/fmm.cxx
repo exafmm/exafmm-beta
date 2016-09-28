@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
   BaseMPI baseMPI;
   BoundBox<kernel::Cell> boundBox(args.nspawn);
   BuildTree<kernel::Cell> buildTree(args.ncrit, args.nspawn);
-  Dataset<kernel::Cell> data;
+  Dataset<kernel::Body> data;
   Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
   Traversal<kernel> traversal(args.nspawn, args.images, args.path);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);

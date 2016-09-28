@@ -7,7 +7,7 @@ namespace exafmm {
   template<typename kernel>
   class Ewald {
   typedef typename kernel::Cell Cell;
-  MAKE_CELL_TYPES(Cell, typename)
+  MAKE_CELL_TYPES(Cell,)
     //! Wave structure for Ewald summation
     struct Wave {
       vec3   K;                                                 //!< 3-D wave number vector
@@ -15,7 +15,7 @@ namespace exafmm {
       real_t IMAG;                                              //!< imaginary part of wave
     };
     typedef std::vector<Wave> Waves;                            //!< Vector of Wave types
-    typedef typename Waves::iterator   W_iter;                           //!< Iterator of Wave types
+    typedef typename Waves::iterator W_iter;                    //!< Iterator of Wave types
 
   private:
     const int ksize;                                            //!< Number of waves in Ewald summation

@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
   BuildTree<kernel::Cell> localTree(args.ncrit, args.nspawn);
   BuildTree<kernel::Cell> globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
-  Dataset<kernel::Cell> data;
+  Dataset<kernel::Body> data;
   Partition<kernel::Body> partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal<kernel> traversal(args.nspawn, args.images);
   TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);

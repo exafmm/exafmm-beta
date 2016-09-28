@@ -1,8 +1,5 @@
 #ifndef types_h
 #define types_h
-#ifndef _SX
-#include "align.h"
-#endif
 #include <assert.h>                                             // Some compilers don't have cassert
 #include <complex>
 #include "kahan.h"
@@ -96,23 +93,12 @@ namespace exafmm {
 #endif
   };
 
-#define MAKE_B_ITER(typename_keyword) typedef typename_keyword Bodies::iterator B_iter;                              //!< Iterator of body vector
-#if _SX
-#define MAKE_BODY_TYPES(Body, typename_keyword)               \
-  typedef typename_keyword std::vector<Body> Bodies; \
-  MAKE_B_ITER(typename_keyword)
-#else 
-#define MAKE_BODY_TYPES(Body, typename_keyword)                             \
-  typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;      \
-  typedef typename_keyword std::vector<Body,BodyAllocator> Bodies; \
-  MAKE_B_ITER(typename_keyword)
-#endif
-
   //! Structure of cells
-  template<typename Body=DefaultBody>
+  template<typename BodyType=DefaultBody>
   struct DefaultCell {
-    typedef Body BodyType;
-    MAKE_BODY_TYPES(Body, typename)
+    typedef BodyType Body;                                      //!< Typedef body inside cell struct
+    typedef std::vector<Body> Bodies;                           //!< Vector of bodies
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
     int      NCHILD;                                            //!< Number of child cells
@@ -133,9 +119,10 @@ namespace exafmm {
   };
 
 #define MAKE_CELL_TYPES(Cell, typename_keyword) \
-  typedef typename_keyword Cell::BodyType Body; \
-  MAKE_BODY_TYPES(Body, typename_keyword) \
-  typedef std::vector<Cell> Cells; \
-  typedef typename_keyword Cells::iterator C_iter;
+  typedef typename Cell::Body Body;             \
+  typedef std::vector<Body> Bodies;             \
+  typedef typename Bodies::iterator B_iter;     \
+  typedef std::vector<Cell> Cells;              \
+  typedef typename Cells::iterator C_iter;
 }
 #endif

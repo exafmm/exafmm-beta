@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   Bounds bounds;
   BuildTree<kernel::Cell> buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
-  Dataset<kernel::Cell> data;
+  Dataset<kernel::Body> data;
   Traversal<kernel> traversal(args.nspawn, args.images, args.path);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify<kernel::Cell> verify(args.path);

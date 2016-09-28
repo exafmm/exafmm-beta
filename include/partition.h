@@ -7,9 +7,9 @@ namespace exafmm {
   //! Handles all the partitioning of domains
   template<typename Body = DefaultBody >
   class Partition {
-    MAKE_BODY_TYPES(Body, typename) \
-    typedef std::vector<int64_t> VHilbert;                      //!< Type of Hilbert key vectors
-    typedef std::pair<int64_t, int64_t> KeyPair;                //!< Type of Hilbert Key Pair
+    typedef std::vector<Body> Bodies;                           //!< Vector of bodies
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
@@ -28,8 +28,6 @@ namespace exafmm {
     float * globalHist;                                         //!< Global body weight histogram
     Bounds * rankBounds;                                        //!< Bounds of each rank
     Bodies buffer;                                              //!< MPI communication buffer for bodies
-
-  private:
 
   public:
     //! Constructor
@@ -234,7 +232,7 @@ namespace exafmm {
       }                                                         // End loop over bodies
       logger::stopTimer("Partition");                           // Stop timer
       logger::startTimer("Sort");                               // Start timer
-      Sort<Body> sort;                                                // Instantiate sort class
+      Sort<Body> sort;                                          // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
       return local;

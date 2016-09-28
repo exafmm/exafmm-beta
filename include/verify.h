@@ -7,7 +7,7 @@ namespace exafmm {
   //! Verify results
   template<typename Cell = DefaultCell<> >
   class Verify {
-    MAKE_CELL_TYPES(Cell, typename)
+    MAKE_CELL_TYPES(Cell,)
   private:
     typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
     typedef Record::iterator R_iter;                            //!< Iterator of regression map

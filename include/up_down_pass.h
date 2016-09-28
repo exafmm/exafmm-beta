@@ -7,7 +7,7 @@ namespace exafmm {
   template<typename kernel>
   class UpDownPass {
     typedef typename kernel::Cell Cell;
-    MAKE_CELL_TYPES(Cell, typename)
+    MAKE_CELL_TYPES(Cell,)
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria
     const bool useRmax;                                         //!< Use maximum distance for MAC

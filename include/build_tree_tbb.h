@@ -7,7 +7,7 @@
 namespace exafmm {
   template<typename Cell = DefaultCell<> >
   class BuildTree {
-    MAKE_CELL_TYPES(Cell, typename)
+    MAKE_CELL_TYPES(Cell,)
   private:
     typedef vec<8,int> ivec8;                                   //!< Vector of 8 integer types
     //! Binary tree is used for counting number of bodies with a recursive approach
