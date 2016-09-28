@@ -19,8 +19,8 @@
 
 namespace exafmm{
   typedef exafmm::LaplaceSphericalCPU kernel;
-  vec3 TemplateKernel::Xperiodic = 0;
-  real_t TemplateKernel::eps2 = 0.0;
+  vec3 KernelBase::Xperiodic = 0;
+  real_t KernelBase::eps2 = 0.0;
   MAKE_CELL_TYPES(kernel::Cell,)
 
   Args * args;

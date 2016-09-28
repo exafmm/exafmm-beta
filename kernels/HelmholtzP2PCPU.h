@@ -5,7 +5,7 @@ namespace exafmm{typedef DefaultCell<>::B_iter B_iter;}
 
 namespace exafmm {
   const complex_t I(0.,1.);
-  class HelmholtzP2PCPU : public TemplateKernel {
+  class HelmholtzP2PCPU : public KernelBase {
   public:
     typedef DefaultCell<> Cell;
     MAKE_CELL_TYPES(Cell,)

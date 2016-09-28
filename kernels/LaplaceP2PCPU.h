@@ -6,7 +6,7 @@ namespace exafmm{typedef DefaultCell<>::B_iter B_iter;}
 #endif
 
 namespace exafmm {
-  class LaplaceP2PCPU : public TemplateKernel {
+  class LaplaceP2PCPU : public KernelBase {
   public:
     typedef DefaultCell<> Cell;
     MAKE_CELL_TYPES(Cell,)

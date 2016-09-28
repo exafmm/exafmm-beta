@@ -14,12 +14,12 @@
 #error Turn off MASS for this test
 #endif
 #if EXAFMM_EXPANSION < 10
-#error Use P >=10 for this test
+#error Use P >= 10 for this test
 #endif
 #include "kernel_select.h"
 using namespace exafmm;
-vec3 TemplateKernel::Xperiodic = 0;
-real_t TemplateKernel::eps2 = 0.0;
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
   MAKE_CELL_TYPES(kernel::Cell,)

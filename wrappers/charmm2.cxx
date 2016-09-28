@@ -22,8 +22,8 @@
 
 namespace exafmm{
   typedef EmptyKernel kernel;
-  real_t TemplateKernel::eps2 = 0.0;
-  vec3 TemplateKernel::Xperiodic = 0.0;
+  real_t KernelBase::eps2 = 0.0;
+  vec3 KernelBase::Xperiodic = 0.0;
 
   static const double Celec = 332.0716;
 

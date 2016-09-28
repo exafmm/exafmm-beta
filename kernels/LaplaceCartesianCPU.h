@@ -636,6 +636,8 @@ namespace exafmm {
   struct Coefs<0,0> {
     static inline void negate(vecP){}
   };
+
+
   class LaplaceCartesianCPU : public LaplaceP2PCPU {
   public:
     static void setup() {}

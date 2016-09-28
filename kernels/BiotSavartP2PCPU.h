@@ -5,7 +5,7 @@ namespace exafmm{typedef DefaultCell<>::B_iter B_iter;}
 #endif
 
 namespace exafmm {
-  class BiotSavartP2PCPU : public TemplateKernel {
+  class BiotSavartP2PCPU : public KernelBase {
   public:
     typedef DefaultCell<> Cell;
     MAKE_CELL_TYPES(Cell,)

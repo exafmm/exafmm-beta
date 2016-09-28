@@ -1,8 +1,6 @@
 -- Immediate --
+- kernel > Kernel
 - Remove MAKE_CELL_TYPES
-- Don't template bodies & cells
-- Defalut* > *
-- Template* > *
 - EmptyKernel?
 - #include alphabetical order
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
@@ -58,7 +56,8 @@ Morton -> Hilbert
 - Use reinterpret_cast pointers to reference them inside Cell struct
 - Complie all P during make -> provide option to make for specific P value
 - Helmholtz breaks for very low P
-Stokes kernels
+- LaplaceCartesianRecursion, LaplaceCartesianTemplate
+Add back Stokes kernels
 Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
