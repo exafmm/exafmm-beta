@@ -1,8 +1,8 @@
 -- Immediate --
-- kernel > Kernel
-- Remove MAKE_CELL_TYPES
-- EmptyKernel?
-- #include alphabetical order
+- KNL runs
+- Template body, cell
+- Template kernels
+- Make kernel runtime option
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
 - Fix all buildbot errors
 - Fix all nightly errors
