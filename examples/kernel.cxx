@@ -4,20 +4,19 @@
 #include "verify.h"
 #include "kernel_select.h"
 using namespace exafmm;
-vec3 KernelBase::Xperiodic = 0;
-real_t KernelBase::eps2 = 0.0;
+vec3 Kernel::Xperiodic = 0;
+real_t Kernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
-complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
 
 int main() {
-  MAKE_CELL_TYPES(DefaultCell<DefaultBody>,)
   Bodies bodies(1), bodies2(1), jbodies(1);
   kernel::setup();
   logger::verbose = true;
 
   Cells cells(4);
-  Verify<> verify;
+  Verify verify;
   jbodies[0].X = 2;
 #if EXAFMM_BIOTSAVART
   jbodies[0].SRC[0] = drand48();

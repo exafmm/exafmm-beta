@@ -14,25 +14,22 @@
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
 #include "LaplaceSphericalCPU.h"
+typedef exafmm::LaplaceSphericalCPU kernel;
 
 namespace exafmm{
-  typedef exafmm::LaplaceSphericalCPU kernel;
-  vec3 KernelBase::Xperiodic = 0;
-  real_t KernelBase::eps2 = 0.0;
-
+  vec3 Kernel::Xperiodic = 0;
+  real_t Kernel::eps2 = 0.0;
   static const double Celec = 332.0716;
 
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox<kernel::Cell> * boundBox;
-  BuildTree<kernel::Cell> * localTree, * globalTree;
-  Partition<kernel::Body> * partition;
+  BoundBox * boundBox;
+  BuildTree * localTree, * globalTree;
+  Partition * partition;
   Traversal<kernel> * traversal;
   TreeMPI<kernel> * treeMPI;
   UpDownPass<kernel> * upDownPass;
-  Verify<kernel::Cell> * verify;
-
-  MAKE_CELL_TYPES(kernel::Cell,)
+  Verify * verify;
 
   bool isTime;
   bool pass;
@@ -49,14 +46,14 @@ namespace exafmm{
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<kernel::Cell>(nspawn);
-    localTree = new BuildTree<kernel::Cell>(ncrit, nspawn);
-    globalTree = new BuildTree<kernel::Cell>(1, nspawn);
-    partition = new Partition<kernel::Body>(baseMPI->mpirank, baseMPI->mpisize);
+    boundBox = new BoundBox(nspawn);
+    localTree = new BuildTree(ncrit, nspawn);
+    globalTree = new BuildTree(1, nspawn);
+    partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
     traversal = new Traversal<kernel>(nspawn, images, path);
     treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
     upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
-    verify = new Verify<kernel::Cell>(path);
+    verify = new Verify(path);
 
     args->ncrit = ncrit;
     args->accuracy = 1;
@@ -234,7 +231,7 @@ namespace exafmm{
   extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
                                  int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
     vec3 cycles = cycle;
-    Ewald<kernel> * ewald = new Ewald<kernel>(ksize, alpha, sigma, cutoff, cycles);
+    Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
     const int shift = 29;
     const int mask = ~(0x7U << shift);
     int nlocal = 0;

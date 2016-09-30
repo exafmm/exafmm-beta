@@ -9,11 +9,7 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename Body=DefaultBody>
   class Dataset {                                               // Contains all the different datasets
-    typedef std::vector<Body> Bodies;                           //!< Vector of bodies
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-
   private:
     long filePosition;                                          // Position of file stream
 

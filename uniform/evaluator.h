@@ -3,7 +3,7 @@
 #include "logger.h"
 
 namespace exafmm {
-  class Evaluator : public Kernel {
+  class Evaluator : public UniformKernel {
   public:
     bool printNow;
 

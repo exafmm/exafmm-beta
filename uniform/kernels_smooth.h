@@ -23,7 +23,7 @@ const real_t ALPHA_L = 100;
 #define EXAFMM_MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 namespace exafmm {
-  class Kernel {
+  class UniformKernel {
   public:
     int maxLevel;
     int maxGlobLevel;
@@ -420,8 +420,8 @@ namespace exafmm {
     }
 
   public:
-    Kernel() : MPISIZE(1), MPIRANK(0) {}
-    ~Kernel() {}
+    UniformKernel() : MPISIZE(1), MPIRANK(0) {}
+    ~UniformKernel() {}
 
     inline int getKey(int *ix, int level, bool levelOffset=true) const {
       int id = 0;

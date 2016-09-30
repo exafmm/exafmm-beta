@@ -5,9 +5,7 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename Cell = DefaultCell<> >
   class BuildTree {
-    MAKE_CELL_TYPES(Cell,)
   private:
     const int ncrit;                                            //!< Number of bodies per leaf cell
     int numLevels;                                              //!< Number of levels

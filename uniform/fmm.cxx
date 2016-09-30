@@ -16,11 +16,10 @@
 using namespace exafmm;
 #include "Empty.h"
 typedef EmptyKernel kernel;
-real_t KernelBase::eps2 = 0.0;
-vec3 KernelBase::Xperiodic = 0.0;
+real_t Kernel::eps2 = 0.0;
+vec3 Kernel::Xperiodic = 0.0;
 
 int main(int argc, char ** argv) {
-  MAKE_CELL_TYPES(kernel::Cell,)
   const int ksize = 11;
   const vec3 cycle = 20 * M_PI;
   const real_t alpha = 10 / max(cycle);
@@ -31,10 +30,10 @@ int main(int argc, char ** argv) {
   args.ncrit = 32;
   args.images = 1;
   BaseMPI baseMPI;
-  BoundBox<kernel::Cell> boundBox(args.nspawn);
-  BuildTree<kernel::Cell> buildTree(args.ncrit, args.nspawn);
-  Dataset<kernel::Body> data;
-  Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
+  BoundBox boundBox(args.nspawn);
+  BuildTree buildTree(args.ncrit, args.nspawn);
+  Dataset data;
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   Traversal<kernel> traversal(args.nspawn, args.images, args.path);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
 #if EXAFMM_SERIAL
@@ -177,7 +176,7 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Total Direct");
     logger::resetTimer("Total Direct");
 #endif
-    Verify<kernel::Cell> verify(args.path);
+    Verify verify(args.path);
     verify.verbose = args.verbose;
     double potSum = verify.getSumScalar(bodies);
     double potSum2 = verify.getSumScalar(bodies2);

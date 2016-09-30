@@ -4,10 +4,7 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename kernel>
   class Ewald {
-  typedef typename kernel::Cell Cell;
-  MAKE_CELL_TYPES(Cell,)
     //! Wave structure for Ewald summation
     struct Wave {
       vec3   K;                                                 //!< 3-D wave number vector

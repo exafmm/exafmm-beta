@@ -4,7 +4,7 @@
 #include "types.h"
 
 namespace exafmm {
-  class KernelBase {
+  class Kernel {
   public:
     static real_t eps2;                                         //!< Epslion squared
     static complex_t wavek;                                     //!< Helmholtz wave number

@@ -1,10 +1,8 @@
 #include "kernel.h"
 
 namespace exafmm {
-  class EmptyKernel : public KernelBase {
+  class EmptyKernel : public Kernel {
   public:
-    typedef DefaultCell<> Cell;
-    MAKE_CELL_TYPES(Cell,)
     static void P2P(C_iter , C_iter , bool ) {}
     static void P2P(C_iter ) {}
     static void setup() {}

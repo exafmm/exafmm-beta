@@ -7,8 +7,6 @@ namespace exafmm {
   template<typename kernel>
   class TreeMPI {
   protected:
-    typedef typename kernel::Cell Cell;
-    MAKE_CELL_TYPES(Cell,)
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int images;                                           //!< Number of periodic image sublevels

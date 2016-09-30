@@ -5,7 +5,6 @@
 
 namespace exafmm {
   class VanDerWaals {
-    MAKE_CELL_TYPES(DefaultCell<>,)
   private:
     const real_t cuton;                                         //!< Cuton distance
     const real_t cutoff;                                        //!< Cutoff distance

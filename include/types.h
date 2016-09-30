@@ -81,7 +81,7 @@ namespace exafmm {
   };
 
   //! Structure of bodies
-  struct DefaultBody : public Source {
+  struct Body : public Source {
     int     IBODY;                                              //!< Initial body numbering for sorting back
     int     IRANK;                                              //!< Initial rank numbering for partitioning back
     int64_t ICELL;                                              //!< Cell index   
@@ -92,13 +92,11 @@ namespace exafmm {
     kcvec4  TRG;                                                //!< Scalar+vector3 target values
 #endif
   };
+  typedef std::vector<Body> Bodies;                             //!< Vector of bodies
+  typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
 
   //! Structure of cells
-  template<typename BodyType=DefaultBody>
-  struct DefaultCell {
-    typedef BodyType Body;                                      //!< Typedef body inside cell struct
-    typedef std::vector<Body> Bodies;                           //!< Vector of bodies
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+  struct Cell {
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
     int      NCHILD;                                            //!< Number of child cells
@@ -117,12 +115,7 @@ namespace exafmm {
     vecP     M;                                                 //!< Multipole coefficients
     vecP     L;                                                 //!< Local coefficients
   };
-
-#define MAKE_CELL_TYPES(Cell, typename_keyword) \
-  typedef typename Cell::Body Body;             \
-  typedef std::vector<Body> Bodies;             \
-  typedef typename Bodies::iterator B_iter;     \
-  typedef std::vector<Cell> Cells;              \
-  typedef typename Cells::iterator C_iter;
+  typedef std::vector<Cell> Cells;                              //!< Vector of cells
+  typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector
 }
 #endif

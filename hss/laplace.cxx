@@ -13,8 +13,8 @@
 using namespace exafmm;
 #include "LaplaceCartesianCPU.h"
 typedef exafmm::LaplaceCartesianCPU kernel;
-vec3 KernelBase::Xperiodic = 0;
-real_t KernelBase::eps2 = 0.0;
+vec3 Kernel::Xperiodic = 0;
+real_t Kernel::eps2 = 0.0;
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *
@@ -26,23 +26,22 @@ void elements(void *, int *, int *, double *, int *);
 
 double elemops = 0.0;
 
-MAKE_CELL_TYPES(kernel::Cell,)
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<kernel::Cell> boundBox(args.nspawn);
+  BoundBox boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree<kernel::Cell> localTree(args.ncrit, args.nspawn);
-  BuildTree<kernel::Cell> globalTree(1, args.nspawn);
+  BuildTree localTree(args.ncrit, args.nspawn);
+  BuildTree globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
-  Dataset<kernel::Body> data;
-  Partition<kernel::Body> partition(baseMPI.mpirank, baseMPI.mpisize);
+  Dataset data;
+  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal<kernel> traversal(args.nspawn, args.images);
   TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<kernel::Cell> verify;
+  Verify verify;
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;

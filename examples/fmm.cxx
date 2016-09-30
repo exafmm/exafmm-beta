@@ -8,25 +8,24 @@
 #include "verify.h"
 #include "kernel_select.h"
 using namespace exafmm;
-vec3 KernelBase::Xperiodic = 0;
-real_t KernelBase::eps2 = 0.0;
+vec3 Kernel::Xperiodic = 0;
+real_t Kernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
-complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
 
 int main(int argc, char ** argv) {
-  MAKE_CELL_TYPES(kernel::Cell,)
   const vec3 cycle = 2 * M_PI;
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<kernel::Cell> boundBox(args.nspawn);
+  BoundBox boundBox(args.nspawn);
   Bounds bounds;
-  BuildTree<kernel::Cell> buildTree(args.ncrit, args.nspawn);
+  BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
-  Dataset<kernel::Body> data;
+  Dataset data;
   Traversal<kernel> traversal(args.nspawn, args.images, args.path);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<kernel::Cell> verify(args.path);
+  Verify verify(args.path);
   num_threads(args.threads);
 
   kernel::setup();

@@ -11,12 +11,11 @@
 #include "kernel_select.h"
 
 namespace exafmm{
-  vec3 KernelBase::Xperiodic = 0;
-  real_t KernelBase::eps2 = 0.0;
+  vec3 Kernel::Xperiodic = 0;
+  real_t Kernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
-  complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
-  MAKE_CELL_TYPES(kernel::Cell,)
   vec3 cycles;
   Bodies buffer;
   Bounds globalBounds;
@@ -29,13 +28,13 @@ namespace exafmm{
   bool pass;
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox<kernel::Cell> * boundBox;
-  BuildTree<kernel::Cell> * localTree, * globalTree;
-  Partition<kernel::Body> * partition;
+  BoundBox * boundBox;
+  BuildTree * localTree, * globalTree;
+  Partition * partition;
   Traversal<kernel> * traversal;
   TreeMPI<kernel> * treeMPI;
   UpDownPass<kernel> * upDownPass;
-  Verify<kernel::Cell> * verify;
+  Verify * verify;
 
   void log_initialize() {
     args->verbose &= baseMPI->mpirank == 0;
@@ -69,14 +68,14 @@ namespace exafmm{
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<kernel::Cell>(nspawn);
-    localTree = new BuildTree<kernel::Cell>(ncrit, nspawn);
-    globalTree = new BuildTree<kernel::Cell>(1, nspawn);
-    partition = new Partition<kernel::Body>(baseMPI->mpirank, baseMPI->mpisize);
+    boundBox = new BoundBox(nspawn);
+    localTree = new BuildTree(ncrit, nspawn);
+    globalTree = new BuildTree(1, nspawn);
+    partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
     traversal = new Traversal<kernel>(nspawn, images, path);
     treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
     upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
-    verify = new Verify<kernel::Cell>(path);
+    verify = new Verify(path);
     num_threads(threads);
 
     args->accuracy = 1;

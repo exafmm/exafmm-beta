@@ -288,9 +288,7 @@ void permute(int numBodies, float * bodies, float * buffer, uint32_t * index) {
   permuteBlock(&buffer[12*offset], bodies, &index[offset], numBodies-offset);
 }
 
-template<typename Cell = DefaultCell<> >
 class BuildTree {
-  MAKE_CELL_TYPES(Cell,)
 private:
   const int ncrit;
   int numLevels;

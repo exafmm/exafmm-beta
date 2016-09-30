@@ -1,14 +1,12 @@
 #include "kernel.h"
-#include "types.h"
-namespace exafmm{typedef DefaultCell<>::B_iter B_iter;}
+#if EXAFMM_USE_SIMD
 #include "simdvec.h"
+#endif
 
 namespace exafmm {
   const complex_t I(0.,1.);
-  class HelmholtzP2PCPU : public KernelBase {
+  class HelmholtzP2PCPU : public Kernel {
   public:
-    typedef DefaultCell<> Cell;
-    MAKE_CELL_TYPES(Cell,)
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);

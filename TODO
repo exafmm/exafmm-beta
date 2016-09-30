@@ -1,5 +1,4 @@
 -- Immediate --
-- KNL runs
 - Template body, cell
 - Template kernels
 - Make kernel runtime option
@@ -7,6 +6,7 @@
 - Fix all buildbot errors
 - Fix all nightly errors
 - Fix charmm2
+- With strumpack
 
 - Use EXAFMM_CLUSTER
 - Configure on OSX
@@ -15,7 +15,7 @@
 - Remove sc16 from master.cfg
 - Extend list based traversal to adaptive tree (UVWX-list)
 - Separate different algorithms into different files (create folder for build tree, partition, etc.)
-- Add kernel.cxx to nightly test
+- Add kernel.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
 
 -- MPI --
 - define mpisize, mpirank in types.h
