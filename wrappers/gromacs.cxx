@@ -18,7 +18,7 @@
 #include "LaplaceSphericalCPU.h"
 typedef exafmm::LaplaceSphericalCPU kernel;
 
-namespace exafmm{
+namespace exafmm {
   vec3 Kernel::Xperiodic = 0;
   real_t Kernel::eps2 = 0.0;
 

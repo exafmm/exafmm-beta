@@ -10,7 +10,7 @@
 #include "verify.h"
 #include "kernel_select.h"
 
-namespace exafmm{
+namespace exafmm {
   vec3 Kernel::Xperiodic = 0;
   real_t Kernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ

@@ -23,7 +23,7 @@ namespace exafmm {
   typedef vec<4,real_t> vec4;                                   //!< Vector of 4 real_t types
   typedef vec<3,complex_t> cvec3;                               //!< Vector of 3 complex_t types
 
-  // SIMD vector types for MIC, AVX, and SSE
+  // SIMD vector types for AVX512, AVX, and SSE
   const int NSIMD = SIMD_BYTES / sizeof(real_t);                //!< SIMD vector length (SIMD_BYTES defined in macros.h)
   typedef vec<NSIMD,real_t> simdvec;                            //!< SIMD vector type
 
@@ -40,22 +40,6 @@ namespace exafmm {
   typedef vec<4,kreal_t> kvec4;                                 //!< Vector of 4 floats with Kahan summaiton
   typedef vec<4,kcomplex_t> kcvec4;                             //!< Vector of 4 complex with Kahan summaiton
 
-  // Multipole/local expansion coefficients
-  const int P = EXAFMM_EXPANSION;                               //!< Order of expansions
-#if EXAFMM_CARTESIAN
-  const int NTERM = P*(P+1)*(P+2)/6;                            //!< Number mutlipole/local terms
-  typedef vec<NTERM,real_t> vecP;                               //!< Multipole/local coefficient type
-#elif EXAFMM_SPHERICAL
-#if EXAFMM_LAPLACE
-  const int NTERM = P*(P+1)/2;                                  //!< Number of terms for Laplace
-#elif EXAFMM_HELMHOLTZ
-  const int NTERM = P*P;                                        //!< Number of terms for Helmholtz
-#elif EXAFMM_BIOTSAVART
-  const int NTERM = 3*P*(P+1)/2;                                //!< Number of terms for Biot-Savart
-#endif
-  typedef vec<NTERM,complex_t> vecP;                            //!< Multipole/local coefficient type
-#endif
-
   //! Center and radius of bounding box
   struct Box {
     vec3   X;                                                   //!< Box center
@@ -68,32 +52,79 @@ namespace exafmm {
     vec3 Xmax;                                                  //!< Maximum value of coordinates
   };
 
+  //! Equations supported
+  enum Equation {
+    Empty,
+    Laplace,
+    Helmholtz,
+    BiotSavart
+  };
+
   //! Structure of aligned source for SIMD
+  template<Equation equation=Empty>
   struct Source {
     vec3      X;                                                //!< Position
-#if EXAFMM_LAPLACE
-    real_t    SRC;                                              //!< Scalar source values
-#elif EXAFMM_HELMHOLTZ
-    complex_t SRC;                                              //!< Scalar source values
-#elif EXAFMM_BIOTSAVART
-    vec4      SRC;                                              //!< Vector source values
-#endif
+  };
+  template<>
+  struct Source<Laplace> : public Source<> {
+    real_t    SRC;                                              //!< Scalar real values
+  };
+  template<>
+  struct Source<Helmholtz> : public Source<> {
+    complex_t SRC;                                              //!< Scalar complex values
+  };
+  template<>
+  struct Source<BiotSavart> : public Source<> {
+    vec4      SRC;                                              //!< Vector real values
   };
 
   //! Structure of bodies
-  struct Body : public Source {
+  template<Equation equation=Empty>
+  struct Body {
     int     IBODY;                                              //!< Initial body numbering for sorting back
     int     IRANK;                                              //!< Initial rank numbering for partitioning back
     int64_t ICELL;                                              //!< Cell index   
     real_t  WEIGHT;                                             //!< Weight for partitioning
-#if EXAFMM_LAPLACE | EXAFMM_BIOTSAVART
-    kvec4   TRG;                                                //!< Scalar+vector3 target values
-#elif EXAFMM_HELMHOLTZ
-    kcvec4  TRG;                                                //!< Scalar+vector3 target values
-#endif
   };
-  typedef std::vector<Body> Bodies;                             //!< Vector of bodies
+  template<>
+  struct Body<Laplace> : public Source<Laplace>, Body<> {
+    kvec4   TRG;                                                //!< Scalar+vector3 real values
+  };
+  template<>
+  struct Body<Helmholtz> : public Source<Helmholtz>, Body<> {
+    kcvec4  TRG;                                                //!< Scalar+vector3 complex values
+  };
+  template<>
+  struct Body<BiotSavart> : public Source<BiotSavart>, Body<> {
+    kvec4   TRG;                                                //!< Scalar+vector3 real values
+  };
+
+  // Multipole/local expansion coefficients
+  const int P = EXAFMM_EXPANSION;                               //!< Order of expansions
+  const int NTERM_LC = P*(P+1)*(P+2)/6;                         //!< Terms for Lapalace Cartesian 
+  const int NTERM_LS = P*(P+1)/2;                               //!< Terms for Laplace Spherical
+  const int NTERM_HS = P*P;                                     //!< Terms for Helmholtz Spherical
+  const int NTERM_BS = 3*P*(P+1)/2;                             //!< Terms for Biot-Savart Spherical
+#if EXAFMM_LAPLACE
+  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
+#define NTERM NTERM_LS
+#elif EXAFMM_HELMHOLTZ
+  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
+#define NTERM NTERM_HS
+#elif EXAFMM_BIOTSAVART
+  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
+#define NTERM NTERM_BS
+#endif
+
   typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
+
+#if EXAFMM_CARTESIAN
+#undef NTERM
+#define NTERM NTERM_LC
+  typedef vec<NTERM,real_t> vecP;                               //!< Multipole/local coefficient type
+#elif EXAFMM_SPHERICAL
+  typedef vec<NTERM,complex_t> vecP;                            //!< Multipole/local coefficient type
+#endif
 
   //! Structure of cells
   struct Cell {

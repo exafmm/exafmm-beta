@@ -19,9 +19,9 @@
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
 #include "Empty.h"
+typedef exafmm::EmptyKernel kernel;
 
 namespace exafmm {
-  typedef EmptyKernel kernel;
   real_t Kernel::eps2 = 0.0;
   vec3 Kernel::Xperiodic = 0.0;
   static const double Celec = 332.0716;
