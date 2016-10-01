@@ -6,6 +6,8 @@
 namespace exafmm {
   class BiotSavartP2PCPU : public Kernel {
   public:
+    static const Equation equation = BiotSavart;
+
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;

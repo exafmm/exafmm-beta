@@ -316,7 +316,7 @@ namespace exafmm {
       for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
 	if (irank != mpirank) {                                 //  If not current rank
 	  C_iter C0 = recvCells.begin() + recvCellDispl[irank]; //   Root cell iterator for irank
-	  Body body;                                            //   Body to contain remote root coordinates
+	  Body<kernel::equation> body;                          //   Body to contain remote root coordinates
 	  body.X = C0->X;                                       //   Copy remote root coordinates
 	  body.IBODY = recvCellDispl[irank];                    //   Copy remote root displacement in vector
 	  bodies.push_back(body);                               //   Push this root cell to body vector

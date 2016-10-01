@@ -5,9 +5,6 @@
 namespace exafmm {
   //! Custom radix sort for body and structures
   class Sort {
-    typedef std::vector<Body> Bodies;                           //!< Vector of bodies
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-
   private:
     Bodies output;                                              //!< Output buffer
 

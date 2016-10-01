@@ -106,17 +106,12 @@ namespace exafmm {
   const int NTERM_HS = P*P;                                     //!< Terms for Helmholtz Spherical
   const int NTERM_BS = 3*P*(P+1)/2;                             //!< Terms for Biot-Savart Spherical
 #if EXAFMM_LAPLACE
-  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
 #define NTERM NTERM_LS
 #elif EXAFMM_HELMHOLTZ
-  typedef std::vector<Body<Helmholtz> > Bodies;                 //!< Vector of bodies
 #define NTERM NTERM_HS
 #elif EXAFMM_BIOTSAVART
-  typedef std::vector<Body<BiotSavart> > Bodies;                //!< Vector of bodies
 #define NTERM NTERM_BS
 #endif
-
-  typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
 
 #if EXAFMM_CARTESIAN
 #undef NTERM
@@ -128,6 +123,7 @@ namespace exafmm {
 
   //! Structure of cells
   struct Cell {
+    typedef std::vector<Body<Laplace> >::iterator B_iter;
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
     int      NCHILD;                                            //!< Number of child cells
@@ -146,6 +142,15 @@ namespace exafmm {
     vecP     M;                                                 //!< Multipole coefficients
     vecP     L;                                                 //!< Local coefficients
   };
+
+#if EXAFMM_LAPLACE
+  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
+#elif EXAFMM_HELMHOLTZ
+  typedef std::vector<Body<Helmholtz> > Bodies;                 //!< Vector of bodies
+#elif EXAFMM_BIOTSAVART
+  typedef std::vector<Body<BiotSavart> > Bodies;                //!< Vector of bodies
+#endif
+  typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector
 }

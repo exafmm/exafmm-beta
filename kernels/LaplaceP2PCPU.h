@@ -6,6 +6,8 @@
 namespace exafmm {
   class LaplaceP2PCPU : public Kernel {
   public:
+    static const Equation equation = Laplace;
+
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
