@@ -109,10 +109,10 @@ namespace exafmm {
   typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
 #define NTERM NTERM_LS
 #elif EXAFMM_HELMHOLTZ
-  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
+  typedef std::vector<Body<Helmholtz> > Bodies;                 //!< Vector of bodies
 #define NTERM NTERM_HS
 #elif EXAFMM_BIOTSAVART
-  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
+  typedef std::vector<Body<BiotSavart> > Bodies;                //!< Vector of bodies
 #define NTERM NTERM_BS
 #endif
 
