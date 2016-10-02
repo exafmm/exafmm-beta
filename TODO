@@ -3,6 +3,7 @@
 - Template body, cell
 - Template kernels
 - Remove kernel_select
+- Remove Empty kernel
 - Make kernel runtime option
 - getKernelNum > getEqNum in args.h
 - B_iter > B_itr
