@@ -69,5 +69,7 @@ namespace exafmm {
 	B[i].TRG[3] += az;
       }
     }
+
+    static void normalize(Bodies) {}
   };
 }

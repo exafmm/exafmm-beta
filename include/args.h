@@ -174,25 +174,33 @@ namespace exafmm {
       return 0;
     }
 
-    uint64_t getKernelNum() {
+    uint64_t getEqNum(const char * _equation) {
+      switch (_equation[0]) {
+      case 'l':
+        return 0;
+      case 'h':
+        return 1;
+      case 's':
+        return 2;
+      case 'b':
+        return 3;
+      default:
+        fprintf(stderr, "invalid equation %s\n", _equation);
+        abort();
+      }
+      return 0;
+    }
+
+    uint64_t getBasisNum() {
       uint64_t key = 0;
-#if EXAFMM_LAPLACE
-      key |= 0;
-#elif EXAFMM_HELMHOLTZ
-      key |= 1;
-#elif EXAFMM_STOKES
-      key |= 2;
-#elif EXAFMM_BIOTSAVART
-      key |= 3;
-#endif
 #if EXAFMM_CARTESIAN
-      key |= 0 << 3;
+      key |= 0;
 #elif EXAFMM_SPHERICAL
-      key |= 1 << 3;
+      key |= 1;
 #elif EXAFMM_PLANEWAVE
-      key |= 2 << 3;
+      key |= 2;
 #elif EXAFMM_EQUIVALENT
-      key |= 3 << 3;
+      key |= 3;
 #endif
       return key;
     }
@@ -335,18 +343,19 @@ namespace exafmm {
       key |= uint64_t(round(log(ncrit)/log(2)));
       key |= getDistNum(distribution) << 4;
       key |= dual << 7;
-      key |= graft << 8;
-      key |= images << 9;
-      key |= IneJ << 11;
-      key |= mutual << 12;
-      key |= uint64_t(round(log(numBodies)/log(10))) << 13;
-      key |= useRopt << 17;
-      key |= PP << 18;
-      key |= uint64_t(round(log(nspawn)/log(10))) << 24;
-      key |= uint64_t(theta*14) << 27;
-      key |= uint64_t(round(log(threads)/log(2))) << 30;
-      key |= uint64_t(useRmax) << 33;
-      key |= getKernelNum() << 34;
+      key |= getEqNum(equation) << 8;
+      key |= graft << 11;
+      key |= images << 12;
+      key |= IneJ << 14;
+      key |= mutual << 15;
+      key |= uint64_t(round(log(numBodies)/log(10))) << 16;
+      key |= useRopt << 20;
+      key |= PP << 21;
+      key |= uint64_t(round(log(nspawn)/log(10))) << 27;
+      key |= uint64_t(theta*14) << 30;
+      key |= uint64_t(round(log(threads)/log(2))) << 33;
+      key |= uint64_t(useRmax) << 36;
+      key |= getBasisNum() << 37;
       key |= getConfigNum() << 40;
       key |= uint64_t(round(log(mpisize)/log(2))) << 45;
       assert( uint64_t(round(log(mpisize)/log(2))) < 18 );

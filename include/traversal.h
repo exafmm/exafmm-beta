@@ -572,11 +572,7 @@ namespace exafmm {
 
     //! Normalize bodies after direct summation
     void normalize(Bodies & bodies) {
-#if !EXAFMM_BIOTSAVART
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	B->TRG /= B->SRC;                                       //  Normalize by target charge
-      }                                                         // End loop over bodies
-#endif
+      kernel::normalize(bodies);                                // Normalize bodies
     }
 
     //! Write G matrix to file

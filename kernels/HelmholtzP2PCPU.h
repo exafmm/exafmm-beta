@@ -285,5 +285,11 @@ namespace exafmm {
 	B[i].TRG[3] -= complex_t(az_r, az_i);
       }
     }
+
+    static void normalize(Bodies & bodies) {
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+	B->TRG /= B->SRC;
+      }
+    }
   };
 }
