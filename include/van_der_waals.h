@@ -4,6 +4,7 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename kernel>
   class VanDerWaals {
   private:
     const real_t cuton;                                         //!< Cuton distance

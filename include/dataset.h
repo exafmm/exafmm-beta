@@ -9,6 +9,7 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename kernel>
   class Dataset {                                               // Contains all the different datasets
   private:
     long filePosition;                                          // Position of file stream

@@ -31,7 +31,7 @@ int main() {
   }
 
   Cells cells(4);
-  Verify verify;
+  Verify<kernel> verify;
   jbodies[0].X = 2;
 #if EXAFMM_BIOTSAVART
   jbodies[0].SRC[0] = drand48();

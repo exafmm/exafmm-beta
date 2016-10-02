@@ -32,18 +32,18 @@ int main(int argc, char ** argv) {
   args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree localTree(args.ncrit, args.nspawn);
-  BuildTree globalTree(1, args.nspawn);
+  BuildTree<kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<kernel> globalTree(1, args.nspawn);
   Cells cells, jcells;
-  Dataset data;
-  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
+  Dataset<kernel> data;
+  Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
+  Partition<kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal<kernel> traversal(args.nspawn, args.images, args.path);
   TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify(args.path);
+  Verify<kernel> verify(args.path);
   num_threads(args.threads);
 
   args.verbose &= baseMPI.mpirank == 0;

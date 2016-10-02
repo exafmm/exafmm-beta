@@ -4,15 +4,17 @@
 #include "dataset.h"
 #include "logger.h"
 using namespace exafmm;
+#include "Empty.h"
+typedef EmptyKernel kernel;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<kernel> boundBox(args.nspawn);
   Bounds bounds;
-  BuildTree buildTree(args.ncrit, args.nspawn);
+  BuildTree<kernel> buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
-  Dataset data;
+  Dataset<kernel> data;
   num_threads(args.threads);
 
   logger::verbose = args.verbose;

@@ -30,10 +30,10 @@ int main(int argc, char ** argv) {
   args.ncrit = 32;
   args.images = 1;
   BaseMPI baseMPI;
-  BoundBox boundBox(args.nspawn);
-  BuildTree buildTree(args.ncrit, args.nspawn);
-  Dataset data;
-  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
+  BoundBox<kernel> boundBox(args.nspawn);
+  BuildTree<kernel> buildTree(args.ncrit, args.nspawn);
+  Dataset<kernel> data;
+  Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
   Traversal<kernel> traversal(args.nspawn, args.images, args.path);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
 #if EXAFMM_SERIAL
@@ -42,6 +42,8 @@ int main(int argc, char ** argv) {
   ParallelFMM FMM;
 #endif
   TreeMPI<kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
+  Verify<kernel> verify(args.path);
+  verify.verbose = args.verbose;
 
   args.numBodies /= FMM.MPISIZE;
   int numBodies = args.numBodies;
@@ -176,8 +178,6 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Total Direct");
     logger::resetTimer("Total Direct");
 #endif
-    Verify verify(args.path);
-    verify.verbose = args.verbose;
     double potSum = verify.getSumScalar(bodies);
     double potSum2 = verify.getSumScalar(bodies2);
     double accDif = verify.getDifVector(bodies, bodies2);

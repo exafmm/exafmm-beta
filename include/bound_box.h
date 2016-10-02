@@ -5,6 +5,7 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename kernel>
   class BoundBox {
   private:
     const int nspawn;                                           //!< Threshold of NBODY for spawning new threads

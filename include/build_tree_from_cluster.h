@@ -3,6 +3,7 @@
 #include "build_tree.h"
 
 namespace exafmm {
+  template<typename kernel>
   class BuildTreeFromCluster {
   public:
     typedef std::vector<int> ints;                              //!< Vector of integer types

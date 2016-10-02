@@ -4,6 +4,7 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename kernel>
   class Ewald {
     //! Wave structure for Ewald summation
     struct Wave {

@@ -4,6 +4,7 @@
 
 namespace exafmm {
   //! Custom radix sort for body and structures
+  template<typename kernel>
   class Sort {
   private:
     Bodies output;                                              //!< Output buffer

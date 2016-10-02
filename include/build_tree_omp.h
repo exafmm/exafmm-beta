@@ -5,6 +5,7 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename kernel>
   class BuildTree {
   private:
     const int ncrit;                                            //!< Number of bodies per leaf cell

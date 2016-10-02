@@ -28,13 +28,13 @@ namespace exafmm {
 
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox * boundBox;
-  BuildTree * localTree, * globalTree;
-  Partition * partition;
+  BoundBox<kernel> * boundBox;
+  BuildTree<kernel> * localTree, * globalTree;
+  Partition<kernel> * partition;
   Traversal<kernel> * traversal;
   TreeMPI<kernel> * treeMPI;
   UpDownPass<kernel> * upDownPass;
-  Verify * verify;
+  Verify<kernel> * verify;
 
 #if EXAFMM_SERIAL
   SerialFMM * FMM;
@@ -56,14 +56,14 @@ namespace exafmm {
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox(nspawn);
-    localTree = new BuildTree(ncrit, nspawn);
-    globalTree = new BuildTree(1, nspawn);
-    partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
+    boundBox = new BoundBox<kernel>(nspawn);
+    localTree = new BuildTree<kernel>(ncrit, nspawn);
+    globalTree = new BuildTree<kernel>(1, nspawn);
+    partition = new Partition<kernel>(baseMPI->mpirank, baseMPI->mpisize);
     traversal = new Traversal<kernel>(nspawn, images, path);
     treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
     upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
-    verify = new Verify(path);
+    verify = new Verify<kernel>(path);
 #if EXAFMM_SERIAL
     FMM = new SerialFMM;
 #else
@@ -362,7 +362,7 @@ namespace exafmm {
                                  int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
     num_threads(args->threads);
     vec3 cycles = cycle;
-    Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
+    Ewald<kernel> * ewald = new Ewald<kernel>(ksize, alpha, sigma, cutoff, cycles);
     const int shift = 29;
     const int mask = ~(0x7U << shift);
     int nlocal = 0;
@@ -526,7 +526,7 @@ namespace exafmm {
                                    int & numTypes, double * rscale, double * gscale, double * fgscale) {
     num_threads(args->threads);
     vec3 cycles = cycle;
-    VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycles, numTypes, rscale, gscale, fgscale);
+    VanDerWaals<kernel> * VDW = new VanDerWaals<kernel>(cuton, cutoff, cycles, numTypes, rscale, gscale, fgscale);
     const int shift = 29;
     const int mask = ~(0x7U << shift);
     int nlocal = 0;

@@ -5,6 +5,7 @@
 
 namespace exafmm {
   //! Verify results
+  template<typename kernel>
   class Verify {
   private:
     typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair

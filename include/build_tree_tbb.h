@@ -5,6 +5,7 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename kernel>
   class BuildTree {
   private:
     typedef vec<8,int> ivec8;                                   //!< Vector of 8 integer types

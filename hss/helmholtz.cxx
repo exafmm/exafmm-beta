@@ -34,17 +34,17 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree localTree(args.ncrit, args.nspawn);
-  BuildTree globalTree(1, args.nspawn);
+  BuildTree<kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<kernel> globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
-  Dataset data;
-  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
+  Dataset<kernel> data;
+  Partition<kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal<kernel> traversal(args.nspawn, args.images);
   TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify;
+  Verify<kernel> verify;
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;

@@ -3,9 +3,9 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename T, int D, int N>
+  template<typename T, typename B_itr, int D, int N>
   struct SIMD {
-    static inline T setBody(B_iter, int) {
+    static inline T setBody(B_itr, int) {
       T v;
       return v;
     }
@@ -14,9 +14,9 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,16> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr, int D>
+  struct SIMD<T,B_itr,D,16> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i   ].X[D],B[i+1 ].X[D],B[i+2 ].X[D],B[i+3 ].X[D],
 	  B[i+4 ].X[D],B[i+5 ].X[D],B[i+6 ].X[D],B[i+7 ].X[D],
 	  B[i+8 ].X[D],B[i+9 ].X[D],B[i+10].X[D],B[i+11].X[D],
@@ -28,9 +28,9 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,8> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr, int D>
+  struct SIMD<T,B_itr,D,8> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i  ].X[D],B[i+1].X[D],B[i+2].X[D],B[i+3].X[D],
 	  B[i+4].X[D],B[i+5].X[D],B[i+6].X[D],B[i+7].X[D]);
       return v;
@@ -40,9 +40,9 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,4> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr, int D>
+  struct SIMD<T,B_itr,D,4> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i].X[D],B[i+1].X[D],B[i+2].X[D],B[i+3].X[D]);
       return v;
     }
@@ -51,9 +51,9 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,2> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr, int D>
+  struct SIMD<T,B_itr,D,2> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i].X[D],B[i+1].X[D]);
       return v;
     }
@@ -62,9 +62,9 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,16> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,3,16> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i   ].SRC,B[i+1 ].SRC,B[i+2 ].SRC,B[i+3 ].SRC,
 	  B[i+4 ].SRC,B[i+5 ].SRC,B[i+6 ].SRC,B[i+7 ].SRC,
 	  B[i+8 ].SRC,B[i+9 ].SRC,B[i+10].SRC,B[i+11].SRC,
@@ -72,32 +72,32 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,8> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,3,8> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i  ].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC,
 	  B[i+4].SRC,B[i+5].SRC,B[i+6].SRC,B[i+7].SRC);
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,4> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,3,4> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC);
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,2> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,3,2> {
+    static inline T setBody(B_itr B, int i) {
       T v(B[i].SRC,B[i+1].SRC);
       return v;
     }
   };
 #if EXAFMM_HELMHOLTZ
-  template<typename T>
-  struct SIMD<T,4,16> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,4,16> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::real(B[i   ].SRC),std::real(B[i+1 ].SRC),
 	  std::real(B[i+2 ].SRC),std::real(B[i+3 ].SRC),
 	  std::real(B[i+4 ].SRC),std::real(B[i+5 ].SRC),
@@ -109,9 +109,9 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,4,8> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,4,8> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::real(B[i  ].SRC),std::real(B[i+1].SRC),
 	  std::real(B[i+2].SRC),std::real(B[i+3].SRC),
 	  std::real(B[i+4].SRC),std::real(B[i+5].SRC),
@@ -119,24 +119,24 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,4,4> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,4,4> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::real(B[i  ].SRC),std::real(B[i+1].SRC),
 	  std::real(B[i+2].SRC),std::real(B[i+3].SRC));
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,4,2> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,4,2> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::real(B[i].SRC),std::real(B[i+1].SRC));
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,16> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,5,16> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::imag(B[i   ].SRC),std::imag(B[i+1 ].SRC),
 	  std::imag(B[i+2 ].SRC),std::imag(B[i+3 ].SRC),
 	  std::imag(B[i+4 ].SRC),std::imag(B[i+5 ].SRC),
@@ -148,9 +148,9 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,8> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,5,8> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::imag(B[i  ].SRC),std::imag(B[i+1].SRC),
 	  std::imag(B[i+2].SRC),std::imag(B[i+3].SRC),
 	  std::imag(B[i+4].SRC),std::imag(B[i+5].SRC),
@@ -158,17 +158,17 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,4> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,5,4> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::imag(B[i  ].SRC),std::imag(B[i+1].SRC),
 	  std::imag(B[i+2].SRC),std::imag(B[i+3].SRC));
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,2> {
-    static inline T setBody(B_iter B, int i) {
+  template<typename T, typename B_itr>
+  struct SIMD<T,B_itr,5,2> {
+    static inline T setBody(B_itr B, int i) {
       T v(std::imag(B[i].SRC),std::imag(B[i+1].SRC));
       return v;
     }

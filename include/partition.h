@@ -5,6 +5,7 @@
 
 namespace exafmm {
   //! Handles all the partitioning of domains
+  template<typename kernel>
   class Partition {
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
@@ -228,7 +229,7 @@ namespace exafmm {
       }                                                         // End loop over bodies
       logger::stopTimer("Partition");                           // Stop timer
       logger::startTimer("Sort");                               // Start timer
-      Sort sort;                                                // Instantiate sort class
+      Sort<kernel> sort;                                        // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
       return local;
@@ -237,7 +238,7 @@ namespace exafmm {
     //! Send bodies back to where they came from
     void unpartition(Bodies & bodies) {
       logger::startTimer("Sort");                               // Start timer
-      Sort sort;                                                // Instantiate sort class
+      Sort<kernel> sort;                                        // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
     }

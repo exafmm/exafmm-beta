@@ -32,11 +32,11 @@ namespace exafmm {
 	ksimdvec az_r = zero;
 	ksimdvec az_i = zero;
 
-	simdvec xi = SIMD<simdvec,0,NSIMD>::setBody(Bi,i);
-	simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(Bi,i);
-	simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(Bi,i);
-	simdvec mi_r = SIMD<simdvec,4,NSIMD>::setBody(Bi,i);
-	simdvec mi_i = SIMD<simdvec,5,NSIMD>::setBody(Bi,i);
+	simdvec xi = SIMD<simdvec,B_iter,0,NSIMD>::setBody(Bi,i);
+	simdvec yi = SIMD<simdvec,B_iter,1,NSIMD>::setBody(Bi,i);
+	simdvec zi = SIMD<simdvec,B_iter,2,NSIMD>::setBody(Bi,i);
+	simdvec mi_r = SIMD<simdvec,B_iter,4,NSIMD>::setBody(Bi,i);
+	simdvec mi_i = SIMD<simdvec,B_iter,5,NSIMD>::setBody(Bi,i);
 
 	simdvec dx = Xperiodic[0];
 	xi -= dx;
@@ -172,12 +172,12 @@ namespace exafmm {
 	ksimdvec az_r = zero;
 	ksimdvec az_i = zero;
 
-	simdvec index = SIMD<simdvec,0,NSIMD>::setIndex(i);
-	simdvec xi = SIMD<simdvec,0,NSIMD>::setBody(B,i);
-	simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(B,i);
-	simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(B,i);
-	simdvec mi_r = SIMD<simdvec,4,NSIMD>::setBody(B,i);
-	simdvec mi_i = SIMD<simdvec,5,NSIMD>::setBody(B,i);
+	simdvec index = SIMD<simdvec,B_iter,0,NSIMD>::setIndex(i);
+	simdvec xi = SIMD<simdvec,B_iter,0,NSIMD>::setBody(B,i);
+	simdvec yi = SIMD<simdvec,B_iter,1,NSIMD>::setBody(B,i);
+	simdvec zi = SIMD<simdvec,B_iter,2,NSIMD>::setBody(B,i);
+	simdvec mi_r = SIMD<simdvec,B_iter,4,NSIMD>::setBody(B,i);
+	simdvec mi_i = SIMD<simdvec,B_iter,5,NSIMD>::setBody(B,i);
 	for (int j=i+1; j<n; j++) {
 	  simdvec dx = B[j].X[0];
 	  dx -= xi;
