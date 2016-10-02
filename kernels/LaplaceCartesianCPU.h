@@ -1,6 +1,9 @@
 #include "LaplaceP2PCPU.h"
 
 namespace exafmm {
+  typedef std::vector<Body<Laplace> > Bodies;
+  typedef typename Bodies::iterator B_iter;
+
   template<int nx, int ny, int nz>
   struct Index {
     static const int      I = Index<nx,ny+1,nz-1>::I + 1;
@@ -633,9 +636,13 @@ namespace exafmm {
     static inline void negate(vecLC){}
   };
 
-
   class LaplaceCartesianCPU : public LaplaceP2PCPU {
   public:
+    using LaplaceP2PCPU::Bodies;
+    using LaplaceP2PCPU::Cells;
+    using LaplaceP2PCPU::B_iter;
+    using LaplaceP2PCPU::C_iter;
+
     static void setup() {}
 
     static void P2M(C_iter C) {

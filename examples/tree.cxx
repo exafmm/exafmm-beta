@@ -4,11 +4,16 @@
 #include "dataset.h"
 #include "logger.h"
 using namespace exafmm;
-#include "Empty.h"
-typedef EmptyKernel kernel;
+#include "LaplaceCartesianCPU.h"
+typedef LaplaceCartesianCPU kernel;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox<kernel> boundBox(args.nspawn);
   Bounds bounds;

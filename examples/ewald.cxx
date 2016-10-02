@@ -30,6 +30,11 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox<kernel> boundBox(args.nspawn);

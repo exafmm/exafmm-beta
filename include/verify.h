@@ -7,9 +7,14 @@ namespace exafmm {
   //! Verify results
   template<typename kernel>
   class Verify {
-  private:
+    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
     typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
     typedef Record::iterator R_iter;                            //!< Iterator of regression map
+
+  private:
     const char * path;                                          //!< Path to save files
 
   public:

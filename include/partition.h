@@ -7,6 +7,11 @@ namespace exafmm {
   //! Handles all the partitioning of domains
   template<typename kernel>
   class Partition {
+    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
+
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator

@@ -5,9 +5,14 @@
 namespace exafmm {
   template<typename kernel>
   class BuildTreeFromCluster {
-  public:
+    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
     typedef std::vector<int> ints;                              //!< Vector of integer types
     typedef std::vector<vec3> vec3s;                            //!< Vector of vec3 types
+
+  public:
     ints iwrap;                                                 //!< Bit flag for wrap around periodic boundary
 
     BuildTreeFromCluster() {}                                   // Constructor

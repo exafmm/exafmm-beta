@@ -6,6 +6,10 @@
 namespace exafmm {
   class BiotSavartP2PCPU : public Kernel {
   public:
+    typedef std::vector<Body<BiotSavart> > Bodies;
+    typedef std::vector<Cell<BiotSavart> > Cells;
+    typedef typename Bodies::iterator B_iter;
+    typedef typename Cells::iterator C_iter;
     static const Equation equation = BiotSavart;
 
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {

@@ -150,18 +150,5 @@ namespace exafmm {
     B_iter BODY;                                                //!< Iterator of first body
     vecBS  M, L;                                                //!< Multipole/local coefficients
   };
-
-#if EXAFMM_LAPLACE
-  typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
-  typedef std::vector<Cell<Laplace> > Cells;                    //!< Vector of cells
-#elif EXAFMM_HELMHOLTZ
-  typedef std::vector<Body<Helmholtz> > Bodies;                 //!< Vector of bodies
-  typedef std::vector<Cell<Helmholtz> > Cells;                  //!< Vector of cells
-#elif EXAFMM_BIOTSAVART
-  typedef std::vector<Body<BiotSavart> > Bodies;                //!< Vector of bodies
-  typedef std::vector<Cell<BiotSavart> > Cells;                 //!< Vector of cells
-#endif
-  typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
-  typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector
 }
 #endif

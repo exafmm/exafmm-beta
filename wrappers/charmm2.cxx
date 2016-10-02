@@ -19,9 +19,14 @@
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
 #include "LaplaceSphericalCPU.h"
-typedef exafmm::LaplaceSphericalCPU kernel;
 
 namespace exafmm {
+  typedef LaplaceSphericalCPU kernel;
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   real_t Kernel::eps2 = 0.0;
   vec3 Kernel::Xperiodic = 0.0;
   static const double Celec = 332.0716;

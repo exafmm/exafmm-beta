@@ -6,6 +6,11 @@
 namespace exafmm {
   template<typename kernel>
   class Ewald {
+    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
+
     //! Wave structure for Ewald summation
     struct Wave {
       vec3   K;                                                 //!< 3-D wave number vector

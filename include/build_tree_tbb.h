@@ -7,8 +7,13 @@
 namespace exafmm {
   template<typename kernel>
   class BuildTree {
-  private:
+    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
     typedef vec<8,int> ivec8;                                   //!< Vector of 8 integer types
+
+  private:
     //! Binary tree is used for counting number of bodies with a recursive approach
     struct BinaryTreeNode {
       ivec8            NBODY;                                   //!< Number of descendant bodies

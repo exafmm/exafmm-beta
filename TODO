@@ -7,6 +7,7 @@
 - getKernelNum > getEqNum in args.h
 - B_iter > B_itr
 - BaseMPI > MPI_Util
+- kernel files > .cxx
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
 - Fix all buildbot errors
 - Fix all nightly errors

@@ -16,9 +16,14 @@
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
 #include "LaplaceSphericalCPU.h"
-typedef exafmm::LaplaceSphericalCPU kernel;
 
 namespace exafmm {
+  typedef LaplaceSphericalCPU kernel;
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   vec3 Kernel::Xperiodic = 0;
   real_t Kernel::eps2 = 0.0;
 

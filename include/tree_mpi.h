@@ -6,7 +6,12 @@ namespace exafmm {
   //! Handles all the communication of local essential trees
   template<typename kernel>
   class TreeMPI {
-  protected:
+    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
+
+  private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int images;                                           //!< Number of periodic image sublevels

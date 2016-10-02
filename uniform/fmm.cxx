@@ -14,8 +14,8 @@
 #include "../uniform/parallelfmm.h"
 #endif
 using namespace exafmm;
-#include "Empty.h"
-typedef EmptyKernel kernel;
+#include "LaplaceCartesianCPU.h"
+typedef LaplaceCartesianCPU kernel;
 real_t Kernel::eps2 = 0.0;
 vec3 Kernel::Xperiodic = 0.0;
 
@@ -29,6 +29,11 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   args.ncrit = 32;
   args.images = 1;
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   BaseMPI baseMPI;
   BoundBox<kernel> boundBox(args.nspawn);
   BuildTree<kernel> buildTree(args.ncrit, args.nspawn);

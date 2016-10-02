@@ -6,6 +6,11 @@
 namespace exafmm {
   template<typename kernel>
   class UpDownPass {
+    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
+
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria
     const bool useRmax;                                         //!< Use maximum distance for MAC

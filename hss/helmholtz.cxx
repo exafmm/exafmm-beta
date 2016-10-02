@@ -32,6 +32,11 @@ const complex_t I1(0.0,1.0);
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox<kernel> boundBox(args.nspawn);

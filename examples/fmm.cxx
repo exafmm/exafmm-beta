@@ -15,6 +15,11 @@ complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
   Args args(argc, argv);
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox<kernel> boundBox(args.nspawn);
   Bounds bounds;

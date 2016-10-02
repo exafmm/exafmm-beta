@@ -11,6 +11,11 @@
 #include "kernel_select.h"
 
 namespace exafmm {
+  typedef std::vector<Body<kernel::equation> > Bodies;
+  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   vec3 Kernel::Xperiodic = 0;
   real_t Kernel::eps2 = 0.0;
   complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);

@@ -7,6 +7,10 @@ namespace exafmm {
   const complex_t I(0.,1.);
   class HelmholtzP2PCPU : public Kernel {
   public:
+    typedef std::vector<Body<Helmholtz> > Bodies;
+    typedef std::vector<Cell<Helmholtz> > Cells;
+    typedef typename Bodies::iterator B_iter;
+    typedef typename Cells::iterator C_iter;
     static const Equation equation = Helmholtz;
 
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
