@@ -126,7 +126,7 @@ namespace exafmm {
 	}
       }
 #if EXAFMM_MASS
-      for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];
+      for (int i=1; i<NTERM_LS; i++) C->M[i] /= C->M[0];
 #endif
     }
 
@@ -138,7 +138,7 @@ namespace exafmm {
 	cart2sph(rho, alpha, beta, dX);
 	evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
 #if EXAFMM_MASS
-        for (int i=1; i<NTERM; i++) Cj->M[i] *= Cj->M[0];
+        for (int i=1; i<NTERM_LS; i++) Cj->M[i] *= Cj->M[0];
 #endif
 	for (int j=0; j<P; j++) {
 	  for (int k=0; k<=j; k++) {
@@ -161,7 +161,7 @@ namespace exafmm {
 	}
       }
 #if EXAFMM_MASS
-      for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];
+      for (int i=1; i<NTERM_LS; i++) Ci->M[i] /= Ci->M[0];
 #endif
     }
 

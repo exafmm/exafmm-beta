@@ -29,16 +29,16 @@ namespace exafmm {
 
   // Kahan summation types (Achieves quasi-double precision using single precision types)
 #if EXAFMM_USE_KAHAN
-  typedef kahan<real_t> kreal_t;                                //!< Floating point type with Kahan summation
+  typedef kahan<real_t> kreal_t;                                //!< Real type with Kahan summation
   typedef kahan<complex_t> kcomplex_t;                          //!< Complex type with Kahan summation
   typedef kahan<simdvec> ksimdvec;                              //!< SIMD vector type with Kahan summation
 #else
-  typedef real_t kreal_t;                                       //!< Floating point type
-  typedef complex_t kcomplex_t;                                 //!< Complex type with Kahan summation
-  typedef simdvec ksimdvec;                                     //!< SIMD vector type
+  typedef real_t kreal_t;                                       //!< Real type (dummy Kahan)
+  typedef complex_t kcomplex_t;                                 //!< Complex type (dummy Kahan)
+  typedef simdvec ksimdvec;                                     //!< SIMD vector type (dummy Kahan)
 #endif
-  typedef vec<4,kreal_t> kvec4;                                 //!< Vector of 4 floats with Kahan summaiton
-  typedef vec<4,kcomplex_t> kcvec4;                             //!< Vector of 4 complex with Kahan summaiton
+  typedef vec<4,kreal_t> kvec4;                                 //!< Vector of 4 real types with Kahan summaiton
+  typedef vec<4,kcomplex_t> kcvec4;                             //!< Vector of 4 complex types with Kahan summaiton
 
   //! Center and radius of bounding box
   struct Box {
@@ -54,76 +54,65 @@ namespace exafmm {
 
   //! Equations supported
   enum Equation {
-    Empty,
-    Laplace,
-    Helmholtz,
-    BiotSavart
+    Empty,                                                      //!< Empty kernel
+    Laplace,                                                    //!< Laplace kernel
+    Helmholtz,                                                  //!< Helmholtz kernel
+    BiotSavart                                                  //!< Biot-Savart kernel
   };
 
   //! Structure of aligned source for SIMD
   template<Equation equation=Empty>
-  struct Source {
+  struct Source {                                               //!< Base components of source structure
     vec3      X;                                                //!< Position
   };
   template<>
-  struct Source<Laplace> : public Source<> {
+  struct Source<Laplace> : public Source<> {                    //!< Special components for Laplace
     real_t    SRC;                                              //!< Scalar real values
   };
   template<>
-  struct Source<Helmholtz> : public Source<> {
+  struct Source<Helmholtz> : public Source<> {                  //!< Special components for Helmholtz
     complex_t SRC;                                              //!< Scalar complex values
   };
   template<>
-  struct Source<BiotSavart> : public Source<> {
+  struct Source<BiotSavart> : public Source<> {                 //!< Special components for Biot-Savart
     vec4      SRC;                                              //!< Vector real values
   };
 
   //! Structure of bodies
   template<Equation equation=Empty>
-  struct Body {
+  struct Body {                                                 //!< Base components of body structure
     int     IBODY;                                              //!< Initial body numbering for sorting back
     int     IRANK;                                              //!< Initial rank numbering for partitioning back
     int64_t ICELL;                                              //!< Cell index   
     real_t  WEIGHT;                                             //!< Weight for partitioning
   };
   template<>
-  struct Body<Laplace> : public Source<Laplace>, Body<> {
+  struct Body<Laplace> : public Source<Laplace>, Body<> {       //!< Special components for Laplace
     kvec4   TRG;                                                //!< Scalar+vector3 real values
   };
   template<>
-  struct Body<Helmholtz> : public Source<Helmholtz>, Body<> {
+  struct Body<Helmholtz> : public Source<Helmholtz>, Body<> {   //!< Special components for Helmholtz
     kcvec4  TRG;                                                //!< Scalar+vector3 complex values
   };
   template<>
-  struct Body<BiotSavart> : public Source<BiotSavart>, Body<> {
+  struct Body<BiotSavart> : public Source<BiotSavart>, Body<> { //!< Special components for Biot-Savart
     kvec4   TRG;                                                //!< Scalar+vector3 real values
   };
 
   // Multipole/local expansion coefficients
   const int P = EXAFMM_EXPANSION;                               //!< Order of expansions
-  const int NTERM_LC = P*(P+1)*(P+2)/6;                         //!< Terms for Lapalace Cartesian 
-  const int NTERM_LS = P*(P+1)/2;                               //!< Terms for Laplace Spherical
-  const int NTERM_HS = P*P;                                     //!< Terms for Helmholtz Spherical
-  const int NTERM_BS = 3*P*(P+1)/2;                             //!< Terms for Biot-Savart Spherical
-#if EXAFMM_LAPLACE
-#define NTERM NTERM_LS
-#elif EXAFMM_HELMHOLTZ
-#define NTERM NTERM_HS
-#elif EXAFMM_BIOTSAVART
-#define NTERM NTERM_BS
-#endif
-
-#if EXAFMM_CARTESIAN
-#undef NTERM
-#define NTERM NTERM_LC
-  typedef vec<NTERM,real_t> vecP;                               //!< Multipole/local coefficient type
-#elif EXAFMM_SPHERICAL
-  typedef vec<NTERM,complex_t> vecP;                            //!< Multipole/local coefficient type
-#endif
+  const int NTERM_LC = P*(P+1)*(P+2)/6;                         //!< # of terms for Lapalace Cartesian 
+  const int NTERM_LS = P*(P+1)/2;                               //!< # of terms for Laplace Spherical
+  const int NTERM_HS = P*P;                                     //!< # of terms for Helmholtz Spherical
+  const int NTERM_BS = 3*P*(P+1)/2;                             //!< # of terms for Biot-Savart Spherical
+  typedef vec<NTERM_LC,real_t> vecLC;                           //!< Coef vector for Laplace Cartesian
+  typedef vec<NTERM_LS,complex_t> vecLS;                        //!< Coef vector for Laplace Spherical
+  typedef vec<NTERM_HS,complex_t> vecHS;                        //!< Coef vector for Helmholtz Spherical
+  typedef vec<NTERM_BS,complex_t> vecBS;                        //!< Coef vector for Biot-Savart Spherical
 
   //! Structure of cells
-  struct Cell {
-    typedef std::vector<Body<Laplace> >::iterator B_iter;
+  template<Equation equation=Empty>
+  struct Cell {                                                 //!< Base components of cell structure
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
     int      NCHILD;                                            //!< Number of child cells
@@ -133,25 +122,46 @@ namespace exafmm {
     int      numP2P;                                            //!< Size of P2P interaction list per cell
     int      numM2L;                                            //!< Size of M2L interaction list per cell
 #endif
-    B_iter   BODY;                                              //!< Iterator of first body
     uint64_t ICELL;                                             //!< Cell index
     real_t   WEIGHT;                                            //!< Weight for partitioning
     real_t   SCALE;                                             //!< Scale for Helmholtz kernel
     vec3     X;                                                 //!< Cell center
     real_t   R;                                                 //!< Cell radius
-    vecP     M;                                                 //!< Multipole coefficients
-    vecP     L;                                                 //!< Local coefficients
+  };
+  template<>
+  struct Cell<Laplace> : public Cell<> {                        //!< Special components for Laplace
+    typedef std::vector<Body<Laplace> >::iterator B_iter;       //!< Iterator type for body vector
+    B_iter BODY;                                                //!< Iterator of first body
+#if EXAFMM_CARTESIAN
+    vecLC  M, L;                                                //!< Multipole/local coefficients
+#elif EXAFMM_SPHERICAL
+    vecLS  M, L;                                                //!< Multipole/local coefficients
+#endif
+  };
+  template<>
+  struct Cell<Helmholtz> : public Cell<> {                      //!< Special components for Helmholtz
+    typedef std::vector<Body<Helmholtz> >::iterator B_iter;     //!< Iterator type for body vector
+    B_iter BODY;                                                //!< Iterator of first body
+    vecHS  M, L;                                                //!< Multipole/local coefficients
+  };
+  template<>
+  struct Cell<BiotSavart> : public Cell<> {                     //!< Special components for Biot-Savart
+    typedef std::vector<Body<BiotSavart> >::iterator B_iter;    //!< Iterator type for body vector
+    B_iter BODY;                                                //!< Iterator of first body
+    vecBS  M, L;                                                //!< Multipole/local coefficients
   };
 
 #if EXAFMM_LAPLACE
   typedef std::vector<Body<Laplace> > Bodies;                   //!< Vector of bodies
+  typedef std::vector<Cell<Laplace> > Cells;                    //!< Vector of cells
 #elif EXAFMM_HELMHOLTZ
   typedef std::vector<Body<Helmholtz> > Bodies;                 //!< Vector of bodies
+  typedef std::vector<Cell<Helmholtz> > Cells;                  //!< Vector of cells
 #elif EXAFMM_BIOTSAVART
   typedef std::vector<Body<BiotSavart> > Bodies;                //!< Vector of bodies
+  typedef std::vector<Cell<BiotSavart> > Cells;                 //!< Vector of cells
 #endif
   typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
-  typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector
 }
 #endif

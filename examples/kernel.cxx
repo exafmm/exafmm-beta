@@ -15,6 +15,18 @@ int main() {
   kernel::setup();
   logger::verbose = true;
 
+#if EXAFMM_LAPLACE
+#define NTERM NTERM_LS
+#elif EXAFMM_HELMHOLTZ
+#define NTERM NTERM_HS
+#elif EXAFMM_BIOTSAVART
+#define NTERM NTERM_BS
+#endif
+#if EXAFMM_CARTESIAN
+#undef NTERM
+#define NTERM NTERM_LC
+#endif
+
   Cells cells(4);
   Verify verify;
   jbodies[0].X = 2;

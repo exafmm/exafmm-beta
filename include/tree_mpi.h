@@ -113,7 +113,7 @@ namespace exafmm {
     //! Add cells to send buffer
     void addSendCell(C_iter C, int & irank, int & icell, int & iparent, bool copyData) {
       if (copyData) {                                           // If copying data to send cells
-	Cell cell(*C);                                          //  Initialize send cell
+	Cell<kernel::equation> cell(*C);                        //  Initialize send cell
 	cell.NCHILD = cell.NBODY = 0;                           //  Reset counters
 	cell.IPARENT = iparent;                                 //  Index of parent
 	sendCells[sendCellDispl[irank]+icell] = cell;           //  Copy cell to send buffer

@@ -3,6 +3,8 @@
 namespace exafmm {
   class EmptyKernel : public Kernel {
   public:
+    static const Equation equation = Empty;
+
     static void P2P(C_iter , C_iter , bool ) {}
     static void P2P(C_iter ) {}
     static void setup() {}

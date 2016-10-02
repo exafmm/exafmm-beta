@@ -18,8 +18,8 @@
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
-#include "Empty.h"
-typedef exafmm::EmptyKernel kernel;
+#include "LaplaceSphericalCPU.h"
+typedef exafmm::LaplaceSphericalCPU kernel;
 
 namespace exafmm {
   real_t Kernel::eps2 = 0.0;
