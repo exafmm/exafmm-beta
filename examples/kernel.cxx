@@ -6,26 +6,29 @@
 using namespace exafmm;
 vec3 Kernel::Xperiodic = 0;
 real_t Kernel::eps2 = 0.0;
-#if EXAFMM_HELMHOLTZ
 complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-#endif
 
 int main() {
   Bodies bodies(1), bodies2(1), jbodies(1);
   kernel::setup();
   logger::verbose = true;
 
-#if EXAFMM_LAPLACE
-#define NTERM NTERM_LS
-#elif EXAFMM_HELMHOLTZ
-#define NTERM NTERM_HS
-#elif EXAFMM_BIOTSAVART
-#define NTERM NTERM_BS
-#endif
+  int NTERM;
+  switch (kernel::equation) {
+  case Laplace:
 #if EXAFMM_CARTESIAN
-#undef NTERM
-#define NTERM NTERM_LC
+    NTERM = NTERM_LC;
+#elif EXAFMM_SPHERICAL
+    NTERM = NTERM_LS;
 #endif
+    break;
+  case Helmholtz:
+    NTERM = NTERM_HS;
+    break;
+  case BiotSavart:
+    NTERM = NTERM_HS;
+    break;
+  }
 
   Cells cells(4);
   Verify verify;

@@ -19,6 +19,7 @@ namespace exafmm {
     {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
     {"dual",         no_argument,       0, 'D'},
+    {"equation",     required_argument, 0, 'e'},
     {"graft",        no_argument,       0, 'g'},
     {"getMatrix",    no_argument,       0, 'G'},
     {"help",         no_argument,       0, 'h'},
@@ -47,6 +48,7 @@ namespace exafmm {
     double cutoff;
     const char * distribution;
     int dual;
+    const char * equation;
     int graft;
     int getMatrix;
     int images;
@@ -74,6 +76,7 @@ namespace exafmm {
 	      " --cutoff (-C)                 : Cutoff distance of interaction (%f)\n"
 	      " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
 	      " --dual (-D)                   : Use dual tree traversal (%d)\n"
+	      " --equation (-e) [l/h/b]       : Laplace, Helmholtz, BiotSavart (%s)\n"
 	      " --graft (-g)                  : Graft remote trees to global tree (%d)\n"
 	      " --getMatrix (-G)              : Write G matrix to file (%d)\n"
 	      " --help (-h)                   : Show this help document\n"
@@ -97,6 +100,7 @@ namespace exafmm {
 	      cutoff,
 	      distribution,
 	      dual,
+              equation,
 	      graft,
 	      getMatrix,
 	      images,
@@ -115,7 +119,7 @@ namespace exafmm {
 	      useRmax);
     }
 
-    const char * parse(const char * arg) {
+    const char * parseDistribution(const char * arg) {
       switch (arg[0]) {
       case 'c':
 	return "cube";
@@ -127,6 +131,21 @@ namespace exafmm {
 	return "plummer";
       case 's':
 	return "sphere";
+      default:
+	fprintf(stderr, "invalid distribution %s\n", arg);
+	abort();
+      }
+      return "";
+    }
+
+    const char * parseEquation(const char * arg) {
+      switch (arg[0]) {
+      case 'l':
+	return "Laplace";
+      case 'h':
+	return "Helmholtz";
+      case 'b':
+	return "BiotSavart";
       default:
 	fprintf(stderr, "invalid distribution %s\n", arg);
 	abort();
@@ -179,18 +198,18 @@ namespace exafmm {
     }
 
     uint64_t getConfigNum() {
-      uint64_t key = 0;                                         // Accuracy     : Time
+      uint64_t key = 0;
 #if EXAFMM_SINGLE
-      key |= 1;                                                 // dependent    : dependent
+      key |= 1;
 #endif
 #if EXAFMM_USE_SIMD
-      key |= 2;                                                 // dependent    : dependent
+      key |= 2;
 #endif
 #if EXAFMM_USE_KAHAN
-      key |= 4;                                                 // dependent    : dependent
+      key |= 4;
 #endif
 #if EXAFMM_WITH_TBB
-      key |= 0 << 3;                                            // independent  : independent
+      key |= 0 << 3;
 #elif EXAFMM_WITH_MTHREAD
       key |= 1 << 3;
 #elif EXAFMM_WITH_CILK
@@ -208,6 +227,7 @@ namespace exafmm {
       cutoff(.0),
       distribution("cube"),
       dual(0),
+      equation("Laplace"),
       graft(0),
       getMatrix(0),
       images(0),
@@ -227,10 +247,10 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "ac:d:De:gGhi:jmn:op:P:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "ac:d:De:gGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
@@ -244,10 +264,13 @@ namespace exafmm {
 	  cutoff = atof(optarg);
 	  break;
 	case 'd':
-	  distribution = parse(optarg);
+	  distribution = parseDistribution(optarg);
 	  break;
 	case 'D':
 	  dual = 1;
+	  break;
+	case 'e':
+	  equation = parseEquation(optarg);
 	  break;
 	case 'g':
 	  graft = 1;
@@ -308,25 +331,25 @@ namespace exafmm {
     }
 
     uint64_t getKey(int mpisize=1) {
-      uint64_t key = 0;                                         // Accuracy     : Time
-      key |= uint64_t(round(log(ncrit)/log(2)));                // 64           : independent
-      key |= getDistNum(distribution) << 4;                     // plummer      : independent
-      key |= dual << 7;                                         // independent  : independent
-      key |= graft << 8;                                        // independent  : on
-      key |= images << 9;                                       // independent  : independent
-      key |= IneJ << 11;                                        // independent  : independent
-      key |= mutual << 12;                                      // independent  : on
-      key |= uint64_t(round(log(numBodies)/log(10))) << 13;     // independent  : independent
-      key |= useRopt << 17;                                     // independent  : independent
-      key |= PP << 18;                                          // dependent    : dependent 
-      key |= uint64_t(round(log(nspawn)/log(10))) << 24;        // 5000         : independent
-      key |= uint64_t(theta*14) << 27;                          // lower bound  : upper bound
-      key |= uint64_t(round(log(threads)/log(2))) << 30;        // upper bound  : upper bound
-      key |= uint64_t(useRmax) << 33;                           // independent  : independent
-      key |= getKernelNum() << 34;                              // dependent    : Laplace
-      key |= getConfigNum() << 40;                              // see inside   : see inside
-      key |= uint64_t(round(log(mpisize)/log(2))) << 45;        // upper bound  : upper bound
-      assert( uint64_t(round(log(mpisize)/log(2))) < 18 );      // Check for overflow 
+      uint64_t key = 0;
+      key |= uint64_t(round(log(ncrit)/log(2)));
+      key |= getDistNum(distribution) << 4;
+      key |= dual << 7;
+      key |= graft << 8;
+      key |= images << 9;
+      key |= IneJ << 11;
+      key |= mutual << 12;
+      key |= uint64_t(round(log(numBodies)/log(10))) << 13;
+      key |= useRopt << 17;
+      key |= PP << 18;
+      key |= uint64_t(round(log(nspawn)/log(10))) << 24;
+      key |= uint64_t(theta*14) << 27;
+      key |= uint64_t(round(log(threads)/log(2))) << 30;
+      key |= uint64_t(useRmax) << 33;
+      key |= getKernelNum() << 34;
+      key |= getConfigNum() << 40;
+      key |= uint64_t(round(log(mpisize)/log(2))) << 45;
+      assert( uint64_t(round(log(mpisize)/log(2))) < 18 );
       return key;
     }
 
@@ -342,6 +365,8 @@ namespace exafmm {
 		  << "distribution" << " : " << distribution << std::endl
 		  << std::setw(stringLength)
 		  << "dual" << " : " << dual << std::endl
+		  << std::setw(stringLength)
+		  << "equation" << " : " << equation << std::endl
 		  << std::setw(stringLength)
 		  << "graft" << " : " << graft << std::endl
 		  << std::setw(stringLength)

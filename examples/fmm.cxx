@@ -10,9 +10,7 @@
 using namespace exafmm;
 vec3 Kernel::Xperiodic = 0;
 real_t Kernel::eps2 = 0.0;
-#if EXAFMM_HELMHOLTZ
 complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-#endif
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;

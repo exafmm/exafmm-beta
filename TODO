@@ -1,7 +1,10 @@
 -- Immediate --
+- Remove EXAFMM_LAPLACE, HELMHOLTZ, BIOTSAVART
 - Template body, cell
 - Template kernels
+- Remove kernel_select
 - Make kernel runtime option
+- getKernelNum > getEqNum in args.h
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
 - Fix all buildbot errors
 - Fix all nightly errors
