@@ -3,42 +3,42 @@
 #include "bound_box.h"
 #include "build_tree.h"
 #include "dataset.h"
+#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#include "kernel_select.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
-complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
+complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
-int main(int argc, char ** argv) {
-  const vec3 cycle = 2 * M_PI;
-  Args args(argc, argv);
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
+template<typename Kernel>
+void fmm(Args args) {
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
+  const vec3 cycle = 2 * M_PI;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree<kernel> localTree(args.ncrit, args.nspawn);
-  BuildTree<kernel> globalTree(1, args.nspawn);
+  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
-  Dataset<kernel> data;
-  Partition<kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  Traversal<kernel> traversal(args.nspawn, args.images, args.path);  
-  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<kernel> verify(args.path);
+  Dataset<Kernel> data;
+  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
+  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);  
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
-  kernel::setup();
+  Kernel::setup();
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
@@ -223,6 +223,21 @@ int main(int argc, char ** argv) {
       else std::cout << "failed time regression" << std::endl;
     }
     abort();
+  }
+}
+
+int main(int argc, char ** argv) {
+  Args args(argc, argv);
+  if (args.equation == "Laplace") {
+#if EXAFMM_CARTESIAN
+    fmm<LaplaceCartesianCPU>(args);
+#elif EXAFMM_SPHERICAL
+    fmm<LaplaceSphericalCPU>(args);
+#endif
+  } else if (args.equation == "Helmholtz") {
+    fmm<HelmholtzSphericalCPU>(args);
+  } else if (args.equation == "BiotSavart") {
+    fmm<BiotSavartSphericalCPU>(args);
   }
   return 0;
 }

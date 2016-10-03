@@ -15,9 +15,9 @@
 #endif
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef LaplaceCartesianCPU kernel;
-real_t Kernel::eps2 = 0.0;
-vec3 Kernel::Xperiodic = 0.0;
+typedef LaplaceCartesianCPU Kernel;
+real_t KernelBase::eps2 = 0.0;
+vec3 KernelBase::Xperiodic = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
@@ -29,25 +29,25 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   args.ncrit = 32;
   args.images = 1;
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
   BaseMPI baseMPI;
-  BoundBox<kernel> boundBox(args.nspawn);
-  BuildTree<kernel> buildTree(args.ncrit, args.nspawn);
-  Dataset<kernel> data;
-  Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal<kernel> traversal(args.nspawn, args.images, args.path);
-  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  BoundBox<Kernel> boundBox(args.nspawn);
+  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
+  Dataset<Kernel> data;
+  Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
-  TreeMPI<kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
-  Verify<kernel> verify(args.path);
+  TreeMPI<Kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
+  Verify<Kernel> verify(args.path);
   verify.verbose = args.verbose;
 
   args.numBodies /= FMM.MPISIZE;

@@ -1,25 +1,38 @@
+#include "args.h"
 #include <fstream>
 #include "kernel.h"
 #include <vector>
 #include "verify.h"
-#include "kernel_select.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
-complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
+complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
-int main() {
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
+template<Equation equation>
+void initSource(Body<equation> & body) {
+  body.SRC = 1;
+}
+template<>
+void initSource<BiotSavart>(Body<BiotSavart> & body) {
+  body.SRC[0] = drand48();
+  body.SRC[1] = drand48();
+  body.SRC[2] = drand48();
+  body.SRC[3] = 0.1;
+}
+
+template<typename Kernel>
+void fmm(Args args) {
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
   Bodies bodies(1), bodies2(1), jbodies(1);
-  kernel::setup();
+  Kernel::setup();
   logger::verbose = true;
 
   int NTERM;
-  switch (kernel::equation) {
+  switch (Kernel::equation) {
   case Laplace:
 #if EXAFMM_CARTESIAN
     NTERM = NTERM_LC;
@@ -36,23 +49,16 @@ int main() {
   }
 
   Cells cells(4);
-  Verify<kernel> verify;
+  Verify<Kernel> verify;
   jbodies[0].X = 2;
-#if EXAFMM_BIOTSAVART
-  jbodies[0].SRC[0] = drand48();
-  jbodies[0].SRC[1] = drand48();
-  jbodies[0].SRC[2] = drand48();
-  jbodies[0].SRC[3] = 0.1;
-#else
-  jbodies[0].SRC = 1;
-#endif
+  initSource<Kernel::equation>(jbodies[0]);
   C_iter Cj = cells.begin();
   Cj->X = 1;
   Cj->X[0] = 3;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M = 0;
-  kernel::P2M(Cj);
+  Kernel::P2M(Cj);
 
 #if 1
   C_iter CJ = cells.begin()+1;
@@ -61,7 +67,7 @@ int main() {
   CJ->X = 0;
   CJ->X[0] = 4;
   CJ->M = 0;
-  kernel::M2M(CJ, cells.begin());
+  Kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;
@@ -71,7 +77,7 @@ int main() {
 #if EXAFMM_MASS
   for (int i=1; i<NTERM; i++) CJ->M[i] /= CJ->M[0];
 #endif
-  kernel::M2L(CI, CJ, false);
+  Kernel::M2L(CI, CJ, false);
 
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
@@ -79,7 +85,7 @@ int main() {
   Ci->IPARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
-  kernel::L2L(Ci, cells.begin());
+  Kernel::L2L(Ci, cells.begin());
 #else
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
@@ -89,7 +95,7 @@ int main() {
 #if EXAFMM_MASS
   for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
 #endif
-  kernel::M2L(Ci, Cj, false);
+  Kernel::M2L(Ci, Cj, false);
 #endif
 
   bodies[0].X = 2;
@@ -98,7 +104,7 @@ int main() {
   bodies[0].TRG = 0;
   Ci->BODY = bodies.begin();
   Ci->NBODY = bodies.size();
-  kernel::L2P(Ci);
+  Kernel::L2P(Ci);
 
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     *B = bodies[B-bodies2.begin()];
@@ -107,7 +113,7 @@ int main() {
   Cj->NBODY = jbodies.size();
   Ci->NBODY = bodies2.size();
   Ci->BODY = bodies2.begin();
-  kernel::P2P(Ci, Cj, false);
+  Kernel::P2P(Ci, Cj, false);
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }
@@ -125,5 +131,20 @@ int main() {
   verify.print("Rel. L2 Error (acc)",accRel);
   file << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
+}
+
+int main(int argc, char ** argv) {
+  Args args(argc, argv);
+  if (args.equation == "Laplace") {
+#if EXAFMM_CARTESIAN
+    fmm<LaplaceCartesianCPU>(args);
+#elif EXAFMM_SPHERICAL
+    fmm<LaplaceSphericalCPU>(args);
+#endif
+  } else if (args.equation == "Helmholtz") {
+    fmm<HelmholtzSphericalCPU>(args);
+  } else if (args.equation == "BiotSavart") {
+    fmm<BiotSavartSphericalCPU>(args);
+  }
   return 0;
 }

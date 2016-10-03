@@ -153,7 +153,7 @@ namespace exafmm {
     vecBS  M, L;                                                //!< Multipole/local coefficients
   };
 
-  struct Kernel {
+  struct KernelBase {
     static vec3 Xperiodic;                                      //!< Periodic coordinate offset
     static real_t eps2;                                         //!< Epslion squared
     static complex_t wavek;                                     //!< Helmholtz wave number

@@ -4,6 +4,7 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
+#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
@@ -16,41 +17,41 @@
 #if EXAFMM_EXPANSION < 10
 #error Use P >= 10 for this test
 #endif
-#include "kernel_select.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
 
-int main(int argc, char ** argv) {
+template<typename Kernel>
+void fmm(Args args) {
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   const int ksize = 11;
   const vec3 cycle = 2 * M_PI;
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = max(cycle) / 2;
-  Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
-  typedef typename Bodies::iterator B_iter;
-  typedef typename Cells::iterator C_iter;
-
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree<kernel> localTree(args.ncrit, args.nspawn);
-  BuildTree<kernel> globalTree(1, args.nspawn);
+  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> globalTree(1, args.nspawn);
   Cells cells, jcells;
-  Dataset<kernel> data;
-  Ewald<kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
-  Partition<kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal<kernel> traversal(args.nspawn, args.images, args.path);
-  TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<kernel> verify(args.path);
+  Dataset<Kernel> data;
+  Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
+  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
+  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
+  Kernel::setup();
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
@@ -63,7 +64,6 @@ int main(int argc, char ** argv) {
     B->X *= cycle / (2 * M_PI);
   }
   buffer.reserve(bodies.size());
-  //data.writeSources(bodies, baseMPI.mpirank);
   bool pass = true;
   bool isTime = false;
   for (int t=0; t<args.repeat; t++) {
@@ -214,5 +214,14 @@ int main(int argc, char ** argv) {
     }
     abort();
   }
+}
+
+int main(int argc, char ** argv) {
+  Args args(argc, argv);
+#if EXAFMM_CARTESIAN
+  fmm<LaplaceCartesianCPU>(args);
+#elif EXAFMM_SPHERICAL
+  fmm<LaplaceSphericalCPU>(args);
+#endif
   return 0;
 }

@@ -12,9 +12,9 @@
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef exafmm::LaplaceCartesianCPU kernel;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
+typedef exafmm::LaplaceCartesianCPU Kernel;
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *
@@ -29,30 +29,30 @@ double elemops = 0.0;
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree<kernel> localTree(args.ncrit, args.nspawn);
-  BuildTree<kernel> globalTree(1, args.nspawn);
+  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
-  Dataset<kernel> data;
-  Partition<kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal<kernel> traversal(args.nspawn, args.images);
-  TreeMPI<kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass<kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<kernel> verify;
+  Dataset<Kernel> data;
+  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
+  Traversal<Kernel> traversal(args.nspawn, args.images);
+  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  Verify<Kernel> verify;
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  kernel::setup();
+  Kernel::setup();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
@@ -438,7 +438,7 @@ void elements(void * obj, int *I, int *J, double *B, int *descB) {
       B_iter Bi=bodies->begin()+iii-1;
       B_iter Bj=jbodies->begin()+jjj-1;
       vec3 dX=Bi->X-Bj->X;
-      real_t R2=norm(dX)+kernel::eps2;
+      real_t R2=norm(dX)+Kernel::eps2;
       B[locr*(j-1)+(i-1)]=R2==0?0.0:1.0/sqrt(R2);
     }
   }

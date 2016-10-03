@@ -6,7 +6,7 @@
 #endif
 
 namespace exafmm {
-  class BiotSavartP2PCPU : public Kernel {
+  class BiotSavartP2PCPU : public KernelBase {
   public:
     typedef std::vector<Body<BiotSavart> > Bodies;
     typedef std::vector<Cell<BiotSavart> > Cells;

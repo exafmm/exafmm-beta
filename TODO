@@ -1,8 +1,8 @@
 -- Immediate --
-- Remove EXAFMM_LAPLACE, HELMHOLTZ, BIOTSAVART
-- Remove kernel_select
-- Make kernel runtime option
-- getKernelNum > getEqNum in args.h
+- Rank items in this list according to importance
+
+- Remove EXAFMM_CARTESIAN, SPHERICAL
+- Update Makefile.am
 - BaseMPI > MPI_Util
 - kernel files > .cxx
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
@@ -11,7 +11,7 @@
 - Fix charmm2
 - With strumpack
 - Full simdList, threadList, configList in nightly.py
-
+- Comment in driver files
 - Use EXAFMM_CLUSTER
 - Configure on OSX
 - Representative case plot generator
@@ -19,6 +19,7 @@
 - Remove sc16 from master.cfg
 - Extend list based traversal to adaptive tree (UVWX-list)
 - Separate different algorithms into different files (create folder for build tree, partition, etc.)
+- uniform/fmm.cxx accuracy problem
 - Add kernel.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
 
 -- MPI --

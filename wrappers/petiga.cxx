@@ -2,23 +2,32 @@
 #include "args.h"
 #include "bound_box.h"
 #include "build_tree.h"
+#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#include "kernel_select.h"
+#if EXAFMM_LAPLACE
+#if EXAFMM_CARTESIAN
+typedef exafmm::LaplaceCartesianCPU Kernel;
+#elif EXAFMM_SPHERICAL
+typedef exafmm::LaplaceSphericalCPU Kernel;
+#endif
+#elif EXAFMM_HELMHOLTZ
+typedef exafmm::HelmholtzSphericalCPU Kernel;
+#endif
 
 namespace exafmm {
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
-  vec3 Kernel::Xperiodic = 0;
-  real_t Kernel::eps2 = 0.0;
-  complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  vec3 KernelBase::Xperiodic = 0;
+  real_t KernelBase::eps2 = 0.0;
+  complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
   vec3 cycles;
   Bodies buffer;
@@ -32,13 +41,13 @@ namespace exafmm {
   bool pass;
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox<kernel> * boundBox;
-  BuildTree<kernel> * localTree, * globalTree;
-  Partition<kernel> * partition;
-  Traversal<kernel> * traversal;
-  TreeMPI<kernel> * treeMPI;
-  UpDownPass<kernel> * upDownPass;
-  Verify<kernel> * verify;
+  BoundBox<Kernel> * boundBox;
+  BuildTree<Kernel> * localTree, * globalTree;
+  Partition<Kernel> * partition;
+  Traversal<Kernel> * traversal;
+  TreeMPI<Kernel> * treeMPI;
+  UpDownPass<Kernel> * upDownPass;
+  Verify<Kernel> * verify;
 
   void log_initialize() {
     args->verbose &= baseMPI->mpirank == 0;
@@ -68,24 +77,29 @@ namespace exafmm {
     const bool useRmax = false;
     const bool useRopt = false;
     const bool verbose = false;
-    kernel::setup();
+    Kernel::setup();
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<kernel>(nspawn);
-    localTree = new BuildTree<kernel>(ncrit, nspawn);
-    globalTree = new BuildTree<kernel>(1, nspawn);
-    partition = new Partition<kernel>(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal<kernel>(nspawn, images, path);
-    treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
-    verify = new Verify<kernel>(path);
+    boundBox = new BoundBox<Kernel>(nspawn);
+    localTree = new BuildTree<Kernel>(ncrit, nspawn);
+    globalTree = new BuildTree<Kernel>(1, nspawn);
+    partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
+    traversal = new Traversal<Kernel>(nspawn, images, path);
+    treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
+    upDownPass = new UpDownPass<Kernel>(theta, useRmax, useRopt);
+    verify = new Verify<Kernel>(path);
     num_threads(threads);
 
     args->accuracy = 1;
     args->ncrit = ncrit;
     args->distribution = "external";
     args->dual = 1;
+#if EXAFMM_LAPLACE
+    args->equation = "Laplace";
+#elif EXAFMM_HELMHOLTZ
+    args->equation = "Helmholtz";
+#endif
     args->graft = 1;
     args->images = images;
     args->mutual = 0;

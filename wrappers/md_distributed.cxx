@@ -15,25 +15,25 @@
 #include "laplace_spherical_cpu.h"
 
 namespace exafmm {
-  typedef LaplaceSphericalCPU kernel;
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef LaplaceSphericalCPU Kernel;
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
-  vec3 Kernel::Xperiodic = 0;
-  real_t Kernel::eps2 = 0.0;
+  vec3 KernelBase::Xperiodic = 0;
+  real_t KernelBase::eps2 = 0.0;
 
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox<kernel> * boundBox;
-  BuildTreeFromCluster<kernel> * clusterTree;
-  BuildTree<kernel> * localTree, * globalTree;
-  Partition<kernel> * partition;
-  Traversal<kernel> * traversal;
-  TreeMPI<kernel> * treeMPI;
-  UpDownPass<kernel> * upDownPass;
-  Verify<kernel> * verify;
+  BoundBox<Kernel> * boundBox;
+  BuildTreeFromCluster<Kernel> * clusterTree;
+  BuildTree<Kernel> * localTree, * globalTree;
+  Partition<Kernel> * partition;
+  Traversal<Kernel> * traversal;
+  TreeMPI<Kernel> * treeMPI;
+  UpDownPass<Kernel> * upDownPass;
+  Verify<Kernel> * verify;
 
   bool isTime;
   bool pass;
@@ -46,19 +46,19 @@ namespace exafmm {
     const int nspawn = 1000;
     const bool useRmax = false;
     const bool useRopt = false;
-    kernel::setup();
+    Kernel::setup();
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<kernel>(nspawn);
-    clusterTree = new BuildTreeFromCluster<kernel>();
-    localTree = new BuildTree<kernel>(ncrit, nspawn);
-    globalTree = new BuildTree<kernel>(1, nspawn);
-    partition = new Partition<kernel>(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal<kernel>(nspawn, images, path);
-    treeMPI = new TreeMPI<kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<kernel>(theta, useRmax, useRopt);
-    verify = new Verify<kernel>(path);
+    boundBox = new BoundBox<Kernel>(nspawn);
+    clusterTree = new BuildTreeFromCluster<Kernel>();
+    localTree = new BuildTree<Kernel>(ncrit, nspawn);
+    globalTree = new BuildTree<Kernel>(1, nspawn);
+    partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
+    traversal = new Traversal<Kernel>(nspawn, images, path);
+    treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
+    upDownPass = new UpDownPass<Kernel>(theta, useRmax, useRopt);
+    verify = new Verify<Kernel>(path);
 
     args->accuracy = 1;
     args->ncrit = ncrit;
@@ -325,7 +325,7 @@ namespace exafmm {
     num_threads(args->threads);
     vec3 cycles;
     for (int d=0; d<3; d++) cycles[d] = cycle[d];
-    Ewald<kernel> * ewald = new Ewald<kernel>(ksize, alpha, sigma, cutoff, cycles);
+    Ewald<Kernel> * ewald = new Ewald<Kernel>(ksize, alpha, sigma, cutoff, cycles);
     args->numBodies = ni;
     logger::printTitle("Ewald Parameters");
     args->print(logger::stringLength, P);

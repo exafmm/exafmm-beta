@@ -6,7 +6,7 @@
 #endif
 
 namespace exafmm {
-  class LaplaceP2PCPU : public Kernel {
+  class LaplaceP2PCPU : public KernelBase {
   public:
     typedef std::vector<Body<Laplace> > Bodies;
     typedef std::vector<Cell<Laplace> > Cells;

@@ -6,7 +6,7 @@
 #endif
 
 namespace exafmm {
-  class HelmholtzP2PCPU : public Kernel {
+  class HelmholtzP2PCPU : public KernelBase {
   public:
     typedef std::vector<Body<Helmholtz> > Bodies;
     typedef std::vector<Cell<Helmholtz> > Cells;

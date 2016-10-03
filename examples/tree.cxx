@@ -5,21 +5,21 @@
 #include "logger.h"
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef LaplaceCartesianCPU kernel;
+typedef LaplaceCartesianCPU Kernel;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef std::vector<Body<kernel::equation> > Bodies;
-  typedef std::vector<Cell<kernel::equation> > Cells;
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::equation> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds bounds;
-  BuildTree<kernel> buildTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
-  Dataset<kernel> data;
+  Dataset<Kernel> data;
   num_threads(args.threads);
 
   logger::verbose = args.verbose;
