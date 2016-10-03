@@ -1,3 +1,5 @@
+#ifndef laplace_cartesian_cpu_h
+#define laplace_cartesian_cpu_h
 #include "LaplaceP2PCPU.h"
 
 namespace exafmm {
@@ -729,3 +731,4 @@ namespace exafmm {
     }
   };
 }
+#endif

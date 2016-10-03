@@ -4,6 +4,8 @@
 #include "types.h"
 
 namespace exafmm {
+  const complex_t I(0.,1.);
+
   class Kernel {
   public:
     static vec3 Xperiodic;                                      //!< Periodic coordinate offset

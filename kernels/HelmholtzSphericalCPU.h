@@ -1,4 +1,7 @@
+#ifndef helmholtz_spherical_cpu_h
+#define helmholtz_spherical_cpu_h
 #include "HelmholtzP2PCPU.h"
+#include "spherical.h"
 
 namespace exafmm {
   int nquad, nquad2;
@@ -72,12 +75,6 @@ namespace exafmm {
         Anm2[nms] /= sqrt(real_t(n - m) * (n + m));
       }
     }
-  }
-
-  void cart2sph(vec3 dX, real_t & r, real_t & theta, real_t & phi) {
-    r = sqrt(norm(dX));
-    theta = r == 0 ? 0 : acos(dX[2] / r);
-    phi = atan2(dX[1], dX[0]);
   }
 
   void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
@@ -778,3 +775,4 @@ namespace exafmm {
     }
   };
 }
+#endif

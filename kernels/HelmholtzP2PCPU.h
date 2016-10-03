@@ -1,10 +1,11 @@
+#ifndef helmholtz_p2p_cpu
+#define helmholtz_p2p_cpu
 #include "kernel.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
 #endif
 
 namespace exafmm {
-  const complex_t I(0.,1.);
   class HelmholtzP2PCPU : public Kernel {
   public:
     typedef std::vector<Body<Helmholtz> > Bodies;
@@ -293,3 +294,4 @@ namespace exafmm {
     }
   };
 }
+#endif

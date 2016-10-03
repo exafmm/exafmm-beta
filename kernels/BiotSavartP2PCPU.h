@@ -1,3 +1,5 @@
+#ifndef biot_savart_p2p_cpu_h
+#define biot_savart_p2p_cpu_h
 #include "kernel.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
@@ -73,3 +75,4 @@ namespace exafmm {
     static void normalize(Bodies) {}
   };
 }
+#endif

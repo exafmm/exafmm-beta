@@ -1,5 +1,6 @@
 -- Immediate --
 - Remove EXAFMM_LAPLACE, HELMHOLTZ, BIOTSAVART
+- camel case > underscore file name
 - Template body, cell
 - Template kernels
 - Remove kernel_select
