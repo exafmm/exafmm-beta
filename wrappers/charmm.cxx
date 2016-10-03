@@ -13,7 +13,7 @@
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
-#include "LaplaceSphericalCPU.h"
+#include "laplace_spherical_cpu.h"
 
 namespace exafmm {
   typedef LaplaceSphericalCPU kernel;

@@ -11,7 +11,7 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
-#include "HelmholtzSphericalCPU.h"
+#include "helmholtz_spherical_cpu.h"
 typedef exafmm::HelmholtzSphericalCPU kernel;
 vec3 Kernel::Xperiodic = 0;
 real_t Kernel::eps2 = 0.0;

@@ -1,6 +1,10 @@
 #ifndef laplace_cartesian_cpu_h
 #define laplace_cartesian_cpu_h
-#include "LaplaceP2PCPU.h"
+#include "laplace_p2p_cpu.h"
+
+#if EXAFMM_EXPANSION < 2
+#error Use P >= 2 for Laplace Cartesian kernel
+#endif
 
 namespace exafmm {
   typedef std::vector<Body<Laplace> > Bodies;

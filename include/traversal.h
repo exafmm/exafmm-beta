@@ -2,6 +2,7 @@
 #define traversal_h
 #include "logger.h"
 #include "thread.h"
+#include "types.h"
 
 #if EXAFMM_COUNT_KERNEL
 #define countKernel(N) N++

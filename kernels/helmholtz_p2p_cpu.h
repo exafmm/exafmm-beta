@@ -1,6 +1,6 @@
 #ifndef helmholtz_p2p_cpu
 #define helmholtz_p2p_cpu
-#include "kernel.h"
+#include "types.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
 #endif

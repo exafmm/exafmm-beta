@@ -1,5 +1,6 @@
 #ifndef spherical_h
 #define spherical_h
+#include "types.h"
 
 namespace exafmm {
   inline int oddOrEven(int n) {

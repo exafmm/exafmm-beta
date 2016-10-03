@@ -176,13 +176,13 @@ namespace exafmm {
 
     uint64_t getEqNum(const char * _equation) {
       switch (_equation[0]) {
-      case 'l':
+      case 'L':
         return 0;
-      case 'h':
+      case 'H':
         return 1;
-      case 's':
+      case 'S':
         return 2;
-      case 'b':
+      case 'B':
         return 3;
       default:
         fprintf(stderr, "invalid equation %s\n", _equation);

@@ -12,6 +12,12 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 #error no SIMD
 #endif
 
+#ifndef __CUDACC__
+#define __host__
+#define __device__
+#define __forceinline__
+#endif
+
 #if _SX
 #define __attribute__(x)
 #endif

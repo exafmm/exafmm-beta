@@ -1,6 +1,6 @@
 #ifndef laplace_spherical_cpu_h
 #define laplace_spherical_cpu_h
-#include "LaplaceP2PCPU.h"
+#include "laplace_p2p_cpu.h"
 #include "spherical.h"
 
 namespace exafmm {

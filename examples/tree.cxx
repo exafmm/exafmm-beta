@@ -4,7 +4,7 @@
 #include "dataset.h"
 #include "logger.h"
 using namespace exafmm;
-#include "LaplaceCartesianCPU.h"
+#include "laplace_cartesian_cpu.h"
 typedef LaplaceCartesianCPU kernel;
 
 int main(int argc, char ** argv) {

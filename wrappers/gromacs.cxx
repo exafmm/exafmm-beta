@@ -15,7 +15,7 @@
 #if EXAFMM_NO_P2P
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
-#include "LaplaceSphericalCPU.h"
+#include "laplace_spherical_cpu.h"
 
 namespace exafmm {
   typedef LaplaceSphericalCPU kernel;

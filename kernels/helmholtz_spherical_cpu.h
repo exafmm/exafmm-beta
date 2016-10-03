@@ -1,6 +1,6 @@
 #ifndef helmholtz_spherical_cpu_h
 #define helmholtz_spherical_cpu_h
-#include "HelmholtzP2PCPU.h"
+#include "helmholtz_p2p_cpu.h"
 #include "spherical.h"
 
 namespace exafmm {

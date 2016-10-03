@@ -4,13 +4,6 @@
 #include "types.h"
 
 namespace exafmm {
-  const complex_t I(0.,1.);
 
-  class Kernel {
-  public:
-    static vec3 Xperiodic;                                      //!< Periodic coordinate offset
-    static real_t eps2;                                         //!< Epslion squared
-    static complex_t wavek;                                     //!< Helmholtz wave number
-  };
 }
 #endif

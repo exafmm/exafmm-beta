@@ -1,6 +1,6 @@
 #ifndef laplace_p2p_cpu_h
 #define laplace_p2p_cpu_h
-#include "kernel.h"
+#include "types.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
 #endif

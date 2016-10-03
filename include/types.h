@@ -18,6 +18,8 @@ namespace exafmm {
   const real_t EPS = 1e-16;                                     //!< Double precision epsilon
 #endif
   typedef std::complex<real_t> complex_t;                       //!< Complex type
+  const complex_t I(0.,1.);                                     //!< Imaginary unit
+
   typedef vec<3,int> ivec3;                                     //!< Vector of 3 int types
   typedef vec<3,real_t> vec3;                                   //!< Vector of 3 real_t types
   typedef vec<4,real_t> vec4;                                   //!< Vector of 4 real_t types
@@ -149,6 +151,12 @@ namespace exafmm {
     typedef std::vector<Body<BiotSavart> >::iterator B_iter;    //!< Iterator type for body vector
     B_iter BODY;                                                //!< Iterator of first body
     vecBS  M, L;                                                //!< Multipole/local coefficients
+  };
+
+  struct Kernel {
+    static vec3 Xperiodic;                                      //!< Periodic coordinate offset
+    static real_t eps2;                                         //!< Epslion squared
+    static complex_t wavek;                                     //!< Helmholtz wave number
   };
 }
 #endif

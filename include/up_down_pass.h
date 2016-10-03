@@ -2,6 +2,7 @@
 #define up_down_pass_h
 #include "logger.h"
 #include "thread.h"
+#include "types.h"
 
 namespace exafmm {
   template<typename kernel>

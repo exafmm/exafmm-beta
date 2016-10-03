@@ -1,6 +1,6 @@
 #ifndef biot_savart_spherical_cpu_h
 #define biot_savart_spherical_cpu_h
-#include "BiotSavartP2PCPU.h"
+#include "biot_savart_p2p_cpu.h"
 #include "spherical.h"
 
 namespace exafmm {

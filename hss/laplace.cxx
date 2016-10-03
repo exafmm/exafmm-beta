@@ -11,7 +11,7 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
-#include "LaplaceCartesianCPU.h"
+#include "laplace_cartesian_cpu.h"
 typedef exafmm::LaplaceCartesianCPU kernel;
 vec3 Kernel::Xperiodic = 0;
 real_t Kernel::eps2 = 0.0;

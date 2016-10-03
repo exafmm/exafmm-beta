@@ -1,5 +1,6 @@
 #ifndef partition_h
 #define partition_h
+#include <mpi.h>
 #include "logger.h"
 #include "sort.h"
 

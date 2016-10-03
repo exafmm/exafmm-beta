@@ -1,6 +1,8 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
+#include <mpi.h>
 #include "logger.h"
+#include "types.h"
 
 namespace exafmm {
   //! Handles all the communication of local essential trees

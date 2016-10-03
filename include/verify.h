@@ -1,7 +1,7 @@
 #ifndef verify_h
 #define verify_h
 #include "logger.h"
-#include <unistd.h>
+#include "types.h"
 
 namespace exafmm {
   //! Equation dependent part of verification
