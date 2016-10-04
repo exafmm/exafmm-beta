@@ -10,13 +10,13 @@ endif
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(fmm_CPPFLAGS)
 
-run_laplace_cartesian:fmm
+run_laplace_cartesian: fmm
 	./$< -Dgmovx -r 10 -e laplace -b cartesian
-run_laplace_spherical: laplace_spherical
+run_laplace_spherical: fmm
 	./$< -Dgmovx -r 10 -e laplace
-run_helmholtz_spherical: helmholtz_spherical
+run_helmholtz_spherical: fmm
 	./$< -Dgv -n 40000 -r 10 -e helmholtz
-run_biotsavart_spherical: biotsavart_spherical
+run_biotsavart_spherical: fmm
 	./$< -Dgv -n 40000 -r 10 -e biotsavart
 run_tree: tree
 	./$< -v -n 10000000 -r 10
@@ -39,7 +39,11 @@ bin_PROGRAMS += fmm_mpi ewald_mpi
 fmm_mpi_SOURCES = fmm_mpi.cxx
 fmm_mpi_CPPFLAGS = $(fmm_CPPFLAGS)
 ewald_mpi_SOURCES = ewald.cxx
+if EXAFMM_HAVE_FX
+ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=7
+else
 ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=10
+endif
 
 run_laplace_cartesian_mpi: fmm_mpi
 	$(MPIRUN) -n 2 ./$< -Dgmovx -r 10 -e laplace -b cartesian

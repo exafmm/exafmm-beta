@@ -500,7 +500,8 @@ kernel_CPPFLAGS = $(fmm_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@fmm_mpi_SOURCES = fmm_mpi.cxx
 @EXAFMM_HAVE_MPI_TRUE@fmm_mpi_CPPFLAGS = $(fmm_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@ewald_mpi_SOURCES = ewald.cxx
-@EXAFMM_HAVE_MPI_TRUE@ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=10
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=10
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=7
 all: all-am
 
 .SUFFIXES:
@@ -921,13 +922,13 @@ revert:
 save:
 	@make -C .. save
 
-run_laplace_cartesian:fmm
+run_laplace_cartesian: fmm
 	./$< -Dgmovx -r 10 -e laplace -b cartesian
-run_laplace_spherical: laplace_spherical
+run_laplace_spherical: fmm
 	./$< -Dgmovx -r 10 -e laplace
-run_helmholtz_spherical: helmholtz_spherical
+run_helmholtz_spherical: fmm
 	./$< -Dgv -n 40000 -r 10 -e helmholtz
-run_biotsavart_spherical: biotsavart_spherical
+run_biotsavart_spherical: fmm
 	./$< -Dgv -n 40000 -r 10 -e biotsavart
 run_tree: tree
 	./$< -v -n 10000000 -r 10
