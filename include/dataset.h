@@ -262,10 +262,10 @@ namespace exafmm {
     using typename DatasetEquation<Kernel::equation>::Bodies;   //!< Vector of bodies
     using typename DatasetEquation<Kernel::equation>::B_iter;   //!< Iterator of body vector
     using DatasetEquation<Kernel::equation>::initSource;        //!< Initialize source values 
-    using DatasetBase::splitRange;                              //!< Split range and return partial range
+    using DatasetEquation<Kernel::equation>::splitRange;        //!< Split range and return partial range
 
   private:
-    using DatasetBase::filePosition;                            //!< Position of file stream
+    using DatasetEquation<Kernel::equation>::filePosition;      //!< Position of file stream
 
     //! Uniform distribution on [-1,1]^3 lattice
     Bodies lattice(int numBodies, int mpirank, int mpisize) {

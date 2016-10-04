@@ -4,13 +4,13 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
-#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
+#include "laplace_spherical_cpu.h"
 #if EXAFMM_EXPANSION < 10
 #error Use P >= 10 for this test
 #endif
@@ -215,10 +215,6 @@ void fmm(Args args) {
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  if (args.basis == "Cartesian") {
-    fmm<LaplaceCartesianCPU<0> >(args);
-  } else if (args.basis == "Spherical") {
-    fmm<LaplaceSphericalCPU>(args);
-  }
+  fmm<LaplaceSphericalCPU>(args);
   return 0;
 }

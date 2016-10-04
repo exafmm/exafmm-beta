@@ -39,11 +39,7 @@ bin_PROGRAMS += fmm_mpi ewald_mpi
 fmm_mpi_SOURCES = fmm_mpi.cxx
 fmm_mpi_CPPFLAGS = $(fmm_CPPFLAGS)
 ewald_mpi_SOURCES = ewald.cxx
-if EXAFMM_HAVE_FX
-ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=7
-else
 ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=10
-endif
 
 run_laplace_cartesian_mpi: fmm_mpi
 	$(MPIRUN) -n 2 ./$< -DgmMovx -r 10 -e laplace -b cartesian

@@ -664,7 +664,9 @@ namespace exafmm {
     return Mi * Mj * std::sqrt(invR2);
   }
   template<>
-  inline real_t msqrt<0>(const real_t & invR2, const real_t &, const real_t &) {}
+  inline real_t msqrt<0>(const real_t & invR2, const real_t &, const real_t &) {
+    return std::sqrt(invR2);
+  }
 
   template<int mass=0>
   class LaplaceCartesianCPU : public LaplaceP2PCPU<Cartesian> {
