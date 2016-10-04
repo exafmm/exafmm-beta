@@ -59,6 +59,11 @@ void fmm(Args args) {
       B->X[0] *= 0.5;
     }
   }
+  if (args.mass) {
+    for (B_iter B=bodies.begin(); B!=bodies.begin(); B++) {
+      B->SRC = 1. / bodies.size();
+    }
+  }
   bool pass = true;
   bool isTime = false;
   for (int t=0; t<args.repeat; t++) {
@@ -230,7 +235,10 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   if (args.equation == "Laplace") {
     if (args.basis == "Cartesian") {
-      fmm<LaplaceCartesianCPU>(args);
+      if (args.mass)
+        fmm<LaplaceCartesianCPU<1> >(args);
+      else
+        fmm<LaplaceCartesianCPU<0> >(args);
     } else if (args.basis == "Spherical") {
       fmm<LaplaceSphericalCPU>(args);
     }

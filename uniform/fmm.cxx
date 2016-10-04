@@ -15,7 +15,7 @@
 #endif
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef LaplaceCartesianCPU Kernel;
+typedef LaplaceCartesianCPU<0> Kernel;
 real_t KernelBase::eps2 = 0.0;
 vec3 KernelBase::Xperiodic = 0.0;
 

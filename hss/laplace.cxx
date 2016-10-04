@@ -12,7 +12,7 @@
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef exafmm::LaplaceCartesianCPU Kernel;
+typedef exafmm::LaplaceCartesianCPU<0> Kernel;
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 

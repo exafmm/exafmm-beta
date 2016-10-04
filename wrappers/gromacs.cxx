@@ -9,9 +9,6 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#if EXAFMM_MASS
-#error Turn off EXAFMM_MASS for this wrapper
-#endif
 #if EXAFMM_NO_P2P
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif

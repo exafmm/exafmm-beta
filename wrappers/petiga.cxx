@@ -11,7 +11,7 @@
 #include "verify.h"
 #if EXAFMM_LAPLACE
 #if EXAFMM_CARTESIAN
-typedef exafmm::LaplaceCartesianCPU Kernel;
+typedef exafmm::LaplaceCartesianCPU<0> Kernel;
 #elif EXAFMM_SPHERICAL
 typedef exafmm::LaplaceSphericalCPU Kernel;
 #endif

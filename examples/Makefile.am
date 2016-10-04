@@ -3,15 +3,15 @@ include ../Makefile.am.include
 bin_PROGRAMS = fmm tree
 fmm_SOURCES = fmm.cxx
 if EXAFMM_HAVE_FX
-fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_MASS -DEXAFMM_EXPANSION=7
+fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=7
 else
-fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_MASS -DEXAFMM_EXPANSION=10
+fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=10
 endif
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(fmm_CPPFLAGS)
 
 run_laplace_cartesian: fmm
-	./$< -Dgmovx -r 10 -e laplace -b cartesian
+	./$< -DgmMovx -r 10 -e laplace -b cartesian
 run_laplace_spherical: fmm
 	./$< -Dgmovx -r 10 -e laplace
 run_helmholtz_spherical: fmm
@@ -46,7 +46,7 @@ ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=10
 endif
 
 run_laplace_cartesian_mpi: fmm_mpi
-	$(MPIRUN) -n 2 ./$< -Dgmovx -r 10 -e laplace -b cartesian
+	$(MPIRUN) -n 2 ./$< -DgmMovx -r 10 -e laplace -b cartesian
 run_laplace_spherical_mpi: fmm_mpi
 	$(MPIRUN) -n 2 ./$< -Dgmovx -r 10 -e laplace
 run_helmholtz_spherical_mpi: fmm_mpi

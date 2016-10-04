@@ -11,9 +11,6 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#if EXAFMM_MASS
-#error Turn off MASS for this test
-#endif
 #if EXAFMM_EXPANSION < 10
 #error Use P >= 10 for this test
 #endif
@@ -219,7 +216,7 @@ void fmm(Args args) {
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   if (args.basis == "Cartesian") {
-    fmm<LaplaceCartesianCPU>(args);
+    fmm<LaplaceCartesianCPU<0> >(args);
   } else if (args.basis == "Spherical") {
     fmm<LaplaceSphericalCPU>(args);
   }

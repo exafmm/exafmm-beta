@@ -10,9 +10,6 @@
 #include "up_down_pass.h"
 #include "van_der_waals.h"
 #include "verify.h"
-#if EXAFMM_MASS
-#error Turn off EXAFMM_MASS for this wrapper
-#endif
 #include "laplace_spherical_cpu.h"
 
 namespace exafmm {

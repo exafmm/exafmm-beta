@@ -42,11 +42,6 @@ namespace exafmm {
 	int end = bodies.size();                                //  End index of bodies
 	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
 	srand48(seed);                                          //  Set seed for random number generator
-#if EXAFMM_MASS
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  B->SRC = 1. / bodies.size();                          //   Initialize mass
-	}                                                       //  End loop over bodies
-#else
 	real_t average = 0;                                     //  Initialize average charge
 	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	  B->SRC = drand48() - .5;                              //   Initialize charge
@@ -56,7 +51,6 @@ namespace exafmm {
 	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	  B->SRC -= average;                                    //   Subtract average charge
 	}                                                       //  End loop over bodies
-#endif
       }                                                         // End loop over partitions
     }
 

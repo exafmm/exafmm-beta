@@ -29,9 +29,6 @@ namespace exafmm {
 	  }
 	}
       }
-#if EXAFMM_MASS
-      for (int i=1; i<NTERM_LS; i++) C->M[i] /= C->M[0];
-#endif
     }
 
     static void M2M(C_iter Ci, C_iter C0) {
@@ -41,9 +38,6 @@ namespace exafmm {
 	real_t rho, alpha, beta;
 	cart2sph(dX, rho, alpha, beta);
 	evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
-#if EXAFMM_MASS
-        for (int i=1; i<NTERM_LS; i++) Cj->M[i] *= Cj->M[0];
-#endif
 	for (int j=0; j<P; j++) {
 	  for (int k=0; k<=j; k++) {
 	    int jks = j * (j + 1) / 2 + k;
@@ -64,9 +58,6 @@ namespace exafmm {
 	  }
 	}
       }
-#if EXAFMM_MASS
-      for (int i=1; i<NTERM_LS; i++) Ci->M[i] /= Ci->M[0];
-#endif
     }
 
     static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
@@ -77,22 +68,11 @@ namespace exafmm {
       evalLocal(rho, alpha, beta, Ynmi);
       if (mutual) evalLocal(rho, alpha+M_PI, beta, Ynmj);
       for (int j=0; j<P; j++) {
-#if EXAFMM_MASS
-	real_t Cnm = std::real(Ci->M[0] * Cj->M[0]) * oddOrEven(j);
-#else
 	real_t Cnm = oddOrEven(j);
-#endif
 	for (int k=0; k<=j; k++) {
 	  int jks = j * (j + 1) / 2 + k;
 	  complex_t Li = 0, Lj = 0;
-#if EXAFMM_MASS
-	  int jk = j * j + j - k;
-	  Li += Cnm * Ynmi[jk];
-	  if (mutual) Lj += Cnm * Ynmj[jk];
-	  for (int n=1; n<P-j; n++) {
-#else
           for (int n=0; n<P-j; n++) {
-#endif
             for (int m=-n; m<0; m++) {
               int nms  = n * (n + 1) / 2 - m;
               int jnkm = (j + n) * (j + n) + j + n + m - k;
@@ -120,9 +100,6 @@ namespace exafmm {
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
       evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
-#if EXAFMM_MASS
-      Ci->L /= Ci->M[0];
-#endif
       for (int j=0; j<P; j++) {
         for (int k=0; k<=j; k++) {
           int jks = j * (j + 1) / 2 + k;

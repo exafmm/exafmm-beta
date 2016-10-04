@@ -50,6 +50,11 @@ void fmm(Args args) {
       B->X[0] *= 0.5;
     }
   }
+  if (args.mass) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      B->SRC = 1. / bodies.size();
+    }
+  }
   bool pass = true;
   bool isTime = false;
   for (int t=0; t<args.repeat; t++) {
@@ -79,7 +84,7 @@ void fmm(Args args) {
         traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
         jbodies = bodies;
       }
-      upDownPass.downwardPass(cells);
+      upDownPass.downwardPass(cells, args.mass);
     }
     logger::printTitle("Total runtime");
     logger::stopDAG();
@@ -148,7 +153,10 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   if (args.equation == "Laplace") {
     if (args.basis == "Cartesian") {
-      fmm<LaplaceCartesianCPU>(args);
+      if (args.mass)
+        fmm<LaplaceCartesianCPU<1> >(args);
+      else
+        fmm<LaplaceCartesianCPU<0> >(args);
     } else if (args.basis == "Spherical") {
       fmm<LaplaceSphericalCPU>(args);
     }

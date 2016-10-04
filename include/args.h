@@ -27,6 +27,7 @@ namespace exafmm {
     {"images",       required_argument, 0, 'i'},
     {"IneJ",         no_argument,       0, 'j'},
     {"mutual",       no_argument,       0, 'm'},
+    {"mass",         no_argument,       0, 'M'},
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
     {"path",         required_argument, 0, 'p'},
@@ -56,6 +57,7 @@ namespace exafmm {
     int images;
     int IneJ;
     int mutual;
+    int mass;
     int numBodies;
     int useRopt;
     const char * path;
@@ -86,6 +88,7 @@ namespace exafmm {
 	      " --images (-i)                   : Number of periodic image levels (%d)\n"
 	      " --IneJ (-j)                     : Use different sources & targets (%d)\n"
 	      " --mutual (-m)                   : Use mutual interaction (%d)\n"
+	      " --mass (-M)                     : Use mass (all positive charges) (%d)\n"
 	      " --numBodies (-n)                : Number of bodies (%d)\n"
 	      " --useRopt (-o)                  : Use error optimized theta for MAC (%d)\n"
 	      " --path (-p)                     : Path to save files (%s)\n"
@@ -110,6 +113,7 @@ namespace exafmm {
 	      images,
 	      IneJ,
 	      mutual,
+	      mass,
 	      numBodies,
 	      useRopt,
               path,
@@ -262,6 +266,7 @@ namespace exafmm {
       images(0),
       IneJ(0),
       mutual(0),
+      mass(0),
       numBodies(1000000),
       useRopt(0),
       path("./"),
@@ -276,10 +281,10 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "ab:c:d:De:gGhi:jmn:op:P:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "ab:c:d:De:gGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
@@ -321,6 +326,9 @@ namespace exafmm {
 	  break;
 	case 'm':
 	  mutual = 1;
+	  break;
+	case 'M':
+	  mass = 1;
 	  break;
 	case 'n':
 	  numBodies = atoi(optarg);
@@ -412,6 +420,8 @@ namespace exafmm {
 		  << "IneJ" << " : " << IneJ << std::endl
 		  << std::setw(stringLength)
 		  << "mutual" << " : " << mutual << std::endl
+		  << std::setw(stringLength)
+		  << "mass" << " : " << mass << std::endl
 		  << std::setw(stringLength)
 		  << "numBodies" << " : " << numBodies << std::endl
 		  << std::setw(stringLength)

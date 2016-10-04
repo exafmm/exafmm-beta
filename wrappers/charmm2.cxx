@@ -15,9 +15,6 @@
 #else
 #include "../uniform/parallelfmm.h"
 #endif
-#if EXAFMM_MASS
-#error Turn off EXAFMM_MASS for this wrapper
-#endif
 #include "laplace_spherical_cpu.h"
 
 namespace exafmm {

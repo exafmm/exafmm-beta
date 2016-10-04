@@ -74,9 +74,9 @@ void fmm(Args args) {
   CI->X[0] = -4;
   CI->M = 1;
   CI->L = 0;
-#if EXAFMM_MASS
-  for (int i=1; i<NTERM; i++) CJ->M[i] /= CJ->M[0];
-#endif
+  if (args.mass) {
+    for (int i=1; i<NTERM; i++) CJ->M[i] /= CJ->M[0];
+  }
   Kernel::M2L(CI, CJ, false);
 
   C_iter Ci = cells.begin()+3;
@@ -92,9 +92,9 @@ void fmm(Args args) {
   Ci->X[0] = -3;
   Ci->M = 1;
   Ci->L = 0;
-#if EXAFMM_MASS
-  for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
-#endif
+  if (args.mass) {
+    for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
+  }
   Kernel::M2L(Ci, Cj, false);
 #endif
 
@@ -137,7 +137,10 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   if (args.equation == "Laplace") {
     if (args.basis == "Cartesian") {
-      fmm<LaplaceCartesianCPU>(args);
+      if (args.mass)
+        fmm<LaplaceCartesianCPU<1> >(args);
+      else
+        fmm<LaplaceCartesianCPU<0> >(args);
     } else if (args.basis == "Spherical") {
       fmm<LaplaceSphericalCPU>(args);
     }
