@@ -6,10 +6,10 @@
 
 namespace exafmm {
   //! Handles all the communication of local essential trees
-  template<typename kernel>
+  template<typename Kernel>
   class TreeMPI {
-    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
     typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
@@ -120,7 +120,7 @@ namespace exafmm {
     //! Add cells to send buffer
     void addSendCell(C_iter C, int & irank, int & icell, int & iparent, bool copyData) {
       if (copyData) {                                           // If copying data to send cells
-	Cell<kernel::equation> cell(*C);                        //  Initialize send cell
+	Cell<Kernel::equation,Kernel::basis> cell(*C);          //  Initialize send cell
 	cell.NCHILD = cell.NBODY = 0;                           //  Reset counters
 	cell.IPARENT = iparent;                                 //  Index of parent
 	sendCells[sendCellDispl[irank]+icell] = cell;           //  Copy cell to send buffer
@@ -323,7 +323,7 @@ namespace exafmm {
       for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
 	if (irank != mpirank) {                                 //  If not current rank
 	  C_iter C0 = recvCells.begin() + recvCellDispl[irank]; //   Root cell iterator for irank
-	  Body<kernel::equation> body;                          //   Body to contain remote root coordinates
+	  Body<Kernel::equation> body;                          //   Body to contain remote root coordinates
 	  body.X = C0->X;                                       //   Copy remote root coordinates
 	  body.IBODY = recvCellDispl[irank];                    //   Copy remote root displacement in vector
 	  bodies.push_back(body);                               //   Push this root cell to body vector
@@ -374,7 +374,7 @@ namespace exafmm {
 	    C->R = std::max(Xmax[d] - C->X[d], C->R);           //    Calculate max distance from center
 	  }                                                     //   End loop over dimensions
 	  C->M = 0;                                             //   Reset multipoles
-	  kernel::M2M(C, C0);                                   //   M2M kernel
+	  Kernel::M2M(C, C0);                                   //   M2M kernel
 	}                                                       //  End if for non-leaf global cell
       }                                                         // End loop over global cells bottom up
       logger::stopTimer("Attach root");                         // Stop timer

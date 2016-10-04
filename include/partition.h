@@ -6,10 +6,10 @@
 
 namespace exafmm {
   //! Handles all the partitioning of domains
-  template<typename kernel>
+  template<typename Kernel>
   class Partition {
-    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
     typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
@@ -235,7 +235,7 @@ namespace exafmm {
       }                                                         // End loop over bodies
       logger::stopTimer("Partition");                           // Stop timer
       logger::startTimer("Sort");                               // Start timer
-      Sort<kernel> sort;                                        // Instantiate sort class
+      Sort<Kernel> sort;                                        // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
       return local;
@@ -244,7 +244,7 @@ namespace exafmm {
     //! Send bodies back to where they came from
     void unpartition(Bodies & bodies) {
       logger::startTimer("Sort");                               // Start timer
-      Sort<kernel> sort;                                        // Instantiate sort class
+      Sort<Kernel> sort;                                        // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
     }

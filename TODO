@@ -1,7 +1,6 @@
 -- Immediate --
 - Rank items in this list according to importance
 
-- Remove EXAFMM_CARTESIAN, SPHERICAL
 - Update Makefile.am
 - BaseMPI > MPI_Util
 - kernel files > .cxx
@@ -9,6 +8,7 @@
 - Fix all buildbot errors
 - Fix all nightly errors
 - Fix charmm2
+- PetIGA no macro
 - With strumpack
 - Full simdList, threadList, configList in nightly.py
 - Comment in driver files
@@ -43,7 +43,7 @@ examples/Makefile options to args
 unit test for each header file in /unit_test
 
 -- types --
-args.h, verify.h from class to namespace
+- args.h, verify.h from class to namespace
 logger.h split to print.h
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka

@@ -4,8 +4,14 @@
 #include "spherical.h"
 
 namespace exafmm {
-  class BiotSavartSphericalCPU : public BiotSavartP2PCPU {
+  class BiotSavartSphericalCPU : public BiotSavartP2PCPU<Spherical> {
   public:
+    using BiotSavartP2PCPU<Spherical>::Bodies;
+    using BiotSavartP2PCPU<Spherical>::Cells;
+    using BiotSavartP2PCPU<Spherical>::B_iter;
+    using BiotSavartP2PCPU<Spherical>::C_iter;
+    static const Basis basis = Spherical;
+
     static void setup() {}
 
     static void P2M(C_iter C) {

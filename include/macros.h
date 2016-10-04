@@ -34,24 +34,9 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 #pragma warning disable 68 111
 #endif
 
-// Check for equation and basis
+// Check for expansion
 #ifndef EXAFMM_EXPANSION
 #error EXAFMM_EXPANSION undefined
-#endif
-#if defined EXAFMM_CARTESIAN || EXAFMM_SPHERICAL
-#else
-#error Please define EXAFMM_CARTESIAN or EXAFMM_SPHERICAL
-#endif
-#if defined EXAFMM_LAPLACE || EXAFMM_HELMHOLTZ || EXAFMM_STOKES || EXAFMM_BIOTSAVART
-#else
-#error Please define EXAFMM_LAPLACE or EXAFMM_HELMHOLTZ or EXAFMM_STOKES or EXAFMM_BIOTSAVART
-#endif
-
-// Check for mismatching equation and basis
-#if defined EXAFMM_HELMHOLTZ || EXAFMM_STOKES || EXAFMM_BIOTSAVART
-#ifdef EXAFMM_CARTESIAN
-#error Use Spherical for Helmholtz, Stokes, Biot-Savart
-#endif
 #endif
 
 #endif

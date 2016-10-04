@@ -4,8 +4,14 @@
 #include "spherical.h"
 
 namespace exafmm {
-  class LaplaceSphericalCPU : public LaplaceP2PCPU {
+  class LaplaceSphericalCPU : public LaplaceP2PCPU<Spherical> {
   public:
+    using LaplaceP2PCPU<Spherical>::Bodies;
+    using LaplaceP2PCPU<Spherical>::Cells;
+    using LaplaceP2PCPU<Spherical>::B_iter;
+    using LaplaceP2PCPU<Spherical>::C_iter;
+    static const Basis basis = Spherical;
+
     static void setup() {}
 
     static void P2M(C_iter C) {

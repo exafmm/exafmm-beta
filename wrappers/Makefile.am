@@ -7,13 +7,13 @@ libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_C
 libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx
 libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 libgromacs_exafmm_a_SOURCES = gromacs.cxx
-libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
 libcharmm_exafmm_a_SOURCES = charmm.cxx
-libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
 libcharmm2_exafmm_a_SOURCES = charmm2.cxx
-libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
 libmd_distributed_a_SOURCES = md_distributed.cxx
-libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=15
+libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=15
 
 bin_PROGRAMS = petiga_laplace_mpi petiga_helmholtz_mpi gromacs_mpi charmm_mpi charmm2_mpi md_distributed_mpi
 petiga_laplace_mpi_SOURCES = test_petiga.cxx

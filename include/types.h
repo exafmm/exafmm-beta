@@ -62,6 +62,12 @@ namespace exafmm {
     BiotSavart                                                  //!< Biot-Savart kernel
   };
 
+  //! Basis of expansion supported
+  enum Basis {
+    Cartesian,                                                  //! Cartesian Taylor expansion
+    Spherical                                                   //! Spherical Harmonics expansion
+  };
+
   //! Structure of aligned source for SIMD
   template<Equation equation=Empty>
   struct Source {                                               //!< Base components of source structure
@@ -113,7 +119,7 @@ namespace exafmm {
   typedef vec<NTERM_BS,complex_t> vecBS;                        //!< Coef vector for Biot-Savart Spherical
 
   //! Structure of cells
-  template<Equation equation=Empty>
+  template<Equation equation=Empty, Basis basis=Spherical>
   struct Cell {                                                 //!< Base components of cell structure
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
@@ -131,23 +137,25 @@ namespace exafmm {
     real_t   R;                                                 //!< Cell radius
   };
   template<>
-  struct Cell<Laplace> : public Cell<> {                        //!< Special components for Laplace
+  struct Cell<Laplace,Cartesian> : public Cell<> {              //!< Special components for Laplace Spherical
     typedef std::vector<Body<Laplace> >::iterator B_iter;       //!< Iterator type for body vector
     B_iter BODY;                                                //!< Iterator of first body
-#if EXAFMM_CARTESIAN
     vecLC  M, L;                                                //!< Multipole/local coefficients
-#elif EXAFMM_SPHERICAL
-    vecLS  M, L;                                                //!< Multipole/local coefficients
-#endif
   };
   template<>
-  struct Cell<Helmholtz> : public Cell<> {                      //!< Special components for Helmholtz
+  struct Cell<Laplace,Spherical> : public Cell<> {              //!< Special components for Laplace Spherical
+    typedef std::vector<Body<Laplace> >::iterator B_iter;       //!< Iterator type for body vector
+    B_iter BODY;                                                //!< Iterator of first body
+    vecLS  M, L;                                                //!< Multipole/local coefficients
+  };
+  template<>
+  struct Cell<Helmholtz,Spherical> : public Cell<> {            //!< Special components for Helmholtz Spherical
     typedef std::vector<Body<Helmholtz> >::iterator B_iter;     //!< Iterator type for body vector
     B_iter BODY;                                                //!< Iterator of first body
     vecHS  M, L;                                                //!< Multipole/local coefficients
   };
   template<>
-  struct Cell<BiotSavart> : public Cell<> {                     //!< Special components for Biot-Savart
+  struct Cell<BiotSavart,Spherical> : public Cell<> {           //!< Special components for Biot-Savart Spherical
     typedef std::vector<Body<BiotSavart> >::iterator B_iter;    //!< Iterator type for body vector
     B_iter BODY;                                                //!< Iterator of first body
     vecBS  M, L;                                                //!< Multipole/local coefficients

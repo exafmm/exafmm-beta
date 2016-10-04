@@ -53,14 +53,14 @@ namespace exafmm {
   };
 
   //! Verify results
-  template<typename kernel>
-  class Verify : VerifyEquation<kernel::equation> {
+  template<typename Kernel>
+  class Verify : VerifyEquation<Kernel::equation> {
   public:
     typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
     typedef Record::iterator R_iter;                            //!< Iterator of regression map
-    using typename VerifyEquation<kernel::equation>::Bodies;    //!< Vector of bodies
-    using typename VerifyEquation<kernel::equation>::B_iter;    //!< Iterator of body vector
-    using VerifyEquation<kernel::equation>::getSumScalar;       //!< Get sum of scalar component of a vector of target bodies
+    using typename VerifyEquation<Kernel::equation>::Bodies;    //!< Vector of bodies
+    using typename VerifyEquation<Kernel::equation>::B_iter;    //!< Iterator of body vector
+    using VerifyEquation<Kernel::equation>::getSumScalar;       //!< Get sum of scalar component of a vector of target bodies
 
   private:
     const char * path;                                          //!< Path to save files

@@ -5,10 +5,10 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename kernel>
+  template<typename Kernel>
   class BoundBox {
-    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
     typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 

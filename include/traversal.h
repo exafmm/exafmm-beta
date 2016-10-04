@@ -11,10 +11,10 @@
 #endif
 
 namespace exafmm {
-  template<typename kernel>
+  template<typename Kernel>
   class Traversal {
-    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
     typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
@@ -218,10 +218,10 @@ namespace exafmm {
 
     //! Dual tree traversal for a single pair of cells
     void dualTreeTraversal(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
-      vec3 dX = Ci->X - Cj->X - kernel::Xperiodic;              // Distance vector from source to target
+      vec3 dX = Ci->X - Cj->X - Kernel::Xperiodic;              // Distance vector from source to target
       real_t R2 = norm(dX);                                     // Scalar distance squared
       if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R) * (1 - 1e-3)) {    // If distance is far enough
-	kernel::M2L(Ci, Cj, mutual);                            //  M2L kernel
+	Kernel::M2L(Ci, Cj, mutual);                            //  M2L kernel
 	countKernel(numM2L);                                    //  Increment M2L counter
 	countList(Ci, Cj, mutual, false);                       //  Increment M2L list
 	countWeight(Ci, Cj, mutual, remote);                    //  Increment M2L weight
@@ -247,20 +247,20 @@ namespace exafmm {
 	}
 	int isNeighbor = 1;
 	for (d=0; d<3; d++) {
-	  if (kernel::Xperiodic[d] > 1e-3) jX[d] += 5;
-	  if (kernel::Xperiodic[d] < -1e-3) jX[d] -= 5;
+	  if (Kernel::Xperiodic[d] > 1e-3) jX[d] += 5;
+	  if (Kernel::Xperiodic[d] < -1e-3) jX[d] -= 5;
 	  isNeighbor &= abs(iX[d] - jX[d]) <= 1;
 	}
 #endif
 	if (Cj->NBODY == 0) {                                   //  If the bodies weren't sent from remote node
 	  //std::cout << "Warning: icell " << Ci->ICELL << " needs bodies from jcell" << Cj->ICELL << std::endl;
-	  kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
+	  Kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
 	  countList(Ci, Cj, mutual, false);                     //   Increment M2L list
 	  countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
 #if EXAFMM_NO_P2P
 	} else if (!isNeighbor) {                               //  If GROAMCS handles neighbors
-	  kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
+	  Kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
 	  countList(Ci, Cj, mutual, false);                     //   Increment M2L list
 	  countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
@@ -269,9 +269,9 @@ namespace exafmm {
 #else
 	} else {
 	  if (R2 == 0 && Ci == Cj) {                            //   If source and target are same
-	    kernel::P2P(Ci);                                    //    P2P kernel for single cell
+	    Kernel::P2P(Ci);                                    //    P2P kernel for single cell
 	  } else {                                              //   Else if source and target are different
-	    kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel for pair of cells
+	    Kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel for pair of cells
 	  }                                                     //   End if for same source and target
 	  countKernel(numP2P);                                  //   Increment P2P counter
 	  countList(Ci, Cj, mutual, true);                      //   Increment P2P list
@@ -358,9 +358,9 @@ namespace exafmm {
 	  C_iter Cj = Cj0 + jcell;                              //   Iterator of source cell
 	  ivec3 pX = getPeriodicIndex(periodicKey);             //   3-D periodic index of source cell
 	  for (int d=0; d<3; d++) {                             //   Loop over dimensions
-	    kernel::Xperiodic[d] = pX[d] * cycle[d];            //    Periodic coordinate offset
+	    Kernel::Xperiodic[d] = pX[d] * cycle[d];            //    Periodic coordinate offset
 	  }                                                     //   End loop over dimensions
-	  kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
+	  Kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
 	  countList(Ci, Cj, mutual, false);                     //   Increment M2L list
 	  countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
@@ -382,9 +382,9 @@ namespace exafmm {
 	    C_iter Cj = Cj0 + jcell;                            //    Iterator of source cell
 	    ivec3 pX = getPeriodicIndex(periodicKey);           //    3-D periodic index of source cell
 	    for (int d=0; d<3; d++) {                           //    Loop over dimensions
-	      kernel::Xperiodic[d] = pX[d] * cycle[d];          //     Periodic coordinate offset
+	      Kernel::Xperiodic[d] = pX[d] * cycle[d];          //     Periodic coordinate offset
 	    }                                                   //    End loop over dimensions
-	    kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel
+	    Kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel
 	    countKernel(numP2P);                                //    Increment P2P counter
 	    countList(Ci, Cj, mutual, true);                    //    Increment P2P list
 	    countWeight(Ci, Cj, mutual, remote);                //    Increment P2P weight
@@ -411,10 +411,10 @@ namespace exafmm {
 		for (int cx=-1; cx<=1; cx++) {                  //      Loop over x periodic direction (child)
 		  for (int cy=-1; cy<=1; cy++) {                //       Loop over y periodic direction (child)
 		    for (int cz=-1; cz<=1; cz++) {              //        Loop over z periodic direction (child)
-		      kernel::Xperiodic[0] = (ix * 3 + cx) * cycle[0];//   Coordinate offset for x periodic direction
-		      kernel::Xperiodic[1] = (iy * 3 + cy) * cycle[1];//   Coordinate offset for y periodic direction
-		      kernel::Xperiodic[2] = (iz * 3 + cz) * cycle[2];//   Coordinate offset for z periodic direction
-		      kernel::M2L(Ci0, Ci, false);              //         M2L kernel
+		      Kernel::Xperiodic[0] = (ix * 3 + cx) * cycle[0];//   Coordinate offset for x periodic direction
+		      Kernel::Xperiodic[1] = (iy * 3 + cy) * cycle[1];//   Coordinate offset for y periodic direction
+		      Kernel::Xperiodic[2] = (iz * 3 + cz) * cycle[2];//   Coordinate offset for z periodic direction
+		      Kernel::M2L(Ci0, Ci, false);              //         M2L kernel
 		    }                                           //        End loop over z periodic direction (child)
 		  }                                             //       End loop over y periodic direction (child)
 		}                                               //      End loop over x periodic direction (child)
@@ -438,7 +438,7 @@ namespace exafmm {
 	  }                                                     //   End loop over y periodic direction
 	}                                                       //  End loop over x periodic direction
 	Ci->M = 0;                                              //  Reset multipoles of periodic parent
-	kernel::M2M(Ci,Cj0);                                    //  Evaluate periodic M2M kernels for this sublevel
+	Kernel::M2M(Ci,Cj0);                                    //  Evaluate periodic M2M kernels for this sublevel
 	cycle *= 3;                                             //  Increase center cell size three times
 	Cj0 = C0;                                               //  Reset Cj0 back
       }                                                         // End loop over sublevels of tree
@@ -488,7 +488,7 @@ namespace exafmm {
       logger::initTracer();                                     // Initialize tracer
       Ci0 = icells.begin();                                     // Iterator of first target cell
       Cj0 = jcells.begin();                                     // Iterator of first source cell
-      kernel::Xperiodic = 0;                                    // Set periodic coordinate offset to 0
+      Kernel::Xperiodic = 0;                                    // Set periodic coordinate offset to 0
       if (dual) {                                               // If dual tree traversal
 	if (images == 0) {                                      //  If non-periodic boundary condition
 	  dualTreeTraversal(Ci0, Cj0, mutual, remote);          //   Traverse the tree
@@ -496,9 +496,9 @@ namespace exafmm {
 	  for (int ix=-1; ix<=1; ix++) {                        //   Loop over x periodic direction
 	    for (int iy=-1; iy<=1; iy++) {                      //    Loop over y periodic direction
 	      for (int iz=-1; iz<=1; iz++) {                    //     Loop over z periodic direction
-		kernel::Xperiodic[0] = ix * cycle[0];           //      Coordinate shift for x periodic direction
-		kernel::Xperiodic[1] = iy * cycle[1];           //      Coordinate shift for y periodic direction
-		kernel::Xperiodic[2] = iz * cycle[2];           //      Coordinate shift for z periodic direction
+		Kernel::Xperiodic[0] = ix * cycle[0];           //      Coordinate shift for x periodic direction
+		Kernel::Xperiodic[1] = iy * cycle[1];           //      Coordinate shift for y periodic direction
+		Kernel::Xperiodic[2] = iz * cycle[2];           //      Coordinate shift for z periodic direction
 		dualTreeTraversal(Ci0, Cj0, false, remote);     //      Traverse the tree for this periodic image
 	      }                                                 //     End loop over z periodic direction
 	    }                                                   //    End loop over y periodic direction
@@ -529,7 +529,7 @@ namespace exafmm {
 	Ci(_Ci), Cj(_Cj) {}                                     // Initialize variables
       void operator() () const {                                // Overload operator
 	if (Ci->NBODY < 25) {                                   // If number of target bodies is less than threshold
-	  kernel::P2P(Ci, Cj, false);                           //  Evaluate P2P kernel
+	  Kernel::P2P(Ci, Cj, false);                           //  Evaluate P2P kernel
 	} else {                                                // If number of target bodies is more than threshold
 	  Cells cells; cells.resize(1);                         //  Initialize new cell vector
 	  C_iter Ci2 = cells.begin();                           //  New cell iterator for right branch
@@ -557,9 +557,9 @@ namespace exafmm {
       for (int ix=-prange; ix<=prange; ix++) {                  //  Loop over x periodic direction
 	for (int iy=-prange; iy<=prange; iy++) {                //   Loop over y periodic direction
 	  for (int iz=-prange; iz<=prange; iz++) {              //    Loop over z periodic direction
-	    kernel::Xperiodic[0] = ix * cycle[0];               //     Coordinate shift for x periodic direction
-	    kernel::Xperiodic[1] = iy * cycle[1];               //     Coordinate shift for y periodic direction
-	    kernel::Xperiodic[2] = iz * cycle[2];               //     Coordinate shift for z periodic direction
+	    Kernel::Xperiodic[0] = ix * cycle[0];               //     Coordinate shift for x periodic direction
+	    Kernel::Xperiodic[1] = iy * cycle[1];               //     Coordinate shift for y periodic direction
+	    Kernel::Xperiodic[2] = iz * cycle[2];               //     Coordinate shift for z periodic direction
 	    Ci->BODY = ibodies.begin();                         //     Iterator of first target body
 	    Ci->NBODY = ibodies.size();                         //     Number of target bodies
 	    Cj->BODY = jbodies.begin();                         //     Iterator of first source body
@@ -573,7 +573,7 @@ namespace exafmm {
 
     //! Normalize bodies after direct summation
     void normalize(Bodies & bodies) {
-      kernel::normalize(bodies);                                // Normalize bodies
+      Kernel::normalize(bodies);                                // Normalize bodies
     }
 
     //! Write G matrix to file
@@ -584,7 +584,7 @@ namespace exafmm {
       for (B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {  // Loop over target bodies
 	for (B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {//  Loop over source bodies
 	  vec3 dX = Bi->X - Bj->X;                              //   Distance vector
-	  real_t R2 = norm(dX) + kernel::eps2;                  //   Distance squared
+	  real_t R2 = norm(dX) + Kernel::eps2;                  //   Distance squared
 	  real_t G = R2 == 0 ? 0.0 : 1.0 / sqrt(R2);            //   Green's function
 	  matrixFile << G << " ";                               //   Write to matrix data file
 	}                                                       //  End loop over source bodies

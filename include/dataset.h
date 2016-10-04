@@ -263,11 +263,11 @@ namespace exafmm {
     }
   };
 
-  template<typename kernel>
-  class Dataset : public DatasetEquation<kernel::equation> {    // Creates all the different datasets
-    using typename DatasetEquation<kernel::equation>::Bodies;   //!< Vector of bodies
-    using typename DatasetEquation<kernel::equation>::B_iter;   //!< Iterator of body vector
-    using DatasetEquation<kernel::equation>::initSource;        //!< Initialize source values 
+  template<typename Kernel>
+  class Dataset : public DatasetEquation<Kernel::equation> {    // Creates all the different datasets
+    using typename DatasetEquation<Kernel::equation>::Bodies;   //!< Vector of bodies
+    using typename DatasetEquation<Kernel::equation>::B_iter;   //!< Iterator of body vector
+    using DatasetEquation<Kernel::equation>::initSource;        //!< Initialize source values 
     using DatasetBase::splitRange;                              //!< Split range and return partial range
 
   private:

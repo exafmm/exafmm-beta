@@ -10,7 +10,7 @@ typedef LaplaceCartesianCPU Kernel;
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::equation> > Cells;
+  typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 

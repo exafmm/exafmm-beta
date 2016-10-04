@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
   args.ncrit = 32;
   args.images = 1;
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::equation> > Cells;
+  typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 

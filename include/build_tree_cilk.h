@@ -289,10 +289,10 @@ namespace exafmm {
     permuteBlock(&buffer[12*offset], bodies, &index[offset], numBodies-offset);
   }
 
-  template<typename kernel>
+  template<typename Kernel>
   class BuildTree {
-    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
     typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 

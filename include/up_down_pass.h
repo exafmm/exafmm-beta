@@ -5,10 +5,10 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename kernel>
+  template<typename Kernel>
   class UpDownPass {
-    typedef std::vector<Body<kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<kernel::equation> > Cells;         //!< Vector of cells
+    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
+    typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
     typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
@@ -97,9 +97,9 @@ namespace exafmm {
 	wait_tasks;                                             //   Synchronize tasks
 	C->M = 0;                                               //  Initialize multipole expansion coefficients
 	C->L = 0;                                               //  Initialize local expansion coefficients
-	if(C->NCHILD==0) kernel::P2M(C);                        //  P2M kernel
+	if(C->NCHILD==0) Kernel::P2M(C);                        //  P2M kernel
 	else {                                                  //  If not leaf cell
-          kernel::M2M(C, C0);                                   //   M2M kernel
+          Kernel::M2M(C, C0);                                   //   M2M kernel
         }                                                       //  End if for non leaf cell
 	if (useRmax) setRmax();                                 //  Redefine cell radius R based on maximum distance
 	C->R /= theta;                                          //  Divide R by theta
@@ -113,9 +113,9 @@ namespace exafmm {
       PreOrderTraversal(C_iter _C, C_iter _C0) :                // Constructor
 	C(_C), C0(_C0) {}                                       // Initialize variables
       void operator() () const {                                // Overload operator()
-	kernel::L2L(C, C0);                                     //  L2L kernel
+	Kernel::L2L(C, C0);                                     //  L2L kernel
 	if (C->NCHILD==0) {                                     //  If leaf cell
-          kernel::L2P(C);                                       //  L2P kernel
+          Kernel::L2P(C);                                       //  L2P kernel
         }                                                       // End if for leaf cell
 #if EXAFMM_USE_WEIGHT
 	C_iter CP = C0 + C->IPARENT;                            // Parent cell
@@ -168,7 +168,7 @@ namespace exafmm {
 #if EXAFMM_MASS
           C0->L /= C0->M[0];                                    //   Denormalize local expansions
 #endif
-          kernel::L2P(C0);                                      //   L2P kernel
+          Kernel::L2P(C0);                                      //   L2P kernel
         }                                                       //  End if root is the only cell
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells

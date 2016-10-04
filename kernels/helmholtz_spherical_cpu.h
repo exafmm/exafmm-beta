@@ -334,8 +334,14 @@ namespace exafmm {
     }
   }
 
-  class HelmholtzSphericalCPU : public HelmholtzP2PCPU {
+  class HelmholtzSphericalCPU : public HelmholtzP2PCPU<Spherical> {
   public:
+    using HelmholtzP2PCPU<Spherical>::Bodies;
+    using HelmholtzP2PCPU<Spherical>::Cells;
+    using HelmholtzP2PCPU<Spherical>::B_iter;
+    using HelmholtzP2PCPU<Spherical>::C_iter;
+    static const Basis basis = Spherical;
+
     static void setup() {
       nquad = fmax(6, P);
       legendre(nquad, xquad, wquad);

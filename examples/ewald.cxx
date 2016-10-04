@@ -24,7 +24,7 @@ real_t KernelBase::eps2 = 0.0;
 template<typename Kernel>
 void fmm(Args args) {
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::equation> > Cells;
+  typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
@@ -218,10 +218,10 @@ void fmm(Args args) {
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-#if EXAFMM_CARTESIAN
-  fmm<LaplaceCartesianCPU>(args);
-#elif EXAFMM_SPHERICAL
-  fmm<LaplaceSphericalCPU>(args);
-#endif
+  if (args.basis == "Cartesian") {
+    fmm<LaplaceCartesianCPU>(args);
+  } else if (args.basis == "Spherical") {
+    fmm<LaplaceSphericalCPU>(args);
+  }
   return 0;
 }
