@@ -1,6 +1,9 @@
 -- Immediate --
 - Rank items in this list according to importance
 
+- Define M, L inside kernel namespace and template over P
+- Use reinterpret_cast pointers to reference them inside Cell struct
+- Complie all P during make -> provide option to make for specific P value
 - Update Makefile.am
 - BaseMPI > MPI_Util
 - kernel files > .cxx
@@ -57,9 +60,6 @@ Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilber
 Morton -> Hilbert
 
 -- kernels --
-- Define M, L inside kernel namespace and template over P
-- Use reinterpret_cast pointers to reference them inside Cell struct
-- Complie all P during make -> provide option to make for specific P value
 - Helmholtz breaks for very low P
 - LaplaceCartesianRecursion, LaplaceCartesianTemplate
 Add back Stokes kernels
