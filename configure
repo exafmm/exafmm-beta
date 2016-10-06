@@ -4985,7 +4985,7 @@ if test "$enable_mpi" = "yes"; then
 
 
 
-	for ac_prog in mpxlC_r mpxlC mpiFCCpx mpiFCC sxmpic++ CC mpiicpc mpicxx
+	for ac_prog in mpxlC_r mpxlC mpiFCCpx mpiFCC sxmpic++ mpiicpc mpicxx CC
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
