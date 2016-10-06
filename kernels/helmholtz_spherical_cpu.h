@@ -340,10 +340,12 @@ namespace exafmm {
     static const Basis basis = Spherical;                       //!< Set basis to Spherical
     static const int NTERM = P*P;                               //!< # of terms in Helmholtz Spherical expansion
     typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
-    using HelmholtzP2PCPU<vecP,Spherical>::Bodies;              //!< Vector of bodies for Helmholtz
-    using HelmholtzP2PCPU<vecP,Spherical>::B_iter;              //!< Iterator of body vector
-    using HelmholtzP2PCPU<vecP,Spherical>::Cells;               //!< Vector of cells for Helmholtz
-    using HelmholtzP2PCPU<vecP,Spherical>::C_iter;              //!< Iterator of cell vector
+    using typename HelmholtzP2PCPU<vecP,Spherical>::Bodies;     //!< Vector of bodies for Helmholtz
+    using typename HelmholtzP2PCPU<vecP,Spherical>::B_iter;     //!< Iterator of body vector
+    using typename HelmholtzP2PCPU<vecP,Spherical>::Cells;      //!< Vector of cells for Helmholtz
+    using typename HelmholtzP2PCPU<vecP,Spherical>::C_iter;     //!< Iterator of cell vector
+    using HelmholtzP2PCPU<vecP,Spherical>::Xperiodic;
+    using HelmholtzP2PCPU<vecP,Spherical>::wavek;
 
     static void setup() {
       nquad = fmax(6, P);
@@ -356,7 +358,7 @@ namespace exafmm {
     static void P2M(C_iter C) {
       real_t Ynm[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
-      vecHS Mnm = complex_t(0,0);
+      vecP Mnm = complex_t(0,0);
       real_t kscale = C->SCALE * abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 	vec3 dX = B->X - C->X;
@@ -393,8 +395,8 @@ namespace exafmm {
     static void M2M(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2];
       complex_t phitemp[2*P], hn[P], ephi[2*P];
-      vecHS Mnm = complex_t(0,0);
-      vecHS Mrot = complex_t(0,0);
+      vecP Mnm = complex_t(0,0);
+      vecP Mrot = complex_t(0,0);
       real_t kscalei = Ci->SCALE * abs(wavek);
       for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
 	real_t kscalej = Cj->SCALE * abs(wavek);
@@ -475,9 +477,9 @@ namespace exafmm {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
-      vecHS Lnm = complex_t(0,0);
-      vecHS Lnmd = complex_t(0,0);
-      vecHS Mnm, Mrot, Lrot;
+      vecP Lnm = complex_t(0,0);
+      vecP Lnmd = complex_t(0,0);
+      vecP Mnm, Mrot, Lrot;
       real_t kscalej = Cj->SCALE * abs(wavek);
       real_t kscalei = Ci->SCALE * abs(wavek);
       real_t radius = Cj->SCALE * sqrt(3.0) * .5;
@@ -598,7 +600,7 @@ namespace exafmm {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t jn[P+1], jnd[P+1], ephi[2*P];
-      vecHS Lnm, Lnmd, Lrot;
+      vecP Lnm, Lnmd, Lrot;
       real_t kscalei = Ci->SCALE * abs(wavek);
       C_iter Cj = C0 + Ci->IPARENT;
       real_t kscalej = Cj->SCALE * abs(wavek);
@@ -718,7 +720,7 @@ namespace exafmm {
       real_t kscale = C->SCALE * abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 	B->TRG /= B->SRC;
-	vecHS Lj = C->L;
+	vecP Lj = C->L;
 	kcvec4 TRG = kcomplex_t(0,0);
 	vec3 dX = B->X - C->X;
 	real_t r, theta, phi;

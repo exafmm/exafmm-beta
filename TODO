@@ -1,7 +1,6 @@
 -- Immediate --
 - Rank items in this list according to importance
 
-- typedef Bodies > using Kernel::Bodies in driver files
 - BaseMPI > MPI_Util
 - kernel files > .cxx
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
@@ -21,6 +20,7 @@
 - Separate different algorithms into different files (create folder for build tree, partition, etc.)
 - uniform/fmm.cxx accuracy problem
 - Add kernel.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
+- Laplace Cartesian with highh P has large error
 
 -- MPI --
 - define mpisize, mpirank in types.h

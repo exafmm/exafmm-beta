@@ -174,106 +174,106 @@ namespace exafmm {
 
 
   template<typename B_iter, typename vecP, int nx, int ny, int nz>
-  struct Kernels {
+  struct Kernel_LC {
     static inline void power(vecP & C, const vec3 & dX) {
-      Kernels<B_iter,vecP,nx,ny+1,nz-1>::power(C, dX);
+      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::power(C, dX);
       C[Index<nx,ny,nz>::I] = C[Index<nx,ny,nz-1>::I] * dX[2] / nz;
     }
     static inline void derivative(vecP & C, const vec3 & dX, const real_t & invR2) {
       static const int n = nx + ny + nz;
-      Kernels<B_iter,vecP,nx,ny+1,nz-1>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::derivative(C, dX, invR2);
       C[Index<nx,ny,nz>::I] = DerivativeSum<vecP,nx,ny,nz>::loop(C,dX) / n * invR2;
     }
     static inline void scale(vecP & C) {
-      Kernels<B_iter,vecP,nx,ny+1,nz-1>::scale(C);
+      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::scale(C);
       C[Index<nx,ny,nz>::I] *= Index<nx,ny,nz>::F;
     }
     static inline void M2M(vecP & MI, const vecP & C, const vecP & MJ) {
-      Kernels<B_iter,vecP,nx,ny+1,nz-1>::M2M(MI, C, MJ);
+      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::M2M(MI, C, MJ);
       MI[Index<nx,ny,nz>::I] += MultipoleSum<vecP,nx,ny,nz>::kernel(C, MJ);
     }
     static inline void M2L(vecP & L, const vecP & C, const vecP & M) {
-      Kernel<B_iter,vecP,nx,ny+1,nz-1>::M2L(L, C, M);
+      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::M2L(L, C, M);
       L[Index<nx,ny,nz>::I] += LocalSum<vecP,nx,ny,nz>::kernel(M, C);
     }
     static inline void L2L(vecP & LI, const vecP & C, const vecP & LJ) {
-      Kernel<B_iter,vecP,nx,ny+1,nz-1>::L2L(LI, C, LJ);
+      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::L2L(LI, C, LJ);
       LI[Index<nx,ny,nz>::I] += LocalSum<vecP,nx,ny,nz>::kernel(C, LJ);
     }
     static inline void L2P(B_iter B, const vecP & C, const vecP & L) {
-      Kernel<B_iter,vecP,nx,ny+1,nz-1>::L2P(B, C, L);
+      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::L2P(B, C, L);
       B->TRG[Index<nx,ny,nz>::I] += LocalSum<vecP,nx,ny,nz>::kernel(C, L);
     }
   };
 
-  template<typename B_iter, int nx, int ny>
-  struct Kernel<B_iter,vecP,nx,ny,0> {
+  template<typename B_iter, typename vecP, int nx, int ny>
+  struct Kernel_LC<B_iter,vecP,nx,ny,0> {
     static inline void power(vecP & C, const vec3 & dX) {
-      Kernel<B_iter,vecP,nx+1,0,ny-1>::power(C, dX);
+      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::power(C, dX);
       C[Index<nx,ny,0>::I] = C[Index<nx,ny-1,0>::I] * dX[1] / ny;
     }
     static inline void derivative(vecP & C, const vec3 & dX, const real_t & invR2) {
       static const int n = nx + ny;
-      Kernel<B_iter,vecP,nx+1,0,ny-1>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::derivative(C, dX, invR2);
       C[Index<nx,ny,0>::I] = DerivativeSum<vecP,nx,ny,0>::loop(C, dX) / n * invR2;
     }
     static inline void scale(vecP & C) {
-      Kernel<B_iter,vecP,nx+1,0,ny-1>::scale(C);
+      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::scale(C);
       C[Index<nx,ny,0>::I] *= Index<nx,ny,0>::F;
     }
     static inline void M2M(vecP & MI, const vecP & C, const vecP & MJ) {
-      Kernel<B_iter,vecP,nx+1,0,ny-1>::M2M(MI, C, MJ);
+      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::M2M(MI, C, MJ);
       MI[Index<nx,ny,0>::I] += MultipoleSum<vecP,nx,ny,0>::kernel(C, MJ);
     }
     static inline void M2L(vecP & L, const vecP & C, const vecP & M) {
-      Kernel<B_iter,vecP,nx+1,0,ny-1>::M2L(L, C, M);
+      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::M2L(L, C, M);
       L[Index<nx,ny,0>::I] += LocalSum<vecP,nx,ny,0>::kernel(M, C);
     }
     static inline void L2L(vecP & LI, const vecP & C, const vecP & LJ) {
-      Kernel<B_iter,vecP,nx+1,0,ny-1>::L2L(LI, C, LJ);
+      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::L2L(LI, C, LJ);
       LI[Index<nx,ny,0>::I] += LocalSum<vecP,nx,ny,0>::kernel(C, LJ);
     }
     static inline void L2P(B_iter B, const vecP & C, const vecP & L) {
-      Kernel<B_iter,vecP,nx+1,0,ny-1>::L2P(B, C, L);
+      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::L2P(B, C, L);
       B->TRG[Index<nx,ny,0>::I] += LocalSum<vecP,nx,ny,0>::kernel(C, L);
     }
   };
 
-  template<typename B_iter, int nx>
-  struct Kernel<B_iter,vecP,nx,0,0> {
+  template<typename B_iter, typename vecP, int nx>
+  struct Kernel_LC<B_iter,vecP,nx,0,0> {
     static inline void power(vecP & C, const vec3 & dX) {
-      Kernel<B_iter,vecP,0,0,nx-1>::power(C, dX);
+      Kernel_LC<B_iter,vecP,0,0,nx-1>::power(C, dX);
       C[Index<nx,0,0>::I] = C[Index<nx-1,0,0>::I] * dX[0] / nx;
     }
     static inline void derivative(vecP & C, const vec3 & dX, const real_t & invR2) {
       static const int n = nx;
-      Kernel<B_iter,vecP,0,0,nx-1>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,0,0,nx-1>::derivative(C, dX, invR2);
       C[Index<nx,0,0>::I] = DerivativeSum<vecP,nx,0,0>::loop(C, dX) / n * invR2;
     }
     static inline void scale(vecP & C) {
-      Kernel<B_iter,vecP,0,0,nx-1>::scale(C);
+      Kernel_LC<B_iter,vecP,0,0,nx-1>::scale(C);
       C[Index<nx,0,0>::I] *= Index<nx,0,0>::F;
     }
     static inline void M2M(vecP & MI, const vecP & C, const vecP & MJ) {
-      Kernel<B_iter,vecP,0,0,nx-1>::M2M(MI, C, MJ);
+      Kernel_LC<B_iter,vecP,0,0,nx-1>::M2M(MI, C, MJ);
       MI[Index<nx,0,0>::I] += MultipoleSum<vecP,nx,0,0>::kernel(C, MJ);
     }
     static inline void M2L(vecP & L, const vecP & C, const vecP & M) {
-      Kernel<B_iter,vecP,0,0,nx-1>::M2L(L, C, M);
+      Kernel_LC<B_iter,vecP,0,0,nx-1>::M2L(L, C, M);
       L[Index<nx,0,0>::I] += LocalSum<vecP,nx,0,0>::kernel(M, C);
     }
     static inline void L2L(vecP & LI, const vecP & C, const vecP & LJ) {
-      Kernel<B_iter,vecP,0,0,nx-1>::L2L(LI, C, LJ);
+      Kernel_LC<B_iter,vecP,0,0,nx-1>::L2L(LI, C, LJ);
       LI[Index<nx,0,0>::I] += LocalSum<vecP,nx,0,0>::kernel(C, LJ);
     }
     static inline void L2P(B_iter B, const vecP & C, const vecP & L) {
-      Kernel<B_iter,vecP,0,0,nx-1>::L2P(B, C, L);
+      Kernel_LC<B_iter,vecP,0,0,nx-1>::L2P(B, C, L);
       B->TRG[Index<nx,0,0>::I] += LocalSum<vecP,nx,0,0>::kernel(C, L);
     }
   };
 
-  template<typename B_iter>
-  struct Kernel<B_iter,vecP,0,0,0> {
+  template<typename B_iter, typename vecP>
+  struct Kernel_LC<B_iter,vecP,0,0,0> {
     static inline void power(vecP &, const vec3 &) {}
     static inline void derivative(vecP &, const vec3 &, const real_t &) {}
     static inline void scale(vecP &) {}
@@ -283,31 +283,58 @@ namespace exafmm {
     static inline void L2P(B_iter, const vecP &, const vecP &) {}
   };
 
-  template<typename vecP, int mass>
-  inline void add(vecP & L, const real_t & M, const vecP & C) {
-    L += C * M;
-  }
-  template<typename vecP>
-  inline void add<vecP,0>(vecP & L, const real_t &, const vecP & C) {
-    L += C;
-  }
-
-  template<typename B_iter, typename vecP, int mass, int PP>
-  struct Coef {
-    static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
-      C[0] = invR;
-      Kernel<B_iter,vecP,0,0,PP>::derivative(C, dX, invR2);
-      Kernel<B_iter,vecP,0,0,PP>::scale(C);
+  template<int NTERM, int mass>
+  struct Mass {
+    typedef vec<NTERM,real_t> vecP;
+    static inline void add(vecP & L, const real_t & M, const vecP & C) {
+      L += C * M;
     }
-    static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
-      add<vecP,mass>(L, M[0], C);
-      for (int i=1; i<NTERM; i++) L[0] += M[i] * C[i];
-      Kernel<B_iter,vecP, 0,0,PP-1>::M2L(L, C, M);
+    static inline void multiply(vecP & M) {
+      for (int i=1; i<NTERM; i++) M[i] *= M[0];
+    }
+    static inline void divide(vecP & M) {
+      for (int i=1; i<NTERM; i++) M[i] /= M[0];
+    }
+    static inline void divide(vecP & L, const real_t & M) {
+      L /= M;
+    }
+    static inline real_t sqrt(const real_t & invR2, const real_t & Mi, const real_t & Mj) {
+      return Mi * Mj * std::sqrt(invR2);
+    }
+  };
+  template<int NTERM>
+  struct Mass<NTERM,0> {
+    typedef vec<NTERM,real_t> vecP;
+    static inline void add(vecP & L, const real_t &, const vecP & C) {
+      L += C;
+    }
+    static inline void multiply(vecP &) {}
+    static inline void divide(vecP &) {}
+    static inline void divide(vecP &, const real_t &) {}
+    static inline real_t sqrt(const real_t & invR2, const real_t &, const real_t &) {
+      return std::sqrt(invR2);
     }
   };
 
-  template<typename B_iter, typename vecP, int mass>
-  struct Coef<B_iter,vecP,mass,1> {
+
+  template<typename B_iter, int NTERM, int mass, int PP>
+  struct Coef {
+    typedef vec<NTERM,real_t> vecP;
+    static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
+      C[0] = invR;
+      Kernel_LC<B_iter,vecP,0,0,PP>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,0,0,PP>::scale(C);
+    }
+    static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
+      Mass<NTERM,mass>::add(L, M[0], C);
+      for (int i=1; i<NTERM; i++) L[0] += M[i] * C[i];
+      Kernel_LC<B_iter,vecP, 0,0,PP-1>::M2L(L, C, M);
+    }
+  };
+
+  template<typename B_iter, int NTERM, int mass>
+  struct Coef<B_iter,NTERM,mass,1> {
+    typedef vec<NTERM,real_t> vecP;
     static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
       C[0] = invR;
       invR2 = -invR2;
@@ -318,14 +345,15 @@ namespace exafmm {
       C[3] = z * invR3;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M __attribute__((unused))) {
-      add<vecP,1-mass>(L, M[0], C);
+      Mass<NTERM,1-mass>::add(L, M[0], C);
     }
   };
 
-  template<typename B_iter, typename vecP, int mass>
-  struct Coef<B_iter,vecP,mass,2> {
+  template<typename B_iter, int NTERM, int mass>
+  struct Coef<B_iter,NTERM,mass,2> {
+    typedef vec<NTERM,real_t> vecP;
     static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
-      Coef<B_iter,vecP,mass,1>::getCoef(C, dX, invR2, invR);
+      Coef<B_iter,NTERM,mass,1>::getCoef(C, dX, invR2, invR);
       real_t x = dX[0], y = dX[1], z = dX[2];
       real_t invR3 = invR * invR2;
       real_t invR5 = 3 * invR3 * invR2;
@@ -339,7 +367,7 @@ namespace exafmm {
       C[9] = z * z * invR5 + invR3;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
-      Coef<B_iter,vecP,mass,1>::sumM2L(L, C, M);
+      Coef<B_iter,NTERM,mass,1>::sumM2L(L, C, M);
       L[0] += M[1]*C[1]+M[2]*C[2]+M[3]*C[3];
       L[1] += M[1]*C[4]+M[2]*C[5]+M[3]*C[6];
       L[2] += M[1]*C[5]+M[2]*C[7]+M[3]*C[8];
@@ -347,10 +375,11 @@ namespace exafmm {
     }
   };
 
-  template<typename B_iter, typename vecP, int mass>
-  struct Coef<B_iter,vecP,mass,3> {
+  template<typename B_iter, int NTERM, int mass>
+  struct Coef<B_iter,NTERM,mass,3> {
+    typedef vec<NTERM,real_t> vecP;
     static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
-      Coef<B_iter,vecP,mass,2>::getCoef(C, dX, invR2, invR);
+      Coef<B_iter,NTERM,mass,2>::getCoef(C, dX, invR2, invR);
       real_t x = dX[0], y = dX[1], z = dX[2];
       real_t invR3 = invR * invR2;
       real_t invR5 = 3 * invR3 * invR2;
@@ -370,7 +399,7 @@ namespace exafmm {
       C[14] = x * y * z * invR7;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
-      Coef<B_iter,vecP,mass,2>::sumM2L(L, C, M);
+      Coef<B_iter,NTERM,mass,2>::sumM2L(L, C, M);
       L[0] += M[4]*C[4]+M[5]*C[5]+M[6]*C[6]+M[7]*C[7]+M[8]*C[8]+M[9]*C[9];
       L[1] += M[4]*C[10]+M[5]*C[11]+M[6]*C[12]+M[7]*C[13]+M[8]*C[14]+M[9]*C[15];
       L[2] += M[4]*C[11]+M[5]*C[13]+M[6]*C[14]+M[7]*C[16]+M[8]*C[17]+M[9]*C[18];
@@ -384,10 +413,11 @@ namespace exafmm {
     }
   };
 
-  template<typename B_iter, typename vecP, int mass>
-  struct Coef<B_iter,vecP,mass,4> {
+  template<typename B_iter, int NTERM, int mass>
+  struct Coef<B_iter,NTERM,mass,4> {
+    typedef vec<NTERM,real_t> vecP;
     static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
-      Coef<B_iter,vecP,mass,3>::getCoef(C, dX, invR2, invR);
+      Coef<B_iter,NTERM,mass,3>::getCoef(C, dX, invR2, invR);
       real_t x = dX[0], y = dX[1], z = dX[2];
       real_t invR3 = invR * invR2;
       real_t invR5 = 3 * invR3 * invR2;
@@ -413,7 +443,7 @@ namespace exafmm {
       C[34] = z * z * (t + 6 * invR7) + 3 * invR5;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
-      Coef<B_iter,vecP,mass,3>::sumM2L(L, C, M);
+      Coef<B_iter,NTERM,mass,3>::sumM2L(L, C, M);
       L[0] += M[10]*C[10]+M[11]*C[11]+M[12]*C[12]+M[13]*C[13]+M[14]*C[14]+M[15]*C[15]+M[16]*C[16]+M[17]*C[17]+M[18]*C[18]+M[19]*C[19];
       L[1] += M[10]*C[20]+M[11]*C[21]+M[12]*C[22]+M[13]*C[23]+M[14]*C[24]+M[15]*C[25]+M[16]*C[26]+M[17]*C[27]+M[18]*C[28]+M[19]*C[29];
       L[2] += M[10]*C[21]+M[11]*C[23]+M[12]*C[24]+M[13]*C[26]+M[14]*C[27]+M[15]*C[28]+M[16]*C[30]+M[17]*C[31]+M[18]*C[32]+M[19]*C[33];
@@ -437,10 +467,11 @@ namespace exafmm {
     }
   };
 
-  template<typename B_iter, typename vecP, int mass>
-  struct Coef<B_iter,vecP,mass,5> {
+  template<typename B_iter, int NTERM, int mass>
+  struct Coef<B_iter,NTERM,mass,5> {
+    typedef vec<NTERM,real_t> vecP;
     static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
-      Coef<B_iter,vecP,mass,4>::getCoef(C, dX, invR2, invR);
+      Coef<B_iter,NTERM,mass,4>::getCoef(C, dX, invR2, invR);
       real_t x = dX[0], y = dX[1], z = dX[2];
       real_t invR3 = invR * invR2;
       real_t invR5 = 3 * invR3 * invR2;
@@ -473,7 +504,7 @@ namespace exafmm {
       C[55] = z * z * z * (t + 10 * invR9) + 15 * z * invR7;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
-      Coef<B_iter,vecP,mass,4>::sumM2L(L, C, M);
+      Coef<B_iter,NTERM,mass,4>::sumM2L(L, C, M);
       L[0] += M[20]*C[20]+M[21]*C[21]+M[22]*C[22]+M[23]*C[23]+M[24]*C[24]+M[25]*C[25]+M[26]*C[26]+M[27]*C[27]+M[28]*C[28]+M[29]*C[29]+M[30]*C[30]+M[31]*C[31]+M[32]*C[32]+M[33]*C[33]+M[34]*C[34];
       L[1] += M[20]*C[35]+M[21]*C[36]+M[22]*C[37]+M[23]*C[38]+M[24]*C[39]+M[25]*C[40]+M[26]*C[41]+M[27]*C[42]+M[28]*C[43]+M[29]*C[44]+M[30]*C[45]+M[31]*C[46]+M[32]*C[47]+M[33]*C[48]+M[34]*C[49];
       L[2] += M[20]*C[36]+M[21]*C[38]+M[22]*C[39]+M[23]*C[41]+M[24]*C[42]+M[25]*C[43]+M[26]*C[45]+M[27]*C[46]+M[28]*C[47]+M[29]*C[48]+M[30]*C[50]+M[31]*C[51]+M[32]*C[52]+M[33]*C[53]+M[34]*C[54];
@@ -512,10 +543,11 @@ namespace exafmm {
   }
   };
 
-  template<typename B_iter, typename vecP, int mass>
-  struct Coef<B_iter,vecP,mass,6> {
+  template<typename B_iter, int NTERM, int mass>
+  struct Coef<B_iter,NTERM,mass,6> {
+    typedef vec<NTERM,real_t> vecP;
     static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
-      Coef<B_iter,vecP,mass,5>::getCoef(C, dX, invR2, invR);
+      Coef<B_iter,NTERM,mass,5>::getCoef(C, dX, invR2, invR);
       real_t x = dX[0], y = dX[1], z = dX[2];
       real_t invR3 = invR * invR2;
       real_t invR5 = 3 * invR3 * invR2;
@@ -556,7 +588,7 @@ namespace exafmm {
       C[83] = z * z * z * z * (t + 15 * invR11) + 45 * z * z * invR9 + 15 * invR7;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
-      Coef<B_iter,vecP,mass,5>::sumM2L(L, C, M);
+      Coef<B_iter,NTERM,mass,5>::sumM2L(L, C, M);
       L[0] += M[35]*C[35]+M[36]*C[36]+M[37]*C[37]+M[38]*C[38]+M[39]*C[39]+M[40]*C[40]+M[41]*C[41]+M[42]*C[42]+M[43]*C[43]+M[44]*C[44]+M[45]*C[45]+M[46]*C[46]+M[47]*C[47]+M[48]*C[48]+M[49]*C[49]+M[50]*C[50]+M[51]*C[51]+M[52]*C[52]+M[53]*C[53]+M[54]*C[54]+M[55]*C[55];
       L[1] += M[35]*C[56]+M[36]*C[57]+M[37]*C[58]+M[38]*C[59]+M[39]*C[60]+M[40]*C[61]+M[41]*C[62]+M[42]*C[63]+M[43]*C[64]+M[44]*C[65]+M[45]*C[66]+M[46]*C[67]+M[47]*C[68]+M[48]*C[69]+M[49]*C[70]+M[50]*C[71]+M[51]*C[72]+M[52]*C[73]+M[53]*C[74]+M[54]*C[75]+M[55]*C[76];
       L[2] += M[35]*C[57]+M[36]*C[59]+M[37]*C[60]+M[38]*C[62]+M[39]*C[63]+M[40]*C[64]+M[41]*C[66]+M[42]*C[67]+M[43]*C[68]+M[44]*C[69]+M[45]*C[71]+M[46]*C[72]+M[47]*C[73]+M[48]*C[74]+M[49]*C[75]+M[50]*C[77]+M[51]*C[78]+M[52]*C[79]+M[53]*C[80]+M[54]*C[81]+M[55]*C[82];
@@ -638,35 +670,6 @@ namespace exafmm {
     static inline void negate(vecP){}
   };
 
-  template<typename vecP, int mass>
-  inline void multiply(vecP & M) {
-    for (int i=1; i<NTERM; i++) M[i] *= M[0];
-  }
-  template<typename vecP>
-  inline void multiply<vecP,0>(vecP &) {}
-
-  template<typename vecP, int mass>
-  inline void divide(vecP & M) {
-    for (int i=1; i<NTERM; i++) M[i] /= M[0];
-  }
-  template<typename vecP>
-  inline void divide<vecP,0>(vecP &) {}
-
-  template<typename vecP, int mass>
-  inline void divide(vecP & L, const real_t & M) {
-    L /= M;
-  }
-  template<typename vecP>
-  inline void divide<vecP,0>(vecP &, const real_t &) {}
-
-  template<typename vecP, int mass>
-  inline real_t msqrt(const real_t & invR2, const real_t & Mi, const real_t & Mj) {
-    return Mi * Mj * std::sqrt(invR2);
-  }
-  template<typename vecP>
-  inline real_t msqrt<vecP,0>(const real_t & invR2, const real_t &, const real_t &) {
-    return std::sqrt(invR2);
-  }
 
   template<int P, int mass=0>
   class LaplaceCartesianCPU : public LaplaceP2PCPU<vec<P*(P+1)*(P+2)/6,real_t>,Cartesian> {
@@ -674,10 +677,11 @@ namespace exafmm {
     static const Basis basis = Cartesian;                       //!< Set basis to Cartesian
     static const int NTERM = P*(P+1)*(P+2)/6;                   //!< # of terms in Laplace Cartesian expansion
     typedef vec<NTERM,real_t> vecP;                             //!< Vector type for expansion terms
-    using LaplaceP2PCPU<vecP,Cartesian>::Bodies;                //!< Vector of bodies for Laplace
-    using LaplaceP2PCPU<vecP,Cartesian>::B_iter;                //!< Iterator of body vector
-    using LaplaceP2PCPU<vecP,Cartesian>::Cells;                 //!< Vector of cells for Laplace
-    using LaplaceP2PCPU<vecP,Cartesian>::C_iter;                //!< Iterator of cell vector
+    using typename LaplaceP2PCPU<vecP,Cartesian>::Bodies;       //!< Vector of bodies for Laplace
+    using typename LaplaceP2PCPU<vecP,Cartesian>::B_iter;       //!< Iterator of body vector
+    using typename LaplaceP2PCPU<vecP,Cartesian>::Cells;        //!< Vector of cells for Laplace
+    using typename LaplaceP2PCPU<vecP,Cartesian>::C_iter;       //!< Iterator of cell vector
+    using LaplaceP2PCPU<vecP,Cartesian>::Xperiodic;
 
     static void setup() {}
 
@@ -686,10 +690,10 @@ namespace exafmm {
 	vec3 dX = C->X - B->X;
 	vecP M;
 	M[0] = B->SRC;
-	Kernel<B_iter,vecP,0,0,P-1>::power(M, dX);
+	Kernel_LC<B_iter,vecP,0,0,P-1>::power(M, dX);
 	C->M += M;
       }
-      divide<vecP,mass>(C->M);
+      Mass<NTERM,mass>::divide(C->M);
     }
 
     static void M2M(C_iter Ci, C_iter C0) {
@@ -698,26 +702,26 @@ namespace exafmm {
 	vecP M;
 	vecP C;
 	C[0] = 1;
-	Kernel<B_iter,vecP,0,0,P-1>::power(C, dX);
-        multiply<vecP,mass>(Cj->M);
+	Kernel_LC<B_iter,vecP,0,0,P-1>::power(C, dX);
+        Mass<NTERM,mass>::multiply(Cj->M);
 	M = Cj->M;
-        divide<vecP,mass>(Cj->M);
+        Mass<NTERM,mass>::divide(Cj->M);
 	Ci->M += C * M[0];
-	Kernel<B_iter,vecP,0,0,P-1>::M2M(Ci->M, C, M);
+	Kernel_LC<B_iter,vecP,0,0,P-1>::M2M(Ci->M, C, M);
       }
-      divide<vecP,mass>(Ci->M);
+      Mass<NTERM,mass>::divide(Ci->M);
     }
 
     static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t invR2 = 1 / norm(dX);
-      real_t invR = msqrt<mass>(invR2,Ci->M[0],Cj->M[0]);
+      real_t invR = Mass<NTERM,mass>::sqrt(invR2,Ci->M[0],Cj->M[0]);
       vecP C;
-      Coef<B_iter,vecP,mass,P-1>::getCoef(C, dX, invR2, invR);
-      Coef<B_iter,vecP,mass,P-1>::sumM2L(Ci->L, C, Cj->M);
+      Coef<B_iter,NTERM,mass,P-1>::getCoef(C, dX, invR2, invR);
+      Coef<B_iter,NTERM,mass,P-1>::sumM2L(Ci->L, C, Cj->M);
       if (mutual) {
 	Sign<vecP,P-1,(P-1)&1>::negate(C);
-	Coef<B_iter,vecP,mass,P-1>::sumM2L(Cj->L, C, Ci->M);
+	Coef<B_iter,NTERM,mass,P-1>::sumM2L(Cj->L, C, Ci->M);
       }
     }
 
@@ -726,11 +730,11 @@ namespace exafmm {
       vec3 dX = Ci->X - Cj->X;
       vecP C;
       C[0] = 1;
-      Kernel<B_iter,vecP,0,0,P-1>::power(C, dX);
-      divide<vecP,mass>(Ci->L, Ci->M[0]);
+      Kernel_LC<B_iter,vecP,0,0,P-1>::power(C, dX);
+      Mass<NTERM,mass>::divide(Ci->L, Ci->M[0]);
       Ci->L += Cj->L;
       for (int i=1; i<NTERM; i++) Ci->L[0] += C[i] * Cj->L[i];
-      Kernel<B_iter,vecP,0,0,P-1>::L2L(Ci->L, C, Cj->L);
+      Kernel_LC<B_iter,vecP,0,0,P-1>::L2L(Ci->L, C, Cj->L);
     }
 
     static void L2P(C_iter Ci) {
@@ -738,7 +742,7 @@ namespace exafmm {
 	vec3 dX = B->X - Ci->X;
 	vecP C, L;
 	C[0] = 1;
-	Kernel<B_iter,vecP,0,0,P-1>::power(C,dX);
+	Kernel_LC<B_iter,vecP,0,0,P-1>::power(C,dX);
 	L = Ci->L;
 	B->TRG /= B->SRC;
 	B->TRG[0] += L[0];
@@ -746,7 +750,7 @@ namespace exafmm {
 	B->TRG[2] += L[2];
 	B->TRG[3] += L[3];
 	for (int i=1; i<NTERM; i++) B->TRG[0] += C[i] * L[i];
-	Kernel<B_iter,vecP,0,0,1>::L2P(B, C, L);
+	Kernel_LC<B_iter,vecP,0,0,1>::L2P(B, C, L);
       }
     }
   };

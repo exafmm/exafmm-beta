@@ -8,10 +8,11 @@ namespace exafmm {
   //! Handles all the communication of local essential trees
   template<typename Kernel>
   class TreeMPI {
-    using typename Kernel::Bodies;                              //!< Vector of bodies
-    using typename Kernel::Cells;                               //!< Vector of cells
-    using typename Kernel::B_iter;                              //!< Iterator of body vector
-    using typename Kernel::C_iter;                              //!< Iterator of cell vecto
+    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
+    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
+    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
+    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vector
+    typedef typename Kernel::vecP vecP;                         //!< Vector type for expansion terms
 
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
@@ -120,7 +121,7 @@ namespace exafmm {
     //! Add cells to send buffer
     void addSendCell(C_iter C, int & irank, int & icell, int & iparent, bool copyData) {
       if (copyData) {                                           // If copying data to send cells
-	Cell<P,Kernel::equation,Kernel::basis> cell(*C);          //  Initialize send cell
+	Cell<B_iter,vecP,Kernel::equation,Kernel::basis> cell(*C); // Initialize send cell
 	cell.NCHILD = cell.NBODY = 0;                           //  Reset counters
 	cell.IPARENT = iparent;                                 //  Index of parent
 	sendCells[sendCellDispl[irank]+icell] = cell;           //  Copy cell to send buffer

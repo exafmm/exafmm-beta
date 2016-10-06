@@ -6,7 +6,7 @@
 #endif
 
 namespace exafmm {
-  template<tyepname vecP,Basis basis>
+  template<typename vecP,Basis basis>
   class BiotSavartP2PCPU : public KernelBase {
   public:
     static const Equation equation = BiotSavart;                //!< Set equation to BiotSavart
