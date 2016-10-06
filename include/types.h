@@ -135,12 +135,12 @@ namespace exafmm {
     B_iter BODY;                                                //!< Iterator of first body
     vecP   M, L;                                                //!< Multipole/local coefficients
   };
-  template<int P>
+  template<typename B_iter, typename vecP>
   struct Cell<B_iter,vecP,Helmholtz,Spherical> : public Cell<B_iter,vecP> { //!< Specialization for Helmholtz Spherical
     B_iter BODY;                                                //!< Iterator of first body
     vecP   M, L;                                                //!< Multipole/local coefficients
   };
-  template<int P>
+  template<typename B_iter, typename vecP>
   struct Cell<B_iter,vecP,BiotSavart,Spherical> : public Cell<B_iter,vecP> { //!< Specialization for Biot-Savart Spherical
     B_iter BODY;                                                //!< Iterator of first body
     vecP   M, L;                                                //!< Multipole/local coefficients
