@@ -9,11 +9,11 @@ namespace exafmm {
   template<tyepname vecP,Basis basis>
   class BiotSavartP2PCPU : public KernelBase {
   public:
-    static const Equation equation = BiotSavart;                 //!< Set equation to BiotSavart
-    typedef std::vector<Body<BiotSavart> > Bodies;               //!< Vector of body type for BiotSavart
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator for body vector
-    typedef std::vector<Cell<B_iter,vecP,BiotSavart,basis> > Cells;//!< Vector of cell type for BiotSavart
-    typedef typename Cells::iterator C_iter;                    //!< Iterator for cell vector
+    static const Equation equation = BiotSavart;                //!< Set equation to BiotSavart
+    typedef std::vector<Body<BiotSavart> > Bodies;              //!< Vector of bodies for BiotSavart
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef std::vector<Cell<B_iter,vecP,BiotSavart,basis> > Cells;//!< Vector of cells for BiotSavart
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;

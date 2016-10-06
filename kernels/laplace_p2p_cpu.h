@@ -10,10 +10,10 @@ namespace exafmm {
   class LaplaceP2PCPU : public KernelBase {
   public:
     static const Equation equation = Laplace;                   //!< Set equation to Laplace
-    typedef std::vector<Body<Laplace> > Bodies;                 //!< Vector of body type for Laplace
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator for body vector
-    typedef std::vector<Cell<B_iter,vecP,Laplace,basis> > Cells;//!< Vector of cell type for Laplace
-    typedef typename Cells::iterator C_iter;                    //!< Iterator for cell vector
+    typedef std::vector<Body<Laplace> > Bodies;                 //!< Vector of bodies for Laplace
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef std::vector<Cell<B_iter,vecP,Laplace,basis> > Cells;//!< Vector of cells for Laplace
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;

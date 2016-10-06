@@ -9,10 +9,10 @@ using namespace exafmm;
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   typedef LaplaceCartesianCPU<P,0> Kernel;
-  using Kernel::Bodies;
-  using Kernel::Cells;
-  using Kernel::B_iter;
-  using Kernel::C_iter;
+  using typename Kernel::Bodies;                                //!< Vector of bodies
+  using typename Kernel::Cells;                                 //!< Vector of cells
+  using typename Kernel::B_iter;                                //!< Iterator of body vector
+  using typename Kernel::C_iter;                                //!< Iterator of cell vecto
 
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox<Kernel> boundBox(args.nspawn);

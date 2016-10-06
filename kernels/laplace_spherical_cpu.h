@@ -10,10 +10,10 @@ namespace exafmm {
     static const Basis basis = Spherical;                       //!< Set basis to Spherical
     static const int NTERM = P*(P+1)/2;                         //!< # of terms in Laplace Spherical expansion
     typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
-    using LaplaceP2PCPU<vecP,Spherical>::Bodies;                //!< Vector of body type for Laplace
-    using LaplaceP2PCPU<vecP,Spherical>::B_iter;                //!< Iterator for body vector
-    using LaplaceP2PCPU<vecP,Spherical>::Cells;                 //!< Vector of cell type for Laplace
-    using LaplaceP2PCPU<vecP,Spherical>::C_iter;                //!< Iterator for cell vector
+    using LaplaceP2PCPU<vecP,Spherical>::Bodies;                //!< Vector of bodies for Laplace
+    using LaplaceP2PCPU<vecP,Spherical>::B_iter;                //!< Iterator of body vector
+    using LaplaceP2PCPU<vecP,Spherical>::Cells;                 //!< Vector of cells for Laplace
+    using LaplaceP2PCPU<vecP,Spherical>::C_iter;                //!< Iterator of cell vector
 
     static void setup() {}
 

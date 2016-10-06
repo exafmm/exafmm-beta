@@ -20,10 +20,10 @@ real_t KernelBase::eps2 = 0.0;
 
 template<typename Kernel>
 void fmm(Args args) {
-  using Kernel::Bodies;
-  using Kernel::Cells;
-  using Kernel::B_iter;
-  using Kernel::C_iter;
+  using typename Kernel::Bodies;                                //!< Vector of bodies
+  using typename Kernel::Cells;                                 //!< Vector of cells
+  using typename Kernel::B_iter;                                //!< Iterator of body vector
+  using typename Kernel::C_iter;                                //!< Iterator of cell vecto
 
   const int ksize = 11;
   const vec3 cycle = 2 * M_PI;

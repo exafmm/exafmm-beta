@@ -7,10 +7,10 @@
 namespace exafmm {
   template<typename Kernel>
   class BuildTree {
-    using Kernel::Bodies;                                       //!< Vector of bodies
-    using Kernel::Cells;                                        //!< Vector of cells
-    using Kernel::B_iter;                                       //!< Iterator of body vector
-    using Kernel::C_iter;                                       //!< Iterator of cell vecto
+    using typename Kernel::Bodies;                              //!< Vector of bodies
+    using typename Kernel::Cells;                               //!< Vector of cells
+    using typename Kernel::B_iter;                              //!< Iterator of body vector
+    using typename Kernel::C_iter;                              //!< Iterator of cell vecto
     typedef vec<8,int> ivec8;                                   //!< Vector of 8 integer types
 
   private:

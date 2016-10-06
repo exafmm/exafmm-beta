@@ -6,10 +6,10 @@
 namespace exafmm {
   template<typename Kernel>
   class VanDerWaals {
-    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<P,Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
+    using typename Kernel::Bodies;                              //!< Vector of bodies
+    using typename Kernel::Cells;                               //!< Vector of cells
+    using typename Kernel::B_iter;                              //!< Iterator of body vector
+    using typename Kernel::C_iter;                              //!< Iterator of cell vecto
 
   private:
     const real_t cuton;                                         //!< Cuton distance

@@ -58,8 +58,8 @@ namespace exafmm {
   public:
     typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
     typedef Record::iterator R_iter;                            //!< Iterator of regression map
-    using typename VerifyEquation<Kernel::equation>::Bodies;    //!< Vector of bodies
-    using typename VerifyEquation<Kernel::equation>::B_iter;    //!< Iterator of body vector
+    using typename Kernel::Bodies;                              //!< Vector of bodies
+    using typename Kernel::B_iter;                              //!< Iterator of body vector
     using VerifyEquation<Kernel::equation>::getSumScalar;       //!< Get sum of scalar component of a vector of target bodies
 
   private:

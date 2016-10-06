@@ -674,10 +674,10 @@ namespace exafmm {
     static const Basis basis = Cartesian;                       //!< Set basis to Cartesian
     static const int NTERM = P*(P+1)*(P+2)/6;                   //!< # of terms in Laplace Cartesian expansion
     typedef vec<NTERM,real_t> vecP;                             //!< Vector type for expansion terms
-    using LaplaceP2PCPU<vecP,Cartesian>::Bodies;                //!< Vector of body type for Laplace
-    using LaplaceP2PCPU<vecP,Cartesian>::B_iter;                //!< Iterator for body vector
-    using LaplaceP2PCPU<vecP,Cartesian>::Cells;                 //!< Vector of cell type for Laplace
-    using LaplaceP2PCPU<vecP,Cartesian>::C_iter;                //!< Iterator for cell vector
+    using LaplaceP2PCPU<vecP,Cartesian>::Bodies;                //!< Vector of bodies for Laplace
+    using LaplaceP2PCPU<vecP,Cartesian>::B_iter;                //!< Iterator of body vector
+    using LaplaceP2PCPU<vecP,Cartesian>::Cells;                 //!< Vector of cells for Laplace
+    using LaplaceP2PCPU<vecP,Cartesian>::C_iter;                //!< Iterator of cell vector
 
     static void setup() {}
 

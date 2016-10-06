@@ -10,10 +10,10 @@ namespace exafmm {
     static const Basis basis = Spherical;                       //!< Set basis to Spherical
     static const int NTERM = 3*P*(P+1)/2;                       //!< # of terms in Biot-Savart Spherical expansion
     typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
-    using BiotSavartP2PCPU<vecP,Spherical>::Bodies;             //!< Vector of body type for Biot-Savart
-    using BiotSavartP2PCPU<vecP,Spherical>::B_iter;             //!< Iterator for body vector
-    using BiotSavartP2PCPU<vecP,Spherical>::Cells;              //!< Vector of cell type for Biot-Savart
-    using BiotSavartP2PCPU<vecP,Spherical>::C_iter;             //!< Iterator for cell vector
+    using BiotSavartP2PCPU<vecP,Spherical>::Bodies;             //!< Vector of bodies for Biot-Savart
+    using BiotSavartP2PCPU<vecP,Spherical>::B_iter;             //!< Iterator of body vector
+    using BiotSavartP2PCPU<vecP,Spherical>::Cells;              //!< Vector of cells for Biot-Savart
+    using BiotSavartP2PCPU<vecP,Spherical>::C_iter;             //!< Iterator of cell vector
 
     static void setup() {}
 

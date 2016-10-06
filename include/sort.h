@@ -6,10 +6,10 @@ namespace exafmm {
   //! Custom radix sort for body and structures
   template<typename Kernel>
   class Sort {
-    using Kernel::Bodies;                                       //!< Vector of bodies
-    using Kernel::Cells;                                        //!< Vector of cells
-    using Kernel::B_iter;                                       //!< Iterator of body vector
-    using Kernel::C_iter;                                       //!< Iterator of cell vecto
+    using typename Kernel::Bodies;                              //!< Vector of bodies
+    using typename Kernel::Cells;                               //!< Vector of cells
+    using typename Kernel::B_iter;                              //!< Iterator of body vector
+    using typename Kernel::C_iter;                              //!< Iterator of cell vecto
 
   private:
     Bodies output;                                              //!< Output buffer
