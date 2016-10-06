@@ -286,8 +286,8 @@ namespace exafmm {
   template<int NTERM, int mass>
   struct Mass {
     typedef vec<NTERM,real_t> vecP;
-    static inline void add(vecP & L, const real_t & M, const vecP & C) {
-      L += C * M;
+    static inline void add(vecP & L, const real_t &, const vecP & C) {
+      L += C;
     }
     static inline void multiply(vecP & M) {
       for (int i=1; i<NTERM; i++) M[i] *= M[0];
@@ -305,8 +305,8 @@ namespace exafmm {
   template<int NTERM>
   struct Mass<NTERM,0> {
     typedef vec<NTERM,real_t> vecP;
-    static inline void add(vecP & L, const real_t &, const vecP & C) {
-      L += C;
+    static inline void add(vecP & L, const real_t & M, const vecP & C) {
+      L += C * M;
     }
     static inline void multiply(vecP &) {}
     static inline void divide(vecP &) {}
@@ -345,7 +345,7 @@ namespace exafmm {
       C[3] = z * invR3;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M __attribute__((unused))) {
-      Mass<NTERM,1-mass>::add(L, M[0], C);
+      Mass<NTERM,mass>::add(L, M[0], C);
     }
   };
 
