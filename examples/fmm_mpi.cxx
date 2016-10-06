@@ -60,7 +60,7 @@ void fmm(Args args) {
     }
   }
   if (args.mass) {
-    for (B_iter B=bodies.begin(); B!=bodies.begin(); B++) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       B->SRC = 1. / bodies.size();
     }
   }
