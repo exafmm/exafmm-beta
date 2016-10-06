@@ -4,13 +4,16 @@
 #include "spherical.h"
 
 namespace exafmm {
-  class LaplaceSphericalCPU : public LaplaceP2PCPU<Spherical> {
+  template<int P>
+  class LaplaceSphericalCPU : public LaplaceP2PCPU<vec<P*(P+1)/2,complex_t>,Spherical> {
   public:
-    using LaplaceP2PCPU<Spherical>::Bodies;
-    using LaplaceP2PCPU<Spherical>::Cells;
-    using LaplaceP2PCPU<Spherical>::B_iter;
-    using LaplaceP2PCPU<Spherical>::C_iter;
-    static const Basis basis = Spherical;
+    static const Basis basis = Spherical;                       //!< Set basis to Spherical
+    static const int NTERM = P*(P+1)/2;                         //!< # of terms in Laplace Spherical expansion
+    typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
+    using LaplaceP2PCPU<vecP,Spherical>::Bodies;                //!< Vector of body type for Laplace
+    using LaplaceP2PCPU<vecP,Spherical>::B_iter;                //!< Iterator for body vector
+    using LaplaceP2PCPU<vecP,Spherical>::Cells;                 //!< Vector of cell type for Laplace
+    using LaplaceP2PCPU<vecP,Spherical>::C_iter;                //!< Iterator for cell vector
 
     static void setup() {}
 

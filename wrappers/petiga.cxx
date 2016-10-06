@@ -21,7 +21,7 @@ typedef exafmm::HelmholtzSphericalCPU Kernel;
 
 namespace exafmm {
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation,Kernel::basis> > Cells;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 

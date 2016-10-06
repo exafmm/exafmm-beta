@@ -1,10 +1,7 @@
 -- Immediate --
 - Rank items in this list according to importance
 
-- Define M, L inside kernel namespace and template over P
-- Use reinterpret_cast pointers to reference them inside Cell struct
-- Complie all P during make -> provide option to make for specific P value
-- Update Makefile.am
+- typedef Bodies > using Kernel::Bodies in driver files
 - BaseMPI > MPI_Util
 - kernel files > .cxx
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
@@ -14,7 +11,7 @@
 - PetIGA no macro
 - With strumpack
 - Full simdList, threadList, configList in nightly.py
-- Comment in driver files
+- Comment in driver files, kernels
 - Use EXAFMM_CLUSTER
 - Configure on OSX
 - Representative case plot generator

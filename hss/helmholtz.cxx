@@ -12,7 +12,6 @@
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
 #include "helmholtz_spherical_cpu.h"
-typedef exafmm::HelmholtzSphericalCPU Kernel;
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
@@ -30,13 +29,14 @@ double elemops = 0.0;
 const complex_t I1(0.0,1.0);
 
 int main(int argc, char ** argv) {
-  const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
+  typedef exafmm::HelmholtzSphericalCPU<P> Kernel;
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation> > Cells;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
+  const real_t cycle = 2 * M_PI;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox<Kernel> boundBox(args.nspawn);

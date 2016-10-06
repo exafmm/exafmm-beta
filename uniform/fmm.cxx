@@ -15,25 +15,24 @@
 #endif
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef LaplaceCartesianCPU<0> Kernel;
 real_t KernelBase::eps2 = 0.0;
 vec3 KernelBase::Xperiodic = 0.0;
 
 int main(int argc, char ** argv) {
+  Args args(argc, argv);
+  args.ncrit = 32;
+  args.images = 1;
+  typedef LaplaceCartesianCPU<P,0> Kernel;
+  typedef std::vector<Body<Kernel::equation> > Bodies;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
+  typedef typename Bodies::iterator B_iter;
+  typedef typename Cells::iterator C_iter;
+
   const int ksize = 11;
   const vec3 cycle = 20 * M_PI;
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
-
-  Args args(argc, argv);
-  args.ncrit = 32;
-  args.images = 1;
-  typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation,Kernel::basis> > Cells;
-  typedef typename Bodies::iterator B_iter;
-  typedef typename Cells::iterator C_iter;
-
   BaseMPI baseMPI;
   BoundBox<Kernel> boundBox(args.nspawn);
   BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);

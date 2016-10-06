@@ -12,7 +12,6 @@
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef exafmm::LaplaceCartesianCPU<0> Kernel;
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 
@@ -27,13 +26,14 @@ void elements(void *, int *, int *, double *, int *);
 double elemops = 0.0;
 
 int main(int argc, char ** argv) {
-  const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
+  typedef exafmm::LaplaceCartesianCPU<P,0> Kernel;
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation> > Cells;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
+  const real_t cycle = 2 * M_PI;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox<Kernel> boundBox(args.nspawn);

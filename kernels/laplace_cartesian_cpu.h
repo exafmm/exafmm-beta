@@ -285,11 +285,11 @@ namespace exafmm {
 
   template<typename vecP, int mass>
   inline void add(vecP & L, const real_t & M, const vecP & C) {
-    for (int i=0; i<NTERM_LC; i++) L[i] += M * C[i];
+    L += C * M;
   }
-  template<>
+  template<typename vecP>
   inline void add<vecP,0>(vecP & L, const real_t &, const vecP & C) {
-    for (int i=0; i<NTERM_LC; i++) L[i] += C[i];
+    L += C;
   }
 
   template<typename B_iter, typename vecP, int mass, int PP>
@@ -301,7 +301,7 @@ namespace exafmm {
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
       add<vecP,mass>(L, M[0], C);
-      for (int i=1; i<NTERM_LC; i++) L[0] += M[i] * C[i];
+      for (int i=1; i<NTERM; i++) L[0] += M[i] * C[i];
       Kernel<B_iter,vecP, 0,0,PP-1>::M2L(L, C, M);
     }
   };
@@ -318,7 +318,7 @@ namespace exafmm {
       C[3] = z * invR3;
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M __attribute__((unused))) {
-      add<1-mass>(L, M[0], C);
+      add<vecP,1-mass>(L, M[0], C);
     }
   };
 
@@ -616,66 +616,68 @@ namespace exafmm {
     }
   };
 
-  template<int PP, bool odd>
+  template<typename vecP, int PP, bool odd>
   struct Sign {
     static const int begin = PP*(PP+1)*(PP+2)/6;
     static const int end = (PP+1)*(PP+2)*(PP+3)/6;
     static inline void negate(vecP & C) {
       for (int i=begin; i<end; i++) C[i] = -C[i];
-      Sign<PP-1,1-odd>::negate(C);
+      Sign<vecP,PP-1,1-odd>::negate(C);
     }
   };
 
-  template<int PP>
-  struct Sign<PP,0> {
+  template<typename vecP, int PP>
+  struct Sign<vecP,PP,0> {
     static inline void negate(vecP & C) {
-      Sign<PP-1,1>::negate(C);
+      Sign<vecP,PP-1,1>::negate(C);
     }
   };
 
-  template<>
-  struct Sign<0,0> {
+  template<typename vecP>
+  struct Sign<vecP,0,0> {
     static inline void negate(vecP){}
   };
 
-  template<int mass>
+  template<typename vecP, int mass>
   inline void multiply(vecP & M) {
-    for (int i=1; i<NTERM_LC; i++) M[i] *= M[0];
+    for (int i=1; i<NTERM; i++) M[i] *= M[0];
   }
-  template<>
-  inline void multiply<0>(vecP &) {}
+  template<typename vecP>
+  inline void multiply<vecP,0>(vecP &) {}
 
-  template<int mass>
+  template<typename vecP, int mass>
   inline void divide(vecP & M) {
-    for (int i=1; i<NTERM_LC; i++) M[i] /= M[0];
+    for (int i=1; i<NTERM; i++) M[i] /= M[0];
   }
-  template<>
-  inline void divide<0>(vecP &) {}
+  template<typename vecP>
+  inline void divide<vecP,0>(vecP &) {}
 
-  template<int mass>
+  template<typename vecP, int mass>
   inline void divide(vecP & L, const real_t & M) {
     L /= M;
   }
-  template<>
-  inline void divide<0>(vecP &, const real_t &) {}
+  template<typename vecP>
+  inline void divide<vecP,0>(vecP &, const real_t &) {}
 
-  template<int mass>
+  template<typename vecP, int mass>
   inline real_t msqrt(const real_t & invR2, const real_t & Mi, const real_t & Mj) {
     return Mi * Mj * std::sqrt(invR2);
   }
-  template<>
-  inline real_t msqrt<0>(const real_t & invR2, const real_t &, const real_t &) {
+  template<typename vecP>
+  inline real_t msqrt<vecP,0>(const real_t & invR2, const real_t &, const real_t &) {
     return std::sqrt(invR2);
   }
 
-  template<int mass=0>
-  class LaplaceCartesianCPU : public LaplaceP2PCPU<Cartesian> {
+  template<int P, int mass=0>
+  class LaplaceCartesianCPU : public LaplaceP2PCPU<vec<P*(P+1)*(P+2)/6,real_t>,Cartesian> {
   public:
-    using LaplaceP2PCPU<Cartesian>::Bodies;
-    using LaplaceP2PCPU<Cartesian>::Cells;
-    using LaplaceP2PCPU<Cartesian>::B_iter;
-    using LaplaceP2PCPU<Cartesian>::C_iter;
-    static const Basis basis = Cartesian;
+    static const Basis basis = Cartesian;                       //!< Set basis to Cartesian
+    static const int NTERM = P*(P+1)*(P+2)/6;                   //!< # of terms in Laplace Cartesian expansion
+    typedef vec<NTERM,real_t> vecP;                             //!< Vector type for expansion terms
+    using LaplaceP2PCPU<vecP,Cartesian>::Bodies;                //!< Vector of body type for Laplace
+    using LaplaceP2PCPU<vecP,Cartesian>::B_iter;                //!< Iterator for body vector
+    using LaplaceP2PCPU<vecP,Cartesian>::Cells;                 //!< Vector of cell type for Laplace
+    using LaplaceP2PCPU<vecP,Cartesian>::C_iter;                //!< Iterator for cell vector
 
     static void setup() {}
 
@@ -685,9 +687,9 @@ namespace exafmm {
 	vecP M;
 	M[0] = B->SRC;
 	Kernel<B_iter,vecP,0,0,P-1>::power(M, dX);
-	for (int i=0; i<NTERM_LC; i++) C->M[i] += M[i];
+	C->M += M;
       }
-      divide<mass>(C->M);
+      divide<vecP,mass>(C->M);
     }
 
     static void M2M(C_iter Ci, C_iter C0) {
@@ -697,13 +699,13 @@ namespace exafmm {
 	vecP C;
 	C[0] = 1;
 	Kernel<B_iter,vecP,0,0,P-1>::power(C, dX);
-        multiply<mass>(Cj->M);
+        multiply<vecP,mass>(Cj->M);
 	M = Cj->M;
-        divide<mass>(Cj->M);
-	for (int i=0; i<NTERM_LC; i++) Ci->M[i] += C[i] * M[0];
+        divide<vecP,mass>(Cj->M);
+	Ci->M += C * M[0];
 	Kernel<B_iter,vecP,0,0,P-1>::M2M(Ci->M, C, M);
       }
-      divide<mass>(Ci->M);
+      divide<vecP,mass>(Ci->M);
     }
 
     static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
@@ -711,11 +713,11 @@ namespace exafmm {
       real_t invR2 = 1 / norm(dX);
       real_t invR = msqrt<mass>(invR2,Ci->M[0],Cj->M[0]);
       vecP C;
-      Coef<B_iter,mass,P-1>::getCoef(C, dX, invR2, invR);
-      Coef<B_iter,mass,P-1>::sumM2L(Ci->L, C, Cj->M);
+      Coef<B_iter,vecP,mass,P-1>::getCoef(C, dX, invR2, invR);
+      Coef<B_iter,vecP,mass,P-1>::sumM2L(Ci->L, C, Cj->M);
       if (mutual) {
-	Sign<P-1,(P-1)&1>::negate(C);
-	Coef<B_iter,mass,P-1>::sumM2L(Cj->L, C, Ci->M);
+	Sign<vecP,P-1,(P-1)&1>::negate(C);
+	Coef<B_iter,vecP,mass,P-1>::sumM2L(Cj->L, C, Ci->M);
       }
     }
 
@@ -725,9 +727,9 @@ namespace exafmm {
       vecP C;
       C[0] = 1;
       Kernel<B_iter,vecP,0,0,P-1>::power(C, dX);
-      divide<mass>(Ci->L, Ci->M[0]);
+      divide<vecP,mass>(Ci->L, Ci->M[0]);
       Ci->L += Cj->L;
-      for (int i=1; i<NTERM_LC; i++) Ci->L[0] += C[i] * Cj->L[i];
+      for (int i=1; i<NTERM; i++) Ci->L[0] += C[i] * Cj->L[i];
       Kernel<B_iter,vecP,0,0,P-1>::L2L(Ci->L, C, Cj->L);
     }
 
@@ -743,7 +745,7 @@ namespace exafmm {
 	B->TRG[1] += L[1];
 	B->TRG[2] += L[2];
 	B->TRG[3] += L[3];
-	for (int i=1; i<NTERM_LC; i++) B->TRG[0] += C[i] * L[i];
+	for (int i=1; i<NTERM; i++) B->TRG[0] += C[i] * L[i];
 	Kernel<B_iter,vecP,0,0,1>::L2P(B, C, L);
       }
     }

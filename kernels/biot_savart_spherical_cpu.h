@@ -4,13 +4,16 @@
 #include "spherical.h"
 
 namespace exafmm {
-  class BiotSavartSphericalCPU : public BiotSavartP2PCPU<Spherical> {
+  template<int P>
+  class BiotSavartSphericalCPU : public BiotSavartP2PCPU<vec<3*P*(P+1)/2,complex_t>,Spherical> {
   public:
-    using BiotSavartP2PCPU<Spherical>::Bodies;
-    using BiotSavartP2PCPU<Spherical>::Cells;
-    using BiotSavartP2PCPU<Spherical>::B_iter;
-    using BiotSavartP2PCPU<Spherical>::C_iter;
-    static const Basis basis = Spherical;
+    static const Basis basis = Spherical;                       //!< Set basis to Spherical
+    static const int NTERM = 3*P*(P+1)/2;                       //!< # of terms in Biot-Savart Spherical expansion
+    typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
+    using BiotSavartP2PCPU<vecP,Spherical>::Bodies;             //!< Vector of body type for Biot-Savart
+    using BiotSavartP2PCPU<vecP,Spherical>::B_iter;             //!< Iterator for body vector
+    using BiotSavartP2PCPU<vecP,Spherical>::Cells;              //!< Vector of cell type for Biot-Savart
+    using BiotSavartP2PCPU<vecP,Spherical>::C_iter;             //!< Iterator for cell vector
 
     static void setup() {}
 

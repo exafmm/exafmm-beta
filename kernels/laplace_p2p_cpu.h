@@ -6,14 +6,14 @@
 #endif
 
 namespace exafmm {
-  template<Basis basis>
+  template<typename vecP, Basis basis>
   class LaplaceP2PCPU : public KernelBase {
   public:
-    typedef std::vector<Body<Laplace> > Bodies;
-    typedef std::vector<Cell<P,Laplace,basis> > Cells;
-    typedef typename Bodies::iterator B_iter;
-    typedef typename Cells::iterator C_iter;
-    static const Equation equation = Laplace;
+    static const Equation equation = Laplace;                   //!< Set equation to Laplace
+    typedef std::vector<Body<Laplace> > Bodies;                 //!< Vector of body type for Laplace
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator for body vector
+    typedef std::vector<Cell<B_iter,vecP,Laplace,basis> > Cells;//!< Vector of cell type for Laplace
+    typedef typename Cells::iterator C_iter;                    //!< Iterator for cell vector
 
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       B_iter Bi = Ci->BODY;

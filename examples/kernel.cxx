@@ -23,7 +23,7 @@ void initSource<BiotSavart>(Body<BiotSavart> & body) {
 template<typename Kernel>
 void fmm(Args args) {
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation,Kernel::basis> > Cells;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
@@ -31,23 +31,7 @@ void fmm(Args args) {
   Kernel::setup();
   logger::verbose = true;
 
-  int NTERM;
-  switch (Kernel::equation) {
-  case Laplace:
-    if (args.basis == "Cartesian") {
-      NTERM = NTERM_LC;
-    } else if (args.basis == "Spherical") {
-      NTERM = NTERM_LS;
-    }
-    break;
-  case Helmholtz:
-    NTERM = NTERM_HS;
-    break;
-  case BiotSavart:
-    NTERM = NTERM_HS;
-    break;
-  }
-
+  const int NTERM = Kernel::NTERM;
   Cells cells(4);
   Verify<Kernel> verify;
   jbodies[0].X = 2;
@@ -138,16 +122,16 @@ int main(int argc, char ** argv) {
   if (args.equation == "Laplace") {
     if (args.basis == "Cartesian") {
       if (args.mass)
-        fmm<LaplaceCartesianCPU<1> >(args);
+        fmm<LaplaceCartesianCPU<P,1> >(args);
       else
-        fmm<LaplaceCartesianCPU<0> >(args);
+        fmm<LaplaceCartesianCPU<P,0> >(args);
     } else if (args.basis == "Spherical") {
-      fmm<LaplaceSphericalCPU>(args);
+      fmm<LaplaceSphericalCPU<P> >(args);
     }
   } else if (args.equation == "Helmholtz") {
-    fmm<HelmholtzSphericalCPU>(args);
+    fmm<HelmholtzSphericalCPU<P> >(args);
   } else if (args.equation == "BiotSavart") {
-    fmm<BiotSavartSphericalCPU>(args);
+    fmm<BiotSavartSphericalCPU<P> >(args);
   }
   return 0;
 }

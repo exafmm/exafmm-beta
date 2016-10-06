@@ -5,12 +5,12 @@
 #include "logger.h"
 using namespace exafmm;
 #include "laplace_cartesian_cpu.h"
-typedef LaplaceCartesianCPU<0> Kernel;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  typedef LaplaceCartesianCPU<P,0> Kernel;
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::equation,Kernel::basis> > Cells;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 

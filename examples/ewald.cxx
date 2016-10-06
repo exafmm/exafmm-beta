@@ -21,7 +21,7 @@ real_t KernelBase::eps2 = 0.0;
 template<typename Kernel>
 void fmm(Args args) {
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation,Kernel::basis> > Cells;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 
@@ -215,6 +215,6 @@ void fmm(Args args) {
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  fmm<LaplaceSphericalCPU>(args);
+  fmm<LaplaceSphericalCPU<P> >(args);
   return 0;
 }

@@ -18,9 +18,9 @@
 #include "laplace_spherical_cpu.h"
 
 namespace exafmm {
-  typedef LaplaceSphericalCPU Kernel;
+  typedef LaplaceSphericalCPU<P> Kernel;
   typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation> > Cells;
+  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
   typedef typename Bodies::iterator B_iter;
   typedef typename Cells::iterator C_iter;
 

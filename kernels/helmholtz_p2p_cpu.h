@@ -6,14 +6,14 @@
 #endif
 
 namespace exafmm {
-  template<Basis basis>
+  template<typename vecP, Basis basis>
   class HelmholtzP2PCPU : public KernelBase {
   public:
-    typedef std::vector<Body<Helmholtz> > Bodies;
-    typedef std::vector<Cell<P,Helmholtz,basis> > Cells;
-    typedef typename Bodies::iterator B_iter;
-    typedef typename Cells::iterator C_iter;
-    static const Equation equation = Helmholtz;
+    static const Equation equation = Helmholtz;                 //!< Set equation to Helmholtz
+    typedef std::vector<Body<Helmholtz> > Bodies;               //!< Vector of body type for Helmholtz
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator for body vector
+    typedef std::vector<Cell<B_iter,vecP,Helmholtz,basis> > Cells;//!< Vector of cell type for Helmholtz
+    typedef typename Cells::iterator C_iter;                    //!< Iterator for cell vector
 
     static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       real_t wave_r = std::real(wavek);

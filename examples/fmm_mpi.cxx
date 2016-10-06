@@ -236,16 +236,16 @@ int main(int argc, char ** argv) {
   if (args.equation == "Laplace") {
     if (args.basis == "Cartesian") {
       if (args.mass)
-        fmm<LaplaceCartesianCPU<1> >(args);
+        fmm<LaplaceCartesianCPU<P,1> >(args);
       else
-        fmm<LaplaceCartesianCPU<0> >(args);
+        fmm<LaplaceCartesianCPU<P,0> >(args);
     } else if (args.basis == "Spherical") {
-      fmm<LaplaceSphericalCPU>(args);
+      fmm<LaplaceSphericalCPU<P> >(args);
     }
   } else if (args.equation == "Helmholtz") {
-    fmm<HelmholtzSphericalCPU>(args);
+    fmm<HelmholtzSphericalCPU<P> >(args);
   } else if (args.equation == "BiotSavart") {
-    fmm<BiotSavartSphericalCPU>(args);
+    fmm<BiotSavartSphericalCPU<P> >(args);
   }
   return 0;
 }
