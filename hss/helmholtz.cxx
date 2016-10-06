@@ -31,10 +31,10 @@ const complex_t I1(0.0,1.0);
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   typedef exafmm::HelmholtzSphericalCPU<P> Kernel;
-  typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
-  typedef typename Bodies::iterator B_iter;
-  typedef typename Cells::iterator C_iter;
+  using Kernel::Bodies;
+  using Kernel::Cells;
+  using Kernel::B_iter;
+  using Kernel::C_iter;
 
   const real_t cycle = 2 * M_PI;
   BaseMPI baseMPI;

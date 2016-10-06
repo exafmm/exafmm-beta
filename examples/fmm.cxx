@@ -14,10 +14,10 @@ complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 template<typename Kernel>
 void fmm(Args args) {
-  typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<P,Kernel::equation,Kernel::basis> > Cells;
-  typedef typename Bodies::iterator B_iter;
-  typedef typename Cells::iterator C_iter;
+  using Kernel::Bodies;
+  using Kernel::Cells;
+  using Kernel::B_iter;
+  using Kernel::C_iter;
 
   const vec3 cycle = 2 * M_PI;
   Bodies bodies, bodies2, jbodies, buffer;

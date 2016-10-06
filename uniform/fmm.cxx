@@ -23,10 +23,10 @@ int main(int argc, char ** argv) {
   args.ncrit = 32;
   args.images = 1;
   typedef LaplaceCartesianCPU<P,0> Kernel;
-  typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
-  typedef typename Bodies::iterator B_iter;
-  typedef typename Cells::iterator C_iter;
+  using Kernel::Bodies;
+  using Kernel::Cells;
+  using Kernel::B_iter;
+  using Kernel::C_iter;
 
   const int ksize = 11;
   const vec3 cycle = 20 * M_PI;

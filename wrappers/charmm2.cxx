@@ -19,10 +19,10 @@
 
 namespace exafmm {
   typedef LaplaceSphericalCPU<P> Kernel;
-  typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
-  typedef typename Bodies::iterator B_iter;
-  typedef typename Cells::iterator C_iter;
+  using Kernel::Bodies;
+  using Kernel::Cells;
+  using Kernel::B_iter;
+  using Kernel::C_iter;
 
   real_t KernelBase::eps2 = 0.0;
   vec3 KernelBase::Xperiodic = 0.0;

@@ -5,10 +5,10 @@
 namespace exafmm {
   template<typename Kernel>
   class BuildTreeFromCluster {
-    typedef std::vector<Body<Kernel::equation> > Bodies;        //!< Vector of bodies
-    typedef std::vector<Cell<P,Kernel::equation,Kernel::basis> > Cells; //!< Vector of cells
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
+    using Kernel::Bodies;                                       //!< Vector of bodies
+    using Kernel::Cells;                                        //!< Vector of cells
+    using Kernel::B_iter;                                       //!< Iterator of body vector
+    using Kernel::C_iter;                                       //!< Iterator of cell vecto
     typedef std::vector<int> ints;                              //!< Vector of integer types
     typedef std::vector<vec3> vec3s;                            //!< Vector of vec3 types
 

@@ -11,19 +11,19 @@
 #include "verify.h"
 #if EXAFMM_LAPLACE
 #if EXAFMM_CARTESIAN
-typedef exafmm::LaplaceCartesianCPU<0> Kernel;
+typedef exafmm::LaplaceCartesianCPU<P,0> Kernel;
 #elif EXAFMM_SPHERICAL
-typedef exafmm::LaplaceSphericalCPU Kernel;
+typedef exafmm::LaplaceSphericalCPU<P> Kernel;
 #endif
 #elif EXAFMM_HELMHOLTZ
-typedef exafmm::HelmholtzSphericalCPU Kernel;
+typedef exafmm::HelmholtzSphericalCPU<P> Kernel;
 #endif
 
 namespace exafmm {
-  typedef std::vector<Body<Kernel::equation> > Bodies;
-  typedef std::vector<Cell<Kernel::vecP,Kernel::equation,Kernel::basis> > Cells;
-  typedef typename Bodies::iterator B_iter;
-  typedef typename Cells::iterator C_iter;
+  using Kernel::Bodies;
+  using Kernel::Cells;
+  using Kernel::B_iter;
+  using Kernel::C_iter;
 
   vec3 KernelBase::Xperiodic = 0;
   real_t KernelBase::eps2 = 0.0;
