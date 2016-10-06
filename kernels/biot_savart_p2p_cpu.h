@@ -10,7 +10,7 @@ namespace exafmm {
   class BiotSavartP2PCPU : public KernelBase {
   public:
     typedef std::vector<Body<BiotSavart> > Bodies;
-    typedef std::vector<Cell<BiotSavart,basis> > Cells;
+    typedef std::vector<Cell<P,BiotSavart,basis> > Cells;
     typedef typename Bodies::iterator B_iter;
     typedef typename Cells::iterator C_iter;
     static const Equation equation = BiotSavart;

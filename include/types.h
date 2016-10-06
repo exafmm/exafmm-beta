@@ -109,17 +109,9 @@ namespace exafmm {
 
   // Multipole/local expansion coefficients
   const int P = EXAFMM_EXPANSION;                               //!< Order of expansions
-  const int NTERM_LC = P*(P+1)*(P+2)/6;                         //!< # of terms for Lapalace Cartesian 
-  const int NTERM_LS = P*(P+1)/2;                               //!< # of terms for Laplace Spherical
-  const int NTERM_HS = P*P;                                     //!< # of terms for Helmholtz Spherical
-  const int NTERM_BS = 3*P*(P+1)/2;                             //!< # of terms for Biot-Savart Spherical
-  typedef vec<NTERM_LC,real_t> vecLC;                           //!< Coef vector for Laplace Cartesian
-  typedef vec<NTERM_LS,complex_t> vecLS;                        //!< Coef vector for Laplace Spherical
-  typedef vec<NTERM_HS,complex_t> vecHS;                        //!< Coef vector for Helmholtz Spherical
-  typedef vec<NTERM_BS,complex_t> vecBS;                        //!< Coef vector for Biot-Savart Spherical
 
   //! Structure of cells
-  template<Equation equation=Empty, Basis basis=Spherical>
+  template<int P, Equation equation=Empty, Basis basis=Spherical>
   struct Cell {                                                 //!< Base components of cell structure
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
@@ -136,29 +128,37 @@ namespace exafmm {
     vec3     X;                                                 //!< Cell center
     real_t   R;                                                 //!< Cell radius
   };
-  template<>
-  struct Cell<Laplace,Cartesian> : public Cell<> {              //!< Special components for Laplace Spherical
+  template<int P>
+  struct Cell<P,Laplace,Cartesian> : public Cell<P> {           //!< Special components for Laplace Spherical
     typedef std::vector<Body<Laplace> >::iterator B_iter;       //!< Iterator type for body vector
+    static const int NTERM = P*(P+1)*(P+2)/6;                   //!< # of terms for Lapalace Cartesian 
+    typedef vec<NTERM,real_t> vecP;                             //!< Coef vector for Laplace Cartesian
     B_iter BODY;                                                //!< Iterator of first body
-    vecLC  M, L;                                                //!< Multipole/local coefficients
+    vecP   M, L;                                                //!< Multipole/local coefficients
   };
-  template<>
-  struct Cell<Laplace,Spherical> : public Cell<> {              //!< Special components for Laplace Spherical
+  template<int P>
+  struct Cell<P,Laplace,Spherical> : public Cell<P> {           //!< Special components for Laplace Spherical
     typedef std::vector<Body<Laplace> >::iterator B_iter;       //!< Iterator type for body vector
+    static const int NTERM = P*(P+1)/2;                         //!< # of terms for Laplace Spherical
+    typedef vec<NTERM,complex_t> vecP;                          //!< Coef vector for Laplace Spherical
     B_iter BODY;                                                //!< Iterator of first body
-    vecLS  M, L;                                                //!< Multipole/local coefficients
+    vecP   M, L;                                                //!< Multipole/local coefficients
   };
-  template<>
-  struct Cell<Helmholtz,Spherical> : public Cell<> {            //!< Special components for Helmholtz Spherical
+  template<int P>
+  struct Cell<P,Helmholtz,Spherical> : public Cell<P> {         //!< Special components for Helmholtz Spherical
     typedef std::vector<Body<Helmholtz> >::iterator B_iter;     //!< Iterator type for body vector
+    static const int NTERM = P*P;                               //!< # of terms for Helmholtz Spherical
+    typedef vec<NTERM,complex_t> vecP;                          //!< Coef vector for Helmholtz Spherical
     B_iter BODY;                                                //!< Iterator of first body
-    vecHS  M, L;                                                //!< Multipole/local coefficients
+    vecP   M, L;                                                //!< Multipole/local coefficients
   };
-  template<>
-  struct Cell<BiotSavart,Spherical> : public Cell<> {           //!< Special components for Biot-Savart Spherical
+  template<int P>
+  struct Cell<P,BiotSavart,Spherical> : public Cell<P> {        //!< Special components for Biot-Savart Spherical
     typedef std::vector<Body<BiotSavart> >::iterator B_iter;    //!< Iterator type for body vector
+    static const int NTERM = 3*P*(P+1)/2;                       //!< # of terms for Biot-Savart Spherical
+    typedef vec<NTERM,complex_t> vecP;                          //!< Coef vector for Biot-Savart Spherical
     B_iter BODY;                                                //!< Iterator of first body
-    vecBS  M, L;                                                //!< Multipole/local coefficients
+    vecP   M, L;                                                //!< Multipole/local coefficients
   };
 
   struct KernelBase {
