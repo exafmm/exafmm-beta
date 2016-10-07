@@ -7,18 +7,34 @@ TList = ['1','2','4']
 cList = ['1','8','64']
 dList = ['c','s','o','p']
 for kernel in kernelList:
+  if 'laplace' in kernel:
+    e = 'laplace'
+    P = '10'
+  elif 'helmholtz' in kernel:
+    e = 'helmholtz'
+    P = '14'
+  elif 'biotsavart' in kernel:
+    e = 'biotsavart'
+    P = '10'
+  if 'cartesian' in kernel:
+    b = 'cartesian'
+  elif 'spherical' in kernel:
+    b = 'spherical'
   if 'mpi' in kernel:
     argList = ['g','j','m','o','x']
     npList = ['1','2','4','8','16']
+    binary = 'fmm_mpi'
   else:
     argList = ['j','m','o','x']
     npList = ['1']
+    binary = 'fmm'
   if 'ewald' in kernel:
     iList = ['3']
+    binary = 'ewald_mpi'
   else:
     iList = ['0']
   for np in npList:
-    exe = ' '.join([''.join(['./examples/',kernel]),'-aDv','-p','./examples/','-r','1'])
+    exe = ' '.join([''.join(['./examples/',binary]),'-e',e,'-b',b,'-P',P,'-aDv','-p','./examples/','-r','1'])
     if 'mpi' in kernel:
       exe = ' '.join(['mpirun','-np',np,exe])
     for n in nList:

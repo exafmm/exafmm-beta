@@ -1,8 +1,8 @@
 -- Immediate --
 - Rank items in this list according to importance
 
-- BaseMPI > MPI_Util
 - kernel files > .cxx
+- BaseMPI > MPI_Util
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
 - Fix all buildbot errors
 - Fix all nightly errors
