@@ -200,8 +200,8 @@ struct CallFMM<Pmin-1> {
     }
   }
   static inline void HelmholtzSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
+    if(args.P < Pmin || 2*Pmax < args.P) {
+      fprintf(stderr,"Pmin <= P <= 2*Pmax\n");
       abort();
     }
   }

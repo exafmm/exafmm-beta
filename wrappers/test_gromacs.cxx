@@ -27,7 +27,7 @@ double get_time() {
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
-  int Ni = 10000;
+  int Ni = 1000;
   int stringLength = 20;
   int images = 3;
   int ksize = 11;

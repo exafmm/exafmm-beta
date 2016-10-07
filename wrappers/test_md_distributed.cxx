@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
   int threads = 16;
   int verbose = 1;
   const char * path = "./";
-  double theta = 0.5;
+  double theta = 0.4;
   double cycle[3] = {2*M_PI, 2*M_PI, 2*M_PI};
   double alpha = 10 / cycle[0];
   double sigma = .25 / M_PI;
