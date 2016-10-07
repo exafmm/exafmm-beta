@@ -4,10 +4,11 @@
 #include "spherical.h"
 
 namespace exafmm {
-  template<int P>
-  class BiotSavartSphericalCPU : public BiotSavartP2PCPU<vec<3*P*(P+1)/2,complex_t>,Spherical> {
+  template<int _P>
+  class BiotSavartSphericalCPU : public BiotSavartP2PCPU<vec<3*_P*(_P+1)/2,complex_t>,Spherical> {
   public:
     static const Basis basis = Spherical;                       //!< Set basis to Spherical
+    static const int P = _P;                                    //!< Set order of expansion
     static const int NTERM = 3*P*(P+1)/2;                       //!< # of terms in Biot-Savart Spherical expansion
     typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
     using typename BiotSavartP2PCPU<vecP,Spherical>::Bodies;    //!< Vector of bodies for Biot-Savart
@@ -24,7 +25,7 @@ namespace exafmm {
 	vec3 dX = B->X - C->X;
 	real_t rho, alpha, beta;
 	cart2sph(dX, rho, alpha, beta);
-	evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
+	evalMultipole(P, rho, alpha, beta, Ynm, YnmTheta);
 	for (int n=0; n<P; n++) {
 	  for (int m=0; m<=n; m++) {
 	    int nm  = n * n + n - m;
@@ -43,7 +44,7 @@ namespace exafmm {
 	vec3 dX = Ci->X - Cj->X;
 	real_t rho, alpha, beta;
 	cart2sph(dX, rho, alpha, beta);
-	evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
+	evalMultipole(P, rho, alpha, beta, Ynm, YnmTheta);
 	for (int j=0; j<P; j++) {
 	  for (int k=0; k<=j; k++) {
 	    int jks = j * (j + 1) / 2 + k;
@@ -78,8 +79,8 @@ namespace exafmm {
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
-      evalLocal(rho, alpha, beta, Ynmi);
-      if (mutual) evalLocal(rho, alpha+M_PI, beta, Ynmj);
+      evalLocal(P, rho, alpha, beta, Ynmi);
+      if (mutual) evalLocal(P, rho, alpha+M_PI, beta, Ynmj);
       for (int j=0; j<P; j++) {
 	real_t Cnm = oddOrEven(j);
 	for (int k=0; k<=j; k++) {
@@ -118,7 +119,7 @@ namespace exafmm {
       vec3 dX = Ci->X - Cj->X;
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
-      evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
+      evalMultipole(P, rho, alpha, beta, Ynm, YnmTheta);
       for (int j=0; j<P; j++) {
 	for (int k=0; k<=j; k++) {
 	  int jks = j * (j + 1) / 2 + k;
@@ -156,7 +157,7 @@ namespace exafmm {
 	vec3 cartesian[3] = {0, 0, 0};
 	real_t r, theta, phi;
 	cart2sph(dX, r, theta, phi);
-	evalMultipole(r, theta, phi, Ynm, YnmTheta);
+	evalMultipole(P, r, theta, phi, Ynm, YnmTheta);
 	for (int n=0; n<P; n++) {
 	  int nm  = n * n + n;
 	  int nms = n * (n + 1) / 2;

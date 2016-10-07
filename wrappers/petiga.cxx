@@ -13,12 +13,12 @@
 const int P = EXAFMM_EXPANSION;
 #if EXAFMM_LAPLACE
 #if EXAFMM_CARTESIAN
-typedef exafmm::LaplaceCartesianCPU<P,0> Kernel;
+typedef exafmm::LaplaceCartesianCPU<Pmax,0> Kernel;
 #elif EXAFMM_SPHERICAL
-typedef exafmm::LaplaceSphericalCPU<P> Kernel;
+typedef exafmm::LaplaceSphericalCPU<Pmax> Kernel;
 #endif
 #elif EXAFMM_HELMHOLTZ
-typedef exafmm::HelmholtzSphericalCPU<P> Kernel;
+typedef exafmm::HelmholtzSphericalCPU<2*Pmax> Kernel;
 #endif
 
 namespace exafmm {

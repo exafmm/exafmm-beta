@@ -3,17 +3,17 @@ include ../Makefile.am.include
 if EXAFMM_HAVE_MPI
 lib_LIBRARIES = libpetiga_exafmm_laplace.a libpetiga_exafmm_helmholtz.a libgromacs_exafmm.a libcharmm_exafmm.a libcharmm2_exafmm.a libmd_distributed.a
 libpetiga_exafmm_laplace_a_SOURCES = petiga.cxx
-libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
+libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN
 libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx
-libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
+libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL
 libgromacs_exafmm_a_SOURCES = gromacs.cxx
-libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
+libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 libcharmm_exafmm_a_SOURCES = charmm.cxx
-libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
+libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 libcharmm2_exafmm_a_SOURCES = charmm2.cxx
-libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
+libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 libmd_distributed_a_SOURCES = md_distributed.cxx
-libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=15
+libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 bin_PROGRAMS = petiga_laplace_mpi petiga_helmholtz_mpi gromacs_mpi charmm_mpi charmm2_mpi md_distributed_mpi
 petiga_laplace_mpi_SOURCES = test_petiga.cxx

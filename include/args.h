@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <stdint.h>
+#include "types.h"
 #ifndef _SX
 #include <getopt.h>
 #endif
@@ -31,7 +32,7 @@ namespace exafmm {
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
     {"path",         required_argument, 0, 'p'},
-    {"PP",           required_argument, 0, 'P'},
+    {"P",            required_argument, 0, 'P'},
     {"repeat",       required_argument, 0, 'r'},
     {"nspawn",       required_argument, 0, 's'},
     {"theta",        required_argument, 0, 't'},
@@ -61,7 +62,7 @@ namespace exafmm {
     int numBodies;
     int useRopt;
     const char * path;
-    int PP;
+    int P;
     int repeat;
     int nspawn;
     double theta;
@@ -117,7 +118,7 @@ namespace exafmm {
 	      numBodies,
 	      useRopt,
               path,
-	      PP,
+	      P,
 	      repeat,
 	      nspawn,
 	      theta,
@@ -270,7 +271,7 @@ namespace exafmm {
       numBodies(1000000),
       useRopt(0),
       path("./"),
-      PP(4),
+      P(Pmax),
       repeat(1),
       nspawn(5000),
       theta(.4),
@@ -340,7 +341,7 @@ namespace exafmm {
           path = optarg;
           break;
 	case 'P':
-	  PP = atoi(optarg);
+	  P = atoi(optarg);
 	  break;
 	case 'r':
 	  repeat = atoi(optarg);
@@ -383,7 +384,7 @@ namespace exafmm {
       key |= mutual << 18;
       key |= uint64_t(round(log(numBodies)/log(10))) << 19;
       key |= useRopt << 23;
-      key |= PP << 24;
+      key |= P << 24;
       key |= uint64_t(round(log(nspawn)/log(10))) << 30;
       key |= uint64_t(theta*14) << 33;
       key |= uint64_t(round(log(threads)/log(2))) << 36;
@@ -394,7 +395,7 @@ namespace exafmm {
       return key;
     }
 
-    void print(int stringLength, int _PP) {
+    void print(int stringLength) {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
 		  << "accuracy" << " : " << accuracy << std::endl
@@ -429,7 +430,7 @@ namespace exafmm {
 		  << std::setw(stringLength)
 		  << "path" << " : " << path << std::endl
 		  << std::setw(stringLength)
-		  << "P" << " : " << _PP << std::endl
+		  << "P" << " : " << P << std::endl
 		  << std::setw(stringLength)
 		  << "repeat" << " : " << repeat << std::endl
 		  << std::setw(stringLength)

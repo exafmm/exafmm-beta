@@ -2,10 +2,6 @@
 #define laplace_cartesian_cpu_h
 #include "laplace_p2p_cpu.h"
 
-#if EXAFMM_EXPANSION < 2
-#error Use P >= 2 for Laplace Cartesian kernel
-#endif
-
 namespace exafmm {
   template<int nx, int ny, int nz>
   struct Index {
@@ -143,137 +139,137 @@ namespace exafmm {
   };
 
 
-  template<typename vecP, int nx, int ny, int nz, int kx=0, int ky=0, int kz=P-1-nx-ny-nz>
+  template<typename vecP, int P, int nx, int ny, int nz, int kx=0, int ky=0, int kz=P-1-nx-ny-nz>
     struct LocalSum {
       static inline real_t kernel(const vecP & M, const vecP & L) {
-        return LocalSum<vecP,nx,ny,nz,kx,ky+1,kz-1>::kernel(M,L)
+        return LocalSum<vecP,P,nx,ny,nz,kx,ky+1,kz-1>::kernel(M,L)
           + M[Index<kx,ky,kz>::I] * L[Index<nx+kx,ny+ky,nz+kz>::I];
       }
     };
 
-  template<typename vecP, int nx, int ny, int nz, int kx, int ky>
-  struct LocalSum<vecP,nx,ny,nz,kx,ky,0> {
+  template<typename vecP, int P, int nx, int ny, int nz, int kx, int ky>
+  struct LocalSum<vecP,P,nx,ny,nz,kx,ky,0> {
     static inline real_t kernel(const vecP & M, const vecP & L) {
-      return LocalSum<vecP,nx,ny,nz,kx+1,0,ky-1>::kernel(M, L)
+      return LocalSum<vecP,P,nx,ny,nz,kx+1,0,ky-1>::kernel(M, L)
         + M[Index<kx,ky,0>::I] * L[Index<nx+kx,ny+ky,nz>::I];
     }
   };
 
-  template<typename vecP, int nx, int ny, int nz, int kx>
-  struct LocalSum<vecP,nx,ny,nz,kx,0,0> {
+  template<typename vecP, int P, int nx, int ny, int nz, int kx>
+  struct LocalSum<vecP,P,nx,ny,nz,kx,0,0> {
     static inline real_t kernel(const vecP & M, const vecP & L) {
-      return LocalSum<vecP,nx,ny,nz,0,0,kx-1>::kernel(M, L)
+      return LocalSum<vecP,P,nx,ny,nz,0,0,kx-1>::kernel(M, L)
         + M[Index<kx,0,0>::I] * L[Index<nx+kx,ny,nz>::I];
     }
   };
 
-  template<typename vecP, int nx, int ny, int nz>
-  struct LocalSum<vecP,nx,ny,nz,0,0,0> {
+  template<typename vecP, int P, int nx, int ny, int nz>
+  struct LocalSum<vecP,P,nx,ny,nz,0,0,0> {
     static inline real_t kernel(const vecP &, const vecP &) { return 0; }
   };
 
 
-  template<typename B_iter, typename vecP, int nx, int ny, int nz>
+  template<typename B_iter, typename vecP, int P, int nx, int ny, int nz>
   struct Kernel_LC {
     static inline void power(vecP & C, const vec3 & dX) {
-      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::power(C, dX);
+      Kernel_LC<B_iter,vecP,P,nx,ny+1,nz-1>::power(C, dX);
       C[Index<nx,ny,nz>::I] = C[Index<nx,ny,nz-1>::I] * dX[2] / nz;
     }
     static inline void derivative(vecP & C, const vec3 & dX, const real_t & invR2) {
       static const int n = nx + ny + nz;
-      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,P,nx,ny+1,nz-1>::derivative(C, dX, invR2);
       C[Index<nx,ny,nz>::I] = DerivativeSum<vecP,nx,ny,nz>::loop(C,dX) / n * invR2;
     }
     static inline void scale(vecP & C) {
-      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::scale(C);
+      Kernel_LC<B_iter,vecP,P,nx,ny+1,nz-1>::scale(C);
       C[Index<nx,ny,nz>::I] *= Index<nx,ny,nz>::F;
     }
     static inline void M2M(vecP & MI, const vecP & C, const vecP & MJ) {
-      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::M2M(MI, C, MJ);
+      Kernel_LC<B_iter,vecP,P,nx,ny+1,nz-1>::M2M(MI, C, MJ);
       MI[Index<nx,ny,nz>::I] += MultipoleSum<vecP,nx,ny,nz>::kernel(C, MJ);
     }
     static inline void M2L(vecP & L, const vecP & C, const vecP & M) {
-      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::M2L(L, C, M);
-      L[Index<nx,ny,nz>::I] += LocalSum<vecP,nx,ny,nz>::kernel(M, C);
+      Kernel_LC<B_iter,vecP,P,nx,ny+1,nz-1>::M2L(L, C, M);
+      L[Index<nx,ny,nz>::I] += LocalSum<vecP,P,nx,ny,nz>::kernel(M, C);
     }
     static inline void L2L(vecP & LI, const vecP & C, const vecP & LJ) {
-      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::L2L(LI, C, LJ);
-      LI[Index<nx,ny,nz>::I] += LocalSum<vecP,nx,ny,nz>::kernel(C, LJ);
+      Kernel_LC<B_iter,vecP,P,nx,ny+1,nz-1>::L2L(LI, C, LJ);
+      LI[Index<nx,ny,nz>::I] += LocalSum<vecP,P,nx,ny,nz>::kernel(C, LJ);
     }
     static inline void L2P(B_iter B, const vecP & C, const vecP & L) {
-      Kernel_LC<B_iter,vecP,nx,ny+1,nz-1>::L2P(B, C, L);
-      B->TRG[Index<nx,ny,nz>::I] += LocalSum<vecP,nx,ny,nz>::kernel(C, L);
+      Kernel_LC<B_iter,vecP,P,nx,ny+1,nz-1>::L2P(B, C, L);
+      B->TRG[Index<nx,ny,nz>::I] += LocalSum<vecP,P,nx,ny,nz>::kernel(C, L);
     }
   };
 
-  template<typename B_iter, typename vecP, int nx, int ny>
-  struct Kernel_LC<B_iter,vecP,nx,ny,0> {
+  template<typename B_iter, typename vecP, int P, int nx, int ny>
+  struct Kernel_LC<B_iter,vecP,P,nx,ny,0> {
     static inline void power(vecP & C, const vec3 & dX) {
-      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::power(C, dX);
+      Kernel_LC<B_iter,vecP,P,nx+1,0,ny-1>::power(C, dX);
       C[Index<nx,ny,0>::I] = C[Index<nx,ny-1,0>::I] * dX[1] / ny;
     }
     static inline void derivative(vecP & C, const vec3 & dX, const real_t & invR2) {
       static const int n = nx + ny;
-      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,P,nx+1,0,ny-1>::derivative(C, dX, invR2);
       C[Index<nx,ny,0>::I] = DerivativeSum<vecP,nx,ny,0>::loop(C, dX) / n * invR2;
     }
     static inline void scale(vecP & C) {
-      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::scale(C);
+      Kernel_LC<B_iter,vecP,P,nx+1,0,ny-1>::scale(C);
       C[Index<nx,ny,0>::I] *= Index<nx,ny,0>::F;
     }
     static inline void M2M(vecP & MI, const vecP & C, const vecP & MJ) {
-      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::M2M(MI, C, MJ);
+      Kernel_LC<B_iter,vecP,P,nx+1,0,ny-1>::M2M(MI, C, MJ);
       MI[Index<nx,ny,0>::I] += MultipoleSum<vecP,nx,ny,0>::kernel(C, MJ);
     }
     static inline void M2L(vecP & L, const vecP & C, const vecP & M) {
-      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::M2L(L, C, M);
-      L[Index<nx,ny,0>::I] += LocalSum<vecP,nx,ny,0>::kernel(M, C);
+      Kernel_LC<B_iter,vecP,P,nx+1,0,ny-1>::M2L(L, C, M);
+      L[Index<nx,ny,0>::I] += LocalSum<vecP,P,nx,ny,0>::kernel(M, C);
     }
     static inline void L2L(vecP & LI, const vecP & C, const vecP & LJ) {
-      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::L2L(LI, C, LJ);
-      LI[Index<nx,ny,0>::I] += LocalSum<vecP,nx,ny,0>::kernel(C, LJ);
+      Kernel_LC<B_iter,vecP,P,nx+1,0,ny-1>::L2L(LI, C, LJ);
+      LI[Index<nx,ny,0>::I] += LocalSum<vecP,P,nx,ny,0>::kernel(C, LJ);
     }
     static inline void L2P(B_iter B, const vecP & C, const vecP & L) {
-      Kernel_LC<B_iter,vecP,nx+1,0,ny-1>::L2P(B, C, L);
-      B->TRG[Index<nx,ny,0>::I] += LocalSum<vecP,nx,ny,0>::kernel(C, L);
+      Kernel_LC<B_iter,vecP,P,nx+1,0,ny-1>::L2P(B, C, L);
+      B->TRG[Index<nx,ny,0>::I] += LocalSum<vecP,P,nx,ny,0>::kernel(C, L);
     }
   };
 
-  template<typename B_iter, typename vecP, int nx>
-  struct Kernel_LC<B_iter,vecP,nx,0,0> {
+  template<typename B_iter, typename vecP, int P, int nx>
+  struct Kernel_LC<B_iter,vecP,P,nx,0,0> {
     static inline void power(vecP & C, const vec3 & dX) {
-      Kernel_LC<B_iter,vecP,0,0,nx-1>::power(C, dX);
+      Kernel_LC<B_iter,vecP,P,0,0,nx-1>::power(C, dX);
       C[Index<nx,0,0>::I] = C[Index<nx-1,0,0>::I] * dX[0] / nx;
     }
     static inline void derivative(vecP & C, const vec3 & dX, const real_t & invR2) {
       static const int n = nx;
-      Kernel_LC<B_iter,vecP,0,0,nx-1>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,P,0,0,nx-1>::derivative(C, dX, invR2);
       C[Index<nx,0,0>::I] = DerivativeSum<vecP,nx,0,0>::loop(C, dX) / n * invR2;
     }
     static inline void scale(vecP & C) {
-      Kernel_LC<B_iter,vecP,0,0,nx-1>::scale(C);
+      Kernel_LC<B_iter,vecP,P,0,0,nx-1>::scale(C);
       C[Index<nx,0,0>::I] *= Index<nx,0,0>::F;
     }
     static inline void M2M(vecP & MI, const vecP & C, const vecP & MJ) {
-      Kernel_LC<B_iter,vecP,0,0,nx-1>::M2M(MI, C, MJ);
+      Kernel_LC<B_iter,vecP,P,0,0,nx-1>::M2M(MI, C, MJ);
       MI[Index<nx,0,0>::I] += MultipoleSum<vecP,nx,0,0>::kernel(C, MJ);
     }
     static inline void M2L(vecP & L, const vecP & C, const vecP & M) {
-      Kernel_LC<B_iter,vecP,0,0,nx-1>::M2L(L, C, M);
-      L[Index<nx,0,0>::I] += LocalSum<vecP,nx,0,0>::kernel(M, C);
+      Kernel_LC<B_iter,vecP,P,0,0,nx-1>::M2L(L, C, M);
+      L[Index<nx,0,0>::I] += LocalSum<vecP,P,nx,0,0>::kernel(M, C);
     }
     static inline void L2L(vecP & LI, const vecP & C, const vecP & LJ) {
-      Kernel_LC<B_iter,vecP,0,0,nx-1>::L2L(LI, C, LJ);
-      LI[Index<nx,0,0>::I] += LocalSum<vecP,nx,0,0>::kernel(C, LJ);
+      Kernel_LC<B_iter,vecP,P,0,0,nx-1>::L2L(LI, C, LJ);
+      LI[Index<nx,0,0>::I] += LocalSum<vecP,P,nx,0,0>::kernel(C, LJ);
     }
     static inline void L2P(B_iter B, const vecP & C, const vecP & L) {
-      Kernel_LC<B_iter,vecP,0,0,nx-1>::L2P(B, C, L);
-      B->TRG[Index<nx,0,0>::I] += LocalSum<vecP,nx,0,0>::kernel(C, L);
+      Kernel_LC<B_iter,vecP,P,0,0,nx-1>::L2P(B, C, L);
+      B->TRG[Index<nx,0,0>::I] += LocalSum<vecP,P,nx,0,0>::kernel(C, L);
     }
   };
 
-  template<typename B_iter, typename vecP>
-  struct Kernel_LC<B_iter,vecP,0,0,0> {
+  template<typename B_iter, typename vecP, int P>
+  struct Kernel_LC<B_iter,vecP,P,0,0,0> {
     static inline void power(vecP &, const vec3 &) {}
     static inline void derivative(vecP &, const vec3 &, const real_t &) {}
     static inline void scale(vecP &) {}
@@ -317,18 +313,18 @@ namespace exafmm {
   };
 
 
-  template<typename B_iter, int NTERM, int mass, int PP>
+  template<typename B_iter, int NTERM, int mass, int P>
   struct Coef {
     typedef vec<NTERM,real_t> vecP;
     static inline void getCoef(vecP & C, const vec3 & dX, real_t & invR2, const real_t & invR) {
       C[0] = invR;
-      Kernel_LC<B_iter,vecP,0,0,PP>::derivative(C, dX, invR2);
-      Kernel_LC<B_iter,vecP,0,0,PP>::scale(C);
+      Kernel_LC<B_iter,vecP,P+1,0,0,P>::derivative(C, dX, invR2);
+      Kernel_LC<B_iter,vecP,P+1,0,0,P>::scale(C);
     }
     static inline void sumM2L(vecP & L, const vecP & C, const vecP & M) {
       Mass<NTERM,mass>::add(L, M[0], C);
       for (int i=1; i<NTERM; i++) L[0] += M[i] * C[i];
-      Kernel_LC<B_iter,vecP, 0,0,PP-1>::M2L(L, C, M);
+      Kernel_LC<B_iter,vecP,P+1,0,0,P-1>::M2L(L, C, M);
     }
   };
 
@@ -648,20 +644,20 @@ namespace exafmm {
     }
   };
 
-  template<typename vecP, int PP, bool odd>
+  template<typename vecP, int P, bool odd>
   struct Sign {
-    static const int begin = PP*(PP+1)*(PP+2)/6;
-    static const int end = (PP+1)*(PP+2)*(PP+3)/6;
+    static const int begin = P*(P+1)*(P+2)/6;
+    static const int end = (P+1)*(P+2)*(P+3)/6;
     static inline void negate(vecP & C) {
       for (int i=begin; i<end; i++) C[i] = -C[i];
-      Sign<vecP,PP-1,1-odd>::negate(C);
+      Sign<vecP,P-1,1-odd>::negate(C);
     }
   };
 
-  template<typename vecP, int PP>
-  struct Sign<vecP,PP,0> {
+  template<typename vecP, int P>
+  struct Sign<vecP,P,0> {
     static inline void negate(vecP & C) {
-      Sign<vecP,PP-1,1>::negate(C);
+      Sign<vecP,P-1,1>::negate(C);
     }
   };
 
@@ -671,10 +667,11 @@ namespace exafmm {
   };
 
 
-  template<int P, int mass=0>
-  class LaplaceCartesianCPU : public LaplaceP2PCPU<vec<P*(P+1)*(P+2)/6,real_t>,Cartesian> {
+  template<int _P, int mass=0>
+  class LaplaceCartesianCPU : public LaplaceP2PCPU<vec<_P*(_P+1)*(_P+2)/6,real_t>,Cartesian> {
   public:
     static const Basis basis = Cartesian;                       //!< Set basis to Cartesian
+    static const int P = _P;                                    //!< Set order of expansion
     static const int NTERM = P*(P+1)*(P+2)/6;                   //!< # of terms in Laplace Cartesian expansion
     typedef vec<NTERM,real_t> vecP;                             //!< Vector type for expansion terms
     using typename LaplaceP2PCPU<vecP,Cartesian>::Bodies;       //!< Vector of bodies for Laplace
@@ -690,7 +687,7 @@ namespace exafmm {
 	vec3 dX = C->X - B->X;
 	vecP M;
 	M[0] = B->SRC;
-	Kernel_LC<B_iter,vecP,0,0,P-1>::power(M, dX);
+	Kernel_LC<B_iter,vecP,P,0,0,P-1>::power(M, dX);
 	C->M += M;
       }
       Mass<NTERM,mass>::divide(C->M);
@@ -702,12 +699,12 @@ namespace exafmm {
 	vecP M;
 	vecP C;
 	C[0] = 1;
-	Kernel_LC<B_iter,vecP,0,0,P-1>::power(C, dX);
+	Kernel_LC<B_iter,vecP,P,0,0,P-1>::power(C, dX);
         Mass<NTERM,mass>::multiply(Cj->M);
 	M = Cj->M;
         Mass<NTERM,mass>::divide(Cj->M);
 	Ci->M += C * M[0];
-	Kernel_LC<B_iter,vecP,0,0,P-1>::M2M(Ci->M, C, M);
+	Kernel_LC<B_iter,vecP,P,0,0,P-1>::M2M(Ci->M, C, M);
       }
       Mass<NTERM,mass>::divide(Ci->M);
     }
@@ -730,11 +727,11 @@ namespace exafmm {
       vec3 dX = Ci->X - Cj->X;
       vecP C;
       C[0] = 1;
-      Kernel_LC<B_iter,vecP,0,0,P-1>::power(C, dX);
+      Kernel_LC<B_iter,vecP,P,0,0,P-1>::power(C, dX);
       Mass<NTERM,mass>::divide(Ci->L, Ci->M[0]);
       Ci->L += Cj->L;
       for (int i=1; i<NTERM; i++) Ci->L[0] += C[i] * Cj->L[i];
-      Kernel_LC<B_iter,vecP,0,0,P-1>::L2L(Ci->L, C, Cj->L);
+      Kernel_LC<B_iter,vecP,P,0,0,P-1>::L2L(Ci->L, C, Cj->L);
     }
 
     static void L2P(C_iter Ci) {
@@ -742,7 +739,7 @@ namespace exafmm {
 	vec3 dX = B->X - Ci->X;
 	vecP C, L;
 	C[0] = 1;
-	Kernel_LC<B_iter,vecP,0,0,P-1>::power(C,dX);
+	Kernel_LC<B_iter,vecP,P,0,0,P-1>::power(C,dX);
 	L = Ci->L;
 	B->TRG /= B->SRC;
 	B->TRG[0] += L[0];
@@ -750,7 +747,7 @@ namespace exafmm {
 	B->TRG[2] += L[2];
 	B->TRG[3] += L[3];
 	for (int i=1; i<NTERM; i++) B->TRG[0] += C[i] * L[i];
-	Kernel_LC<B_iter,vecP,0,0,1>::L2P(B, C, L);
+	Kernel_LC<B_iter,vecP,P,0,0,1>::L2P(B, C, L);
       }
     }
   };

@@ -613,17 +613,17 @@ AM_CPPFLAGS = -I../include -I../kernels $(am__append_5) \
 AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_exafmm_laplace.a libpetiga_exafmm_helmholtz.a libgromacs_exafmm.a libcharmm_exafmm.a libcharmm2_exafmm.a libmd_distributed.a
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_SOURCES = petiga.cxx
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL
 @EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_SOURCES = gromacs.cxx
-@EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
+@EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_SOURCES = charmm.cxx
-@EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
+@EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_SOURCES = charmm2.cxx
-@EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=9
+@EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_SOURCES = md_distributed.cxx
-@EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_EXPANSION=15
+@EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_SOURCES = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_CPPFLAGS = $(libpetiga_laplace_a_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_LDADD = libpetiga_exafmm_laplace.a

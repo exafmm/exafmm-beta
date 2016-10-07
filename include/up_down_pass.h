@@ -11,6 +11,7 @@ namespace exafmm {
     typedef typename Kernel::Cells Cells;                       //!< Vector of cells
     typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
     typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
+    static const int P = Kernel::P;                             //!< Set order of expansion
 
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria

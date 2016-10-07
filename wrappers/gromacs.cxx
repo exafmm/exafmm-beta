@@ -15,7 +15,7 @@
 #include "laplace_spherical_cpu.h"
 
 namespace exafmm {
-  typedef LaplaceSphericalCPU<P> Kernel;
+  typedef LaplaceSphericalCPU<Pmax> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector

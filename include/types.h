@@ -153,6 +153,11 @@ namespace exafmm {
   };
 
   // Multipole/local expansion coefficients
-  const int P = EXAFMM_EXPANSION;                               //!< Order of expansions
+#ifdef EXAFMM_PMAX
+  const int Pmax = EXAFMM_PMAX;                                 //!< Order of expansions
+#else
+  const int Pmax = 10;                                          //!< Order of expansions
+#endif
+  const int Pmin = 4;
 }
 #endif

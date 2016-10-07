@@ -27,7 +27,7 @@ double elemops = 0.0;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef exafmm::LaplaceCartesianCPU<P,0> Kernel; 
+  typedef exafmm::LaplaceCartesianCPU<Pmax,0> Kernel; 
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
@@ -57,7 +57,7 @@ int main(int argc, char ** argv) {
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, P);
+  args.print(logger::stringLength);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   buffer.reserve(bodies.size());
   for (int t=0; t<args.repeat; t++) {

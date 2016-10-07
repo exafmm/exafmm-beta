@@ -34,9 +34,4 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 #pragma warning disable 68 111
 #endif
 
-// Check for expansion
-#ifndef EXAFMM_EXPANSION
-#error EXAFMM_EXPANSION undefined
-#endif
-
 #endif

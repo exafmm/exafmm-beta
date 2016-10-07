@@ -11,9 +11,6 @@
 #include "up_down_pass.h"
 #include "verify.h"
 #include "laplace_spherical_cpu.h"
-#if EXAFMM_EXPANSION < 10
-#error Use P >= 10 for this test
-#endif
 using namespace exafmm;
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
@@ -54,7 +51,7 @@ void fmm(Args args) {
   logger::verbose = args.verbose;
   logger::path = args.path;
   logger::printTitle("Ewald Parameters");
-  args.print(logger::stringLength, P);
+  args.print(logger::stringLength);
   ewald.print(logger::stringLength);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -215,6 +212,6 @@ void fmm(Args args) {
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  fmm<LaplaceSphericalCPU<P> >(args);
+  fmm<LaplaceSphericalCPU<10> >(args);
   return 0;
 }

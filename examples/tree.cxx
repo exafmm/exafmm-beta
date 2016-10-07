@@ -8,7 +8,7 @@ using namespace exafmm;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef LaplaceCartesianCPU<P,0> Kernel;
+  typedef LaplaceCartesianCPU<4,0> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
@@ -24,7 +24,7 @@ int main(int argc, char ** argv) {
 
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, P);
+  args.print(logger::stringLength);
   buffer.reserve(args.numBodies);
   double * grow1 = new double [args.repeat+1];
   double * link1 = new double [args.repeat+1];

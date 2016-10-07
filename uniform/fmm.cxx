@@ -22,7 +22,7 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   args.ncrit = 32;
   args.images = 1;
-  typedef LaplaceCartesianCPU<P,0> Kernel;
+  typedef LaplaceCartesianCPU<6,0> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector

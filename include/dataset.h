@@ -131,7 +131,6 @@ namespace exafmm {
 	int end = bodies.size();                                //  End index of bodies
 	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
 	srand48(seed);                                          //  Set seed for random number generator
-	const complex_t I(0.0,1.0);
 	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	  B->SRC = B->X[0] + I * B->X[1];                       //   Initialize source
 	}                                                       //  End loop over bodies

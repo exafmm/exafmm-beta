@@ -31,7 +31,7 @@ namespace exafmm {
   }
 
   //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-  void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t * Ynm, complex_t * YnmTheta) {
+  void evalMultipole(int P, real_t rho, real_t alpha, real_t beta, complex_t * Ynm, complex_t * YnmTheta) {
     real_t x = std::cos(alpha);                                 // x = cos(alpha)
     real_t y = std::sin(alpha);                                 // y = sin(alpha)
     real_t invY = y == 0 ? 0 : 1 / y;                           // 1 / y
@@ -71,7 +71,7 @@ namespace exafmm {
   }
 
   //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-  void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
+  void evalLocal(int P, real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
     real_t x = std::cos(alpha);                                 // x = cos(alpha)
     real_t y = std::sin(alpha);                                 // y = sin(alpha)
     real_t fact = 1;                                            // Initialize 2 * m + 1

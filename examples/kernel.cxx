@@ -108,30 +108,77 @@ void fmm(Args args) {
   double potNrm = verify.getNrmScalar(bodies);
   double accDif = verify.getDifVector(bodies, bodies2);
   double accNrm = verify.getNrmVector(bodies);
-  std::cout << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
+  std::cout << args.P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   double potRel = std::sqrt(potDif/potNrm);
   double accRel = std::sqrt(accDif/accNrm);
   verify.print("Rel. L2 Error (pot)",potRel);
   verify.print("Rel. L2 Error (acc)",accRel);
-  file << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
+  file << args.P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
 }
+
+template<int P>
+struct CallFMM {
+#ifndef _FX
+  static inline void LaplaceCartesianCPU_P1(Args args) {
+    if(args.P == P) fmm<LaplaceCartesianCPU<P,1> >(args);
+    CallFMM<P-1>::LaplaceCartesianCPU_P1(args);
+  }
+  static inline void LaplaceCartesianCPU_P0(Args args) {
+    if(args.P == P) fmm<LaplaceCartesianCPU<P,0> >(args);
+    CallFMM<P-1>::LaplaceCartesianCPU_P0(args);
+  }
+#endif
+  static inline void LaplaceSphericalCPU_P(Args args) {
+    if(args.P == P) fmm<LaplaceSphericalCPU<P> >(args);
+    CallFMM<P-1>::LaplaceSphericalCPU_P(args);
+  }
+  static inline void HelmholtzSphericalCPU_P(Args args) {
+    if(args.P == P) fmm<HelmholtzSphericalCPU<P> >(args);
+    CallFMM<P-1>::HelmholtzSphericalCPU_P(args);
+  }
+  static inline void BiotSavartSphericalCPU_P(Args args) {
+    if(args.P == P) fmm<BiotSavartSphericalCPU<P> >(args);
+    CallFMM<P-1>::BiotSavartSphericalCPU_P(args);
+  }
+};
+
+template<>
+struct CallFMM<Pmin-1> {
+#ifndef _FX
+  static inline void LaplaceCartesianCPU_P1(Args args) {
+    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+  }
+  static inline void LaplaceCartesianCPU_P0(Args args) {
+    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+  }
+#endif
+  static inline void LaplaceSphericalCPU_P(Args args) {
+    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+  }
+  static inline void HelmholtzSphericalCPU_P(Args args) {
+    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+  }
+  static inline void BiotSavartSphericalCPU_P(Args args) {
+    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+  }
+};
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   if (args.equation == "Laplace") {
     if (args.basis == "Cartesian") {
       if (args.mass)
-        fmm<LaplaceCartesianCPU<P,1> >(args);
+        CallFMM<Pmax>::LaplaceCartesianCPU_P1(args);
       else
-        fmm<LaplaceCartesianCPU<P,0> >(args);
+        CallFMM<Pmax>::LaplaceCartesianCPU_P0(args);
     } else if (args.basis == "Spherical") {
-      fmm<LaplaceSphericalCPU<P> >(args);
+      CallFMM<Pmax>::LaplaceSphericalCPU_P(args);
     }
   } else if (args.equation == "Helmholtz") {
-    fmm<HelmholtzSphericalCPU<P> >(args);
+    CallFMM<2*Pmax>::HelmholtzSphericalCPU_P(args);
   } else if (args.equation == "BiotSavart") {
-    fmm<BiotSavartSphericalCPU<P> >(args);
+    CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);
   }
   return 0;
 }
