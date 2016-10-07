@@ -120,6 +120,7 @@ namespace exafmm {
       if (value2 != 0) secondValue = true;                      // If there is a second value
       Record record, record2;                                   // Map for regression value
       const char * host = getenv("WORKERNAME");                 // Get workername
+      if (!host) host = "";
       std::stringstream name;                                   // File name for regression
       name << path;                                             // Append path to file name
       if (time) name << "time_" << host << ".reg";              // If time regression
@@ -137,7 +138,14 @@ namespace exafmm {
           file >> record[readKey];                              //   Read value
           if (secondValue) file >> record2[readKey];            //   Read value2
         }                                                       //  End loop over regression values
-      }                                                         // End if for file existence
+      } else {                                                         // End if for file existence
+	if (time) {
+	  std::cout << "Time regression not performed" << std::endl;
+	} else {
+	  std::cout << "Accuracy regression not performed" << std::endl;
+	}
+	return true;
+      }
       file.close();                                             // Close regression file
       average = (average * iteration + value) / (iteration + 1);// Average of all iterations
       if (secondValue) average2 = (average2 * iteration + value2) / (iteration + 1);// Average of all iterations
