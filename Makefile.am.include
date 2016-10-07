@@ -59,7 +59,7 @@ if EXAFMM_WITH_CILK
 LIBS += -lcilkrts
 endif
 if EXAFMM_WITH_MTHREAD
-LIBS += -lmyth-native
+LIBS += -lmyth
 endif
 
 ### Floating point precision

@@ -26,7 +26,8 @@ using namespace tbb;
 
 #elif EXAFMM_WITH_MTHREAD
 /* MassiveThreads (TBB-like interface on top of MassiveThreads)  */
-#define num_threads(E)		      myth_init_ex(E, 1 << 16)
+//#define num_threads(E)		      myth_init_ex(E, 1 << 16)
+#define num_threads(E)		      do { myth_globalattr_set_stacksize(0, 1 << 16); myth_globalattr_set_n_workers(0, E); myth_init(); } while (0)
 #define TO_MTHREAD_NATIVE 1
 #include <tpswitch/tpswitch.h>
 
