@@ -63,7 +63,7 @@ int main(int argc, char ** argv) {
   args.verbose &= FMM.MPIRANK == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, EXAFMM_PP);
+  args.print(logger::stringLength);
 
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");

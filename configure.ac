@@ -1,4 +1,4 @@
-AC_INIT([exaFMM], [1.0.1])
+AC_INIT([exaFMM], [2.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_FILES([Makefile examples/Makefile wrappers/Makefile uniform/Makefile hss/Makefile])
 AC_CONFIG_HEADER(config.h)
