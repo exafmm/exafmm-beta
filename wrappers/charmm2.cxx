@@ -88,7 +88,7 @@ namespace exafmm {
     logger::verbose = args->verbose;
     logger::path = args->path;
     logger::printTitle("Initial Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
     if (baseMPI->mpirank == 0) {
       std::cout << "PP      : " << EXAFMM_PP << std::endl;
       std::cout << "DP2P    : " << DP2P << std::endl;
@@ -229,7 +229,7 @@ namespace exafmm {
     assert(nlocal % 3 == 0);
     args->numBodies = nlocal;
     logger::printTitle("FMM Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
@@ -377,7 +377,7 @@ namespace exafmm {
     }
     args->numBodies = nlocal;
     logger::printTitle("Ewald Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
     ewald->print(logger::stringLength);
     logger::printTitle("Ewald Profiling");
     logger::startTimer("Total Ewald");
@@ -537,7 +537,7 @@ namespace exafmm {
     }
     args->numBodies = nlocal;
     logger::printTitle("VdW Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
     logger::printTitle("VdW Profiling");
     logger::startTimer("Total VdW");
     logger::startPAPI();

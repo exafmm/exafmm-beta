@@ -10,18 +10,17 @@
 #include "up_down_pass.h"
 #include "verify.h"
 
-const int P = EXAFMM_EXPANSION;
+namespace exafmm {
 #if EXAFMM_LAPLACE
 #if EXAFMM_CARTESIAN
-typedef exafmm::LaplaceCartesianCPU<Pmax,0> Kernel;
+  typedef LaplaceCartesianCPU<Pmax,0> Kernel;
 #elif EXAFMM_SPHERICAL
-typedef exafmm::LaplaceSphericalCPU<Pmax> Kernel;
+  typedef LaplaceSphericalCPU<Pmax> Kernel;
 #endif
 #elif EXAFMM_HELMHOLTZ
-typedef exafmm::HelmholtzSphericalCPU<2*Pmax> Kernel;
+  typedef HelmholtzSphericalCPU<2*Pmax> Kernel;
 #endif
 
-namespace exafmm {
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
@@ -57,7 +56,7 @@ namespace exafmm {
     logger::verbose = args->verbose;
     logger::path = args->path;
     logger::printTitle("FMM Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();

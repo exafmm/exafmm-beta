@@ -181,20 +181,35 @@ template<>
 struct CallFMM<Pmin-1> {
 #ifndef _FX
   static inline void LaplaceCartesianCPU_P1(Args args) {
-    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+    if(args.P < Pmin || Pmax < args.P) {
+      fprintf(stderr,"Pmin <= P <= Pmax\n");
+      abort();
+    }
   }
   static inline void LaplaceCartesianCPU_P0(Args args) {
-    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+    if(args.P < Pmin || Pmax < args.P) {
+      fprintf(stderr,"Pmin <= P <= Pmax\n");
+      abort();
+    }
   }
 #endif
   static inline void LaplaceSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+    if(args.P < Pmin || Pmax < args.P) {
+      fprintf(stderr,"Pmin <= P <= Pmax\n");
+      abort();
+    }
   }
   static inline void HelmholtzSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+    if(args.P < Pmin || Pmax < args.P) {
+      fprintf(stderr,"Pmin <= P <= Pmax\n");
+      abort();
+    }
   }
   static inline void BiotSavartSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) fprintf(stderr,"Pmin <= P <= Pmax\n"); abort();
+    if(args.P < Pmin || Pmax < args.P) {
+      fprintf(stderr,"Pmin <= P <= Pmax\n");
+      abort();
+    }
   }
 };
 

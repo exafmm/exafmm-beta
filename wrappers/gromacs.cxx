@@ -80,7 +80,7 @@ namespace exafmm {
     logger::verbose = args->verbose;
     logger::path = args->path;
     logger::printTitle("Initial Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
 
     pass = true;
     isTime = false;
@@ -151,7 +151,7 @@ namespace exafmm {
     vec3 cycles = cycle;
     args->numBodies = n;
     logger::printTitle("FMM Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
@@ -231,7 +231,7 @@ namespace exafmm {
     Ewald<Kernel> * ewald = new Ewald<Kernel>(ksize, alpha, sigma, cutoff, cycles);
     args->numBodies = n;
     logger::printTitle("Ewald Parameters");
-    args->print(logger::stringLength, P);
+    args->print(logger::stringLength);
     ewald->print(logger::stringLength);
     logger::printTitle("Ewald Profiling");
     logger::startTimer("Total Ewald");
