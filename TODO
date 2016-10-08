@@ -1,82 +1,64 @@
 -- Immediate --
-- Rank items in this list according to importance
+* Rank items in this list according to importance
 
-- kernel files > .cxx
-- BaseMPI > MPI_Util
+- define mpisize, mpirank in types.h
+- Improve vec.h - vectorclass interface
+- Update vectorclass, still need -fabi-version=6?
+- splitRange defined in both dataset.h and partition.h
+- Separate different algorithms into different files (create folder for build tree, partition, etc.)
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
-- Fix all buildbot errors
-- Fix all nightly errors
 - Fix charmm2
 - PetIGA no macro
+- Helmholtz breaks for very low P
 - With strumpack
-- Full simdList, threadList, configList in nightly.py
-- Comment in driver files, kernels
-- Use EXAFMM_CLUSTER
-- Configure on OSX
-- Representative case plot generator
-- Remove make cleanall from build
-- Remove sc16 from master.cfg
-- Extend list based traversal to adaptive tree (UVWX-list)
-- Separate different algorithms into different files (create folder for build tree, partition, etc.)
 - uniform/fmm.cxx accuracy problem
+- Use EXAFMM_CLUSTER in md_distributed
 - Add kernel.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
-- Laplace Cartesian with highh P has large error
+- Full simdList, threadList, configList in nightly.py
+
+- Remove make cleanall from build
+- Extend list based traversal to adaptive tree (UVWX-list)
 
 -- MPI --
-- define mpisize, mpirank in types.h
-- benchmark against uniform on kyoto
-- match performance of uniform with non-uniform
-- merge partition and treeMPI
 - LBT MPI <- ICELL is being calculated from localBounds
-- Test difficult distributions for partitioning and LET
 MPI-3.0 lock all
 cycle counter based weights
 2:1 refinement for precomputation
 non-orthogonal recursive bisection
 
 -- automake --
-- Do we need -fabi-version=6?
 - Add m4/ax_mpi variants from PVFMM
-- Theoretical error bound using kernel.cxx
-move contents of macros.h to configure.ac
-examples/Makefile options to args
-unit test for each header file in /unit_test
+Representative case plot generator
 
 -- types --
-- args.h, verify.h from class to namespace
-logger.h split to print.h
+- logger.h split to print.h
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
 Remove M, L from Cell struct
-Improve vec.h - vectorclass interface
 Calculate EPS from test
 
 -- tree build --
-Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)
-Morton -> Hilbert
+- Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)
+- Morton, Hilbert in build_tree folder
 
 -- kernels --
-- Helmholtz breaks for very low P
-- LaplaceCartesianRecursion, LaplaceCartesianTemplate
-Add back Stokes kernels
+- Calculate Flops, Cycle counter kernel timer
+- Separate LaplaceCartesianRecursion, LaplaceCartesianTemplate
+- Precomputation of translation matrix (import from PVFMM)
+- Hack vecmathlib and import essential features
+- Add back Stokes kernels
+- Theoretical error bound using kernel.cxx
 Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
-hack vecmathlib and import essential features
-Calculate Flops
-Cycle counter kernel timer
 FX10 sin, cos, exp intrinsic
 
 -- driver --
 - System benchmarking, HPCC, SPEC, for CPU, GPU, MPI performance
-Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
-TBB -> OpenMP with atomics -> flush
-splitRange defined in both dataset.h and partition.h
-UVWX-list with precomputation
+- TBB -> OpenMP with atomics -> flush
 Periodic B.C. by one precomputed translation matrix
 Teng's BH MAC with M2P option during DTT
-Interface with BEM code
 charmm2: remove repartition inside Ewald & VdW
 cutoff based traversal for md_distributed
 
@@ -95,6 +77,8 @@ Cartesian vs. Spherical vs. Planewave
 ORB vs. HOT
 OpenMP vs. TBB vs. Cilk vs. MThreads
 Geometric vs. Algebraic Mat-Vec
+benchmark against uniform on kyoto
 
 -- documentation --
+- JOSS paper
 ipython notebook tutorial (from Andreas)

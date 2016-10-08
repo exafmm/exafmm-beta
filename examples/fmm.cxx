@@ -219,13 +219,18 @@ int main(int argc, char ** argv) {
         CallFMM<Pmax>::LaplaceCartesianCPU_P1(args);            //    Call Laplace Cartesian kernel for mass
       else                                                      //   Elseif charges are both positive and negative
         CallFMM<Pmax>::LaplaceCartesianCPU_P0(args);            //    Call Laplace Cartesian kernel for charge
+      break;                                                    //  Break Cartesian basis
     case 'S':                                                   //  Spherical basis
       CallFMM<Pmax>::LaplaceSphericalCPU_P(args);               //   Call Laplace Spherical kernel
+      break;                                                    //  Break Spherical basis
     }                                                           //  End case switch for basis
+    break;                                                      // Break Laplace equation
   case 'H':                                                     // Helmholtz equation
     CallFMM<2*Pmax>::HelmholtzSphericalCPU_P(args);             //  Call Helmholtz Spherical kernel
+    break;                                                      // Break Helmholtz equation
   case 'B':                                                     // Biot-Savart equation
     CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);              //  Call Biot-Savart Spherical kernel
+    break;                                                      // Break Biot-Savart equation
   }                                                             // End case switch for equation
   return 0;
 }
