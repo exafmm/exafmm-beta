@@ -119,7 +119,6 @@ void fmm(Args args) {
 
 template<int P>
 struct CallFMM {
-#ifndef _FX
   static inline void LaplaceCartesianCPU_P1(Args args) {
     if(args.P == P) fmm<LaplaceCartesianCPU<P,1> >(args);
     CallFMM<P-1>::LaplaceCartesianCPU_P1(args);
@@ -128,7 +127,6 @@ struct CallFMM {
     if(args.P == P) fmm<LaplaceCartesianCPU<P,0> >(args);
     CallFMM<P-1>::LaplaceCartesianCPU_P0(args);
   }
-#endif
   static inline void LaplaceSphericalCPU_P(Args args) {
     if(args.P == P) fmm<LaplaceSphericalCPU<P> >(args);
     CallFMM<P-1>::LaplaceSphericalCPU_P(args);
@@ -145,7 +143,6 @@ struct CallFMM {
 
 template<>
 struct CallFMM<Pmin-1> {
-#ifndef _FX
   static inline void LaplaceCartesianCPU_P1(Args args) {
     if(args.P < Pmin || Pmax < args.P) {
       fprintf(stderr,"Pmin <= P <= Pmax\n");
@@ -158,7 +155,6 @@ struct CallFMM<Pmin-1> {
       abort();
     }
   }
-#endif
   static inline void LaplaceSphericalCPU_P(Args args) {
     if(args.P < Pmin || Pmax < args.P) {
       fprintf(stderr,"Pmin <= P <= Pmax\n");
@@ -180,20 +176,22 @@ struct CallFMM<Pmin-1> {
 };
 
 int main(int argc, char ** argv) {
-  Args args(argc, argv);
-  if (args.equation == "Laplace") {
-    if (args.basis == "Cartesian") {
-      if (args.mass)
-        CallFMM<Pmax>::LaplaceCartesianCPU_P1(args);
-      else
-        CallFMM<Pmax>::LaplaceCartesianCPU_P0(args);
-    } else if (args.basis == "Spherical") {
-      CallFMM<Pmax>::LaplaceSphericalCPU_P(args);
-    }
-  } else if (args.equation == "Helmholtz") {
-    CallFMM<2*Pmax>::HelmholtzSphericalCPU_P(args);
-  } else if (args.equation == "BiotSavart") {
-    CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);
-  }
+  Args args(argc, argv);                                        // Argument parser class
+  switch (args.equation[0]) {                                   // Case switch for equation
+  case 'L':                                                     // Laplace equation
+    switch (args.basis[0]) {                                    //  Case switch for basis
+    case 'C':                                                   //  Cartesian basis
+      if (args.mass)                                            //   If all charges are positive
+        CallFMM<Pmax>::LaplaceCartesianCPU_P1(args);            //    Call Laplace Cartesian kernel for mass
+      else                                                      //   Elseif charges are both positive and negative
+        CallFMM<Pmax>::LaplaceCartesianCPU_P0(args);            //    Call Laplace Cartesian kernel for charge
+    case 'S':                                                   //  Spherical basis
+      CallFMM<Pmax>::LaplaceSphericalCPU_P(args);               //   Call Laplace Spherical kernel
+    }                                                           //  End case switch for basis
+  case 'H':                                                     // Helmholtz equation
+    CallFMM<2*Pmax>::HelmholtzSphericalCPU_P(args);             //  Call Helmholtz Spherical kernel
+  case 'B':                                                     // Biot-Savart equation
+    CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);              //  Call Biot-Savart Spherical kernel
+  }                                                             // End case switch for equation
   return 0;
 }
