@@ -349,8 +349,23 @@ namespace exafmm {
     }
 
   public:
-    HelmholtzSphericalCPU();
-    ~HelmholtzSphericalCPU();
+    HelmholtzSphericalCPU() {
+      xquad = new real_t [P];
+      xquad2 = new real_t [2*P];
+      wquad = new real_t [P];
+      wquad2 = new real_t [2*P];
+      Anm1 = new real_t [(P+1)*(P+2)/2];
+      Anm2 = new real_t [(P+1)*(P+2)/2];
+    }
+
+    ~HelmholtzSphericalCPU() {
+      xquad = new real_t [P];
+      xquad2 = new real_t [2*P];
+      wquad = new real_t [P];
+      wquad2 = new real_t [2*P];
+      Anm1 = new real_t [(P+1)*(P+2)/2];
+      Anm2 = new real_t [(P+1)*(P+2)/2];
+    }
 
     static void setup() {
       nquad = fmax(6, P);
@@ -790,27 +805,6 @@ namespace exafmm {
       }
     }
   };
-
-  template<int P>
-  HelmholtzSphericalCPU<P>::HelmholtzSphericalCPU() {
-    xquad = new real_t [P];
-    std::cout << "xquad allocated\n";
-    xquad2 = new real_t [2*P];
-    wquad = new real_t [P];
-    wquad2 = new real_t [2*P];
-    Anm1 = new real_t [(P+1)*(P+2)/2];
-    Anm2 = new real_t [(P+1)*(P+2)/2];
-  }
-
-  template<int P>
-  HelmholtzSphericalCPU<P>::~HelmholtzSphericalCPU() {
-    delete[] xquad;
-    delete[] xquad2;
-    delete[] wquad;
-    delete[] wquad2;
-    delete[] Anm1;
-    delete[] Anm2;
-  }
 }
 
 #endif

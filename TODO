@@ -1,6 +1,9 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+- ax_openmp,mpi,compiler_vendor: compare with original
+- Set best debug options for each compiler
+- Check if Helmholtz with -D has ever worked (start with master)
 - define mpisize, mpirank in types.h
 - Improve vec.h - vectorclass interface
 - Update vectorclass, still need -fabi-version=6?
@@ -28,10 +31,12 @@ non-orthogonal recursive bisection
 
 -- automake --
 - Add m4/ax_mpi variants from PVFMM
+Use docker to create virtual environment for buildbot
 Representative case plot generator
 
 -- types --
 - logger.h split to print.h
+- __attribute__((always_inline))
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
@@ -57,6 +62,8 @@ FX10 sin, cos, exp intrinsic
 -- driver --
 - System benchmarking, HPCC, SPEC, for CPU, GPU, MPI performance
 - TBB -> OpenMP with atomics -> flush
+- OMP_PLACES {threads,cores,sockets}
+MemAxes: Visualizing Memory Traffic
 Periodic B.C. by one precomputed translation matrix
 Teng's BH MAC with M2P option during DTT
 charmm2: remove repartition inside Ewald & VdW

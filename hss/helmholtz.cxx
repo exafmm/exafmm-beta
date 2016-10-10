@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vecto
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
 
   const real_t cycle = 2 * M_PI;
   BaseMPI baseMPI;

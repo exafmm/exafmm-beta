@@ -1,3 +1,4 @@
+# https://www.gnu.org/software/autoconf-archive/The-Macros.html#The-Macros
 AC_INIT([exaFMM], [2.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_FILES([Makefile examples/Makefile wrappers/Makefile uniform/Makefile hss/Makefile])
@@ -17,9 +18,6 @@ AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_o
 if test "$enable_openmp" = "yes"; then
    AC_DEFINE(EXAFMM_HAVE_OPENMP,1,[Use OpenMP])
    AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
-   AC_LANG_PUSH([Fortran])
-   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
-   AC_LANG_POP([Fortran])
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_OPENMP, test "$enable_openmp" = "yes")
 
@@ -193,12 +191,17 @@ if test "$enable_debug" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 
-AC_LANG_PUSH([C++])
 AX_COMPILER_VENDOR()
-AC_LANG_POP([C++])
-AC_MSG_NOTICE([CXX    : $CXX])
-AC_MSG_NOTICE([FC     : $FC])
-AC_MSG_NOTICE([Vendor : $ax_cv_cxx_compiler_vendor])
+AX_COMPILER_FLAGS()
+AC_LANG_PUSH([Fortran])
+AX_COMPILER_FLAGS()
+AC_LANG_POP([Fortran])
+
+AC_MSG_NOTICE([Vendor   : $ax_cv_cxx_compiler_vendor])
+AC_MSG_NOTICE([CXX      : $CXX])
+AC_MSG_NOTICE([CXXFLAGS : $ax_compiler_cxxflags])
+AC_MSG_NOTICE([FC       : $FC])
+AC_MSG_NOTICE([FCFLAGS  : $ax_compiler_fcflags])
 
 AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$ax_cv_cxx_compiler_vendor" = "ibm")
 AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$ax_cv_cxx_compiler_vendor" = "fujitsu")

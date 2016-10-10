@@ -17,7 +17,7 @@ void fmm(Args args) {
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vecto
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
 
   const vec3 cycle = 2 * M_PI;
   Bodies bodies, bodies2, jbodies, buffer;
@@ -211,6 +211,9 @@ struct CallFMM<Pmin-1> {
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);                                        // Argument parser class
+#if 1
+  fmm<HelmholtzSphericalCPU<2*Pmax> >(args);
+#else
   switch (args.equation[0]) {                                   // Case switch for equation
   case 'L':                                                     // Laplace equation
     switch (args.basis[0]) {                                    //  Case switch for basis
@@ -232,5 +235,6 @@ int main(int argc, char ** argv) {
     CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);              //  Call Biot-Savart Spherical kernel
     break;                                                      // Break Biot-Savart equation
   }                                                             // End case switch for equation
+#endif
   return 0;
 }

@@ -26,7 +26,7 @@ int main(int argc, char ** argv) {
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vecto
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
 
   const int ksize = 11;
   const vec3 cycle = 20 * M_PI;

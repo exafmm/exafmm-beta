@@ -24,7 +24,7 @@ namespace exafmm {
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vecto
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
 
   vec3 KernelBase::Xperiodic = 0;
   real_t KernelBase::eps2 = 0.0;
