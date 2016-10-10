@@ -24,7 +24,7 @@
 /* Define to enable ARM NEON optimizations. */
 #undef EXAFMM_HAVE_NEON
 
-/* Define if OpenMP is enabled */
+/* Use OpenMP */
 #undef EXAFMM_HAVE_OPENMP
 
 /* Define to enable SSE/SSE3 optimizations. */
@@ -62,6 +62,9 @@
 
 /* Use Intel TBB */
 #undef EXAFMM_WITH_TBB
+
+/* Define if OpenMP is enabled */
+#undef HAVE_OPENMP
 
 /* Name of package */
 #undef PACKAGE
