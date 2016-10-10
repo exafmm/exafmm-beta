@@ -17,7 +17,11 @@ AM_PROG_AR
 AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_openmp=$enableval, enable_openmp=no)
 if test "$enable_openmp" = "yes"; then
    AC_DEFINE(EXAFMM_HAVE_OPENMP,1,[Use OpenMP])
-   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
+   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP for C++])])
+   AC_LANG_PUSH([Fortran])
+   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP for Fortran])])
+   AC_LANG_POP([Fortran])
+   
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_OPENMP, test "$enable_openmp" = "yes")
 

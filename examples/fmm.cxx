@@ -211,7 +211,7 @@ struct CallFMM<Pmin-1> {
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);                                        // Argument parser class
-#if 1
+#if 0
   fmm<HelmholtzSphericalCPU<2*Pmax> >(args);
 #else
   switch (args.equation[0]) {                                   // Case switch for equation
