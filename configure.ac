@@ -8,6 +8,8 @@ AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AM_MAINTAINER_MODE
 AC_LANG([C++])
+${CXXFLAGS=""}
+${FCFLAGS=""}
 AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
 AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran])
 AC_PROG_RANLIB
@@ -199,9 +201,9 @@ AC_LANG_POP([Fortran])
 
 AC_MSG_NOTICE([Vendor   : $ax_cv_cxx_compiler_vendor])
 AC_MSG_NOTICE([CXX      : $CXX])
-AC_MSG_NOTICE([CXXFLAGS : $ax_compiler_cxxflags])
+AC_MSG_NOTICE([CXXFLAGS : $COMPILER_CXXFLAGS])
 AC_MSG_NOTICE([FC       : $FC])
-AC_MSG_NOTICE([FCFLAGS  : $ax_compiler_fcflags])
+AC_MSG_NOTICE([FCFLAGS  : $COMPILER_FCFLAGS])
 
 AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$ax_cv_cxx_compiler_vendor" = "ibm")
 AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$ax_cv_cxx_compiler_vendor" = "fujitsu")

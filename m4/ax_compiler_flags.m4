@@ -46,41 +46,63 @@ AC_DEFUN([AX_COMPILER_FLAGS],[
 
     # Base flags
     AX_APPEND_COMPILE_FLAGS([dnl
-        -fno-strict-aliasing dnl
+        -O0 dnl
+        -g dnl
     ],ax_compiler_[]_AC_LANG_ABBREV[]flags,[$ax_compiler_flags_test])
 
     AS_IF([test "$ax_enable_compile_warnings" != "no"],[
         # "yes" flags
-        AX_APPEND_COMPILE_FLAGS([dnl
+        # http://stackoverflow.com/questions/3375697/useful-gcc-flags-for-c
+        AX_APPEND_COMPILE_FLAGS([ dnl
+            "-check all" dnl
+            "-debug all" dnl
+            "-diag-disable remark" dnl
+            -fmudflap dnl
+            -fno-strict-aliasing dnl
+            -fsanitize=address dnl
+            -fsanitize=thread dnl
+            -fsanitize=leak dnl
+            -fstack-protector dnl
+            -ftrapuv dnl
+            -ftrapv dnl
+            -traceback dnl
+            -Waggregate-return dnl
             -Wall dnl
-            -Wextra dnl
-            -Wundef dnl
-            -Wwrite-strings dnl
-            -Wpointer-arith dnl
-            -Wmissing-declarations dnl
-            -Wredundant-decls dnl
-            -Wno-unused-parameter dnl
-            -Wno-missing-field-initializers dnl
-            -Wformat=2 dnl
+            -Warray-bounds dnl
+            dnl -Wconversion dnl Too many warnings in vectorclass
             -Wcast-align dnl
+            -Wcast-qual dnl
+            -Wextra dnl
+            -Wfatal-errors dnl
+            -Wfloat-equal dnl
+            -Wformat=2 dnl
             -Wformat-nonliteral dnl
             -Wformat-security dnl
+            -Winit-self dnl
+            -Winline dnl
+            -Wmissing-declarations dnl
+            -Wmissing-format-attribute dnl
+            -Wmissing-include-dirs dnl
+            -Wmissing-noreturn dnl
+            -Wno-unused-parameter dnl
+            -Wno-missing-field-initializers dnl
+            -Wno-overloaded-virtual dnl
+            -Wpacked dnl
+            -Wpointer-arith dnl
+            -Wredundant-decls dnl
+            -Wreturn-type dnl
+            -Wshadow dnl
             -Wsign-compare dnl
             -Wstrict-aliasing dnl
-            -Wshadow dnl
-            -Winline dnl
-            -Wpacked dnl
-            -Wmissing-format-attribute dnl
-            -Wmissing-noreturn dnl
-            -Winit-self dnl
-            -Wredundant-decls dnl
-            -Wmissing-include-dirs dnl
-            -Wunused-but-set-variable dnl
-            -Warray-bounds dnl
-            -Wreturn-type dnl
-            -Wno-overloaded-virtual dnl
-            -Wswitch-enum dnl
+            -Wstrict-overflow=5 dnl
+            -Wstrict-prototype dnl
             -Wswitch-default dnl
+            -Wswitch-enum dnl
+            dnl -Wundef dnl Requires all macros to be defined to either 0 or 1
+            -Wuninitialized dnl
+            -Wunreachable-code dnl
+            -Wunused-but-set-variable dnl
+            -Wwrite-strings dnl
         ],ax_compiler_[]_AC_LANG_ABBREV[]flags,[$ax_compiler_flags_test])
     ])
 
@@ -100,4 +122,5 @@ AC_DEFUN([AX_COMPILER_FLAGS],[
 
     # Substitute the variables
     AC_SUBST(ax_compiler_[]_AC_LANG_ABBREV[]flags)
+    COMPILER_[]_AC_LANG_PREFIX[]FLAGS=$ax_compiler_[]_AC_LANG_ABBREV[]flags
 ])dnl AX_COMPILER_FLAGS

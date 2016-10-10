@@ -134,21 +134,9 @@ else
 AM_CPPFLAGS += -DNDEBUG
 endif
 
-# http://stackoverflow.com/questions/3375697/useful-gcc-flags-for-c
 if EXAFMM_DEBUG
-# -Wconversion # Too many warnings in vectorclass
-# -Wundef # Requires all macros to be defined to either 0 or 1
-AM_CXXFLAGS += -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -Wfatal-errors
-AM_FCFLAGS += -O0 -g
-if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS += -traceback -ftrapuv -diag-disable remark
-AM_FCFLAGS += -traceback -ftrapuv -diag-disable remark -check all -debug all
-else
-if EXAFMM_HAVE_GNU
-AM_CXXFLAGS += -ftrapv -fsanitize=address
-AM_FCFLAGS += -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -ftrapv -fsanitize=address
-endif
-endif
+AM_CXXFLAGS += $(COMPILER_CXXFLAGS)
+AM_FCFLAGS += $(COMPILER_FCFLAGS)
 endif
 
 AM_MAKEFLAGS = -s
