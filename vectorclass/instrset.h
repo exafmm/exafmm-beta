@@ -1,11 +1,11 @@
 /****************************  instrset.h   **********************************
 * Author:        Agner Fog
 * Date created:  2012-05-30
-* Last modified: 2014-10-22
-* Version:       1.16
+* Last modified: 2016-05-02
+* Version:       1.22
 * Project:       vector classes
 * Description:
-* Header file for various compiler-specific tasks and other common tasks to 
+* Header file for various compiler-specific tasks and other common tasks to
 * vector class library:
 * > selects the supported instruction set
 * > defines integer types
@@ -14,11 +14,11 @@
 * > defines template class to represent compile-time integer constant
 * > defines template for compile-time error messages
 *
-* (c) Copyright 2012 - 2014 GNU General Public License www.gnu.org/licenses
+* (c) Copyright 2012 - 2016 GNU General Public License www.gnu.org/licenses
 ******************************************************************************/
 
 #ifndef INSTRSET_H
-#define INSTRSET_H 116
+#define INSTRSET_H 122
 
 // Detect 64 bit mode
 #if (defined(_M_AMD64) || defined(_M_X64) || defined(__amd64) ) && ! defined(__x86_64__)
@@ -26,9 +26,9 @@
 #endif
 
 // Find instruction set from compiler macros if INSTRSET not defined
-// Note: Microsoft compilers do not define these macros automatically
+// Note: Most of these macros are not defined in Microsoft compilers
 #ifndef INSTRSET
-#if defined ( __AVX512F__ ) || defined ( __AVX512__ ) // || defined ( __AVX512ER__ ) 
+#if defined ( __AVX512F__ ) || defined ( __AVX512__ ) // || defined ( __AVX512ER__ )
 #define INSTRSET 9
 #elif defined ( __AVX2__ )
 #define INSTRSET 8
@@ -48,7 +48,7 @@
 #define INSTRSET 1
 #elif defined ( _M_IX86_FP )           // Defined in MS compiler. 1: SSE, 2: SSE2
 #define INSTRSET _M_IX86_FP
-#else 
+#else
 #define INSTRSET 0
 #endif // instruction set defines
 #endif // INSTRSET
@@ -56,7 +56,7 @@
 // Include the appropriate header file for intrinsic functions
 #if INSTRSET > 7                       // AVX2 and later
 #if defined (__GNUC__) && ! defined (__INTEL_COMPILER)
-#include <x86intrin.h>                 // x86intrin.h includes header files for whatever instruction 
+#include <x86intrin.h>                 // x86intrin.h includes header files for whatever instruction
                                        // sets are specified on the compiler command line, such as:
                                        // xopintrin.h, fma4intrin.h
 #else
@@ -97,17 +97,17 @@
 #endif //  __GNUC__
 #elif defined (__SSE4A__)              // AMD SSE4A
 #include <ammintrin.h>
-#endif // __XOP__ 
+#endif // __XOP__
 
 // FMA3 instruction set
 #if defined (__FMA__) && (defined(__GNUC__) || defined(__clang__))  && ! defined (__INTEL_COMPILER)
-#include <fmaintrin.h> 
-#endif // __FMA__ 
+#include <fmaintrin.h>
+#endif // __FMA__
 
 // FMA4 instruction set
 #if defined (__FMA4__) && (defined(__GNUC__) || defined(__clang__))
 #include <fma4intrin.h> // must have both x86intrin.h and fma4intrin.h, don't know why
-#endif // __FMA4__ 
+#endif // __FMA4__
 
 
 // Define integer types with known size
@@ -156,10 +156,16 @@
 #endif // _MSC_VER
 
 // functions in instrset_detect.cpp
-int  instrset_detect(void);                      // tells which instruction sets are supported
-bool hasFMA3(void);                              // true if FMA3 instructions supported
-bool hasFMA4(void);                              // true if FMA4 instructions supported
-bool hasXOP (void);                              // true if XOP  instructions supported
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
+    int  instrset_detect(void);                      // tells which instruction sets are supported
+    bool hasFMA3(void);                              // true if FMA3 instructions supported
+    bool hasFMA4(void);                              // true if FMA4 instructions supported
+    bool hasXOP(void);                              // true if XOP  instructions supported
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 // GCC version
 #if defined(__GNUC__) && !defined (GCC_VERSION) && !defined (__clang__)
@@ -174,7 +180,7 @@ bool hasXOP (void);                              // true if XOP  instructions su
 // Apple bug 18746972
 #endif
 
-// Fix problem with macros named min and max in WinDef.h
+// Fix problem with non-overloadable macros named min and max in WinDef.h
 #ifdef _MSC_VER
 #if defined (_WINDEF_) && defined(min) && defined(max)
 #undef min
@@ -185,19 +191,25 @@ bool hasXOP (void);                              // true if XOP  instructions su
 #endif
 #endif
 
-// Template class to represent compile-time integer constant
-template <int32_t  n> class Const_int_t  {};     // represent compile-time signed integer constant
-template <uint32_t n> class Const_uint_t {};     // represent compile-time unsigned integer constant
-#define const_int(n)  (Const_int_t <n>())        // n must be compile-time integer constant
-#define const_uint(n) (Const_uint_t<n>())        // n must be compile-time unsigned integer constant
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
+    // Template class to represent compile-time integer constant
+    template <int32_t  n> class Const_int_t {};       // represent compile-time signed integer constant
+    template <uint32_t n> class Const_uint_t {};      // represent compile-time unsigned integer constant
+    #define const_int(n)  (Const_int_t <n>())         // n must be compile-time integer constant
+    #define const_uint(n) (Const_uint_t<n>())         // n must be compile-time unsigned integer constant
 
-// Template for compile-time error messages
-template <bool> class Static_error_check {
-    public:  Static_error_check(){};
-};
-template <> class Static_error_check<false> {    // generate compile-time error if false
-    private: Static_error_check(){};
-};
+    // Template for compile-time error messages
+    template <bool> class Static_error_check {
+    public:  Static_error_check() {};
+    };
+    template <> class Static_error_check<false> {     // generate compile-time error if false
+    private: Static_error_check() {};
+    };
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 
 #endif // INSTRSET_H

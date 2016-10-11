@@ -1,16 +1,16 @@
 /****************************  vectorf512.h   *******************************
 * Author:        Agner Fog
 * Date created:  2014-07-23
-* Last modified: 2014-10-22
-* Version:       1.16
+* Last modified: 2016-04-26
+* Version:       1.22
 * Project:       vector classes
 * Description:
-* Header file defining floating point vector classes as interface to intrinsic 
+* Header file defining floating point vector classes as interface to intrinsic
 * functions in x86 microprocessors with AVX512 and later instruction sets.
 *
 * Instructions:
-* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired 
-* instruction set, which must be at least AVX512F. 
+* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired
+* instruction set, which must be at least AVX512F.
 *
 * The following vector classes are defined here:
 * Vec16f    Vector of  16  single precision floating point numbers
@@ -23,7 +23,7 @@
 *
 * For detailed instructions, see VectorClass.pdf
 *
-* (c) Copyright 2014 GNU General Public License http://www.gnu.org/licenses
+* (c) Copyright 2014-2016 GNU General Public License http://www.gnu.org/licenses
 *****************************************************************************/
 
 // check combination of header files
@@ -36,6 +36,9 @@
 
 #include "vectori512e.h"
 
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
 
 /*****************************************************************************
 *
@@ -171,7 +174,7 @@ public:
         *this = Vec8db(b);
         return *this;
     }
-private: 
+private:
     // Prevent constructing from int, etc. because of ambiguity
     Vec8db(int b);
     // Prevent assigning int because of ambiguity
@@ -770,7 +773,7 @@ static inline Vec16f nmul_add(Vec16f const & a, Vec16f const & b, Vec16f const &
     return Vec16f(nmul_add(a.get_low(), b.get_low(), c.get_low()), nmul_add(a.get_high(), b.get_high(), c.get_high()));
 }
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec16f mul_sub_x(Vec16f const & a, Vec16f const & b, Vec16f const & c) {
     return Vec16f(mul_sub_x(a.get_low(), b.get_low(), c.get_low()), mul_sub_x(a.get_high(), b.get_high(), c.get_high()));
@@ -788,7 +791,7 @@ static inline Vec16i exponent(Vec16f const & a) {
 
 // Extract the fraction part of a floating point number
 // a = 2^exponent(a) * fraction(a), except for a = 0
-// fraction(1.0f) = 1.0f, fraction(5.0f) = 1.25f 
+// fraction(1.0f) = 1.0f, fraction(5.0f) = 1.25f
 static inline Vec16f fraction(Vec16f const & a) {
     return Vec16f(fraction(a.get_low()), fraction(a.get_high()));
 }
@@ -820,7 +823,7 @@ static inline Vec16f sign_combine(Vec16f const & a, Vec16f const & b) {
     return Vec16f(sign_combine(a.get_low(), b.get_low()), sign_combine(a.get_high(), b.get_high()));
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 // (the underscore in the name avoids a conflict with a macro in Intel's mathimf.h)
 static inline Vec16fb is_finite(Vec16f const & a) {
@@ -976,7 +979,7 @@ public:
     double extract(uint32_t index) const {
         double a[8];
         store(a);
-        return a[index & 7];        
+        return a[index & 7];
     }
 
     // Extract a single element. Use store function if extracting more than one element.
@@ -1359,7 +1362,7 @@ static inline Vec8q truncate_to_int64(Vec8d const & a) {
 static inline Vec8q truncate_to_int64_limited(Vec8d const & a) {
     // Note: assume MXCSR control register is set to rounding
     return Vec8q(truncate_to_int64_limited(a.get_low()), truncate_to_int64_limited(a.get_high()));
-} 
+}
 
 // function round_to_int64: round to nearest or even. (inefficient)
 static inline Vec8q round_to_int64(Vec8d const & a) {
@@ -1422,7 +1425,7 @@ static inline Vec8d nmul_add(Vec8d const & a, Vec8d const & b, Vec8d const & c) 
     return Vec8d(nmul_add(a.get_low(), b.get_low(), c.get_low()), nmul_add(a.get_high(), b.get_high(), c.get_high()));
 }
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec8d mul_sub_x(Vec8d const & a, Vec8d const & b, Vec8d const & c) {
     return Vec8d(mul_sub_x(a.get_low(), b.get_low(), c.get_low()), mul_sub_x(a.get_high(), b.get_high(), c.get_high()));
@@ -1440,7 +1443,7 @@ static inline Vec8q exponent(Vec8d const & a) {
 
 // Extract the fraction part of a floating point number
 // a = 2^exponent(a) * fraction(a), except for a = 0
-// fraction(1.0) = 1.0, fraction(5.0) = 1.25 
+// fraction(1.0) = 1.0, fraction(5.0) = 1.25
 static inline Vec8d fraction(Vec8d const & a) {
     return Vec8d(fraction(a.get_low()), fraction(a.get_high()));
 }
@@ -1471,7 +1474,7 @@ static inline Vec8d sign_combine(Vec8d const & a, Vec8d const & b) {
     return Vec8d(sign_combine(a.get_low(), b.get_low()), sign_combine(a.get_high(), b.get_high()));
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 static inline Vec8db is_finite(Vec8d const & a) {
     return Vec8db(is_finite(a.get_low()), is_finite(a.get_high()));
@@ -1571,7 +1574,7 @@ static inline Vec8d reinterpret_d (Vec8d const & x) {
 ******************************************************************************
 *
 * These permute functions can reorder the elements of a vector and optionally
-* set some elements to zero. 
+* set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
 * constants. Each template parameter is an index to the element you want to select.
@@ -1612,13 +1615,13 @@ static inline Vec16f permute16f(Vec16f const & a) {
 ******************************************************************************
 *
 * These blend functions can mix elements from two different vectors and
-* optionally set some elements to zero. 
+* optionally set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select, where higher indexes indicate an element from the second source
 * vector. For example, if each vector has 8 elements, then indexes 0 - 7
-* will select an element from the first vector and indexes 8 - 15 will select 
+* will select an element from the first vector and indexes 8 - 15 will select
 * an element from the second vector. A negative index will generate zero.
 *
 * Example:
@@ -1650,8 +1653,8 @@ static inline Vec4d select4(Vec8d const & a, Vec8d const & b) {
 }
 
 // blend vectors Vec8d
-template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7> 
-static inline Vec8d blend8d(Vec8d const & a, Vec8d const & b) {  
+template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
+static inline Vec8d blend8d(Vec8d const & a, Vec8d const & b) {
     const int j0 = i0 >= 0 ? i0/4 : i0;
     const int j1 = i1 >= 0 ? i1/4 : i1;
     const int j2 = i2 >= 0 ? i2/4 : i2;
@@ -1676,11 +1679,11 @@ static inline Vec8d blend8d(Vec8d const & a, Vec8d const & b) {
     if (r0 < 0) {
         x0 = Vec4d(0.);
     }
-    else if (((m1 ^ r0*0x4444) & 0xCCCC & mz) == 0) { 
+    else if (((m1 ^ r0*0x4444) & 0xCCCC & mz) == 0) {
         // i0 - i3 all from same source
         x0 = permute4d<i0 & -13, i1 & -13, i2 & -13, i3 & -13> (select4<r0> (a,b));
     }
-    else if ((j2 < 0 || j2 == r0 || j2 == s0) && (j3 < 0 || j3 == r0 || j3 == s0)) { 
+    else if ((j2 < 0 || j2 == r0 || j2 == s0) && (j3 < 0 || j3 == r0 || j3 == s0)) {
         // i0 - i3 all from two sources
         const int k0 =  i0 >= 0 ? i0 & 3 : i0;
         const int k1 = (i1 >= 0 ? i1 & 3 : i1) | (j1 == s0 ? 4 : 0);
@@ -1698,11 +1701,11 @@ static inline Vec8d blend8d(Vec8d const & a, Vec8d const & b) {
     if (r1 < 0) {
         x1 = Vec4d(0.);
     }
-    else if (((m1 ^ uint32_t(r1)*0x44440000u) & 0xCCCC0000 & mz) == 0) { 
+    else if (((m1 ^ uint32_t(r1)*0x44440000u) & 0xCCCC0000 & mz) == 0) {
         // i4 - i7 all from same source
         x1 = permute4d<i4 & -13, i5 & -13, i6 & -13, i7 & -13> (select4<r1> (a,b));
     }
-    else if ((j6 < 0 || j6 == r1 || j6 == s1) && (j7 < 0 || j7 == r1 || j7 == s1)) { 
+    else if ((j6 < 0 || j6 == r1 || j6 == s1) && (j7 < 0 || j7 == r1 || j7 == s1)) {
         // i4 - i7 all from two sources
         const int k4 =  i4 >= 0 ? i4 & 3 : i4;
         const int k5 = (i5 >= 0 ? i5 & 3 : i5) | (j5 == s1 ? 4 : 0);
@@ -1736,8 +1739,8 @@ static inline Vec8f select4(Vec16f const & a, Vec16f const & b) {
     return Vec8f(0.f);
 }
 
-template <int i0,  int i1,  int i2,  int i3,  int i4,  int i5,  int i6,  int i7, 
-          int i8,  int i9,  int i10, int i11, int i12, int i13, int i14, int i15 > 
+template <int i0,  int i1,  int i2,  int i3,  int i4,  int i5,  int i6,  int i7,
+          int i8,  int i9,  int i10, int i11, int i12, int i13, int i14, int i15 >
 static inline Vec16f blend16f(Vec16f const & a, Vec16f const & b) {
 
     const int j0  = i0  >= 0 ? i0 /8 : i0;
@@ -1874,8 +1877,8 @@ template <int n>
 static inline Vec16f lookup(Vec16i const & index, float const * table) {
     if (n <=  0) return 0;
     if (n <=  8) {
-        Vec8f table1 = Vec8f().load(table);        
-        return Vec16f(       
+        Vec8f table1 = Vec8f().load(table);
+        return Vec16f(
             lookup8 (index.get_low(),  table1),
             lookup8 (index.get_high(), table1));
     }
@@ -1902,14 +1905,14 @@ static inline Vec8d lookup8(Vec8q const & index, Vec8d const & table) {
     Vec4d t0 = lookup<8>(index.get_low(), tab);
     Vec4d t1 = lookup<8>(index.get_high(), tab);
     return Vec8d(t0, t1);
-} 
+}
 
 template <int n>
 static inline Vec8d lookup(Vec8q const & index, double const * table) {
     if (n <= 0) return 0;
     if (n <= 4) {
-        Vec4d table1 = Vec4d().load(table);        
-        return Vec8d(       
+        Vec4d table1 = Vec4d().load(table);
+        return Vec8d(
             lookup4 (index.get_low(),  table1),
             lookup4 (index.get_high(), table1));
     }
@@ -1936,7 +1939,7 @@ static inline Vec8d lookup(Vec8q const & index, double const * table) {
 *
 *****************************************************************************/
 // Load elements from array a with indices i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15
-template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, 
+template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7,
 int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15>
 static inline Vec16f gather16f(void const * a) {
     Static_error_check<(i0|i1|i2|i3|i4|i5|i6|i7|i8|i9|i10|i11|i12|i13|i14|i15)>=0> Negative_array_index;  // Error message if index is negative
@@ -1986,7 +1989,7 @@ static inline Vec16f gather16f(void const * a) {
         }
     }
     if ((i0<imin+16  || i0>imax-16)  && (i1<imin+16  || i1>imax-16)  && (i2<imin+16  || i2>imax-16)  && (i3<imin+16  || i3>imax-16)
-    &&  (i4<imin+16  || i4>imax-16)  && (i5<imin+16  || i5>imax-16)  && (i6<imin+16  || i6>imax-16)  && (i7<imin+16  || i7>imax-16)    
+    &&  (i4<imin+16  || i4>imax-16)  && (i5<imin+16  || i5>imax-16)  && (i6<imin+16  || i6>imax-16)  && (i7<imin+16  || i7>imax-16)
     &&  (i8<imin+16  || i8>imax-16)  && (i9<imin+16  || i9>imax-16)  && (i10<imin+16 || i10>imax-16) && (i11<imin+16 || i11>imax-16)
     &&  (i12<imin+16 || i12>imax-16) && (i13<imin+16 || i13>imax-16) && (i14<imin+16 || i14>imax-16) && (i15<imin+16 || i15>imax-16) ) {
         // load two contiguous blocks and blend
@@ -2123,5 +2126,9 @@ static inline uint8_t to_bits(Vec8db const & x) {
 static inline Vec8db to_Vec8db(uint8_t x) {
     return Vec8db(to_Vec8qb(x));
 }
+
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 #endif // VECTORF512_H

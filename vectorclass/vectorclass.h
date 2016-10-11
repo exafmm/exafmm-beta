@@ -1,17 +1,17 @@
 /****************************  vectorclass.h   ********************************
 * Author:        Agner Fog
 * Date created:  2012-05-30
-* Last modified: 2015-08-08
-* Version:       1.18
+* Last modified: 2016-09-27
+* Version:       1.23
 * Project:       vector classes
 * Description:
-* Header file defining vector classes as interface to intrinsic functions 
+* Header file defining vector classes as interface to intrinsic functions
 * in x86 microprocessors with SSE2 and later instruction sets up to AVX512.
 *
 * Instructions:
-* Use Gnu, Clang, Intel or Microsoft C++ compiler. Compile for the desired 
-* instruction set, which must be at least SSE2. Specify the supported 
-* instruction set by a command line define, e.g. __SSE4_1__ if the 
+* Use Gnu, Clang, Intel or Microsoft C++ compiler. Compile for the desired
+* instruction set, which must be at least SSE2. Specify the supported
+* instruction set by a command line define, e.g. __SSE4_1__ if the
 * compiler does not automatically do so.
 *
 * Each vector object is represented internally in the CPU as a vector
@@ -22,15 +22,14 @@
 *
 * For detailed instructions, see VectorClass.pdf
 *
-* (c) Copyright 2012 - 2015 GNU General Public License www.gnu.org/licenses
+* (c) Copyright 2012-2016 GNU General Public License www.gnu.org/licenses
 ******************************************************************************/
 #ifndef VECTORCLASS_H
-#define VECTORCLASS_H  116
-#pragma GCC system_header
+#define VECTORCLASS_H  123
 
 // Maximum vector size, bits. Allowed values are 128, 256, 512
 #ifndef MAX_VECTOR_SIZE
-#define MAX_VECTOR_SIZE 512
+#define MAX_VECTOR_SIZE 256
 #endif
 
 #include "instrset.h"        // Select supported instruction set
@@ -65,6 +64,6 @@
 #endif  //  INSTRSET >= 9
 #endif  //  MAX_VECTOR_SIZE >= 512
 
-#endif  // INSTRSET < 2 
+#endif  // INSTRSET < 2
 
 #endif  // VECTORCLASS_H

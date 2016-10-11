@@ -1,8 +1,8 @@
 /*************************  dispatch_example.cpp   ****************************
 | Author:        Agner Fog
 | Date created:  2012-05-30
-| Last modified: 2014-07-23
-| Version:       1.14
+* Last modified: 2016-04-26
+* Version:       1.22
 | Project:       vector classes
 | Description:
 | Example of CPU dispatching.
@@ -17,7 +17,7 @@
 | g++ -O3 -msse2 -otest instrset_detect.cpp d2.o d5.o d7.o d8.o d9.o
 | ./test
 |
-| (c) Copyright 2012 - 2014 GNU General Public License http://www.gnu.org/licenses
+| (c) Copyright 2012-2016 GNU General Public License http://www.gnu.org/licenses
 \*****************************************************************************/
 
 #include <stdio.h>
@@ -25,12 +25,15 @@
 #define MAX_VECTOR_SIZE 512
 #include "vectorclass.h"
 
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
 
 // define function type (change this to fit your purpose. Should not contain vector types)
 typedef float MyFuncType(float*);
 
 // function prototypes for each version
-MyFuncType  myfunc, myfunc_SSE2, myfunc_SSE41, myfunc_AVX, myfunc_AVX2, myfunc_AVX512, myfunc_dispatch; 
+MyFuncType  myfunc, myfunc_SSE2, myfunc_SSE41, myfunc_AVX, myfunc_AVX2, myfunc_AVX512, myfunc_dispatch;
 
 // Define function name depending on which instruction set we compile for
 #if   INSTRSET == 2                    // SSE2
@@ -85,7 +88,7 @@ inline float myfunc(float * f) {
 
 
 // Example: main calls myfunc
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
     float a[16]={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};  // array of 16 floats
 
@@ -97,3 +100,6 @@ int main(int argc, char* argv[])
 
 #endif  // INSTRSET == 2
 
+#ifdef VCL_NAMESPACE
+}
+#endif

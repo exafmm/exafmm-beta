@@ -1,23 +1,23 @@
 /****************************  vectormath_lib.h   *****************************
-| Author:        Agner Fog
-| Date created:  2012-05-30
-* Last modified: 2014-04-23
-| Version:       1.16
-| Project:       vector classes
-| Description:
-| Header file defining mathematical functions on floating point vectors
-| May use Intel SVML library or AMD LIBM library
-|
-| Instructions:
-| Define VECTORMATH to one of the following values:
-|   0:  Use ordinary math library (slow)
-|   1:  Use AMD LIBM library
-|   2:  Use Intel SVML library with any compiler
-|   3:  Use Intel SVML library with Intel compiler
-|
-| For detailed instructions, see VectorClass.pdf
-|
-| (c) Copyright 2012-2014 GNU General Public License http://www.gnu.org/licenses
+* Author:        Agner Fog
+* Date created:  2012-05-30
+* Last modified: 2016-04-26
+* Version:       1.22
+* Project:       vector classes
+* Description:
+* Header file defining mathematical functions on floating point vectors
+* May use Intel SVML library or AMD LIBM library
+*
+* Instructions:
+* Define VECTORMATH to one of the following values:
+*   0:  Use ordinary math library (slow)
+*   1:  Use AMD LIBM library
+*   2:  Use Intel SVML library with any compiler
+*   3:  Use Intel SVML library with Intel compiler
+*
+* For detailed instructions, see VectorClass.pdf
+*
+* (c) Copyright 2012-2016 GNU General Public License http://www.gnu.org/licenses
 \*****************************************************************************/
 
 // check combination of header files
@@ -34,13 +34,18 @@
 #endif // __INTEL_COMPILER
 #endif // VECTORMATH
 
+#include <math.h>
+
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
+
 /*****************************************************************************
 *
 *      VECTORMATH = 0. Use ordinary library (scalar)
 *
 *****************************************************************************/
 #if VECTORMATH == 0
-#include <math.h>
 
 #ifndef VECTORMATH_COMMON_H
 // exponential and power functions
@@ -52,7 +57,7 @@ static inline Vec4f exp (Vec4f const & x) {
 static inline Vec2d exp (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(exp(xx[0]), exp(xx[1]));
+    return Vec2d(::exp(xx[0]), ::exp(xx[1]));
 }
 
 // There is no certain way to know which functions are available, but at least some (Gnu)
@@ -105,30 +110,30 @@ static inline Vec4f pow (Vec4f const & a, Vec4f const & b) {
 static inline Vec2d pow (Vec2d const & a, Vec2d const & b) {
     double aa[4], bb[4];
     a.store(aa);  b.store(bb);
-    return Vec2d(pow(aa[0],bb[0]), pow(aa[1],bb[1]));
+    return Vec2d(::pow(aa[0],bb[0]), ::pow(aa[1],bb[1]));
 }
 
 static inline Vec4f log (Vec4f const & x) {
     float xx[4];
     x.store(xx);
-    return Vec4f(log(xx[0]), log(xx[1]), log(xx[2]), log(xx[3]));
+    return Vec4f(logf(xx[0]), logf(xx[1]), logf(xx[2]), logf(xx[3]));
 }
 static inline Vec2d log (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(log(xx[0]), log(xx[1]));
+    return Vec2d(::log(xx[0]), ::log(xx[1]));
 }
 
 #ifdef HAVE_LOG1P
 static inline Vec4f log1p (Vec4f const & x) {
     float xx[4];
     x.store(xx);
-    return Vec4f(log1p(xx[0]), log1p(xx[1]), log1p(xx[2]), log1p(xx[3]));
+    return Vec4f(::log1p(xx[0]), ::log1p(xx[1]), ::log1p(xx[2]), ::log1p(xx[3]));
 }
 static inline Vec2d log1p (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(log1p(xx[0]), log1p(xx[1]));
+    return Vec2d(::log1p(xx[0]), ::log1p(xx[1]));
 }
 #endif
 
@@ -147,7 +152,7 @@ static inline Vec4f log10 (Vec4f const & x) {  // logarithm base 10
 static inline Vec2d log10 (Vec2d const & x) {  // logarithm base 10
     double xx[4];
     x.store(xx);
-    return Vec2d(log10(xx[0]), log10(xx[1]));
+    return Vec2d(::log10(xx[0]), ::log10(xx[1]));
 }
 
 // trigonometric functions
@@ -159,7 +164,7 @@ static inline Vec4f sin(Vec4f const & x) {
 static inline Vec2d sin (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(sin(xx[0]), sin(xx[1]));
+    return Vec2d(::sin(xx[0]), ::sin(xx[1]));
 }
 
 static inline Vec4f cos(Vec4f const & x) {
@@ -170,7 +175,7 @@ static inline Vec4f cos(Vec4f const & x) {
 static inline Vec2d cos (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(cos(xx[0]), cos(xx[1]));
+    return Vec2d(::cos(xx[0]), ::cos(xx[1]));
 }
 
 static inline Vec4f sincos (Vec4f * pcos, Vec4f const & x) {   // sine and cosine. sin(x) returned, cos(x) in pcos
@@ -190,7 +195,7 @@ static inline Vec4f tan(Vec4f const & x) {
 static inline Vec2d tan (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(tan(xx[0]), tan(xx[1]));
+    return Vec2d(::tan(xx[0]), ::tan(xx[1]));
 }
 
 // inverse trigonometric functions
@@ -202,7 +207,7 @@ static inline Vec4f asin(Vec4f const & x) {
 static inline Vec2d asin (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(asin(xx[0]), asin(xx[1]));
+    return Vec2d(::asin(xx[0]), ::asin(xx[1]));
 }
 
 static inline Vec4f acos(Vec4f const & x) {
@@ -213,7 +218,7 @@ static inline Vec4f acos(Vec4f const & x) {
 static inline Vec2d acos (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(acos(xx[0]), acos(xx[1]));
+    return Vec2d(::acos(xx[0]), ::acos(xx[1]));
 }
 
 static inline Vec4f atan(Vec4f const & x) {
@@ -224,7 +229,7 @@ static inline Vec4f atan(Vec4f const & x) {
 static inline Vec2d atan (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(atan(xx[0]), atan(xx[1]));
+    return Vec2d(::atan(xx[0]), ::atan(xx[1]));
 }
 
 static inline Vec4f atan2 (Vec4f const & a, Vec4f const & b) {   // inverse tangent of a/b
@@ -235,7 +240,7 @@ static inline Vec4f atan2 (Vec4f const & a, Vec4f const & b) {   // inverse tang
 static inline Vec2d atan2 (Vec2d const & a, Vec2d const & b) {   // inverse tangent of a/b
     double aa[4], bb[4];
     a.store(aa);  b.store(bb);
-    return Vec2d(atan2(aa[0],bb[0]), atan2(aa[1],bb[1]));
+    return Vec2d(::atan2(aa[0],bb[0]), ::atan2(aa[1],bb[1]));
 }
 #endif // VECTORMATH_COMMON_H
 
@@ -248,7 +253,7 @@ static inline Vec4f sinh(Vec4f const & x) {   // hyperbolic sine
 static inline Vec2d sinh (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(sinh(xx[0]), sinh(xx[1]));
+    return Vec2d(::sinh(xx[0]), ::sinh(xx[1]));
 }
 
 static inline Vec4f cosh(Vec4f const & x) {   // hyperbolic cosine
@@ -259,7 +264,7 @@ static inline Vec4f cosh(Vec4f const & x) {   // hyperbolic cosine
 static inline Vec2d cosh (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(cosh(xx[0]), cosh(xx[1]));
+    return Vec2d(::cosh(xx[0]), ::cosh(xx[1]));
 }
 
 static inline Vec4f tanh(Vec4f const & x) {   // hyperbolic tangent
@@ -270,7 +275,7 @@ static inline Vec4f tanh(Vec4f const & x) {   // hyperbolic tangent
 static inline Vec2d tanh (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(tanh(xx[0]), tanh(xx[1]));
+    return Vec2d(::tanh(xx[0]), ::tanh(xx[1]));
 }
 
 // error function
@@ -278,12 +283,12 @@ static inline Vec2d tanh (Vec2d const & x) {
 static inline Vec4f erf(Vec4f const & x) {
     float xx[4];
     x.store(xx);
-    return Vec4f(erf(xx[0]), erf(xx[1]), erf(xx[2]), erf(xx[3]));
+    return Vec4f(::erf(xx[0]), ::erf(xx[1]), ::erf(xx[2]), ::erf(xx[3]));
 }
 static inline Vec2d erf (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(erf(xx[0]), erf(xx[1]));
+    return Vec2d(::erf(xx[0]), ::erf(xx[1]));
 }
 #endif
 
@@ -291,12 +296,12 @@ static inline Vec2d erf (Vec2d const & x) {
 static inline Vec4f erfc(Vec4f const & x) {
     float xx[4];
     x.store(xx);
-    return Vec4f(erfc(xx[0]), erfc(xx[1]), erfc(xx[2]), erfc(xx[3]));
+    return Vec4f(::erfc(xx[0]), ::erfc(xx[1]), ::erfc(xx[2]), ::erfc(xx[3]));
 }
 static inline Vec2d erfc (Vec2d const & x) {
     double xx[4];
     x.store(xx);
-    return Vec2d(erfc(xx[0]), erfc(xx[1]));
+    return Vec2d(::erfc(xx[0]), ::erfc(xx[1]));
 }
 #endif
 
@@ -304,7 +309,7 @@ static inline Vec2d erfc (Vec2d const & x) {
 static inline Vec4f cexp (Vec4f const & x) {   // complex exponential function
     float xx[4], ee[2];
     x.store(xx);
-    Vec4f z(cosf(xx[1]),sinf(xx[1]),cosf(xx[3]),sinf(xx[3])); 
+    Vec4f z(cosf(xx[1]),sinf(xx[1]),cosf(xx[3]),sinf(xx[3]));
     ee[0] = expf(xx[0]);  ee[1] = expf(xx[2]);
     return z * Vec4f(ee[0],ee[0],ee[1],ee[1]);
 }
@@ -312,8 +317,8 @@ static inline Vec4f cexp (Vec4f const & x) {   // complex exponential function
 static inline Vec2d cexp (Vec2d const & x) {   // complex exponential function
     double xx[2];
     x.store(xx);
-    Vec2d z(cos(xx[1]), sin(xx[1]));
-    return z * exp(xx[0]);
+    Vec2d z(::cos(xx[1]), ::sin(xx[1]));
+    return z * ::exp(xx[0]);
 }
 
 #if defined (VECTORF256_H)  // 256 bit vectors defined
@@ -403,11 +408,11 @@ static inline Vec4d cos (Vec4d const & x) {   // cosine
 }
 
 static inline Vec8f sincos (Vec8f * pcos, Vec8f const & x) {   // sine and cosine. sin(x) returned, cos(x) in pcos
-    *pcos = Vec8f(cos(x.get_low()), cos(x.get_high())); 
+    *pcos = Vec8f(cos(x.get_low()), cos(x.get_high()));
     return Vec8f(sin(x.get_low()), sin(x.get_high()));
 }
 static inline Vec4d sincos (Vec4d * pcos, Vec4d const & x) {   // sine and cosine. sin(x) returned, cos(x) in pcos
-    *pcos = Vec4d(cos(x.get_low()), cos(x.get_high())); 
+    *pcos = Vec4d(cos(x.get_low()), cos(x.get_high()));
     return Vec4d(sin(x.get_low()), sin(x.get_high()));
 }
 
@@ -440,11 +445,11 @@ static inline Vec4d atan (Vec4d const & x) {   // inverse tangent
     return Vec4d(atan(x.get_low()), atan(x.get_high()));
 }
 
-static inline Vec8f atan (Vec8f const & a, Vec8f const & b) {   // inverse tangent of a/b
-    return Vec8f(atan(a.get_low(),b.get_low()), atan(a.get_high(),b.get_high()));
+static inline Vec8f atan2 (Vec8f const & a, Vec8f const & b) {   // inverse tangent of a/b
+    return Vec8f(atan2(a.get_low(),b.get_low()), atan2(a.get_high(),b.get_high()));
 }
-static inline Vec4d atan (Vec4d const & a, Vec4d const & b) {   // inverse tangent of a/b
-    return Vec4d(atan(a.get_low(),b.get_low()), atan(a.get_high(),b.get_high()));
+static inline Vec4d atan2 (Vec4d const & a, Vec4d const & b) {   // inverse tangent of a/b
+    return Vec4d(atan2(a.get_low(),b.get_low()), atan2(a.get_high(),b.get_high()));
 }
 #endif // VECTORMATH_COMMON_H
 
@@ -505,7 +510,7 @@ static inline Vec4d cexp (Vec4d const & x) {   // complex exponential function
 *
 *****************************************************************************/
 #elif VECTORMATH == 1
-//#include <amdlibm.h> 
+//#include <amdlibm.h>
 #include "amdlibm.h" // if header file is in current directory
 
 #ifndef VECTORMATH_COMMON_H
@@ -721,17 +726,17 @@ static inline Vec4d cos (Vec4d const & x) {   // cosine
 
 static inline Vec8f sincos (Vec8f * pcos, Vec8f const & x) {   // sine and cosine. sin(x) returned, cos(x) in pcos
     Vec4f r_sin0, r_sin1, r_cos0, r_cos1;
-    r_sin0 = sincos(&r_cos0, x.get_low()); 
+    r_sin0 = sincos(&r_cos0, x.get_low());
     r_sin1 = sincos(&r_cos1, x.get_high());
     *pcos = Vec8f(r_cos0, r_cos1);
-    return Vec8f(r_sin0, r_sin1); 
+    return Vec8f(r_sin0, r_sin1);
 }
 static inline Vec4d sincos (Vec4d * pcos, Vec4d const & x) {   // sine and cosine. sin(x) returned, cos(x) in pcos
     Vec2d r_sin0, r_sin1, r_cos0, r_cos1;
-    r_sin0 = sincos(&r_cos0, x.get_low()); 
+    r_sin0 = sincos(&r_cos0, x.get_low());
     r_sin1 = sincos(&r_cos1, x.get_high());
     *pcos = Vec4d(r_cos0, r_cos1);
-    return Vec4d(r_sin0, r_sin1); 
+    return Vec4d(r_sin0, r_sin1);
 }
 
 static inline Vec8f tan (Vec8f const & x) {   // tangent
@@ -751,7 +756,7 @@ static inline Vec4d tan (Vec4d const & x) {   // tangent
 *      VECTORMATH = 2. Use Intel SVML library with any compiler
 *
 *****************************************************************************/
-#elif VECTORMATH == 2 
+#elif VECTORMATH == 2
 
 extern "C" {
 extern __m128  __svml_expf4       (__m128);
@@ -1060,7 +1065,7 @@ static inline Vec2d cexp (Vec2d const & x) {   // complex exponential function
 }
 
 
-#if defined (VECTORF256_H) && VECTORF256_H >= 2  
+#if defined (VECTORF256_H) && VECTORF256_H >= 2
 // AVX gives 256 bit vectors
 
 extern "C" {
@@ -1377,7 +1382,7 @@ static inline Vec4d cexp (Vec4d const & x) {   // complex exponential function
 *      VECTORMATH = 3. Use Intel SVML library with Intel compiler
 *
 *****************************************************************************/
-#elif VECTORMATH == 3 
+#elif VECTORMATH == 3
 #include <ia32intrin.h>    // intel svml functions defined in Intel version of immintrin.h
 
 // 128 bit vectors
@@ -1963,17 +1968,17 @@ static inline Vec4d cos (Vec4d const & x) {   // cosine
 // no inline assembly in 64 bit MS compiler
 static inline Vec8f sincos (Vec8f * pcos, Vec8f const & x) {   // sine and cosine. sin(x) returned, cos(x) in pcos
     Vec4f r_sin0, r_sin1, r_cos0, r_cos1;
-    r_sin0 = sincos(&r_cos0, x.get_low()); 
+    r_sin0 = sincos(&r_cos0, x.get_low());
     r_sin1 = sincos(&r_cos1, x.get_high());
     *pcos = Vec8f(r_cos0, r_cos1);
-    return Vec8f(r_sin0, r_sin1); 
+    return Vec8f(r_sin0, r_sin1);
 }
 static inline Vec4d sincos (Vec4d * pcos, Vec4d const & x) {   // sine and cosine. sin(x) returned, cos(x) in pcos
     Vec2d r_sin0, r_sin1, r_cos0, r_cos1;
-    r_sin0 = sincos(&r_cos0, x.get_low()); 
+    r_sin0 = sincos(&r_cos0, x.get_low());
     r_sin1 = sincos(&r_cos1, x.get_high());
     *pcos = Vec4d(r_cos0, r_cos1);
-    return Vec4d(r_sin0, r_sin1); 
+    return Vec4d(r_sin0, r_sin1);
 }
 #endif // inline assembly available
 
@@ -2103,5 +2108,9 @@ static inline Vec4d cexp (Vec4d const & x) {   // complex exponential function
 }
 
 #endif // VECTORF256_H == 1
+
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 #endif // VECTORMATH_LIB_H

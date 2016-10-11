@@ -1,21 +1,25 @@
 /**************************  instrset_detect.cpp   ****************************
 | Author:        Agner Fog
 | Date created:  2012-05-30
-| Last modified: 2014-07-23
-| Version:       1.14
+* Last modified: 2016-04-26
+* Version:       1.22
 | Project:       vector classes
 | Description:
 | Functions for checking which instruction sets are supported.
 |
-| (c) Copyright 2012 - 2014 GNU General Public License http://www.gnu.org/licenses
+| (c) Copyright 2012-2016 GNU General Public License http://www.gnu.org/licenses
 \*****************************************************************************/
 
 #include "instrset.h"
 
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
+
 // Define interface to cpuid instruction.
 // input:  eax = functionnumber, ecx = 0
 // output: eax = output[0], ebx = output[1], ecx = output[2], edx = output[3]
-static inline void cpuid (int output[4], int functionnumber) {	
+static inline void cpuid (int output[4], int functionnumber) {
 #if defined (_MSC_VER) || defined (__INTEL_COMPILER)       // Microsoft or Intel compiler, intrin.h included
 
     __cpuidex(output, functionnumber, 0);                  // intrinsic function for CPUID
@@ -46,7 +50,7 @@ static inline void cpuid (int output[4], int functionnumber) {
 }
 
 // Define interface to xgetbv instruction
-static inline int64_t xgetbv (int ctr) {	
+static inline int64_t xgetbv (int ctr) {
 #if (defined (_MSC_FULL_VER) && _MSC_FULL_VER >= 160040000) || (defined (__INTEL_COMPILER) && __INTEL_COMPILER >= 1200) // Microsoft or Intel compiler supporting _xgetbv intrinsic
 
     return _xgetbv(ctr);                                   // intrinsic function for XGETBV
@@ -151,3 +155,7 @@ bool hasXOP(void) {
     cpuid(abcd, 0x80000001);                               // call cpuid function 0x80000001
     return ((abcd[2] & (1 << 11)) != 0);                   // ecx bit 11 indicates XOP
 }
+
+#ifdef VCL_NAMESPACE
+}
+#endif

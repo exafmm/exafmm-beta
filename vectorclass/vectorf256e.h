@@ -1,8 +1,8 @@
 /****************************  vectorf256e.h   *******************************
 * Author:        Agner Fog
 * Date created:  2012-05-30
-* Last modified: 2015-08-25
-* Version:       1.18
+* Last modified: 2016-04-26
+* Version:       1.22
 * Project:       vector classes
 * Description:
 * Header file defining 256-bit floating point vector classes as interface
@@ -16,7 +16,7 @@
 *
 * For detailed instructions, see VectorClass.pdf
 *
-* (c) Copyright 2012 - 2015 GNU General Public License http://www.gnu.org/licenses
+* (c) Copyright 2012 - 2016 GNU General Public License http://www.gnu.org/licenses
 *****************************************************************************/
 
 // check combination of header files
@@ -34,6 +34,9 @@
 
 #include "vectorf128.h"  // Define 128-bit vectors
 
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
 
 /*****************************************************************************
 *
@@ -82,7 +85,7 @@ protected:
 *          select functions
 *
 *****************************************************************************/
-// Select between two Vec256fe sources, element by element. Used in various functions 
+// Select between two Vec256fe sources, element by element. Used in various functions
 // and operators. Corresponds to this pseudocode:
 // for (int i = 0; i < 8; i++) result[i] = s[i] ? a[i] : b[i];
 // Each element in s must be either 0 (false) or 0xFFFFFFFF (true).
@@ -93,7 +96,7 @@ static inline Vec256fe selectf (Vec256fe const & s, Vec256fe const & a, Vec256fe
 // Same, with two Vec256de sources.
 // and operators. Corresponds to this pseudocode:
 // for (int i = 0; i < 4; i++) result[i] = s[i] ? a[i] : b[i];
-// Each element in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). No other 
+// Each element in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). No other
 // values are allowed.
 static inline Vec256de selectd (Vec256de const & s, Vec256de const & a, Vec256de const & b) {
     return Vec256de(selectd(b.get_low(), a.get_low(), s.get_low()), selectd(b.get_high(), a.get_high(), s.get_high()));
@@ -499,7 +502,7 @@ public:
     // Constructor to build from all elements:
     Vec8f(float f0, float f1, float f2, float f3, float f4, float f5, float f6, float f7) {
         y0 = _mm_setr_ps(f0, f1, f2, f3);
-        y1 = _mm_setr_ps(f4, f5, f6, f7); 
+        y1 = _mm_setr_ps(f4, f5, f6, f7);
     }
     // Constructor to build from two Vec4f:
     Vec8f(Vec4f const & a0, Vec4f const & a1) {
@@ -928,7 +931,7 @@ static inline Vec8i truncate_to_int(Vec8f const & a) {
 static inline Vec8f to_float(Vec8i const & a) {
     return Vec8f(to_float(a.get_low()), to_float(a.get_high()));
 }
-#endif // VECTORI256_H 
+#endif // VECTORI256_H
 
 
 // Approximate math functions
@@ -961,7 +964,7 @@ static inline Vec8f nmul_add(Vec8f const & a, Vec8f const & b, Vec8f const & c) 
 }
 
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec8f mul_sub_x(Vec8f const & a, Vec8f const & b, Vec8f const & c) {
     return Vec8f(mul_sub_x(a.get_low(),b.get_low(),c.get_low()), mul_sub_x(a.get_high(),b.get_high(),c.get_high()));
@@ -981,7 +984,7 @@ static inline Vec8i exponent(Vec8f const & a) {
 
 // Extract the fraction part of a floating point number
 // a = 2^exponent(a) * fraction(a), except for a = 0
-// fraction(1.0f) = 1.0f, fraction(5.0f) = 1.25f 
+// fraction(1.0f) = 1.0f, fraction(5.0f) = 1.25f
 static inline Vec8f fraction(Vec8f const & a) {
     return Vec8f(fraction(a.get_low()), fraction(a.get_high()));
 }
@@ -1016,7 +1019,7 @@ static inline Vec8f sign_combine(Vec8f const & a, Vec8f const & b) {
     return Vec8f(sign_combine(a.get_low(), b.get_low()), sign_combine(a.get_high(), b.get_high()));
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 // (the underscore in the name avoids a conflict with a macro in Intel's mathimf.h)
 static inline Vec8fb is_finite(Vec8f const & a) {
@@ -1087,8 +1090,8 @@ public:
     }
     // Constructor to build from all elements:
     Vec4d(double d0, double d1, double d2, double d3) {
-        y0 = _mm_setr_pd(d0, d1); 
-        y1 = _mm_setr_pd(d2, d3); 
+        y0 = _mm_setr_pd(d0, d1);
+        y1 = _mm_setr_pd(d2, d3);
     }
     // Constructor to build from two Vec4f:
     Vec4d(Vec2d const & a0, Vec2d const & a1) {
@@ -1164,7 +1167,7 @@ public:
             y1 = Vec2d(0.0);
         }
         return *this;
-    }    
+    }
     // Member function to change a single element in vector
     // Note: This function is inefficient. Use load function if changing more than one element
     Vec4d const & insert(uint32_t index, double value) {
@@ -1406,7 +1409,7 @@ static inline Vec4db operator ! (Vec4d const & a) {
 
 // Select between two operands. Corresponds to this pseudocode:
 // for (int i = 0; i < 2; i++) result[i] = s[i] ? a[i] : b[i];
-// Each byte in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). 
+// Each byte in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true).
 // No other values are allowed.
 static inline Vec4d select (Vec4db const & s, Vec4d const & a, Vec4d const & b) {
     return Vec4d(select(s.get_low(), a.get_low(), b.get_low()), select(s.get_high(), a.get_high(), b.get_high()));
@@ -1594,7 +1597,7 @@ static inline Vec4d nmul_add(Vec4d const & a, Vec4d const & b, Vec4d const & c) 
     return Vec4d(nmul_add(a.get_low(),b.get_low(),c.get_low()), nmul_add(a.get_high(),b.get_high(),c.get_high()));
 }
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec4d mul_sub_x(Vec4d const & a, Vec4d const & b, Vec4d const & c) {
     return Vec4d(mul_sub_x(a.get_low(),b.get_low(),c.get_low()), mul_sub_x(a.get_high(),b.get_high(),c.get_high()));
@@ -1613,7 +1616,7 @@ static inline Vec4q exponent(Vec4d const & a) {
 
 // Extract the fraction part of a floating point number
 // a = 2^exponent(a) * fraction(a), except for a = 0
-// fraction(1.0) = 1.0, fraction(5.0) = 1.25 
+// fraction(1.0) = 1.0, fraction(5.0) = 1.25
 static inline Vec4d fraction(Vec4d const & a) {
     return Vec4d(fraction(a.get_low()), fraction(a.get_high()));
 }
@@ -1645,7 +1648,7 @@ static inline Vec4d sign_combine(Vec4d const & a, Vec4d const & b) {
     return Vec4d(sign_combine(a.get_low(), b.get_low()), sign_combine(a.get_high(), b.get_high()));
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 static inline Vec4db is_finite(Vec4d const & a) {
     return Vec4db(is_finite(a.get_low()), is_finite(a.get_high()));
@@ -1746,10 +1749,10 @@ static inline Vec256de reinterpret_d (Vec256de const & x) {
 ******************************************************************************
 *
 * The permute function can reorder the elements of a vector and optionally
-* set some elements to zero. 
+* set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select. An index of -1 will generate zero. An index of -256 means don't care.
 *
 * Example:
@@ -1759,10 +1762,10 @@ static inline Vec256de reinterpret_d (Vec256de const & x) {
 *
 *
 * The blend function can mix elements from two different vectors and
-* optionally set some elements to zero. 
+* optionally set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select, where indexes 0 - 3 indicate an element from the first source
 * vector and indexes 4 - 7 indicate an element from the second source vector.
 * A negative index will generate zero.
@@ -1778,7 +1781,7 @@ static inline Vec256de reinterpret_d (Vec256de const & x) {
 // permute vector Vec4d
 template <int i0, int i1, int i2, int i3>
 static inline Vec4d permute4d(Vec4d const & a) {
-    return Vec4d(blend2d<i0,i1> (a.get_low(), a.get_high()), 
+    return Vec4d(blend2d<i0,i1> (a.get_low(), a.get_high()),
            blend2d<i2,i3> (a.get_low(), a.get_high()));
 }
 
@@ -1804,7 +1807,7 @@ static inline Vec4d blend4d(Vec4d const & a, Vec4d const & b) {
     const int j0 = i0 >= 0 ? i0/2 : i0;
     const int j1 = i1 >= 0 ? i1/2 : i1;
     const int j2 = i2 >= 0 ? i2/2 : i2;
-    const int j3 = i3 >= 0 ? i3/2 : i3;    
+    const int j3 = i3 >= 0 ? i3/2 : i3;
     Vec2d x0, x1;
 
     if (j0 == j1 || i0 < 0 || i1 < 0) {  // both from same
@@ -1833,7 +1836,7 @@ static inline Vec4d blend4d(Vec4d const & a, Vec4d const & b) {
 // permute vector Vec8f
 template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
 static inline Vec8f permute8f(Vec8f const & a) {
-    return Vec8f(blend4f<i0,i1,i2,i3> (a.get_low(), a.get_high()), 
+    return Vec8f(blend4f<i0,i1,i2,i3> (a.get_low(), a.get_high()),
                  blend4f<i4,i5,i6,i7> (a.get_low(), a.get_high()));
 }
 
@@ -1880,11 +1883,11 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
     if (r0 < 0) {
         x0 = _mm_setzero_ps();
     }
-    else if (((m1 ^ r0*0x4444) & 0xCCCC & mz) == 0) { 
+    else if (((m1 ^ r0*0x4444) & 0xCCCC & mz) == 0) {
         // i0 - i3 all from same source
         x0 = permute4f<i0 & -13, i1 & -13, i2 & -13, i3 & -13> (select4<r0> (a,b));
     }
-    else if ((j2 < 0 || j2 == r0 || j2 == s0) && (j3 < 0 || j3 == r0 || j3 == s0)) { 
+    else if ((j2 < 0 || j2 == r0 || j2 == s0) && (j3 < 0 || j3 == r0 || j3 == s0)) {
         // i0 - i3 all from two sources
         const int k0 =  i0 >= 0 ? i0 & 3 : i0;
         const int k1 = (i1 >= 0 ? i1 & 3 : i1) | (j1 == s0 ? 4 : 0);
@@ -1902,11 +1905,11 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
     if (r1 < 0) {
         x1 = _mm_setzero_ps();
     }
-    else if (((m1 ^ r1*0x44440000u) & 0xCCCC0000 & mz) == 0) { 
+    else if (((m1 ^ r1*0x44440000u) & 0xCCCC0000 & mz) == 0) {
         // i4 - i7 all from same source
         x1 = permute4f<i4 & -13, i5 & -13, i6 & -13, i7 & -13> (select4<r1> (a,b));
     }
-    else if ((j6 < 0 || j6 == r1 || j6 == s1) && (j7 < 0 || j7 == r1 || j7 == s1)) { 
+    else if ((j6 < 0 || j6 == r1 || j6 == s1) && (j7 < 0 || j7 == r1 || j7 == s1)) {
         // i4 - i7 all from two sources
         const int k4 =  i4 >= 0 ? i4 & 3 : i4;
         const int k5 = (i5 >= 0 ? i5 & 3 : i5) | (j5 == s1 ? 4 : 0);
@@ -1963,8 +1966,8 @@ template <int n>
 static inline Vec8f lookup(Vec8i const & index, float const * table) {
     if (n <= 0) return 0;
     if (n <= 4) {
-        Vec4f table1 = Vec4f().load(table);        
-        return Vec8f(       
+        Vec4f table1 = Vec4f().load(table);
+        return Vec8f(
             lookup4 (index.get_low(),  table1),
             lookup4 (index.get_high(), table1));
     }
@@ -1995,8 +1998,8 @@ template <int n>
 static inline Vec4d lookup(Vec4q const & index, double const * table) {
     if (n <= 0) return 0;
     if (n <= 2) {
-        Vec2d table1 = Vec2d().load(table);        
-        return Vec4d(       
+        Vec2d table1 = Vec2d().load(table);
+        return Vec4d(
             lookup2 (index.get_low(),  table1),
             lookup2 (index.get_high(), table1));
     }
@@ -2029,7 +2032,7 @@ static inline int horizontal_find_first(Vec8fb const & x) {
 
 static inline int horizontal_find_first(Vec4db const & x) {
     return horizontal_find_first(Vec4qb(x));
-} 
+}
 
 // Count the number of elements that are true
 static inline uint32_t horizontal_count(Vec8fb const & x) {
@@ -2065,5 +2068,9 @@ static inline uint8_t to_bits(Vec4db const & x) {
 static inline Vec4db to_Vec4db(uint8_t x) {
     return Vec4db(to_Vec4qb(x));
 }
+
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 #endif // VECTORF256_H

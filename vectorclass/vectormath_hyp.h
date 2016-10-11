@@ -5,7 +5,7 @@
 * Version:       1.16
 * Project:       vector classes
 * Description:
-* Header file containing inline vector functions of hyperbolic and inverse 
+* Header file containing inline vector functions of hyperbolic and inverse
 * hyperbolic functions:
 * sinh        hyperbolic sine
 * cosh        hyperbolic cosine
@@ -24,14 +24,17 @@
 *
 * For detailed instructions, see vectormath_common.h and VectorClass.pdf
 *
-* (c) Copyright 2015 GNU General Public License http://www.gnu.org/licenses
+* (c) Copyright 2014-2016 GNU General Public License http://www.gnu.org/licenses
 ******************************************************************************/
 
 #ifndef VECTORMATH_HYP_H
-#define VECTORMATH_HYP_H  1 
+#define VECTORMATH_HYP_H  1
 
-#include "vectormath_exp.h"  
+#include "vectormath_exp.h"
 
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
 
 /******************************************************************************
 *                 Hyperbolic functions
@@ -41,21 +44,21 @@
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE sinh_d(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE sinh_d(VTYPE const & x0) {
 // The limit of abs(x) is 709.7, as defined by max_x in vectormath_exp.h for 0.5*exp(x).
 
     // Coefficients
     const double p0 = -3.51754964808151394800E5;
     const double p1 = -1.15614435765005216044E4;
     const double p2 = -1.63725857525983828727E2;
-    const double p3 = -7.89474443963537015605E-1; 
+    const double p3 = -7.89474443963537015605E-1;
 
     const double q0 = -2.11052978884890840399E6;
     const double q1 =  3.61578279834431989373E4;
     const double q2 = -2.77711081420602794433E2;
-    const double q3 =  1.0; 
+    const double q3 =  1.0;
 
     // data vectors
     VTYPE  x, x2, y1, y2;
@@ -103,9 +106,9 @@ static inline Vec8d sinh(Vec8d const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE sinh_f(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE sinh_f(VTYPE const & x0) {
 // The limit of abs(x) is 89.0, as defined by max_x in vectormath_exp.h for 0.5*exp(x).
 
     // Coefficients
@@ -159,9 +162,9 @@ static inline Vec16f sinh(Vec16f const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE cosh_d(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE cosh_d(VTYPE const & x0) {
 // The limit of abs(x) is 709.7, as defined by max_x in vectormath_exp.h for 0.5*exp(x).
 
     // data vectors
@@ -195,9 +198,9 @@ static inline Vec8d cosh(Vec8d const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE cosh_f(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE cosh_f(VTYPE const & x0) {
 // The limit of abs(x) is 89.0, as defined by max_x in vectormath_exp.h for 0.5*exp(x).
 
     // data vectors
@@ -231,19 +234,19 @@ static inline Vec16f cosh(Vec16f const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE tanh_d(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE tanh_d(VTYPE const & x0) {
 
     // Coefficients
     const double p0 = -1.61468768441708447952E3;
     const double p1 = -9.92877231001918586564E1;
     const double p2 = -9.64399179425052238628E-1;
-    
+
     const double q0 =  4.84406305325125486048E3;
     const double q1 =  2.23548839060100448583E3;
     const double q2 =  1.12811678491632931402E2;
-    const double q3 =  1.0; 
+    const double q3 =  1.0;
 
     // data vectors
     VTYPE  x, x2, y1, y2;
@@ -293,9 +296,9 @@ static inline Vec8d tanh(Vec8d const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE tanh_f(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE tanh_f(VTYPE const & x0) {
 // The limit of abs(x) is 89.0, as defined by max_x in vectormath_exp.h for 0.5*exp(x).
 
     // Coefficients
@@ -358,15 +361,15 @@ static inline Vec16f tanh(Vec16f const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE asinh_d(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE asinh_d(VTYPE const & x0) {
 
     // Coefficients
     const double p0 = -5.56682227230859640450E0;
     const double p1 = -9.09030533308377316566E0;
     const double p2 = -4.37390226194356683570E0;
-    const double p3 = -5.91750212056387121207E-1; 
+    const double p3 = -5.91750212056387121207E-1;
     const double p4 = -4.33231683752342103572E-3;
 
     const double q0 =  3.34009336338516356383E1;
@@ -426,9 +429,9 @@ static inline Vec8d asinh(Vec8d const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE asinh_f(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE asinh_f(VTYPE const & x0) {
 
     // Coefficients
     const float r0 = -1.6666288134E-1f;
@@ -486,15 +489,15 @@ static inline Vec16f asinh(Vec16f const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE acosh_d(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE acosh_d(VTYPE const & x0) {
 
     // Coefficients
     const double p0 = 1.10855947270161294369E5;
     const double p1 = 1.08102874834699867335E5;
     const double p2 = 3.43989375926195455866E4;
-    const double p3 = 3.94726656571334401102E3; 
+    const double p3 = 3.94726656571334401102E3;
     const double p4 = 1.18801130533544501356E2;
 
     const double q0 = 7.83869920495893927727E4;
@@ -553,9 +556,9 @@ static inline Vec8d acosh(Vec8d const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE acosh_f(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE acosh_f(VTYPE const & x0) {
 
     // Coefficients
     const float r0 =  1.4142135263E0f;
@@ -613,9 +616,9 @@ static inline Vec16f acosh(Vec16f const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE atanh_d(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE atanh_d(VTYPE const & x0) {
 
     // Coefficients
     const double p0 = -3.09092539379866942570E1;
@@ -679,9 +682,9 @@ static inline Vec8d atanh(Vec8d const & x) {
 // This function does not produce denormals
 // Template parameters:
 // VTYPE:  double vector type
-// BVTYPE: boolean vector type 
-template<class VTYPE, class BVTYPE> 
-static inline VTYPE atanh_f(VTYPE const & x0) {    
+// BVTYPE: boolean vector type
+template<class VTYPE, class BVTYPE>
+static inline VTYPE atanh_f(VTYPE const & x0) {
 
     // Coefficients
     const float r0 = 3.33337300303E-1f;
@@ -732,5 +735,9 @@ static inline Vec16f atanh(Vec16f const & x) {
     return atanh_f<Vec16f, Vec16fb>(x);
 }
 #endif // MAX_VECTOR_SIZE >= 512
+
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 #endif

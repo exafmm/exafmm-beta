@@ -1,15 +1,15 @@
 /****************************  vectorf256.h   *******************************
 * Author:        Agner Fog
 * Date created:  2012-05-30
-* Last modified: 2015-07-31
-* Version:       1.17
+* Last modified: 2016-04-26
+* Version:       1.22
 * Project:       vector classes
 * Description:
 * Header file defining 256-bit floating point vector classes as interface
 * to intrinsic functions in x86 microprocessors with AVX instruction set.
 *
 * Instructions:
-* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired 
+* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired
 * instruction set, which must be at least AVX.
 *
 * The following vector classes are defined here:
@@ -27,7 +27,7 @@
 *
 * For detailed instructions, see VectorClass.pdf
 *
-* (c) Copyright 2012 - 2014 GNU General Public License http://www.gnu.org/licenses
+* (c) Copyright 2012 - 2016 GNU General Public License http://www.gnu.org/licenses
 *****************************************************************************/
 
 // check combination of header files
@@ -44,14 +44,16 @@
 
 #include "vectorf128.h"  // Define 128-bit vectors
 
-
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
 
 /*****************************************************************************
 *
 *          select functions
 *
 *****************************************************************************/
-// Select between two __m256 sources, element by element. Used in various functions 
+// Select between two __m256 sources, element by element. Used in various functions
 // and operators. Corresponds to this pseudocode:
 // for (int i = 0; i < 8; i++) result[i] = s[i] ? a[i] : b[i];
 // Each element in s must be either 0 (false) or 0xFFFFFFFF (true).
@@ -62,7 +64,7 @@ static inline __m256 selectf (__m256 const & s, __m256 const & a, __m256 const &
 // Same, with two __m256d sources.
 // and operators. Corresponds to this pseudocode:
 // for (int i = 0; i < 4; i++) result[i] = s[i] ? a[i] : b[i];
-// Each element in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). No other 
+// Each element in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). No other
 // values are allowed.
 static inline __m256d selectd (__m256d const & s, __m256d const & a, __m256d const & b) {
     return _mm256_blendv_pd (b, a, s);
@@ -112,7 +114,7 @@ public:
     // Constructor to build from all elements:
     Vec8fb(bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7) {
 #if INSTRSET >= 8  // AVX2
-        ymm = _mm256_castsi256_ps(_mm256_setr_epi32(-(int)b0, -(int)b1, -(int)b2, -(int)b3, -(int)b4, -(int)b5, -(int)b6, -(int)b7)); 
+        ymm = _mm256_castsi256_ps(_mm256_setr_epi32(-(int)b0, -(int)b1, -(int)b2, -(int)b3, -(int)b4, -(int)b5, -(int)b6, -(int)b7));
 #else
         __m128 blo = _mm_castsi128_ps(_mm_setr_epi32(-(int)b0, -(int)b1, -(int)b2, -(int)b3));
         __m128 bhi = _mm_castsi128_ps(_mm_setr_epi32(-(int)b4, -(int)b5, -(int)b6, -(int)b7));
@@ -326,7 +328,7 @@ public:
     // Constructor to build from all elements:
     Vec4db(bool b0, bool b1, bool b2, bool b3) {
 #if INSTRSET >= 8  // AVX2
-        ymm = _mm256_castsi256_pd(_mm256_setr_epi64x(-(int64_t)b0, -(int64_t)b1, -(int64_t)b2, -(int64_t)b3)); 
+        ymm = _mm256_castsi256_pd(_mm256_setr_epi64x(-(int64_t)b0, -(int64_t)b1, -(int64_t)b2, -(int64_t)b3));
 #else
         __m128 blo = _mm_castsi128_ps(_mm_setr_epi32(-(int)b0, -(int)b0, -(int)b1, -(int)b1));
         __m128 bhi = _mm_castsi128_ps(_mm_setr_epi32(-(int)b2, -(int)b2, -(int)b3, -(int)b3));
@@ -369,7 +371,7 @@ public:
     operator __m256d() const {
         return ymm;
     }
-#ifdef VECTORI256_H  
+#ifdef VECTORI256_H
 #if VECTORI256_H == 2  // 256 bit integer vectors are available, AVX2
     // Constructor to convert from type Vec4qb used as Boolean for integer vectors
     Vec4db(Vec4qb const & x) {
@@ -550,7 +552,7 @@ public:
     }
     // Constructor to build from all elements:
     Vec8f(float f0, float f1, float f2, float f3, float f4, float f5, float f6, float f7) {
-        ymm = _mm256_setr_ps(f0, f1, f2, f3, f4, f5, f6, f7); 
+        ymm = _mm256_setr_ps(f0, f1, f2, f3, f4, f5, f6, f7);
     }
     // Constructor to build from two Vec4f:
     Vec8f(Vec4f const & a0, Vec4f const & a1) {
@@ -619,7 +621,7 @@ public:
     // cut off vector to n elements. The last 8-n elements are set to zero
     Vec8f & cutoff(int n) {
         if (uint32_t(n) >= 8) return *this;
-        static const union {        
+        static const union {
             int32_t i[16];
             float   f[16];
         } mask = {{-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0}};
@@ -899,7 +901,7 @@ static inline float horizontal_add (Vec8f const & a) {
     __m256 t2 = _mm256_hadd_ps(t1,t1);
     __m128 t3 = _mm256_extractf128_ps(t2,1);
     __m128 t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-    return _mm_cvtss_f32(t4);        
+    return _mm_cvtss_f32(t4);
 }
 
 // function max: a > b ? a : b
@@ -1001,22 +1003,22 @@ static inline Vec8f pow(Vec8f const & a, Const_int_t<n>) {
 
 // function round: round to nearest integer (even). (result as float vector)
 static inline Vec8f round(Vec8f const & a) {
-    return _mm256_round_ps(a, 0);
+    return _mm256_round_ps(a, 0+8);
 }
 
 // function truncate: round towards zero. (result as float vector)
 static inline Vec8f truncate(Vec8f const & a) {
-    return _mm256_round_ps(a, 3);
+    return _mm256_round_ps(a, 3+8);
 }
 
 // function floor: round towards minus infinity. (result as float vector)
 static inline Vec8f floor(Vec8f const & a) {
-    return _mm256_round_ps(a, 1);
+    return _mm256_round_ps(a, 1+8);
 }
 
 // function ceil: round towards plus infinity. (result as float vector)
 static inline Vec8f ceil(Vec8f const & a) {
-    return _mm256_round_ps(a, 2);
+    return _mm256_round_ps(a, 2+8);
 }
 
 #ifdef VECTORI256_H  // 256 bit integer vectors are available
@@ -1068,7 +1070,7 @@ static inline Vec8f mul_add(Vec8f const & a, Vec8f const & b, Vec8f const & c) {
 #else
     return a * b + c;
 #endif
-    
+
 }
 
 // Multiply and subtract
@@ -1079,7 +1081,7 @@ static inline Vec8f mul_sub(Vec8f const & a, Vec8f const & b, Vec8f const & c) {
     return _mm256_msub_ps(a, b, c);
 #else
     return a * b - c;
-#endif    
+#endif
 }
 
 // Multiply and inverse subtract
@@ -1094,7 +1096,7 @@ static inline Vec8f nmul_add(Vec8f const & a, Vec8f const & b, Vec8f const & c) 
 }
 
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec8f mul_sub_x(Vec8f const & a, Vec8f const & b, Vec8f const & c) {
 #ifdef __FMA__
@@ -1151,7 +1153,7 @@ static inline Vec8i exponent(Vec8f const & a) {
 
 // Extract the fraction part of a floating point number
 // a = 2^exponent(a) * fraction(a), except for a = 0
-// fraction(1.0f) = 1.0f, fraction(5.0f) = 1.25f 
+// fraction(1.0f) = 1.0f, fraction(5.0f) = 1.25f
 static inline Vec8f fraction(Vec8f const & a) {
 #if defined (VECTORI256_H) && VECTORI256_H > 2  // 256 bit integer vectors are available, AVX2
     Vec8ui t1 = _mm256_castps_si256(a);   // reinterpret as 32-bit integer
@@ -1207,7 +1209,7 @@ static inline Vec8f sign_combine(Vec8f const & a, Vec8f const & b) {
     return a ^ (b & signmask);
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 // (the underscore in the name avoids a conflict with a macro in Intel's mathimf.h)
 static inline Vec8fb is_finite(Vec8f const & a) {
@@ -1292,8 +1294,8 @@ static inline Vec8f nan8f(int n = 0x10) {
 template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
 static inline Vec8f change_sign(Vec8f const & a) {
     if ((i0 | i1 | i2 | i3 | i4 | i5 | i6 | i7) == 0) return a;
-    __m256 mask = constant8f<i0 ? 0x80000000 : 0, i1 ? 0x80000000 : 0, i2 ? 0x80000000 : 0, i3 ? 0x80000000 : 0,
-        i4 ? 0x80000000 : 0, i5 ? 0x80000000 : 0, i6 ? 0x80000000 : 0, i7 ? 0x80000000 : 0> ();
+    __m256 mask = constant8f<i0 ? (int)0x80000000 : 0, i1 ? (int)0x80000000 : 0, i2 ? (int)0x80000000 : 0, i3 ? (int)0x80000000 : 0,
+        i4 ? (int)0x80000000 : 0, i5 ? (int)0x80000000 : 0, i6 ? (int)0x80000000 : 0, i7 ? (int)0x80000000 : 0> ();
     return _mm256_xor_ps(a, mask);
 }
 
@@ -1317,7 +1319,7 @@ public:
     }
     // Constructor to build from all elements:
     Vec4d(double d0, double d1, double d2, double d3) {
-        ymm = _mm256_setr_pd(d0, d1, d2, d3); 
+        ymm = _mm256_setr_pd(d0, d1, d2, d3);
     }
     // Constructor to build from two Vec2d:
     Vec4d(Vec2d const & a0, Vec2d const & a1) {
@@ -1629,7 +1631,7 @@ static inline Vec4db operator ! (Vec4d const & a) {
 
 // Select between two operands. Corresponds to this pseudocode:
 // for (int i = 0; i < 2; i++) result[i] = s[i] ? a[i] : b[i];
-// Each byte in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). 
+// Each byte in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true).
 // No other values are allowed.
 static inline Vec4d select (Vec4db const & s, Vec4d const & a, Vec4d const & b) {
     return _mm256_blendv_pd(b, a, s);
@@ -1653,7 +1655,7 @@ static inline double horizontal_add (Vec4d const & a) {
     __m256d t1 = _mm256_hadd_pd(a,a);
     __m128d t2 = _mm256_extractf128_pd(t1,1);
     __m128d t3 = _mm_add_sd(_mm256_castpd256_pd128(t1),t2);
-    return _mm_cvtsd_f64(t3);        
+    return _mm_cvtsd_f64(t3);
 }
 
 // function max: a > b ? a : b
@@ -1755,22 +1757,22 @@ static inline Vec4d pow(Vec4d const & a, Const_int_t<n>) {
 
 // function round: round to nearest integer (even). (result as double vector)
 static inline Vec4d round(Vec4d const & a) {
-    return _mm256_round_pd(a, 0);
+    return _mm256_round_pd(a, 0+8);
 }
 
 // function truncate: round towards zero. (result as double vector)
 static inline Vec4d truncate(Vec4d const & a) {
-    return _mm256_round_pd(a, 3);
+    return _mm256_round_pd(a, 3+8);
 }
 
 // function floor: round towards minus infinity. (result as double vector)
 static inline Vec4d floor(Vec4d const & a) {
-    return _mm256_round_pd(a, 1);
+    return _mm256_round_pd(a, 1+8);
 }
 
 // function ceil: round towards plus infinity. (result as double vector)
 static inline Vec4d ceil(Vec4d const & a) {
-    return _mm256_round_pd(a, 2);
+    return _mm256_round_pd(a, 2+8);
 }
 
 // function round_to_int: round to nearest integer (even). (result as integer vector)
@@ -1805,7 +1807,7 @@ static inline Vec4q truncate_to_int64_limited(Vec4d const & a) {
 #else
     return Vec4q(truncate_to_int64_limited(a.get_low()), truncate_to_int64_limited(a.get_high()));
 #endif
-} 
+}
 
 // function round_to_int64: round to nearest or even. (inefficient)
 static inline Vec4q round_to_int64(Vec4d const & a) {
@@ -1875,7 +1877,7 @@ static inline Vec4d mul_add(Vec4d const & a, Vec4d const & b, Vec4d const & c) {
 #else
     return a * b + c;
 #endif
-    
+
 }
 
 
@@ -1888,7 +1890,7 @@ static inline Vec4d mul_sub(Vec4d const & a, Vec4d const & b, Vec4d const & c) {
 #else
     return a * b - c;
 #endif
-   
+
 }
 
 // Multiply and inverse subtract
@@ -1902,7 +1904,7 @@ static inline Vec4d nmul_add(Vec4d const & a, Vec4d const & b, Vec4d const & c) 
 #endif
 }
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec4d mul_sub_x(Vec4d const & a, Vec4d const & b, Vec4d const & c) {
 #ifdef __FMA__
@@ -1945,7 +1947,7 @@ static inline Vec4q exponent(Vec4d const & a) {
 
 // Extract the fraction part of a floating point number
 // a = 2^exponent(a) * fraction(a), except for a = 0
-// fraction(1.0) = 1.0, fraction(5.0) = 1.25 
+// fraction(1.0) = 1.0, fraction(5.0) = 1.25
 static inline Vec4d fraction(Vec4d const & a) {
 #if VECTORI256_H > 1  // AVX2
     Vec4uq t1 = _mm256_castpd_si256(a);   // reinterpret as 64-bit integer
@@ -1998,7 +2000,7 @@ static inline Vec4d sign_combine(Vec4d const & a, Vec4d const & b) {
     return a ^ (b & signmask);
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 static inline Vec4db is_finite(Vec4d const & a) {
 #if defined (VECTORI256_H) && VECTORI256_H > 1  // 256 bit integer vectors are available, AVX2
@@ -2085,7 +2087,7 @@ static inline Vec4d nan4d(int n = 0x10) {
 template <int i0, int i1, int i2, int i3>
 static inline Vec4d change_sign(Vec4d const & a) {
     if ((i0 | i1 | i2 | i3) == 0) return a;
-    __m256 mask = constant8f<0, i0 ? 0x80000000 : 0, 0, i1 ? 0x80000000 : 0, 0, i2 ? 0x80000000 : 0, 0, i3 ? 0x80000000 : 0> ();
+    __m256 mask = constant8f<0, i0 ? (int)0x80000000 : 0, 0, i1 ? (int)0x80000000 : 0, 0, i2 ? (int)0x80000000 : 0, 0, i3 ? (int)0x80000000 : 0> ();
     return _mm256_xor_pd(a, _mm256_castps_pd(mask));
 }
 
@@ -2102,7 +2104,7 @@ static inline Vec4d change_sign(Vec4d const & a) {
 
 // ABI version 4 or later needed on Gcc for correct mangling of 256-bit intrinsic vectors.
 // It is recommended to compile with -fabi-version=0 to get the latest abi version
-#if !defined (GCC_VERSION) || (defined (__GXX_ABI_VERSION) && __GXX_ABI_VERSION >= 1004)  
+#if !defined (GCC_VERSION) || (defined (__GXX_ABI_VERSION) && __GXX_ABI_VERSION >= 1004)
 static inline __m256i reinterpret_i (__m256i const & x) {
     return x;
 }
@@ -2220,7 +2222,7 @@ static inline __m256d reinterpret_d (Vec4d const & x) {
 
 // ABI version 4 or later needed on Gcc for correct mangling of 256-bit intrinsic vectors.
 // It is recommended to compile with -fabi-version=0 to get the latest abi version
-#if !defined (GCC_VERSION) || (defined (__GXX_ABI_VERSION) && __GXX_ABI_VERSION >= 1004)  
+#if !defined (GCC_VERSION) || (defined (__GXX_ABI_VERSION) && __GXX_ABI_VERSION >= 1004)
 
 static inline Vec256ie reinterpret_i (__m256  const & x) {
     Vec8f xx(x);
@@ -2300,10 +2302,10 @@ static inline __m256d reinterpret_d (Vec256ie const & x) {
 ******************************************************************************
 *
 * The permute function can reorder the elements of a vector and optionally
-* set some elements to zero. 
+* set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select. An index of -1 will generate zero. An index of -256 means don't care.
 *
 * Example:
@@ -2313,10 +2315,10 @@ static inline __m256d reinterpret_d (Vec256ie const & x) {
 *
 *
 * The blend function can mix elements from two different vectors and
-* optionally set some elements to zero. 
+* optionally set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select, where indexes 0 - 3 indicate an element from the first source
 * vector and indexes 4 - 7 indicate an element from the second source vector.
 * A negative index will generate zero.
@@ -2404,7 +2406,7 @@ static inline Vec4d permute4d(Vec4d const & a) {
         if (do_zero) {
             __m128d t  = _mm256_castpd256_pd128(a);
             t  = _mm_and_pd(t,t);
-            r1 = _mm256_castpd128_pd256(t);  
+            r1 = _mm256_castpd128_pd256(t);
         }
         else r1 = a;
         break;
@@ -2433,7 +2435,7 @@ static inline Vec4d permute4d(Vec4d const & a) {
             if (do_zero) {
                 __m128d t  = _mm256_castpd256_pd128(a);
                 t  = _mm_and_pd(t,t);
-                r2 = _mm256_castpd128_pd256(t);  
+                r2 = _mm256_castpd128_pd256(t);
             }
             else r2 = a;
             break;
@@ -2454,13 +2456,13 @@ template <int i0, int i1, int i2, int i3>
 static inline Vec4d blend4d(Vec4d const & a, Vec4d const & b) {
 
     // Combine all the indexes into a single bitfield, with 8 bits for each
-    const int m1 = (i0 & 7) | (i1 & 7) << 8 | (i2 & 7) << 16 | (i3 & 7) << 24; 
+    const int m1 = (i0 & 7) | (i1 & 7) << 8 | (i2 & 7) << 16 | (i3 & 7) << 24;
 
     // Mask to zero out negative indexes
     const uint32_t mz = (i0 < 0 ? 0 : 0xFF) | (i1 < 0 ? 0 : 0xFF) << 8 | (i2 < 0 ? 0 : 0xFF) << 16 | (i3 < 0 ? 0 : 0xFF) << 24;
 
     if (mz == 0) return _mm256_setzero_pd();  // all zero
-    
+
     __m256d t1;
     if ((((m1 & 0xFEFEFEFE) ^ 0x06020400) & mz) == 0) {
         // fits VSHUFPD(a,b)
@@ -2505,8 +2507,8 @@ static inline Vec4d blend4d(Vec4d const & a, Vec4d const & b) {
             const bool partialzero = (((i0 | i1) ^ j0) & 0x80) != 0 || (((i2 | i3) ^ j1) & 0x80) != 0;
             if (partialzero) {
                 // zero some elements
-                __m256d mask = _mm256_castps_pd (constant8f < 
-                    i0 < 0 ? 0 : -1, i0 < 0 ? 0 : -1, i1 < 0 ? 0 : -1, i1 < 0 ? 0 : -1, 
+                __m256d mask = _mm256_castps_pd (constant8f <
+                    i0 < 0 ? 0 : -1, i0 < 0 ? 0 : -1, i1 < 0 ? 0 : -1, i1 < 0 ? 0 : -1,
                     i2 < 0 ? 0 : -1, i2 < 0 ? 0 : -1, i3 < 0 ? 0 : -1, i3 < 0 ? 0 : -1 > ());
                 return _mm256_and_pd(t1, mask);
             }
@@ -2523,7 +2525,7 @@ static inline Vec4d blend4d(Vec4d const & a, Vec4d const & b) {
         (uint32_t)(i0^4) < 4 ? (i0^4) : -0x100,
         (uint32_t)(i1^4) < 4 ? (i1^4) : -0x100,
         (uint32_t)(i2^4) < 4 ? (i2^4) : -0x100,
-        (uint32_t)(i3^4) < 4 ? (i3^4) : -0x100 > (b);   
+        (uint32_t)(i3^4) < 4 ? (i3^4) : -0x100 > (b);
     t1 = _mm256_blend_pd(a1, b1, (i0&4)>>2 | (i1&4)>>1 | (i2&4) | (i3&4) << 1);
     if (mz == 0xFFFFFFFF) return t1;
     return permute4d<i0 < 0 ? -1 : 0, i1 < 0 ? -1 : 1, i2 < 0 ? -1 : 2, i3 < 0 ? -1 : 3> (t1);
@@ -2740,7 +2742,7 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
         t1   = select(mask, a, b);
         if (!do_zero) return t1;
         // zero some elements
-        mask = constant8f< (i0<0&&(i0&8)) ? 0 : -1, (i1<0&&(i1&8)) ? 0 : -1, (i2<0&&(i2&8)) ? 0 : -1, (i3<0&&(i3&8)) ? 0 : -1, 
+        mask = constant8f< (i0<0&&(i0&8)) ? 0 : -1, (i1<0&&(i1&8)) ? 0 : -1, (i2<0&&(i2&8)) ? 0 : -1, (i3<0&&(i3&8)) ? 0 : -1,
             (i4<0&&(i4&8)) ? 0 : -1, (i5<0&&(i5&8)) ? 0 : -1, (i6<0&&(i6&8)) ? 0 : -1, (i7<0&&(i7&8)) ? 0 : -1 > ();
         return _mm256_and_ps(t1, mask);
     }
@@ -2754,7 +2756,7 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
             const bool partialzero = (((i0 | i1 | i2 | i3) ^ j0) & 0x80) != 0 || (((i4 | i5 | i6 | i7) ^ j1) & 0x80) != 0;
             if (partialzero) {
                 // zero some elements
-                mask = constant8f< i0 < 0 ? 0 : -1, i1 < 0 ? 0 : -1, i2 < 0 ? 0 : -1, i3 < 0 ? 0 : -1, 
+                mask = constant8f< i0 < 0 ? 0 : -1, i1 < 0 ? 0 : -1, i2 < 0 ? 0 : -1, i3 < 0 ? 0 : -1,
                     i4 < 0 ? 0 : -1, i5 < 0 ? 0 : -1, i6 < 0 ? 0 : -1, i7 < 0 ? 0 : -1 > ();
                 return _mm256_and_ps(t1, mask);
             }
@@ -2763,7 +2765,7 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
     }
     // Not checking special cases for vunpckhps, vunpcklps: they are too rare
 
-    // Check if it is possible to use VSHUFPS. 
+    // Check if it is possible to use VSHUFPS.
     // Index n must match index n+4 on bit 0-1, and even index n must match odd index n+1 on bit 2-3
     const bool sps = ((m1 ^ (m1 >> 16)) & 0x3333 & mz & (mz >> 16)) == 0  &&  ((m1 ^ (m1 >> 4)) & 0x0C0C0C0C & mz & mz >> 4) == 0;
 
@@ -2891,7 +2893,7 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
         const int n2 = i4 > 0 ? i4/2 : i5 > 0 ? i5/2 : blank1;
         const int n3 = i6 > 0 ? i6/2 : i7 > 0 ? i7/2 : blank1;
         t1 = _mm256_castpd_ps (blend4d<n0,n1,n2,n3> (_mm256_castps_pd(a), _mm256_castps_pd(b)));
-        if (blank1 == -1 || !do_zero) {    
+        if (blank1 == -1 || !do_zero) {
             return  t1;
         }
         // need more zeroing
@@ -2921,11 +2923,11 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
         (uint32_t)(i6^8) < 8 ? (i6^8) : blank2,
         (uint32_t)(i7^8) < 8 ? (i7^8) : blank2 > (b);
 
-    if (blank2 == -1) {    
-        return  _mm256_or_ps(ta, tb); 
+    if (blank2 == -1) {
+        return  _mm256_or_ps(ta, tb);
     }
     // no zeroing, need to blend
-    const int maskb = ((i0 >> 3) & 1) | ((i1 >> 2) & 2) | ((i2 >> 1) & 4) | (i3 & 8) | 
+    const int maskb = ((i0 >> 3) & 1) | ((i1 >> 2) & 2) | ((i2 >> 1) & 4) | (i3 & 8) |
         ((i4 << 1) & 0x10) | ((i5 << 2) & 0x20) | ((i6 << 3) & 0x40) | ((i7 << 4) & 0x80);
     return _mm256_blend_ps(ta, tb, maskb);  // blend
 }
@@ -2962,9 +2964,9 @@ static inline Vec8f blend8f(Vec8f const & a, Vec8f const & b) {
 
 static inline Vec8f lookup8(Vec8i const & index, Vec8f const & table) {
 #if INSTRSET >= 8 && VECTORI256_H > 1 // AVX2
-#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)        
+#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)
     // bug in MS VS 11 beta: operands in wrong order. fixed in 11.0
-    return _mm256_permutevar8x32_ps(_mm256_castsi256_ps(index), _mm256_castps_si256(table)); 
+    return _mm256_permutevar8x32_ps(_mm256_castsi256_ps(index), _mm256_castps_si256(table));
 #elif defined (GCC_VERSION) && GCC_VERSION <= 40700 && !defined(__INTEL_COMPILER) && !defined(__clang__)
         // Gcc 4.7.0 has wrong parameter type and operands in wrong order. fixed in version 4.7.1
     return _mm256_permutevar8x32_ps(_mm256_castsi256_ps(index), table);
@@ -2995,8 +2997,8 @@ template <int n>
 static inline Vec8f lookup(Vec8i const & index, float const * table) {
     if (n <= 0) return 0;
     if (n <= 4) {
-        Vec4f table1 = Vec4f().load(table);        
-        return Vec8f(       
+        Vec4f table1 = Vec4f().load(table);
+        return Vec8f(
             lookup4 (index.get_low(),  table1),
             lookup4 (index.get_high(), table1));
     }
@@ -3029,9 +3031,9 @@ static inline Vec4d lookup4(Vec4q const & index, Vec4d const & table) {
     // Convert the index to fit VPERMPS
     Vec8i index1 = permute8i<0,0,2,2,4,4,6,6> (Vec8i(index+index));
     Vec8i index2 = index1 + Vec8i(constant8i<0,1,0,1,0,1,0,1>());
-#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)        
+#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)
     // bug in MS VS 11 beta: operands in wrong order. fixed in 11.0
-    return _mm256_castps_pd(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(index2), _mm256_castpd_si256(table))); 
+    return _mm256_castps_pd(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(index2), _mm256_castpd_si256(table)));
 #elif defined (GCC_VERSION) && GCC_VERSION <= 40700 && !defined(__INTEL_COMPILER) && !defined(__clang__)
         // Gcc 4.7.0 has wrong parameter type and operands in wrong order
     return _mm256_castps_pd(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(index2), _mm256_castpd_ps(table)));
@@ -3065,8 +3067,8 @@ template <int n>
 static inline Vec4d lookup(Vec4q const & index, double const * table) {
     if (n <= 0) return 0;
     if (n <= 2) {
-        Vec2d table1 = Vec2d().load(table);        
-        return Vec4d(       
+        Vec2d table1 = Vec2d().load(table);
+        return Vec4d(
             lookup2 (index.get_low(),  table1),
             lookup2 (index.get_high(), table1));
     }
@@ -3162,5 +3164,9 @@ static inline uint8_t to_bits(Vec4db const & x) {
 static inline Vec4db to_Vec4db(uint8_t x) {
     return Vec4db(to_Vec4qb(x));
 }
+
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 #endif // VECTORF256_H

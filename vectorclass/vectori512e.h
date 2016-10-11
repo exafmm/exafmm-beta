@@ -1,16 +1,16 @@
 /****************************  vectori512e.h   *******************************
 * Author:        Agner Fog
 * Date created:  2014-07-23
-* Last modified: 2014-10-16
-* Version:       1.16
+* Last modified: 2016-04-26
+* Version:       1.22
 * Project:       vector classes
 * Description:
-* Header file defining integer vector classes as interface to intrinsic 
+* Header file defining integer vector classes as interface to intrinsic
 * functions in x86 microprocessors with AVX512 and later instruction sets.
 *
 * Instructions:
-* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired 
-* instruction set, which must be at least AVX512. 
+* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired
+* instruction set, which must be at least AVX512.
 *
 * The following vector classes are defined here:
 * Vec16i    Vector of  16  32-bit signed   integers
@@ -25,7 +25,7 @@
 *
 * For detailed instructions, see VectorClass.pdf
 *
-* (c) Copyright 2014 GNU General Public License http://www.gnu.org/licenses
+* (c) Copyright 2014 - 2016 GNU General Public License http://www.gnu.org/licenses
 *****************************************************************************/
 
 // check combination of header files
@@ -36,6 +36,9 @@
 #else
 #define VECTORI512_H  1
 
+#ifdef VCL_NAMESPACE
+namespace VCL_NAMESPACE {
+#endif
 
 /*****************************************************************************
 *
@@ -87,13 +90,13 @@ public:
     // Member function to load from array (unaligned)
     Vec512b & load(void const * p) {
         z0 = Vec8i().load(p);
-        z1 = Vec8i().load((int32_t*)p+8);
+        z1 = Vec8i().load((int32_t const*)p+8);
         return *this;
     }
     // Member function to load from array, aligned by 64
     Vec512b & load_a(void const * p) {
         z0 = Vec8i().load_a(p);
-        z1 = Vec8i().load_a((int32_t*)p+8);
+        z1 = Vec8i().load_a((int32_t const*)p+8);
         return *this;
     }
     // Member function to store into array (unaligned)
@@ -206,7 +209,6 @@ static inline Vec512b andnot (Vec512b const & a, Vec512b const & b) {
 *****************************************************************************/
 // Generate a constant vector of 8 integers stored in memory.
 // Can be converted to any integer vector type
-#if __cplusplus > 199711L
 template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15>
 static inline Vec512ie constant16i() {
     static const union {
@@ -215,7 +217,6 @@ static inline Vec512ie constant16i() {
     } u = {{i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15}};
     return Vec512ie(u.y[0], u.y[1]);
 }
-#endif
 
 
 /*****************************************************************************
@@ -230,7 +231,7 @@ public:
     Vec16b () {
     }
     // Constructor to build from all elements:
-    Vec16b(bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7, 
+    Vec16b(bool b0, bool b1, bool b2, bool b3, bool b4, bool b5, bool b6, bool b7,
     bool b8, bool b9, bool b10, bool b11, bool b12, bool b13, bool b14, bool b15) {
         *this = Vec512b(Vec8i(-(int)b0, -(int)b1, -(int)b2, -(int)b3, -(int)b4, -(int)b5, -(int)b6, -(int)b7), Vec8i(-(int)b8, -(int)b9, -(int)b10, -(int)b11, -(int)b12, -(int)b13, -(int)b14, -(int)b15));
     }
@@ -243,12 +244,12 @@ public:
     Vec16b (Vec8ib const & x0, Vec8ib const & x1) {
         z0 = x0;
         z1 = x1;
-    }        
+    }
     // Constructor to make from two halves
     Vec16b (Vec8i const & x0, Vec8i const & x1) {
         z0 = x0;
         z1 = x1;
-    }        
+    }
     // Constructor to broadcast single value:
     Vec16b(bool b) {
         z0 = z1 = Vec8i(-int32_t(b));
@@ -258,7 +259,7 @@ public:
         z0 = z1 = Vec8i(-int32_t(b));
         return *this;
     }
-private: 
+private:
     // Prevent constructing from int, etc. because of ambiguity
     Vec16b(int b);
     // Prevent assigning int because of ambiguity
@@ -521,7 +522,7 @@ public:
         z0 = z1 = Vec8i(-int32_t(b));
         return *this;
     }
-private: 
+private:
     // Prevent constructing from int, etc. because of ambiguity
     Vec8b(int b);
     // Prevent assigning int because of ambiguity
@@ -612,7 +613,7 @@ public:
         *this = Vec8b(b);
         return *this;
     }
-private: 
+private:
     // Prevent constructing from int, etc. because of ambiguity
     Vec8qb(int b);
     // Prevent assigning int because of ambiguity
@@ -731,7 +732,7 @@ public:
         }
         else {
             z0 = Vec8i().load(p);
-            z1 = Vec8i().load_partial(n - 8, (int32_t *)p + 8);
+            z1 = Vec8i().load_partial(n - 8, (int32_t const*)p + 8);
         }
         return *this;
     }
@@ -894,7 +895,7 @@ static inline Vec16ib operator == (Vec16i const & a, Vec16i const & b) {
 static inline Vec16ib operator != (Vec16i const & a, Vec16i const & b) {
     return Vec16ib(a.get_low() != b.get_low(), a.get_high() != b.get_high());
 }
-  
+
 // vector operator > : returns true for elements for which a > b
 static inline Vec16ib operator > (Vec16i const & a, Vec16i const & b) {
     return Vec16ib(a.get_low() > b.get_low(), a.get_high() > b.get_high());
@@ -1119,7 +1120,7 @@ static inline Vec16ui & operator >>= (Vec16ui & a, uint32_t b) {
 static inline Vec16ui & operator >>= (Vec16ui & a, int32_t b) {
     a = a >> uint32_t(b);
     return a;
-} 
+}
 
 // vector operator << : shift left all elements
 static inline Vec16ui operator << (Vec16ui const & a, uint32_t b) {
@@ -1144,7 +1145,7 @@ static inline Vec16ib operator > (Vec16ui const & a, Vec16ui const & b) {
 // vector operator >= : returns true for elements for which a >= b (unsigned)
 static inline Vec16ib operator >= (Vec16ui const & a, Vec16ui const & b) {
     return Vec16ib(a.get_low() >= b.get_low(), a.get_high() >= b.get_high());
-}            
+}
 
 // vector operator <= : returns true for elements for which a <= b (unsigned)
 static inline Vec16ib operator <= (Vec16ui const & a, Vec16ui const & b) {
@@ -1252,13 +1253,13 @@ public:
     // Member function to load from array (unaligned)
     Vec8q & load(void const * p) {
         z0 = Vec4q().load(p);
-        z1 = Vec4q().load((int64_t*)p+4);
+        z1 = Vec4q().load((int64_t const*)p+4);
         return *this;
     }
     // Member function to load from array, aligned by 64
     Vec8q & load_a(void const * p) {
         z0 = Vec4q().load_a(p);
-        z1 = Vec4q().load_a((int64_t*)p+4);
+        z1 = Vec4q().load_a((int64_t const*)p+4);
         return *this;
     }
     // Partial load. Load n elements and set the rest to 0
@@ -1269,7 +1270,7 @@ public:
         }
         else {
             z0 = Vec4q().load(p);
-            z1 = Vec4q().load_partial(n - 4, (int64_t *)p + 4);
+            z1 = Vec4q().load_partial(n - 4, (int64_t const*)p + 4);
         }
         return *this;
     }
@@ -1429,7 +1430,7 @@ static inline Vec8qb operator == (Vec8q const & a, Vec8q const & b) {
 static inline Vec8qb operator != (Vec8q const & a, Vec8q const & b) {
     return Vec8qb(a.get_low() != b.get_low(), a.get_high() != b.get_high());
 }
-  
+
 // vector operator < : returns true for elements for which a < b
 static inline Vec8qb operator < (Vec8q const & a, Vec8q const & b) {
     return Vec8qb(a.get_low() < b.get_low(), a.get_high() < b.get_high());
@@ -1663,7 +1664,7 @@ static inline Vec8uq & operator >>= (Vec8uq & a, uint32_t b) {
 static inline Vec8uq & operator >>= (Vec8uq & a, int32_t b) {
     a = a >> uint32_t(b);
     return a;
-} 
+}
 
 // vector operator << : shift left all elements
 static inline Vec8uq operator << (Vec8uq const & a, uint32_t b) {
@@ -1747,7 +1748,7 @@ static inline Vec8uq min(Vec8uq const & a, Vec8uq const & b) {
 ******************************************************************************
 *
 * These permute functions can reorder the elements of a vector and optionally
-* set some elements to zero. 
+* set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
 * constants. Each template parameter is an index to the element you want to select.
@@ -1799,13 +1800,13 @@ static inline Vec16ui permute16ui(Vec16ui const & a) {
 ******************************************************************************
 *
 * These blend functions can mix elements from two different vectors and
-* optionally set some elements to zero. 
+* optionally set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select, where higher indexes indicate an element from the second source
 * vector. For example, if each vector has 8 elements, then indexes 0 - 7
-* will select an element from the first vector and indexes 8 - 15 will select 
+* will select an element from the first vector and indexes 8 - 15 will select
 * an element from the second vector. A negative index will generate zero.
 *
 * Example:
@@ -1838,8 +1839,8 @@ static inline Vec4q select4(Vec8q const & a, Vec8q const & b) {
 }
 
 // blend vectors Vec8q
-template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7> 
-static inline Vec8q blend8q(Vec8q const & a, Vec8q const & b) {  
+template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
+static inline Vec8q blend8q(Vec8q const & a, Vec8q const & b) {
     const int j0 = i0 >= 0 ? i0/4 : i0;
     const int j1 = i1 >= 0 ? i1/4 : i1;
     const int j2 = i2 >= 0 ? i2/4 : i2;
@@ -1864,11 +1865,11 @@ static inline Vec8q blend8q(Vec8q const & a, Vec8q const & b) {
     if (r0 < 0) {
         x0 =  Vec4q(0);
     }
-    else if (((m1 ^ r0*0x4444) & 0xCCCC & mz) == 0) { 
+    else if (((m1 ^ r0*0x4444) & 0xCCCC & mz) == 0) {
         // i0 - i3 all from same source
         x0 = permute4q<i0 & -13, i1 & -13, i2 & -13, i3 & -13> (select4<r0> (a,b));
     }
-    else if ((j2 < 0 || j2 == r0 || j2 == s0) && (j3 < 0 || j3 == r0 || j3 == s0)) { 
+    else if ((j2 < 0 || j2 == r0 || j2 == s0) && (j3 < 0 || j3 == r0 || j3 == s0)) {
         // i0 - i3 all from two sources
         const int k0 =  i0 >= 0 ? i0 & 3 : i0;
         const int k1 = (i1 >= 0 ? i1 & 3 : i1) | (j1 == s0 ? 4 : 0);
@@ -1886,11 +1887,11 @@ static inline Vec8q blend8q(Vec8q const & a, Vec8q const & b) {
     if (r1 < 0) {
         x1 =  Vec4q(0);
     }
-    else if (((m1 ^ uint32_t(r1)*0x44440000u) & 0xCCCC0000 & mz) == 0) { 
+    else if (((m1 ^ uint32_t(r1)*0x44440000u) & 0xCCCC0000 & mz) == 0) {
         // i4 - i7 all from same source
         x1 = permute4q<i4 & -13, i5 & -13, i6 & -13, i7 & -13> (select4<r1> (a,b));
     }
-    else if ((j6 < 0 || j6 == r1 || j6 == s1) && (j7 < 0 || j7 == r1 || j7 == s1)) { 
+    else if ((j6 < 0 || j6 == r1 || j6 == s1) && (j7 < 0 || j7 == r1 || j7 == s1)) {
         // i4 - i7 all from two sources
         const int k4 =  i4 >= 0 ? i4 & 3 : i4;
         const int k5 = (i5 >= 0 ? i5 & 3 : i5) | (j5 == s1 ? 4 : 0);
@@ -1908,7 +1909,7 @@ static inline Vec8q blend8q(Vec8q const & a, Vec8q const & b) {
     return Vec8q(x0,x1);
 }
 
-template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7> 
+template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
 static inline Vec8uq blend8uq(Vec8uq const & a, Vec8uq const & b) {
     return Vec8uq( blend8q<i0,i1,i2,i3,i4,i5,i6,i7> (a,b));
 }
@@ -1930,8 +1931,8 @@ static inline Vec8i select4(Vec16i const & a, Vec16i const & b) {
     return  Vec8i(0);
 }
 
-template <int i0,  int i1,  int i2,  int i3,  int i4,  int i5,  int i6,  int i7, 
-          int i8,  int i9,  int i10, int i11, int i12, int i13, int i14, int i15 > 
+template <int i0,  int i1,  int i2,  int i3,  int i4,  int i5,  int i6,  int i7,
+          int i8,  int i9,  int i10, int i11, int i12, int i13, int i14, int i15 >
 static inline Vec16i blend16i(Vec16i const & a, Vec16i const & b) {
 
     const int j0  = i0  >= 0 ? i0 /8 : i0;
@@ -2028,8 +2029,8 @@ static inline Vec16i blend16i(Vec16i const & a, Vec16i const & b) {
     return Vec16i(x0,x1);
 }
 
-template <int i0,  int i1,  int i2,  int i3,  int i4,  int i5,  int i6,  int i7, 
-          int i8,  int i9,  int i10, int i11, int i12, int i13, int i14, int i15 > 
+template <int i0,  int i1,  int i2,  int i3,  int i4,  int i5,  int i6,  int i7,
+          int i8,  int i9,  int i10, int i11, int i12, int i13, int i14, int i15 >
 static inline Vec16ui blend16ui(Vec16ui const & a, Vec16ui const & b) {
     return Vec16ui( blend16i<i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15> (Vec16i(a),Vec16i(b)));
 }
@@ -2074,8 +2075,8 @@ template <int n>
 static inline Vec16i lookup(Vec16i const & index, void const * table) {
     if (n <=  0) return 0;
     if (n <=  8) {
-        Vec8i table1 = Vec8i().load(table);        
-        return Vec16i(       
+        Vec8i table1 = Vec8i().load(table);
+        return Vec16i(
             lookup8 (index.get_low(),  table1),
             lookup8 (index.get_high(), table1));
     }
@@ -2107,8 +2108,8 @@ template <int n>
 static inline Vec8q lookup(Vec8q const & index, void const * table) {
     if (n <= 0) return 0;
     if (n <= 4) {
-        Vec4q table1 = Vec4q().load(table);        
-        return Vec8q(       
+        Vec4q table1 = Vec4q().load(table);
+        return Vec8q(
             lookup4 (index.get_low(),  table1),
             lookup4 (index.get_high(), table1));
     }
@@ -2136,7 +2137,7 @@ static inline Vec8q lookup(Vec8q const & index, void const * table) {
 *
 *****************************************************************************/
 // Load elements from array a with indices i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15
-template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, 
+template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7,
 int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15>
 static inline Vec16i gather16i(void const * a) {
     Static_error_check<(i0|i1|i2|i3|i4|i5|i6|i7|i8|i9|i10|i11|i12|i13|i14|i15)>=0> Negative_array_index;  // Error message if index is negative
@@ -2186,7 +2187,7 @@ static inline Vec16i gather16i(void const * a) {
         }
     }
     if ((i0<imin+16  || i0>imax-16)  && (i1<imin+16  || i1>imax-16)  && (i2<imin+16  || i2>imax-16)  && (i3<imin+16  || i3>imax-16)
-    &&  (i4<imin+16  || i4>imax-16)  && (i5<imin+16  || i5>imax-16)  && (i6<imin+16  || i6>imax-16)  && (i7<imin+16  || i7>imax-16)    
+    &&  (i4<imin+16  || i4>imax-16)  && (i5<imin+16  || i5>imax-16)  && (i6<imin+16  || i6>imax-16)  && (i7<imin+16  || i7>imax-16)
     &&  (i8<imin+16  || i8>imax-16)  && (i9<imin+16  || i9>imax-16)  && (i10<imin+16 || i10>imax-16) && (i11<imin+16 || i11>imax-16)
     &&  (i12<imin+16 || i12>imax-16) && (i13<imin+16 || i13>imax-16) && (i14<imin+16 || i14>imax-16) && (i15<imin+16 || i15>imax-16) ) {
         // load two contiguous blocks and blend
@@ -2543,5 +2544,9 @@ static inline uint8_t to_bits(Vec8b const & a) {
 static inline Vec8qb to_Vec8qb(uint8_t x) {
     return Vec8q(to_Vec4qb(x), to_Vec4qb(x>>4));
 }
+
+#ifdef VCL_NAMESPACE
+}
+#endif
 
 #endif // VECTORI512_H
