@@ -98,7 +98,7 @@ AC_DEFUN([AX_COMPILER_FLAGS],[
 	-Wstrict-aliasing dnl
 	-Wstrict-overflow=5 dnl
 	-Wstrict-prototype dnl
-	-Wswitch-default dnl
+	dnl -Wswitch-default dnl Vectorclass doesn't have default cases
 	-Wswitch-enum dnl
 	dnl -Wundef dnl Requires all macros to be defined to either 0 or 1
 	-Wuninitialized dnl

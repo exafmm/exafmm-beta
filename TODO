@@ -1,8 +1,6 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-- Improve vec.h - vectorclass interface
-- Update vectorclass, still need -fabi-version=6?
 - Remove GCC system_header from vec.h and remove all errors
 - splitRange defined in both dataset.h and partition.h
 - Separate different algorithms into different files (create folder for build tree, partition, etc.)
@@ -10,7 +8,7 @@
 - Fix charmm2
 - PetIGA no macro
 - Helmholtz breaks for very low P
-- Helmholtz breaks for -D 
+- Helmholtz breaks for -D
 - With strumpack
 - uniform/fmm.cxx accuracy problem
 - Use EXAFMM_CLUSTER in md_distributed
@@ -38,6 +36,7 @@ Representative case plot generator
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
+Improve vec.h - vectorclass interface
 Remove M, L from Cell struct
 Calculate EPS from test
 

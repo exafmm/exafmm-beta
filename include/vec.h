@@ -1,6 +1,5 @@
 #ifndef vec_h
 #define vec_h
-#pragma GCC system_header
 #include <ostream>
 #define EXAFMM_VEC_NEWTON 1
 #define EXAFMM_VEC_VERBOSE 0
@@ -637,7 +636,7 @@ namespace exafmm {
       return ((float*)&data)[i];
     }
     const float &operator[](int i) const {                      // Indexing (rvalue)
-      return ((float*)&data)[i];
+      return ((const float*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<16; i++) s << v[i] << ' ';
@@ -752,7 +751,7 @@ namespace exafmm {
       return ((double*)&data)[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((double*)&data)[i];
+      return ((const double*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<8; i++) s << v[i] << ' ';
@@ -872,7 +871,7 @@ namespace exafmm {
       return ((float*)&data)[i];
     }
     const float &operator[](int i) const {                      // Indexing (rvalue)
-      return ((float*)&data)[i];
+      return ((const float*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<8; i++) s << v[i] << ' ';
@@ -983,7 +982,7 @@ namespace exafmm {
       return ((double*)&data)[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((double*)&data)[i];
+      return ((const double*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<4; i++) s << v[i] << ' ';
@@ -1108,7 +1107,7 @@ namespace exafmm {
       return ((double*)&data)[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((double*)&data)[i];
+      return ((const double*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<4; i++) s << vec_extract(v.data,i) << ' ';
@@ -1231,7 +1230,7 @@ namespace exafmm {
       return ((float*)&data)[i];
     }
     const float &operator[](int i) const {                      // Indexing (rvalue)
-      return ((float*)&data)[i];
+      return ((const float*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<4; i++) s << v[i] << ' ';
@@ -1342,7 +1341,7 @@ namespace exafmm {
       return ((double*)&data)[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((double*)&data)[i];
+      return ((const double*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<2; i++) s << v[i] << ' ';
@@ -1466,7 +1465,7 @@ namespace exafmm {
       return ((double*)&data)[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((double*)&data)[i];
+      return ((const double*)&data)[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<2; i++) s << v[i] << ' ';
