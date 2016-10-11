@@ -123,7 +123,7 @@ namespace exafmm {
     for (C_iter C=cells.begin(); C!=cells.end(); C++) {
       int ic = 0;
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
-        if (drand48() > 0.5 && ic > 2 || ic > 5) ic = 0;
+        if ((drand48() > 0.5 && ic > 2) || ic > 5) ic = 0;
         if (ic == 0) {
           B->ICELL = id;
           id++;

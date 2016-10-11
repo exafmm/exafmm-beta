@@ -26,6 +26,7 @@
 ******************************************************************************/
 #ifndef VECTORCLASS_H
 #define VECTORCLASS_H  116
+#pragma GCC system_header
 
 // Maximum vector size, bits. Allowed values are 128, 256, 512
 #ifndef MAX_VECTOR_SIZE

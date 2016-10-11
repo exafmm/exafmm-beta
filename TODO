@@ -1,18 +1,16 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-- ax_openmp,mpi,compiler_vendor: compare with original
-- Set best debug options for each compiler
-- Check if Helmholtz with -D has ever worked (start with master)
-- define mpisize, mpirank in types.h
 - Improve vec.h - vectorclass interface
 - Update vectorclass, still need -fabi-version=6?
+- Remove GCC system_header from vec.h and remove all errors
 - splitRange defined in both dataset.h and partition.h
 - Separate different algorithms into different files (create folder for build tree, partition, etc.)
 - ./laplace_spherical -aDv -r 1 -j -n 2 -t .45 -T 1 -c 1 -d p
 - Fix charmm2
 - PetIGA no macro
 - Helmholtz breaks for very low P
+- Helmholtz breaks for -D 
 - With strumpack
 - uniform/fmm.cxx accuracy problem
 - Use EXAFMM_CLUSTER in md_distributed

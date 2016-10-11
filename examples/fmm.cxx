@@ -226,6 +226,9 @@ int main(int argc, char ** argv) {
     case 'S':                                                   //  Spherical basis
       CallFMM<Pmax>::LaplaceSphericalCPU_P(args);               //   Call Laplace Spherical kernel
       break;                                                    //  Break Spherical basis
+    default:                                                    //  No matching case
+      fprintf(stderr,"No matching basis\n");                    //   Print error message
+      abort();                                                  //   Abort execution
     }                                                           //  End case switch for basis
     break;                                                      // Break Laplace equation
   case 'H':                                                     // Helmholtz equation
@@ -234,6 +237,9 @@ int main(int argc, char ** argv) {
   case 'B':                                                     // Biot-Savart equation
     CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);              //  Call Biot-Savart Spherical kernel
     break;                                                      // Break Biot-Savart equation
+  default:                                                      // No matching case
+    fprintf(stderr,"No matching equation\n");                   //  Print error message
+    abort();                                                    //  Abort execution
   }                                                             // End case switch for equation
 #endif
   return 0;

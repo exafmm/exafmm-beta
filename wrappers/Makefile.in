@@ -84,7 +84,7 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 @EXAFMM_HAVE_BG_FALSE@@EXAFMM_HAVE_CRAY_TRUE@@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_INTEL_TRUE@@EXAFMM_HAVE_SX_FALSE@am__append_3 = -ansi_alias -fabi-version=6 -Wfatal-errors
 @EXAFMM_HAVE_BG_FALSE@@EXAFMM_HAVE_CRAY_TRUE@@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_INTEL_TRUE@@EXAFMM_HAVE_SX_FALSE@am__append_4 = -ansi_alias
 
-### Thread libraries
+# Thread libraries
 @EXAFMM_HAVE_OPENMP_TRUE@am__append_5 = -DEXAFMM_WITH_OPENMP
 @EXAFMM_HAVE_OPENMP_TRUE@am__append_6 = $(OPENMP_CXXFLAGS)
 @EXAFMM_HAVE_OPENMP_TRUE@am__append_7 = $(OPENMP_CXXFLAGS)
@@ -92,10 +92,10 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 @EXAFMM_WITH_CILK_TRUE@am__append_9 = -lcilkrts
 @EXAFMM_WITH_MTHREAD_TRUE@am__append_10 = -lmyth-native
 
-### Floating point precision
+# Floating point precision
 @EXAFMM_SINGLE_TRUE@am__append_11 = -DEXAFMM_SINGLE
 
-### SIMD flags
+# SIMD flags
 @EXAFMM_USE_SIMD_TRUE@am__append_12 = -DEXAFMM_USE_SIMD
 @EXAFMM_HAVE_MIC_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_13 = $(MIC_CXXFLAGS) # Use MIC intrinsics
 @EXAFMM_HAVE_AVX_TRUE@@EXAFMM_HAVE_MIC_FALSE@@EXAFMM_USE_SIMD_TRUE@am__append_14 = $(AVX_CXXFLAGS) # Use AVX intrinsics
@@ -127,7 +127,11 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 
 # Count interaction list per cell
 @EXAFMM_COUNT_LIST_TRUE@am__append_26 = -DEXAFMM_COUNT_LIST
+
+# Enable assert
 @EXAFMM_ASSERT_FALSE@am__append_27 = -DNDEBUG
+
+# Use all possible debugging flags
 @EXAFMM_DEBUG_TRUE@am__append_28 = $(COMPILER_CXXFLAGS)
 @EXAFMM_DEBUG_TRUE@am__append_29 = $(COMPILER_FCFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@bin_PROGRAMS = petiga_laplace_mpi$(EXEEXT) \
@@ -363,6 +367,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMPILER_CXXFLAGS = @COMPILER_CXXFLAGS@
+COMPILER_FCFLAGS = @COMPILER_FCFLAGS@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
@@ -397,6 +403,7 @@ MPIRUN = @MPIRUN@
 NEON_CXXFLAGS = @NEON_CXXFLAGS@
 OBJEXT = @OBJEXT@
 OPENMPILIBS = @OPENMPILIBS@
+OPENMP_CXXFLAGS = @OPENMP_CXXFLAGS@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -461,7 +468,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
-### Base flags
+# Optimization flags
 AM_CPPFLAGS = -I../include -I../kernels $(am__append_5) \
 	$(am__append_11) $(am__append_12) $(am__append_18) \
 	$(am__append_19) $(am__append_20) $(am__append_22) \

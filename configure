@@ -602,7 +602,9 @@ EXAFMM_HAVE_FX_TRUE
 EXAFMM_HAVE_BG_FALSE
 EXAFMM_HAVE_BG_TRUE
 ax_compiler_fcflags
+COMPILER_FCFLAGS
 ax_compiler_cxxflags
+COMPILER_CXXFLAGS
 SED
 EXAFMM_DEBUG_FALSE
 EXAFMM_DEBUG_TRUE
@@ -656,6 +658,7 @@ EXAFMM_WITH_TBB_FALSE
 EXAFMM_WITH_TBB_TRUE
 EXAFMM_HAVE_OPENMP_FALSE
 EXAFMM_HAVE_OPENMP_TRUE
+OPENMP_CXXFLAGS
 am__fastdepCC_FALSE
 am__fastdepCC_TRUE
 CCDEPMODE
@@ -4740,6 +4743,7 @@ if test "x$ax_cv_cxx_openmp" = "xunknown"; then
 else
   if test "x$ax_cv_cxx_openmp" != "xnone"; then
     OPENMP_CXXFLAGS=$ax_cv_cxx_openmp
+
   fi
 
 $as_echo "#define HAVE_OPENMP 1" >>confdefs.h
@@ -5926,13 +5930,11 @@ fi
 done
 
 
-    if test "$ax_enable_compile_warnings" != "no"; then :
-
-        # "yes" flags
-        # http://stackoverflow.com/questions/3375697/useful-gcc-flags-for-c
+    # http://stackoverflow.com/questions/3375697/useful-gcc-flags-for-c
+    # http://stackoverflow.com/questions/5088460/flags-to-enable-thorough-and-verbose-g-warnings
 
 
-for flag in              "-check all"             "-debug all"             "-diag-disable remark"             -fmudflap             -fno-strict-aliasing             -fsanitize=address             -fsanitize=thread             -fsanitize=leak             -fstack-protector             -ftrapuv             -ftrapv             -traceback             -Waggregate-return             -Wall             -Warray-bounds                         -Wcast-align             -Wcast-qual             -Wextra             -Wfatal-errors             -Wfloat-equal             -Wformat=2             -Wformat-nonliteral             -Wformat-security             -Winit-self             -Winline             -Wmissing-declarations             -Wmissing-format-attribute             -Wmissing-include-dirs             -Wmissing-noreturn             -Wno-unused-parameter             -Wno-missing-field-initializers             -Wno-overloaded-virtual             -Wpacked             -Wpointer-arith             -Wredundant-decls             -Wreturn-type             -Wshadow             -Wsign-compare             -Wstrict-aliasing             -Wstrict-overflow=5             -Wstrict-prototype             -Wswitch-default             -Wswitch-enum                         -Wuninitialized             -Wunreachable-code             -Wunused-but-set-variable             -Wwrite-strings         ; do
+for flag in          $ax_compiler_flags_test         "-check all"         "-debug all" 	"-diag-disable remark" 	-fmudflap 	-fno-strict-aliasing 	-fsanitize=address 	-fsanitize=leak 	-fstack-protector 	-ftrapuv 	-ftrapv 	-traceback 		-Wall 	-Warray-bounds         -Wbad-function-cast 		-Wcast-align 	-Wcast-qual 	-Wextra 	-Wfatal-errors 		-Wformat=2 	-Wformat-nonliteral 	-Wformat-security 	-Winit-self 	-Winline 	-Wmissing-format-attribute 	-Wmissing-include-dirs 	-Wmissing-noreturn         -Wnested-externs 	-Wno-missing-field-initializers 	-Wno-overloaded-virtual         -Wno-unused-local-typedefs 	-Wno-unused-parameter         -Wno-unused-variable 		-Wpointer-arith 	-Wredundant-decls 	-Wreturn-type 	-Wshadow 	-Wsign-compare 	-Wstrict-aliasing 	-Wstrict-overflow=5 	-Wstrict-prototype 	-Wswitch-default 	-Wswitch-enum 		-Wuninitialized 	-Wunreachable-code 	-Wunused-but-set-variable 	-Wwrite-strings     ; do
   as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags_$ax_compiler_flags_test_$flag" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $flag" >&5
 $as_echo_n "checking whether C++ compiler accepts $flag... " >&6; }
@@ -5993,8 +5995,6 @@ fi
 
 done
 
-
-fi
 
     # In the flags below, when disabling specific flags, always add *both*
     # -Wno-foo and -Wno-error=foo. This fixes the situation where (for example)
@@ -6075,9 +6075,10 @@ done
 esac
     done
 
+    COMPILER_CXXFLAGS=$ax_compiler_cxxflags
     # Substitute the variables
 
-    COMPILER_CXXFLAGS=$ax_compiler_cxxflags
+
 
 ac_ext=${ac_fc_srcext-f}
 ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
@@ -6217,13 +6218,11 @@ fi
 done
 
 
-    if test "$ax_enable_compile_warnings" != "no"; then :
-
-        # "yes" flags
-        # http://stackoverflow.com/questions/3375697/useful-gcc-flags-for-c
+    # http://stackoverflow.com/questions/3375697/useful-gcc-flags-for-c
+    # http://stackoverflow.com/questions/5088460/flags-to-enable-thorough-and-verbose-g-warnings
 
 
-for flag in              "-check all"             "-debug all"             "-diag-disable remark"             -fmudflap             -fno-strict-aliasing             -fsanitize=address             -fsanitize=thread             -fsanitize=leak             -fstack-protector             -ftrapuv             -ftrapv             -traceback             -Waggregate-return             -Wall             -Warray-bounds                         -Wcast-align             -Wcast-qual             -Wextra             -Wfatal-errors             -Wfloat-equal             -Wformat=2             -Wformat-nonliteral             -Wformat-security             -Winit-self             -Winline             -Wmissing-declarations             -Wmissing-format-attribute             -Wmissing-include-dirs             -Wmissing-noreturn             -Wno-unused-parameter             -Wno-missing-field-initializers             -Wno-overloaded-virtual             -Wpacked             -Wpointer-arith             -Wredundant-decls             -Wreturn-type             -Wshadow             -Wsign-compare             -Wstrict-aliasing             -Wstrict-overflow=5             -Wstrict-prototype             -Wswitch-default             -Wswitch-enum                         -Wuninitialized             -Wunreachable-code             -Wunused-but-set-variable             -Wwrite-strings         ; do
+for flag in          $ax_compiler_flags_test         "-check all"         "-debug all" 	"-diag-disable remark" 	-fmudflap 	-fno-strict-aliasing 	-fsanitize=address 	-fsanitize=leak 	-fstack-protector 	-ftrapuv 	-ftrapv 	-traceback 		-Wall 	-Warray-bounds         -Wbad-function-cast 		-Wcast-align 	-Wcast-qual 	-Wextra 	-Wfatal-errors 		-Wformat=2 	-Wformat-nonliteral 	-Wformat-security 	-Winit-self 	-Winline 	-Wmissing-format-attribute 	-Wmissing-include-dirs 	-Wmissing-noreturn         -Wnested-externs 	-Wno-missing-field-initializers 	-Wno-overloaded-virtual         -Wno-unused-local-typedefs 	-Wno-unused-parameter         -Wno-unused-variable 		-Wpointer-arith 	-Wredundant-decls 	-Wreturn-type 	-Wshadow 	-Wsign-compare 	-Wstrict-aliasing 	-Wstrict-overflow=5 	-Wstrict-prototype 	-Wswitch-default 	-Wswitch-enum 		-Wuninitialized 	-Wunreachable-code 	-Wunused-but-set-variable 	-Wwrite-strings     ; do
   as_CACHEVAR=`$as_echo "ax_cv_check_fcflags_$ax_compiler_flags_test_$flag" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran compiler accepts $flag" >&5
 $as_echo_n "checking whether Fortran compiler accepts $flag... " >&6; }
@@ -6278,8 +6277,6 @@ fi
 
 done
 
-
-fi
 
     # In the flags below, when disabling specific flags, always add *both*
     # -Wno-foo and -Wno-error=foo. This fixes the situation where (for example)
@@ -6354,9 +6351,10 @@ done
 esac
     done
 
+    COMPILER_FCFLAGS=$ax_compiler_fcflags
     # Substitute the variables
 
-    COMPILER_FCFLAGS=$ax_compiler_fcflags
+
 
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'

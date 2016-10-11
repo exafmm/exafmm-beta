@@ -1,5 +1,6 @@
 #ifndef vec_h
 #define vec_h
+#pragma GCC system_header
 #include <ostream>
 #define EXAFMM_VEC_NEWTON 1
 #define EXAFMM_VEC_VERBOSE 0

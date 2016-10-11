@@ -1,4 +1,4 @@
-### Base flags
+# Optimization flags
 AM_CPPFLAGS = -I../include -I../kernels
 if EXAFMM_HAVE_BG
 AM_CXXFLAGS = -qarch=qp -qtune=qp -O3 -qhot
@@ -46,7 +46,7 @@ endif
 endif
 endif
 
-### Thread libraries
+# Thread libraries
 if EXAFMM_HAVE_OPENMP
 AM_CPPFLAGS += -DEXAFMM_WITH_OPENMP
 AM_CXXFLAGS += $(OPENMP_CXXFLAGS)
@@ -62,12 +62,12 @@ if EXAFMM_WITH_MTHREAD
 LIBS += -lmyth-native
 endif
 
-### Floating point precision
+# Floating point precision
 if EXAFMM_SINGLE
 AM_CPPFLAGS += -DEXAFMM_SINGLE
 endif
 
-### SIMD flags
+# SIMD flags
 if EXAFMM_USE_SIMD
 AM_CPPFLAGS += -DEXAFMM_USE_SIMD
 if EXAFMM_HAVE_MIC
@@ -129,11 +129,13 @@ if EXAFMM_COUNT_LIST
 AM_CPPFLAGS += -DEXAFMM_COUNT_LIST
 endif
 
+# Enable assert
 if EXAFMM_ASSERT
 else
 AM_CPPFLAGS += -DNDEBUG
 endif
 
+# Use all possible debugging flags
 if EXAFMM_DEBUG
 AM_CXXFLAGS += $(COMPILER_CXXFLAGS)
 AM_FCFLAGS += $(COMPILER_FCFLAGS)

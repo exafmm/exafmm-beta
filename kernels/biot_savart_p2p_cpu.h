@@ -15,7 +15,7 @@ namespace exafmm {
     typedef std::vector<Cell<B_iter,vecP,BiotSavart,basis> > Cells;//!< Vector of cells for BiotSavart
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
-    static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
+    static void P2P(C_iter Ci, C_iter Cj, bool ) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
       int ni = Ci->NBODY;

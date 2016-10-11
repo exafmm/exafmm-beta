@@ -12,7 +12,7 @@ namespace exafmm {
   // Basic type definitions
 #if EXAFMM_SINGLE
   typedef float real_t;                                         //!< Floating point type is single precision
-  const real_t EPS = 1e-8;                                      //!< Single precision epsilon
+  const real_t EPS = 1e-8f;                                     //!< Single precision epsilon
 #else
   typedef double real_t;                                        //!< Floating point type is double precision
   const real_t EPS = 1e-16;                                     //!< Double precision epsilon
@@ -26,7 +26,7 @@ namespace exafmm {
   typedef vec<3,complex_t> cvec3;                               //!< Vector of 3 complex_t types
 
   // SIMD vector types for AVX512, AVX, and SSE
-  const int NSIMD = SIMD_BYTES / sizeof(real_t);                //!< SIMD vector length (SIMD_BYTES defined in macros.h)
+  const int NSIMD = SIMD_BYTES / int(sizeof(real_t));           //!< SIMD vector length (SIMD_BYTES defined in macros.h)
   typedef vec<NSIMD,real_t> simdvec;                            //!< SIMD vector type
 
   // Kahan summation types (Achieves quasi-double precision using single precision types)

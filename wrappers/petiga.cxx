@@ -78,6 +78,7 @@ namespace exafmm {
     const bool useRmax = false;
     const bool useRopt = false;
     const bool verbose = false;
+    KernelBase::eps2 = eps2;
     Kernel::setup();
 
     args = new Args;

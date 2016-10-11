@@ -1,6 +1,7 @@
 #ifndef thread_h
 #define thread_h
 #include "config.h"
+#pragma GCC system_header
 
 #if EXAFMM_WITH_CILK
 #include <cilk/cilk.h>
