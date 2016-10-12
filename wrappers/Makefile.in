@@ -132,12 +132,11 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 @EXAFMM_ASSERT_FALSE@am__append_27 = -DNDEBUG
 
 # Use all possible debugging flags
-@EXAFMM_DEBUG_TRUE@am__append_28 = $(COMPILER_CXXFLAGS)
-@EXAFMM_DEBUG_TRUE@am__append_29 = $(COMPILER_FCFLAGS)
+@EXAFMM_DEBUG_TRUE@am__append_28 = $(COMPILER_CXXFLAGS) -DEXAFMM_DEBUG
+@EXAFMM_DEBUG_TRUE@am__append_29 = $(COMPILER_FCFLAGS) -DEXAFMM_DEBUG
 @EXAFMM_HAVE_MPI_TRUE@bin_PROGRAMS = petiga_laplace_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	petiga_helmholtz_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	gromacs_mpi$(EXEEXT) charmm_mpi$(EXEEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	charmm2_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	md_distributed_mpi$(EXEEXT)
 subdir = wrappers
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -185,12 +184,6 @@ AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
-libcharmm2_exafmm_a_AR = $(AR) $(ARFLAGS)
-libcharmm2_exafmm_a_LIBADD =
-am__libcharmm2_exafmm_a_SOURCES_DIST = charmm2.cxx
-@EXAFMM_HAVE_MPI_TRUE@am_libcharmm2_exafmm_a_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	libcharmm2_exafmm_a-charmm2.$(OBJEXT)
-libcharmm2_exafmm_a_OBJECTS = $(am_libcharmm2_exafmm_a_OBJECTS)
 libcharmm_exafmm_a_AR = $(AR) $(ARFLAGS)
 libcharmm_exafmm_a_LIBADD =
 am__libcharmm_exafmm_a_SOURCES_DIST = charmm.cxx
@@ -221,12 +214,6 @@ am__libpetiga_exafmm_laplace_a_SOURCES_DIST = petiga.cxx
 libpetiga_exafmm_laplace_a_OBJECTS =  \
 	$(am_libpetiga_exafmm_laplace_a_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
-am__charmm2_mpi_SOURCES_DIST = test_charmm.f90
-@EXAFMM_HAVE_MPI_TRUE@am_charmm2_mpi_OBJECTS = test_charmm.$(OBJEXT)
-charmm2_mpi_OBJECTS = $(am_charmm2_mpi_OBJECTS)
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_DEPENDENCIES = libcharmm2_exafmm.a
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2_exafmm.a
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2_exafmm.a
 am__charmm_mpi_SOURCES_DIST = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@am_charmm_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm_mpi_OBJECTS = $(am_charmm_mpi_OBJECTS)
@@ -311,22 +298,19 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libcharmm2_exafmm_a_SOURCES) $(libcharmm_exafmm_a_SOURCES) \
-	$(libgromacs_exafmm_a_SOURCES) $(libmd_distributed_a_SOURCES) \
+SOURCES = $(libcharmm_exafmm_a_SOURCES) $(libgromacs_exafmm_a_SOURCES) \
+	$(libmd_distributed_a_SOURCES) \
 	$(libpetiga_exafmm_helmholtz_a_SOURCES) \
-	$(libpetiga_exafmm_laplace_a_SOURCES) $(charmm2_mpi_SOURCES) \
-	$(nodist_EXTRA_charmm2_mpi_SOURCES) $(charmm_mpi_SOURCES) \
+	$(libpetiga_exafmm_laplace_a_SOURCES) $(charmm_mpi_SOURCES) \
 	$(nodist_EXTRA_charmm_mpi_SOURCES) $(gromacs_mpi_SOURCES) \
 	$(md_distributed_mpi_SOURCES) $(petiga_helmholtz_mpi_SOURCES) \
 	$(petiga_laplace_mpi_SOURCES)
-DIST_SOURCES = $(am__libcharmm2_exafmm_a_SOURCES_DIST) \
-	$(am__libcharmm_exafmm_a_SOURCES_DIST) \
+DIST_SOURCES = $(am__libcharmm_exafmm_a_SOURCES_DIST) \
 	$(am__libgromacs_exafmm_a_SOURCES_DIST) \
 	$(am__libmd_distributed_a_SOURCES_DIST) \
 	$(am__libpetiga_exafmm_helmholtz_a_SOURCES_DIST) \
 	$(am__libpetiga_exafmm_laplace_a_SOURCES_DIST) \
-	$(am__charmm2_mpi_SOURCES_DIST) $(am__charmm_mpi_SOURCES_DIST) \
-	$(am__gromacs_mpi_SOURCES_DIST) \
+	$(am__charmm_mpi_SOURCES_DIST) $(am__gromacs_mpi_SOURCES_DIST) \
 	$(am__md_distributed_mpi_SOURCES_DIST) \
 	$(am__petiga_helmholtz_mpi_SOURCES_DIST) \
 	$(am__petiga_laplace_mpi_SOURCES_DIST)
@@ -584,7 +568,7 @@ AM_CPPFLAGS = -I../include -I../kernels $(am__append_5) \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_2) $(am__append_4) \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_7) $(am__append_29)
 AM_MAKEFLAGS = -s
-@EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_exafmm_laplace.a libpetiga_exafmm_helmholtz.a libgromacs_exafmm.a libcharmm_exafmm.a libcharmm2_exafmm.a libmd_distributed.a
+@EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_exafmm_laplace.a libpetiga_exafmm_helmholtz.a libgromacs_exafmm.a libcharmm_exafmm.a libmd_distributed.a
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_SOURCES = petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_PMAX=7
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx
@@ -593,8 +577,6 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_SOURCES = charmm.cxx
 @EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_SOURCES = charmm2.cxx
-@EXAFMM_HAVE_MPI_TRUE@libcharmm2_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_SOURCES = md_distributed.cxx
 @EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_SOURCES = test_petiga.cxx
@@ -614,14 +596,6 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm_exafmm.a -lstdc++ -lgomp
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm_exafmm.a -lC++
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LDADD = libcharmm_exafmm.a
-@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_SOURCES = test_charmm.f90
-@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm2_mpi_SOURCES = test_gromacs.cxx
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LINK = $(FCLINK) $(AM_FCFLAGS)
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LINK = $(CXXLINK) --linkfortran
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2_exafmm.a -lstdc++ -lgomp
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2_exafmm.a -lC++
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDADD = libcharmm2_exafmm.a
 @EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_SOURCES = test_md_distributed.cxx
 @EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_LDADD = libmd_distributed.a
@@ -692,11 +666,6 @@ uninstall-libLIBRARIES:
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 
-libcharmm2_exafmm.a: $(libcharmm2_exafmm_a_OBJECTS) $(libcharmm2_exafmm_a_DEPENDENCIES) $(EXTRA_libcharmm2_exafmm_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libcharmm2_exafmm.a
-	$(AM_V_AR)$(libcharmm2_exafmm_a_AR) libcharmm2_exafmm.a $(libcharmm2_exafmm_a_OBJECTS) $(libcharmm2_exafmm_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libcharmm2_exafmm.a
-
 libcharmm_exafmm.a: $(libcharmm_exafmm_a_OBJECTS) $(libcharmm_exafmm_a_DEPENDENCIES) $(EXTRA_libcharmm_exafmm_a_DEPENDENCIES) 
 	$(AM_V_at)-rm -f libcharmm_exafmm.a
 	$(AM_V_AR)$(libcharmm_exafmm_a_AR) libcharmm_exafmm.a $(libcharmm_exafmm_a_OBJECTS) $(libcharmm_exafmm_a_LIBADD)
@@ -764,10 +733,6 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
-charmm2_mpi$(EXEEXT): $(charmm2_mpi_OBJECTS) $(charmm2_mpi_DEPENDENCIES) $(EXTRA_charmm2_mpi_DEPENDENCIES) 
-	@rm -f charmm2_mpi$(EXEEXT)
-	$(AM_V_GEN)$(charmm2_mpi_LINK) $(charmm2_mpi_OBJECTS) $(charmm2_mpi_LDADD) $(LIBS)
-
 charmm_mpi$(EXEEXT): $(charmm_mpi_OBJECTS) $(charmm_mpi_DEPENDENCIES) $(EXTRA_charmm_mpi_DEPENDENCIES) 
 	@rm -f charmm_mpi$(EXEEXT)
 	$(AM_V_GEN)$(charmm_mpi_LINK) $(charmm_mpi_OBJECTS) $(charmm_mpi_LDADD) $(LIBS)
@@ -794,10 +759,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/charmm2_mpi-test_gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/charmm_mpi-test_gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gromacs_mpi-test_gromacs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm2_exafmm_a-charmm2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm_exafmm_a-charmm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgromacs_exafmm_a-gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmd_distributed_a-md_distributed.Po@am__quote@
@@ -822,20 +785,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-libcharmm2_exafmm_a-charmm2.o: charmm2.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm2_exafmm_a-charmm2.o -MD -MP -MF $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo -c -o libcharmm2_exafmm_a-charmm2.o `test -f 'charmm2.cxx' || echo '$(srcdir)/'`charmm2.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm2.cxx' object='libcharmm2_exafmm_a-charmm2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm2_exafmm_a-charmm2.o `test -f 'charmm2.cxx' || echo '$(srcdir)/'`charmm2.cxx
-
-libcharmm2_exafmm_a-charmm2.obj: charmm2.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm2_exafmm_a-charmm2.obj -MD -MP -MF $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo -c -o libcharmm2_exafmm_a-charmm2.obj `if test -f 'charmm2.cxx'; then $(CYGPATH_W) 'charmm2.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm2.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='charmm2.cxx' object='libcharmm2_exafmm_a-charmm2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libcharmm2_exafmm_a-charmm2.obj `if test -f 'charmm2.cxx'; then $(CYGPATH_W) 'charmm2.cxx'; else $(CYGPATH_W) '$(srcdir)/charmm2.cxx'; fi`
 
 libcharmm_exafmm_a-charmm.o: charmm.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm_exafmm_a-charmm.o -MD -MP -MF $(DEPDIR)/libcharmm_exafmm_a-charmm.Tpo -c -o libcharmm_exafmm_a-charmm.o `test -f 'charmm.cxx' || echo '$(srcdir)/'`charmm.cxx
@@ -906,20 +855,6 @@ libpetiga_exafmm_laplace_a-petiga.obj: petiga.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='petiga.cxx' object='libpetiga_exafmm_laplace_a-petiga.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_exafmm_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libpetiga_exafmm_laplace_a-petiga.obj `if test -f 'petiga.cxx'; then $(CYGPATH_W) 'petiga.cxx'; else $(CYGPATH_W) '$(srcdir)/petiga.cxx'; fi`
-
-charmm2_mpi-test_gromacs.o: test_gromacs.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm2_mpi-test_gromacs.o -MD -MP -MF $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo -c -o charmm2_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo $(DEPDIR)/charmm2_mpi-test_gromacs.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_gromacs.cxx' object='charmm2_mpi-test_gromacs.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o charmm2_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
-
-charmm2_mpi-test_gromacs.obj: test_gromacs.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm2_mpi-test_gromacs.obj -MD -MP -MF $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo -c -o charmm2_mpi-test_gromacs.obj `if test -f 'test_gromacs.cxx'; then $(CYGPATH_W) 'test_gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/test_gromacs.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo $(DEPDIR)/charmm2_mpi-test_gromacs.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_gromacs.cxx' object='charmm2_mpi-test_gromacs.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o charmm2_mpi-test_gromacs.obj `if test -f 'test_gromacs.cxx'; then $(CYGPATH_W) 'test_gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/test_gromacs.cxx'; fi`
 
 charmm_mpi-test_gromacs.o: test_gromacs.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm_mpi-test_gromacs.o -MD -MP -MF $(DEPDIR)/charmm_mpi-test_gromacs.Tpo -c -o charmm_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
@@ -1224,8 +1159,6 @@ save:
 	@make -C .. save
 
 @EXAFMM_HAVE_MPI_TRUE@run_charmm_mpi: charmm_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< ./ water_32.fmm water.out 0
-@EXAFMM_HAVE_MPI_TRUE@run_charmm2_mpi: charmm2_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< ./ water_32.fmm water.out 0
 @EXAFMM_HAVE_MPI_TRUE@run_gromacs_mpi: gromacs_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$<

@@ -131,8 +131,8 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 @EXAFMM_ASSERT_FALSE@am__append_27 = -DNDEBUG
 
 # Use all possible debugging flags
-@EXAFMM_DEBUG_TRUE@am__append_28 = $(COMPILER_CXXFLAGS)
-@EXAFMM_DEBUG_TRUE@am__append_29 = $(COMPILER_FCFLAGS)
+@EXAFMM_DEBUG_TRUE@am__append_28 = $(COMPILER_CXXFLAGS) -DEXAFMM_DEBUG
+@EXAFMM_DEBUG_TRUE@am__append_29 = $(COMPILER_FCFLAGS) -DEXAFMM_DEBUG
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@bin_PROGRAMS = laplace$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@	helmholtz$(EXEEXT)
 subdir = hss

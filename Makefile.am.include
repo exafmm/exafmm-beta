@@ -78,7 +78,7 @@ AM_CXXFLAGS += $(AVX_CXXFLAGS) # Use AVX intrinsics
 else
 if EXAFMM_HAVE_SSE3
 AM_CXXFLAGS += $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-else 
+else
 if EXAFMM_HAVE_NEON
 AM_CXXFLAGS += $(NEON_CXXFLAGS) # Use Neon intrinsics
 endif
@@ -137,8 +137,8 @@ endif
 
 # Use all possible debugging flags
 if EXAFMM_DEBUG
-AM_CXXFLAGS += $(COMPILER_CXXFLAGS)
-AM_FCFLAGS += $(COMPILER_FCFLAGS)
+AM_CXXFLAGS += $(COMPILER_CXXFLAGS) -DEXAFMM_DEBUG
+AM_FCFLAGS += $(COMPILER_FCFLAGS) -DEXAFMM_DEBUG
 endif
 
 AM_MAKEFLAGS = -s
