@@ -163,7 +163,7 @@ int main(int argc, char ** argv) {
         upDownPass.downwardPass(cells);
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
-#if 1 
+#if 0 
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
@@ -202,10 +202,10 @@ int main(int argc, char ** argv) {
 #endif
     data.initTarget(bodies);
     logger::resetTimer("Total FMM");
-    logger::resetTimer("Comm partition"); 
+    logger::resetTimer("Comm partition");     
     if (args.write) {
-      logger::writeTime(baseMPI.mpirank);
-      traversal.writeTraversalData(baseMPI.mpirank);
+      logger::writeTime(baseMPI.mpirank,t);
+      traversal.writeTraversalData(baseMPI.mpirank, bodies.size(), t);
     }
   }
   delete treeMPI;
