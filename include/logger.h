@@ -111,11 +111,12 @@ namespace exafmm {
     }
 
     //! Write timings of all events
-    inline void writeTime(int mpirank=0) {
+    inline void writeTime(int mpirank=0, int iteration=0) {
       std::stringstream name;                                   // File name
       name << "time" << std::setfill('0') << std::setw(6)       // Set format
 	   << mpirank << ".dat";                                // Create file name for timer
-      std::ofstream timerFile(name.str().c_str());              // Open timer log file
+      std::ios_base::openmode mode = (iteration == 0)? std::ios_base::out:std::ios::app;    
+      std::ofstream timerFile(name.str().c_str(),mode);         // Open timer log file
       for (T_iter E=timer.begin(); E!=timer.end(); E++) {       // Loop over all events
 	timerFile << std::setw(stringLength) << std::left       //  Set format
 		  << E->first << " " << E->second << std::endl; //  Print event and timer
