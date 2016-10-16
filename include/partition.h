@@ -41,8 +41,8 @@ private:
     real_t const& _max = max(bounds.Xmax);                    // get max of all dimensions
     int64_t min_h = 0ull;                                     // initialize min Hilbert order
     int64_t max_h = 0ull;                                     // initialize max Hilbert order
-    //order = cast_coord(ceil(log(accuracy) / log(2)));         // get needed bits to represent Hilbert order in each dimension
-    order = 21;
+    //order = cast_coord(ceil(log(accuracy) / log(2)));         // get needed bits to represent Hilbert order in each dimension    
+    order = log2(mpisize);
     real_t diameter = _max - _min;                            // set domain's diameter
     assert(order <= 21);                                      // maximum key is 63 bits
     B_iter begin = bodies.begin();                            // bodies begin iterator
@@ -311,18 +311,20 @@ public:
       }                                                       //  End loop over bodies in current rank
     }                                                         // End loop over MPI ranks
     logger::stopTimer("Partition");                           // Stop timer
+    logger::startTimer("Sort");                               // Start timer (for consistency)
+    logger::stopTimer("Sort");                                // Stop timer (for consistency)
     return rankBounds[mpirank];                               // Return local bounds
   }
 
 #if EXAFMM_COUNT_LIST
   template <typename T>
-  void rebalance(Cells const& cells, Bodies& bodies, real_t const& numP2P, T& remoteInteractionList) {
+  void rebalance(Cells const& cells, Bodies& bodies, real_t const& numP2P, T const& remoteInteractionList) {    
     logger::startTimer("Partition");                           // Start timer
     for (int i = 0; i < bodies.size(); ++i) {
       bodies[i].IRANK = mpirank;
     }
     std::vector<double> remoteLoad(mpisize);
-    const double imbalanceRate = 0.05;
+    const double imbalanceRate = 0.005;
     double sumWork = static_cast<double>(numP2P);
     MPI_Allgather(&sumWork, 1, MPI_DOUBLE, (double*)&remoteLoad[0], 1, MPI_DOUBLE, MPI_COMM_WORLD);// Gather all domain bounds
     double avgLoad = std::accumulate(remoteLoad.begin(), remoteLoad.end(), 0.0) / mpisize;
@@ -394,35 +396,40 @@ public:
       }
     }
     B_iter B0 = bodies.begin();
-    //std::cout<<"avgLoad: " << avgLoad << std::endl;
+  //  std::cout<<"avgLoad: " << avgLoad << std::endl;
     int rebalanceSize = ranksToBalance.size();
     bool repartition = (rebalanceSize > 0);
+    std::vector<uint16_t> allocatedCells(cells.size(),0);
     for (int i = 0; i < ranksToBalance.size(); ++i) {
       repartition = true;
       int irecv = ranksToBalance[i];
       int interactionCount = remoteInteractionList.size();
       double rightLoad = remoteLoad[irecv];
-      //std::cout<<" rank " << mpirank << " is balancing " << irecv <<" with load " << rightLoad << std::endl;
-      for (int cc = 0; cc < interactionCount; ++cc) {
+//      std::cout<<" rank " << mpirank << " is balancing " << irecv <<" with load " << rightLoad << std::endl;
+      for (int cc = 0; cc < interactionCount; ++cc) {        
+        if(allocatedCells[cc]) continue;
         std::vector<int> const& cellInteraction = remoteInteractionList[cc];
         int maxDiff = 0;
         int index = 0;
         if (cellInteraction[irecv] > cellInteraction[mpirank]) {
           double cellLoad = std::accumulate(cellInteraction.begin(), cellInteraction.end(), 0.0);
-          loadDificit += cellLoad - cellInteraction[mpirank];
-          rightLoad -= cellLoad - cellInteraction[irecv];
+          loadDificit += cellLoad - cellInteraction[irecv];
+          rightLoad -= cellLoad - cellInteraction[mpirank];
+          // std::cout<< mpirank << " and " << irecv << std::endl;
+          // for(int irank = 0; irank < mpisize; ++irank){
+          //   std::cout<<"irank: " << irank << " load: "<< cellInteraction[irank] <<std::endl;
+          // }
           if (loadDificit > 0 || rightLoad <= avgLoad)
             break;
+          allocatedCells[cc] = 1;
           int ibody = cells[cc].IBODY;
           int nbody = cells[cc].NBODY;
           for (int ii = ibody; ii < nbody; ++ii) {
             (B0 + ii)->IRANK = irecv;
           }
-          remoteInteractionList.erase(remoteInteractionList.begin() + cc);
-          interactionCount--;
         }
       }
-      //std::cout<<" rank " << mpirank << " reduced load of " << irecv <<" to  " << rightLoad << std::endl;
+      ///std::cout<<" rank " << mpirank << " reduced load of " << irecv <<" to  " << rightLoad << std::endl;
     }
     logger::stopTimer("Partition");                           // Start timer
     logger::startTimer("Sort");                               // Start timer

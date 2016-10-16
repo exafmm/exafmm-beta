@@ -38,11 +38,13 @@ protected:
     int indegree;                                             //!< Number of incoming edges 
     int outdegree;                                            //!< Number of outgoing edges     
     MPI_Comm graphComm;                                       //!< The distributed graph communicator
+#if EXAFMM_USE_DISTGRAPH     
     ~DistGraphInfo() {
       delete[] sources;
-      delete[] destinations;
+      delete[] destinations;                  
       MPI_Comm_free(&graphComm);
     }
+#endif    
   };  
   struct GraphNode {
   public:
@@ -100,7 +102,7 @@ private:
     }                                                         // End loop over ranks
   }
   
-  //! Exchange bodies in a point-to-point manner
+  //! Exchange bodies/cells in a point-to-point manner
   template<typename T>
   void alltoallv_p2p(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
     int dataSize = recvDispl[mpisize - 1] + recvCount[mpisize - 1];    
@@ -165,7 +167,7 @@ private:
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
   }
 
-  //! Exchange bodies in a point-to-point manner
+  //! Exchange bodies/cells in a point-to-point manner
   template<typename T>
   void alltoallv_p2p_onesided(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) { 
     //std::vector<int> v = getNeighborRanks();       
@@ -1298,6 +1300,9 @@ public:
 // #elif EXAFMM_USE_ONESIDED
 //     alltoall(bodies);                                     // Send body count       
 //     alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+#elif EXAFMM_USE_P2P
+    alltoall(bodies);                                         // Send body count    
+    alltoallv_p2p(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #else 
     alltoall(bodies);                                         // Send body count    
     alltoallv(bodies);                                        // Send bodies        
@@ -1328,9 +1333,12 @@ public:
       sendBodyDispl[irank + 1] = sendBodyDispl[irank] + sendBodyCount[irank]; //  Set send displacement
     }      
     alltoallv_p2p_hypercube(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
-   #elif EXAFMM_USE_ONESIDED
+#elif EXAFMM_USE_ONESIDED
      alltoall(sendBodies);                                     // Send body count       
      alltoallv_p2p_onesided(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
+#elif EXAFMM_USE_P2P
+    alltoall(sendBodies);                                         // Send body count    
+    alltoallv_p2p(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #else    
     alltoall(sendBodies);                                     // Send body count       
     alltoallv(sendBodies);                                    // Send bodies
@@ -1355,9 +1363,12 @@ public:
       recvCellDispl[i] = 0;
     }  
     alltoallv_p2p_hypercube(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);
- #elif EXAFMM_USE_ONESIDED
+#elif EXAFMM_USE_ONESIDED
     alltoall(sendCells);                                     // Send body count       
     alltoallv_p2p_onesided(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);      
+#elif EXAFMM_USE_P2P
+    alltoall(sendCells);                                       // send cell count
+    alltoallv_p2p(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);  // send cells
 #else 
     alltoall(sendCells);                                      // Send cell count            
     alltoallv(sendCells);                                     // Senc cells

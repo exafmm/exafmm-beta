@@ -45,18 +45,20 @@ private:
     }                                                         // End if for mutual interaction 
     if(mpisize > 0 && isP2P) {                                // Ignore if mpisize was not initialized in the constructor 
       int ichild = (Ci0 + Ci->IPARENT)->ICHILD;  
-      int nchild = (Ci0 + Ci->IPARENT)->NCHILD;  
-      C_iter cc = Ci0 + ichild;
+      int nchild = (Ci0 + Ci->IPARENT)->NCHILD;        
+      C_iter cc = Ci0 + ichild;      
       int i = 0;
       for(; i < nchild; ++i) {
         if((cc+i)->IBODY == Ci->IBODY) break;
       }    
-      ichild+=i;                  
-      if(!remote)
-        remoteInteractionList[ichild][mpirank]++;
+      ichild+=i;               
+      //int nbody = (Ci0 +ichild)->NBODY;   
+      if(!remote) {        
+        remoteInteractionList[ichild][mpirank] = Ci->NBODY;      
+      }
       else {   
-        if(Cj->NBODY > 0)                                                       
-          remoteInteractionList[ichild][Cj->BODY->IRANK]++;      
+        if(Cj->NBODY > 0)                                                               
+          remoteInteractionList[ichild][Cj->BODY->IRANK] += Cj->NBODY;      
       }      
     }
     if(remote) {
@@ -480,8 +482,8 @@ public:
     for (C_iter C = cells.begin(); C != cells.end(); C++) {   // Loop over cells
       C->numP2P = C->numM2L = 0;                              //  Initialize size of interaction list
     }                                                         // End loop over cells
-    if(mpisize>0)                                             // Ignore if MPI size is not set in the constructor 
-      remoteInteractionList.resize(cells.size(),std::vector<int>(mpisize,0)); // initialize remote interaction list   
+    if(mpisize>0)                                             // Ignore if MPI size is not set in the constructor       
+      remoteInteractionList = std::vector<std::vector<int> >(cells.size(),std::vector<int>(mpisize,0));   
     remoteNumM2L = 0;
     remoteNumP2P = 0;        
   }
@@ -656,12 +658,13 @@ public:
     }                                                         // End if for verbose flag
 #endif
   }
-  void writeTraversalData(int mpirank){
+  void writeTraversalData(int mpirank, int numBodies, int iteration=0){
 #if EXAFMM_COUNT_KERNEL || EXAFMM_COUNT_LIST
     std::stringstream name;                                   // File name
     name << "num" << std::setfill('0') << std::setw(6)        // Set format
          << mpirank << ".dat";                                // Create file name for list
-    std::ofstream listFile(name.str().c_str(),std::ios::app); // Open list log file         
+    std::ios_base::openmode mode = (iteration == 0)? std::ios_base::out:std::ios::app;
+    std::ofstream listFile(name.str().c_str(),mode); // Open list log file         
 #endif
 #if EXAFMM_COUNT_KERNEL && EXAFMM_COUNT_LIST
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
@@ -672,16 +675,22 @@ public:
       << "Remote P2P calls" << " " << remoteNumM2L << std::endl; //  Print event and timer
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "Remote M2L calls" << " " << remoteNumP2P << std::endl; //  Print event and timer          
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Bodies" << " " << numBodies << std::endl; //  Print event and timer          
 #elif EXAFMM_COUNT_LIST      
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "Remote P2P calls" << " " << remoteNumM2L << std::endl; //  Print event and timer
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "Remote M2L calls" << " " << remoteNumP2P << std::endl; //  Print event and timer          
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Bodies" << " " << numBodies << std::endl; //  Print event and timer                
 #elif EXAFMM_COUNT_KERNEL      
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
       << "P2P calls" << " " << numP2P << std::endl;           //  Print event and timer
     listFile << std::setw(logger::stringLength) << std::left  //  Set format
-      << "M2L calls" << " " << numM2L << std::endl;           //  Print event and timer          
+      << "M2L calls" << " " << numM2L << std::endl;           //  Print event and timer
+    listFile << std::setw(logger::stringLength) << std::left  //  Set format
+      << "Bodies" << " " << numBodies << std::endl; //  Print event and timer                          
 #endif      
   }
 #if EXAFMM_COUNT_LIST
