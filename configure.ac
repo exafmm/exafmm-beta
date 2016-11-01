@@ -129,7 +129,7 @@ if test "$have_avx512" = "yes"; then
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       AC_MSG_ERROR([AVX512 requires single or double precision])
    fi
-   AVX512_CXXFLAGS="-mavx512f -mavx512pf -mavx512er -mavx512cd"
+   AVX512_CXXFLAGS=-xMIC-AVX512
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_AVX512, test "$have_avx512" = "yes")
 AC_SUBST(AVX512_CXXFLAGS)
