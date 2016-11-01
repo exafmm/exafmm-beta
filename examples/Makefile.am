@@ -1,6 +1,6 @@
 include ../Makefile.am.include
 
-bin_PROGRAMS = fmm tree
+bin_PROGRAMS = fmm tree vec
 fmm_SOURCES = fmm.cxx
 if EXAFMM_HAVE_FX
 fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=7
@@ -9,6 +9,8 @@ fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=10
 endif
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(fmm_CPPFLAGS)
+vec_SOURCES = vec.cxx
+vec_CPPFLAGS = $(fmm_CPPFLAGS)
 
 run_laplace_cartesian: fmm
 	./$< -DgmMovx -r 10 -e laplace -b cartesian -P 10
@@ -20,6 +22,8 @@ run_biotsavart_spherical: fmm
 	./$< -Dgv -n 40000 -r 10 -e biotsavart -P 10
 run_tree: tree
 	./$< -v -n 10000000 -r 10
+run_vec: vec
+	./$<
 
 bin_PROGRAMS += kernel
 kernel_SOURCES = kernel.cxx

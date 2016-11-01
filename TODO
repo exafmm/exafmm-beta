@@ -7,7 +7,7 @@
 - With strumpack
 - uniform/fmm.cxx accuracy problem
 - Use EXAFMM_CLUSTER in md_distributed
-- Add kernel.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
+- Add kernel.cxx vec.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
 - Full simdList, threadList, configList in nightly.py
 
 - Remove make cleanall from build

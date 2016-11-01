@@ -2,7 +2,9 @@
 #define vec_h
 #include <ostream>
 #define EXAFMM_VEC_NEWTON 1
+#ifndef EXAFMM_VEC_VERBOSE
 #define EXAFMM_VEC_VERBOSE 0
+#endif
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Using Agner's vectorclass for operator overloading SIMD intrinsics.")
 #endif
@@ -661,7 +663,8 @@ namespace exafmm {
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
-      return vec(_mm512_rsqrt23_ps(v.data));
+      vec one = 1;
+      return vec(_mm512_div_ps(one.data,_mm512_sqrt_ps(v.data)));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
@@ -772,11 +775,10 @@ namespace exafmm {
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON
-      vec<16,float> in(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],0,0,0,0,0,0,0,0);
-      vec<16,float> temp = rsqrt(in);
-      temp *= (temp * temp * in - 3.0f) * (-0.5f);
-      vec<8,double> out(temp[0],temp[1],temp[2],temp[3],temp[4],temp[5],temp[6],temp[7]);
-      return out;
+      vec temp = vec(_mm512_cvtps_pd(_mm512_rsqrt23_ps(_mm512_cvtpd_ps(v.data))));
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      return temp;
 #else
       vec one = 1;
       return vec(_mm512_div_pd(one.data,_mm512_sqrt_pd(v.data)));
@@ -896,7 +898,8 @@ namespace exafmm {
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
-      return vec(approx_rsqrt(v.data));
+      vec one = 1;
+      return vec(one.data / sqrt(v.data));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
@@ -1003,11 +1006,10 @@ namespace exafmm {
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec<8,float> in(v[0],v[1],v[2],v[3],0,0,0,0);
-      vec<8,float> temp = rsqrt(in);
-      temp *= (temp * temp * in - 3.0f) * (-0.5f);
-      vec<4,double> out(temp[0],temp[1],temp[2],temp[3]);
-      return out;
+      vec temp = vec(_mm256_cvtps_pd(approx_rsqrt(_mm256_cvtpd_ps(v.data))));
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      return temp;
 #else
       vec one = 1;
       return vec(one.data / sqrt(v.data));
@@ -1137,9 +1139,11 @@ namespace exafmm {
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(vec_rsqrtes(v.data));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
-      return vec(vec_rsqrtes(v.data));
+      vec one = 1;
+      return vec(one.data / vec_sqrt(v.data));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
@@ -1255,7 +1259,8 @@ namespace exafmm {
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
-      return vec(approx_rsqrt(v.data));
+      vec one = 1;
+      return vec(one.data / sqrt(v.data));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
@@ -1362,11 +1367,10 @@ namespace exafmm {
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec<4,float> in(v[0],v[1],0,0);
-      vec<4,float> temp = rsqrt(in);
-      temp *= (temp * temp * in - 3.0f) * (-0.5f);
-      vec<2,double> out(temp[0],temp[1]);
-      return out;
+      vec temp = vec(_mm_cvtps_pd(approx_rsqrt(_mm_cvtpd_ps(v.data))));
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      return temp;
 #else
       vec one = 1;
       return vec(one.data / sqrt(v.data));
@@ -1487,9 +1491,11 @@ namespace exafmm {
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(_fjsp_rsqrta_v2r8(v.data));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
-      return vec(_fjsp_rsqrta_v2r8(v.data));
+      vec one = 1;
+      return vec(one.data / _mm_sqrt_pd(v.data));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
