@@ -121,36 +121,36 @@ void test() {
   for (int i=0; i<S; i++) {
     assert(std::abs(a[i]-1)<EPS);
     assert(std::abs(b[i]-2*i)<EPS);
-    assert(std::abs(c[i]-(i+1.0d)/10)<EPS);
+    assert(std::abs(c[i]-(i+1.)/10)<EPS);
   }
   b &= c > (a / 2);
   a = b + c;
   c = a - b;
   for (int i=0; i<S; i++) {
-    if (i <= S/2) {
-      assert(std::abs(a[i]-(i+1.0d)/10)<EPS);
+    if (i < 5) {
+      assert(std::abs(a[i]-(i+1.)/10)<EPS);
       assert(std::abs(b[i])<EPS);
     } else {
-      assert(std::abs(a[i]-(2.1*i+0.1d)<EPS));
+      assert(std::abs(a[i]-(2.1*i+0.1)<EPS));
       assert(std::abs(b[i]-(2*i)<EPS));
     }
-    assert(std::abs(c[i]-(i+1.0d)/10)<EPS);
+    assert(std::abs(c[i]-(i+1.)/10)<EPS);
   }
   a = c * c;
   b = a / c;
   c = -b;
   for (int i=0; i<S; i++) {
-    assert(std::abs(a[i]-(i+1.0d)*(i+1.0d)/100)<EPS);
-    assert(std::abs(b[i]-(i+1.0d)/10)<EPS);
-    assert(std::abs(c[i]+(i+1.0d)/10)<EPS);
+    assert(std::abs(a[i]-(i+1.)*(i+1.)/100)<EPS);
+    assert(std::abs(b[i]-(i+1.)/10)<EPS);
+    assert(std::abs(c[i]+(i+1.)/10)<EPS);
   }
   a = rsqrt(a);
   b = min(a,b);
   c = max(a,c);
   for (int i=0; i<S; i++) {
-    assert(std::abs(a[i]-10/(i+1.0d))<EPS);
-    assert(std::abs(b[i]-(i+1.0d)/10)<EPS);
-    assert(std::abs(c[i]-10/(i+1.0d))<EPS);
+    assert(std::abs(a[i]-10/(i+1.))<EPS);
+    assert(std::abs(b[i]-std::min((i+1.)/10,double(a[i])))<EPS);
+    assert(std::abs(c[i]-10/(i+1.))<EPS);
   }
   a = a[0]/5;
   b = sum(a);
@@ -181,8 +181,8 @@ void test() {
 
 int main(int , char ** ) {
 #if defined __AVX512F__ || defined __MIC__
-  test<8,float>();
-  test<4,double>();
+  test<16,float>();
+  test<8,double>();
 #endif
 #ifdef __AVX__
   test<8,float>();
