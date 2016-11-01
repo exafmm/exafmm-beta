@@ -565,7 +565,10 @@ namespace exafmm {
   template<>
   class vec<16,float> {
   private:
-    Vec16f data;
+    union {
+      Vec16f data;
+      float array[16];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const float v) : data(v) {}                             // Copy constructor scalar
@@ -631,10 +634,10 @@ namespace exafmm {
       return vec(-data);
     }
     float &operator[](int i) {                                  // Indexing (lvalue)
-      return ((float*)&data)[i];
+      return array[i];
     }
     const float &operator[](int i) const {                      // Indexing (rvalue)
-      return ((const float*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<16; i++) s << v[i] << ' ';
@@ -680,7 +683,10 @@ namespace exafmm {
   template<>
   class vec<8,double> {
   private:
-    Vec8d data;
+    union {
+      Vec8d data;
+      double array[8];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const double v) : data(v) {}                            // Copy constructor scalar
@@ -744,10 +750,10 @@ namespace exafmm {
       return vec(-data);
     }
     double &operator[](int i) {                                 // Indexing (lvalue)
-      return ((double*)&data)[i];
+      return array[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((const double*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<8; i++) s << v[i] << ' ';
@@ -800,7 +806,10 @@ namespace exafmm {
   template<>
   class vec<16,float> {
   private:
-    __m512 data;
+    union {
+      __m512 data;
+      float array[16];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const float v) {                                        // Copy constructor scalar
@@ -869,10 +878,10 @@ namespace exafmm {
       return vec(_mm512_sub_ps(_mm512_setzero_ps(),data));
     }
     float &operator[](int i) {                                  // Indexing (lvalue)
-      return ((float*)&data)[i];
+      return array[i];
     }
     const float &operator[](int i) const {                      // Indexing (rvalue)
-      return ((const float*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<16; i++) s << v[i] << ' ';
@@ -918,7 +927,10 @@ namespace exafmm {
   template<>
   class vec<8,double> {
   private:
-    __m512d data;
+    union {
+      __m512d data;
+      double array[8];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const double v) {                                       // Copy constructor scalar
@@ -985,10 +997,10 @@ namespace exafmm {
       return vec(_mm512_sub_pd(_mm512_setzero_pd(),data));
     }
     double &operator[](int i) {                                 // Indexing (lvalue)
-      return ((double*)&data)[i];
+      return array[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((const double*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<8; i++) s << v[i] << ' ';
@@ -1040,7 +1052,10 @@ namespace exafmm {
   template<>
   class vec<8,float> {
   private:
-    Vec8f data;
+    union {
+      Vec8f data;
+      float array[8];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const float v) : data(v) {}                             // Copy constructor scalar
@@ -1104,10 +1119,10 @@ namespace exafmm {
       return vec(-data);
     }
     float &operator[](int i) {                                  // Indexing (lvalue)
-      return ((float*)&data)[i];
+      return array[i];
     }
     const float &operator[](int i) const {                      // Indexing (rvalue)
-      return ((const float*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<8; i++) s << v[i] << ' ';
@@ -1153,7 +1168,10 @@ namespace exafmm {
   template<>
   class vec<4,double> {
   private:
-    Vec4d data;
+    union {
+      Vec4d data;
+      double array[4];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const double v) : data(v) {}                            // Copy constructor scalar
@@ -1216,10 +1234,10 @@ namespace exafmm {
       return vec(-data);
     }
     double &operator[](int i) {                                 // Indexing (lvalue)
-      return ((double*)&data)[i];
+      return array[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((const double*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<4; i++) s << v[i] << ' ';
@@ -1402,7 +1420,10 @@ namespace exafmm {
   template<>
   class vec<4,float> {
   private:
-    Vec4f data;
+    union {
+      Vec4f data;
+      float array[4];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const float v) : data(v) {}                             // Copy constructor scalar
@@ -1465,10 +1486,10 @@ namespace exafmm {
       return vec(-data);
     }
     float &operator[](int i) {                                  // Indexing (lvalue)
-      return ((float*)&data)[i];
+      return array[i];
     }
     const float &operator[](int i) const {                      // Indexing (rvalue)
-      return ((const float*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<4; i++) s << v[i] << ' ';
@@ -1514,7 +1535,10 @@ namespace exafmm {
   template<>
   class vec<2,double> {
   private:
-    Vec2d data;
+    union {
+      Vec2d data;
+      double array[2];
+    };
   public:
     vec(){}                                                     // Default constructor
     vec(const double v) : data(v) {}                            // Copy constructor scalar
@@ -1577,10 +1601,10 @@ namespace exafmm {
       return vec(-data);
     }
     double &operator[](int i) {                                 // Indexing (lvalue)
-      return ((double*)&data)[i];
+      return array[i];
     }
     const double &operator[](int i) const {                     // Indexing (rvalue)
-      return ((const double*)&data)[i];
+      return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
       for (int i=0; i<2; i++) s << v[i] << ' ';
