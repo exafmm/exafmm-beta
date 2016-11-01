@@ -98,6 +98,18 @@ fi
 AM_CONDITIONAL(EXAFMM_HAVE_AVX, test "$have_avx" = "yes")
 AC_SUBST(AVX_CXXFLAGS)
 
+# AVX2
+AC_ARG_ENABLE(avx2, [AC_HELP_STRING([--enable-avx2],[enable AVX2 optimizations])], have_avx2=$enableval, have_avx2=no)
+if test "$have_avx2" = "yes"; then
+   AC_DEFINE(EXAFMM_HAVE_AVX2,1,[Define to enable AVX2 optimizations.])
+   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+      AC_MSG_ERROR([AVX2 requires single or double precision])
+   fi
+   AVX2_CXXFLAGS=-mavx2
+fi
+AM_CONDITIONAL(EXAFMM_HAVE_AVX2, test "$have_avx2" = "yes")
+AC_SUBST(AVX2_CXXFLAGS)
+
 # MIC
 AC_ARG_ENABLE(mic, [AC_HELP_STRING([--enable-mic],[enable MIC optimizations])], have_mic=$enableval, have_mic=no)
 if test "$have_mic" = "yes"; then
@@ -109,6 +121,19 @@ if test "$have_mic" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_MIC, test "$have_mic" = "yes")
 AC_SUBST(MIC_CXXFLAGS)
+
+# AVX512
+AC_ARG_ENABLE(avx512, [AC_HELP_STRING([--enable-avx512],[enable AVX512 optimizations])], have_avx512=$enableval, have_avx512=no)
+if test "$have_avx512" = "yes"; then
+   AC_DEFINE(EXAFMM_HAVE_AVX512,1,[Define to enable AVX512 optimizations.])
+   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+      AC_MSG_ERROR([AVX512 requires single or double precision])
+   fi
+   AVX512_CXXFLAGS=-mavx512
+fi
+AM_CONDITIONAL(EXAFMM_HAVE_AVX512, test "$have_avx512" = "yes")
+AC_SUBST(AVX512_CXXFLAGS)
+
 
 # Neon
 AC_ARG_ENABLE(neon, [AC_HELP_STRING([--enable-neon],[enable ARM NEON optimizations])], have_neon=$enableval, have_n\

@@ -558,7 +558,241 @@ namespace exafmm {
   };
 #endif
 
-#if __MIC__
+#ifdef __AVX512F__
+#if EXAFMM_VEC_VERBOSE
+#pragma message("Overloading vector operators for AVX512")
+#endif
+  template<>
+  class vec<16,float> {
+  private:
+    Vec16f data;
+  public:
+    vec(){}                                                     // Default constructor
+    vec(const float v) : data(v) {}                             // Copy constructor scalar
+    vec(const Vec16f v) {                                       // Copy constructor SIMD register
+      data = v;
+    }
+    vec(const vec & v) {                                        // Copy constructor vector
+      data = v.data;
+    }
+    vec(const float a, const float b, const float c, const float d,
+        const float e, const float f, const float g, const float h,
+        const float i, const float j, const float k, const float l,
+        const float m, const float n, const float o, const float p) :
+      data(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) {}                  // Copy constructor (component-wise)
+    ~vec(){}                                                    // Destructor
+    const vec &operator=(const float v) {                       // Scalar assignment
+      data = v;
+      return *this;
+    }
+    const vec &operator=(const vec & v) {                       // Vector assignment
+      data = v.data;
+      return *this;
+    }
+    const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
+      data += v.data;
+      return *this;
+    }
+    const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
+      data -= v.data;
+      return *this;
+    }
+    const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
+      data *= v.data;
+      return *this;
+    }
+    const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
+      data /= v.data;
+      return *this;
+    }
+    const vec &operator&=(const Vec16fb & v) {                  // Vector compound assignment (bitwise and)
+      data = data & v;
+      return *this;
+    }
+    vec operator+(const vec & v) const {                        // Vector arithmetic (add)
+      return vec(data + v.data);
+    }
+    vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
+      return vec(data - v.data);
+    }
+    vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
+      return vec(data * v.data);
+    }
+    vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
+      return vec(data / v.data);
+    }
+    Vec16fb operator>(const vec & v) const {                    // Vector arithmetic (greater than)
+      return data > v.data;
+    }
+    Vec16fb operator<(const vec & v) const {                    // Vector arithmetic (less than)
+      return data < v.data;
+    }
+    vec operator-() const {                                     // Vector arithmetic (negation)
+      return vec(-data);
+    }
+    float &operator[](int i) {                                  // Indexing (lvalue)
+      return ((float*)&data)[i];
+    }
+    const float &operator[](int i) const {                      // Indexing (rvalue)
+      return ((const float*)&data)[i];
+    }
+    friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
+      for (int i=0; i<16; i++) s << v[i] << ' ';
+      return s;
+    }
+    friend float sum(const vec & v) {                           // Sum vector
+      return horizontal_add(v.data);
+    }
+    friend float norm(const vec & v) {                          // L2 norm squared
+      Vec16f temp = v.data * v.data;
+      return horizontal_add(temp);
+    }
+    friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
+      return vec(min(v.data,w.data));
+    }
+    friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
+      return vec(max(v.data,w.data));
+    }
+    friend vec rsqrt(const vec & v) {                           // Reciprocal square root
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
+      vec temp = vec(approx_rsqrt(v.data));
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      return temp;
+#else
+      vec one = 1;
+      return vec(one.data / sqrt(v.data));
+#endif
+    }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(sin(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(cos(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = sincos(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(exp(v.data));
+    }
+  };
+
+  template<>
+  class vec<8,double> {
+  private:
+    Vec8d data;
+  public:
+    vec(){}                                                     // Default constructor
+    vec(const double v) : data(v) {}                            // Copy constructor scalar
+    vec(const Vec8d v) {                                        // Copy constructor SIMD register
+      data = v;
+    }
+    vec(const vec & v) {                                        // Copy constructor vector
+      data = v.data;
+    }
+    vec(const double a, const double b, const double c, const double d,
+        const double e, const double f, const double g, const double h) :
+      data(a,b,c,d,e,f,g,h) {}                                  // Copy constructor (component-wise)
+    ~vec(){}                                                    // Destructor
+    const vec &operator=(const double v) {                      // Scalar assignment
+      data = v;
+      return *this;
+    }
+    const vec &operator=(const vec & v) {                       // Vector assignment
+      data = v.data;
+      return *this;
+    }
+    const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
+      data += v.data;
+      return *this;
+    }
+    const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
+      data -= v.data;
+      return *this;
+    }
+    const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
+      data *= v.data;
+      return *this;
+    }
+    const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
+      data /= v.data;
+      return *this;
+    }
+    const vec &operator&=(const Vec8db & v) {                   // Vector compound assignment (bitwise and)
+      data = data & v;
+      return *this;
+    }
+    vec operator+(const vec & v) const {                        // Vector arithmetic (add)
+      return vec(data + v.data);
+    }
+    vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
+      return vec(data - v.data);
+    }
+    vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
+      return vec(data * v.data);
+    }
+    vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
+      return vec(data / v.data);
+    }
+    Vec8db operator>(const vec & v) const {                     // Vector arithmetic (greater than)
+      return data > v.data;
+    }
+    Vec8db operator<(const vec & v) const {                     // Vector arithmetic (less than)
+      return data < v.data;
+    }
+    vec operator-() const {                                     // Vector arithmetic (negation)
+      return vec(-data);
+    }
+    double &operator[](int i) {                                 // Indexing (lvalue)
+      return ((double*)&data)[i];
+    }
+    const double &operator[](int i) const {                     // Indexing (rvalue)
+      return ((const double*)&data)[i];
+    }
+    friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
+      for (int i=0; i<8; i++) s << v[i] << ' ';
+      return s;
+    }
+    friend double sum(const vec & v) {                          // Sum vector
+      return horizontal_add(v.data);
+    }
+    friend double norm(const vec & v) {                         // L2 norm squared
+      Vec8d temp = v.data * v.data;
+      return horizontal_add(temp);
+    }
+    friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
+      return vec(min(v.data,w.data));
+    }
+    friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
+      return vec(max(v.data,w.data));
+    }
+    friend vec rsqrt(const vec & v) {                           // Reciprocal square root
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
+      vec temp = vec(_mm512_cvtps_pd(approx_rsqrt(_mm512_cvtpd_ps(v.data))));
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      temp *= (temp * temp * v - 3.0f) * (-0.5f);
+      return temp;
+#else
+      vec one = 1;
+      return vec(one.data / sqrt(v.data));
+#endif
+    }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(sin(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(cos(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = sincos(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(exp(v.data));
+    }
+  };
+#endif
+
+#ifdef __MIC__
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for MIC")
 #endif
@@ -799,7 +1033,7 @@ namespace exafmm {
   };
 #endif
 
-#if __AVX__
+#ifdef __AVX__
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for AVX")
 #endif
@@ -1030,7 +1264,7 @@ namespace exafmm {
   };
 #endif
 
-#if __bgq__
+#ifdef __bgq__
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for BG/Q")
 #endif
@@ -1161,7 +1395,7 @@ namespace exafmm {
   };
 #endif
 
-#if __SSE__
+#ifdef __SSE__
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for SSE")
 #endif
@@ -1391,7 +1625,7 @@ namespace exafmm {
   };
 #endif
 
-#if __sparc_v9__ & EXAFMM_USE_SIMD
+#if defined __sparc_v9__ & EXAFMM_USE_SIMD
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for SPARC")
 #endif

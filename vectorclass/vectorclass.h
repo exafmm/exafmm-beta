@@ -29,7 +29,7 @@
 
 // Maximum vector size, bits. Allowed values are 128, 256, 512
 #ifndef MAX_VECTOR_SIZE
-#define MAX_VECTOR_SIZE 256
+#define MAX_VECTOR_SIZE 512
 #endif
 
 #include "instrset.h"        // Select supported instruction set
