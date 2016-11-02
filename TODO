@@ -31,7 +31,6 @@ Representative case plot generator
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
-Improve vec.h - vectorclass interface
 Remove M, L from Cell struct
 Calculate EPS from test
 
