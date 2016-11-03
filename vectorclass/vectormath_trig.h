@@ -205,42 +205,42 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
 // instantiations of sincos_d template:
 
 static inline __m128d _mm_sin_pd(__m128d const & x) {
-  return __m128d(sincos_d<Vec2d, Vec2q, Vec4i, Vec2db, 1>(0, Vec2d(x)));
+  return sincos_d<Vec2d, Vec2q, Vec4i, Vec2db, 1>(0, x);
 }
 
 static inline __m128d _mm_cos_pd(__m128d const & x) {
-  return __m128d(sincos_d<Vec2d, Vec2q, Vec4i, Vec2db, 2>(0, Vec2d(x)));
+  return sincos_d<Vec2d, Vec2q, Vec4i, Vec2db, 2>(0, x);
 }
 
 static inline __m128d _mm_sincos_pd(__m128d * cosret, __m128d const & x) {
-  return __m128d(sincos_d<Vec2d, Vec2q, Vec4i, Vec2db, 3>((Vec2d*)cosret, Vec2d(x)));
+  return sincos_d<Vec2d, Vec2q, Vec4i, Vec2db, 3>((Vec2d*)cosret, x);
 }
 
 #ifdef __AVX__
 static inline __m256d _mm256_sin_pd(__m256d const & x) {
-  return __m256d(sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 1>(0, Vec4d(x)));
+  return sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 1>(0, x);
 }
 
 static inline __m256d _mm256_cos_pd(__m256d const & x) {
-  return __m256d(sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 2>(0, Vec4d(x)));
+  return sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 2>(0, x);
 }
 
 static inline __m256d _mm256_sincos_pd(__m256d * cosret, __m256d const & x) {
-  return __m256d(sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 3>((Vec4d*)cosret, Vec4d(x)));
+  return sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 3>((Vec4d*)cosret, x);
 }
 #endif
 
 #if __AVX512F__ | __MIC__
 static inline __m512d _mm512_sin_pd(__m512d const & x) {
-  return __m512d(sincos_d<Vec8d, Vec8q, Vec8i, Vec8db, 1>(0, Vec8d(x)));
+  return sincos_d<Vec8d, Vec8q, Vec8i, Vec8db, 1>(0, x);
 }
 
 static inline __m512d _mm512_cos_pd(__m512d const & x) {
-  return __m512d(sincos_d<Vec8d, Vec8q, Vec8i, Vec8db, 2>(0, Vec8d(x)));
+  return sincos_d<Vec8d, Vec8q, Vec8i, Vec8db, 2>(0, x);
 }
 
 static inline __m512d _mm512_sincos_pd(__m512d * cosret, __m512d const & x) {
-  return __m512d(sincos_d<Vec8d, Vec8q, Vec8i, Vec8db, 3>((Vec8d*)cosret, Vec8d(x)));
+  return sincos_d<Vec8d, Vec8q, Vec8i, Vec8db, 3>((Vec8d*)cosret, x);
 }
 #endif
 
@@ -325,53 +325,45 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
     if      (SC == 1) return sin1;
     else if (SC == 2) return cos1;
     else if (SC == 3) {  // calculate both. cos returned through pointer
-        *cosret = cos1;
-        return sin1;
+      *cosret = cos1;
+      return sin1;
     }
 }
 
 // instantiations of sincos_f template:
 
 static inline __m128 _mm_sin_ps(__m128 const & x) {
-  return __m128(sincos_f<Vec4f, Vec4i, Vec4fb, 1>(0, Vec4f(x)));
+  return sincos_f<Vec4f, Vec4i, Vec4fb, 1>(0, x);
 }
-
 static inline __m128 _mm_cos_ps(__m128 const & x) {
-  return __m128(sincos_f<Vec4f, Vec4i, Vec4fb, 2>(0, Vec4f(x)));
+  return sincos_f<Vec4f, Vec4i, Vec4fb, 2>(0, x);
 }
-
 static inline __m128 _mm_sincos_ps(__m128 * cosret, __m128 const & x) {
-  return __m128(sincos_f<Vec4f, Vec4i, Vec4fb, 3>((Vec4f*)cosret, Vec4f(x)));
+  return sincos_f<Vec4f, Vec4i, Vec4fb, 3>((Vec4f*)cosret, x);
 }
 
 #ifdef __AVX__
 static inline __m256 _mm256_sin_ps(__m256 const & x) {
-  return __m256(sincos_f<Vec8f, Vec8i, Vec8fb, 1>(0, Vec8f(x)));
+  return sincos_f<Vec8f, Vec8i, Vec8fb, 1>(0, x);
 }
-
 static inline __m256 _mm256_cos_ps(__m256 const & x) {
-  return __m256(sincos_f<Vec8f, Vec8i, Vec8fb, 2>(0, Vec8f(x)));
+  return sincos_f<Vec8f, Vec8i, Vec8fb, 2>(0, x);
 }
-
 static inline __m256 _mm256_sincos_ps(__m256 * cosret, __m256 const & x) {
-  return __m256(sincos_f<Vec8f, Vec8i, Vec8fb, 3>((Vec8f*)cosret, Vec8f(x)));
+  return sincos_f<Vec8f, Vec8i, Vec8fb, 3>((Vec8f*)cosret, x);
 }
-
 #endif
 
 #if __AVX512F__ | __MIC__
 static inline __m512 _mm512_sin_ps(__m512 const & x) {
-  return __m512(sincos_f<Vec16f, Vec16i, Vec16fb, 1>(0, Vec16f(x)));
+  return sincos_f<Vec16f, Vec16i, Vec16fb, 1>(0, x);
 }
-
 static inline __m512 _mm512_cos_ps(__m512 const & x) {
-  return __m512(sincos_f<Vec16f, Vec16i, Vec16fb, 2>(0, Vec16f(x)));
+  return sincos_f<Vec16f, Vec16i, Vec16fb, 2>(0, x);
 }
-
 static inline __m512 _mm512_sincos_ps(__m512 * cosret, __m512 const & x) {
-  return __m512(sincos_f<Vec16f, Vec16i, Vec16fb, 3>((Vec16f*)cosret, Vec16f(x)));
+  return sincos_f<Vec16f, Vec16i, Vec16fb, 3>((Vec16f*)cosret, x);
 }
-
 #endif
 
 static inline float _mm_reduce_add_ps(__m128 const & in) {

@@ -210,7 +210,7 @@ namespace exafmm {
       for (int i=0; i<N; i++) temp[i] = exp(v[i]);
       return temp;
     }
-    friend int wrap(vec & v, const vec & w) {                     // Wrap around periodic boundary
+    friend int wrap(vec & v, const vec & w) {                   // Wrap around periodic boundary
       int iw = 0;
       for (int i=0; i<N; i++) {
 	if(v[i] < -w[i] / 2) {
@@ -224,7 +224,7 @@ namespace exafmm {
       }
       return iw;
     }
-    friend void unwrap(vec & v, const vec & w, const int & iw) {  // Undo wrap around periodic boundary
+    friend void unwrap(vec & v, const vec & w, const int & iw) {// Undo wrap around periodic boundary
       for (int i=0; i<N; i++) {
 	if((iw >> i) & 1) v[i] += (v[i] > 0 ? -w[i] : w[i]);
       }
