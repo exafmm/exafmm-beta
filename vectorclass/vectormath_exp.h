@@ -299,7 +299,7 @@ static inline __m256d _mm256_exp_pd(__m256d const & x) {
 }
 #endif
 
-#if defined __MIC__ || defined __AVX512F__
+#if __AVX512F__ | __MIC__
 static inline __m512d _mm512_exp_pd(__m512d const & x) {
   return __m512d(exp_d<Vec8d, Vec8db, 0, 0>(Vec8d(x)));
 }
@@ -410,7 +410,7 @@ static inline __m256 _mm256_exp_ps(__m256 const & x) {
 }
 #endif
 
-#if defined __MIC__ || defined __AVX512F__
+#if __AVX512F__ | __MIC__
 static inline __m512 _mm512_exp_ps(__m512 const & x) {
   return __m512(exp_f<Vec16f, Vec16fb, 0, 0>(Vec16f(x)));
 }

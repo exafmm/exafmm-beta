@@ -1,6 +1,7 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+- #ifdef __INTEL_COMPILER were possible
 - PetIGA no macro
 - Helmholtz breaks for very low P
 - Helmholtz breaks for -D

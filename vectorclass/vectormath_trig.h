@@ -230,7 +230,7 @@ static inline __m256d _mm256_sincos_pd(__m256d * cosret, Vec4d const & x) {
 }
 #endif
 
-#if defined __MIC__ || defined __AVX512F__
+#if __AVX512F__ | __MIC__
 static inline __m512d _mm512_sin_pd(__m512d const & x) {
   return __m512d(sincos_d<Vec8d, Vec8q, Vec8i, Vec8db, 1>(0, Vec8d(x)));
 }
@@ -359,7 +359,7 @@ static inline __m256 _mm256_sincos_ps(__m256 * cosret, __m256 const & x) {
 
 #endif
 
-#if defined __MIC__ || defined __AVX512F__
+#if __AVX512F__ | __MIC__
 static inline __m512 _mm512_sin_ps(__m512 const & x) {
   return __m512(sincos_f<Vec16f, Vec16i, Vec16fb, 1>(0, Vec16f(x)));
 }
@@ -1026,5 +1026,63 @@ static inline Vec16f atan(Vec16f const & y) {
 }
 
 #endif // MAX_VECTOR_SIZE >= 512
+
+static inline float _mm_reduce_add_ps(__m128 const & in) {
+  union {
+    __m128 temp;
+    float out[4];
+  };
+  temp = _mm_hadd_ps(in,in);
+  temp = _mm_hadd_ps(temp,temp);
+  return out[0];
+}
+
+static inline double _mm_reduce_add_pd(__m128d const & in) {
+  union {
+    __m128d temp;
+    double out[2];
+  };
+  temp = _mm_hadd_pd(in,in);
+  return out[0];
+}
+
+#ifdef __AVX__
+static inline float _mm256_reduce_add_ps(__m256 const &in) {
+  union {
+    __m256 temp;
+    float out[8];
+  };
+  temp = _mm256_permute2f128_ps(in,in,1);
+  temp = _mm256_add_ps(temp,in);
+  temp = _mm256_hadd_ps(temp,temp);
+  temp = _mm256_hadd_ps(temp,temp);
+  return out[0];
+}
+
+static inline double _mm256_reduce_add_pd(__m256d const & in) {
+  union {
+    __m256d temp;
+    double out[4];
+  };
+  temp = _mm256_permute2f128_pd(in,in,1);
+  temp = _mm256_add_pd(temp,in);
+  temp = _mm256_hadd_pd(temp,temp);
+  return out[0];
+}
+#endif
+
+#if __AVX512F__ | __MIC__
+static inline float _mm512_reduce_add_ps(__m512 const & in) {
+  __m256 temp = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd(in),1));
+  temp = _mm256_add_ps(temp,_mm512_castps512_ps256(in));
+  return _mm256_reduce_add_ps(temp);
+}
+
+static inline double _mm512_reduce_add_pd(__m512d const & in) {
+  __m256d temp = _mm512_extractf64x4_pd(in,1);
+  temp = _mm256_add_pd(temp,_mm512_castpd512_pd256(in));
+  return _mm256_reduce_add_pd(temp);
+}
+#endif
 
 #endif

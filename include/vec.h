@@ -1,8 +1,8 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
-#include "vectormath_trig.h"
-#include "vectormath_exp.h"
+#include "../vectorclass/vectormath_trig.h"
+#include "../vectorclass/vectormath_exp.h"
 #ifndef EXAFMM_VEC_NEWTON
 #define EXAFMM_VEC_NEWTON 1
 #endif
@@ -550,7 +550,7 @@ namespace exafmm {
   };
 #endif
 
-#if defined __MIC__ || defined __AVX512F__
+#if __AVX512F__ | __MIC__
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for AVX512/MIC")
 #endif
@@ -893,27 +893,11 @@ namespace exafmm {
       return s;
     }
     friend float sum(const vec & v) {                           // Sum vector
-      union {
-        __m256 temp;
-        float out[8];
-      };
-      temp = _mm256_permute2f128_ps(v.data,v.data,1);
-      temp = _mm256_add_ps(temp,v.data);
-      temp = _mm256_hadd_ps(temp,temp);
-      temp = _mm256_hadd_ps(temp,temp);
-      return out[0];
+      return _mm256_reduce_add_ps(v.data);
     }
     friend float norm(const vec & v) {                          // L2 norm squared
-      union {
-        __m256 temp;
-        float out[8];
-      };
-      temp = _mm256_mul_ps(v.data,v.data);
-      __m256 perm = _mm256_permute2f128_ps(temp,temp,1);
-      temp = _mm256_add_ps(temp,perm);
-      temp = _mm256_hadd_ps(temp,temp);
-      temp = _mm256_hadd_ps(temp,temp);
-      return out[0];
+      __m256 temp = _mm256_mul_ps(v.data,v.data);
+      return _mm256_reduce_add_ps(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
       return vec(_mm256_min_ps(v.data,w.data));
@@ -1027,25 +1011,11 @@ namespace exafmm {
       return s;
     }
     friend double sum(const vec & v) {                          // Sum vector
-      union {
-        __m256d temp;
-        double out[4];
-      };
-      temp = _mm256_permute2f128_pd(v.data,v.data,1);
-      temp = _mm256_add_pd(temp,v.data);
-      temp = _mm256_hadd_pd(temp,temp);
-      return out[0];
+      return _mm256_reduce_add_pd(v.data);
     }
     friend double norm(const vec & v) {                         // L2 norm squared
-      union {
-        __m256d temp;
-        double out[4];
-      };
-      temp = _mm256_mul_pd(v.data,v.data);
-      __m256d perm = _mm256_permute2f128_pd(temp,temp,1);
-      temp = _mm256_add_pd(temp,perm);
-      temp = _mm256_hadd_pd(temp,temp);
-      return out[0];
+      __m256d temp = _mm256_mul_pd(v.data,v.data);
+      return _mm256_reduce_add_pd(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
       return vec(_mm256_min_pd(v.data,w.data));
@@ -1297,23 +1267,11 @@ namespace exafmm {
       return s;
     }
     friend float sum(const vec & v) {                           // Sum vector
-      union {
-        __m128 temp;
-        float out[4];
-      };
-      temp = _mm_hadd_ps(v.data,v.data);
-      temp = _mm_hadd_ps(temp,temp);
-      return out[0];
+      return _mm_reduce_add_ps(v.data);
     }
     friend float norm(const vec & v) {                          // L2 norm squared
-      union {
-        __m128 temp;
-        float out[4];
-      };
-      temp = _mm_mul_ps(v.data,v.data);
-      temp = _mm_hadd_ps(temp,temp);
-      temp = _mm_hadd_ps(temp,temp);
-      return out[0];
+      __m128 temp = _mm_mul_ps(v.data,v.data);
+      return _mm_reduce_add_ps(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
       return vec(_mm_min_ps(v.data,w.data));
@@ -1427,21 +1385,11 @@ namespace exafmm {
       return s;
     }
     friend double sum(const vec & v) {                          // Sum vector
-      union {
-        __m128d temp;
-        double out[2];
-      };
-      temp = _mm_hadd_pd(v.data,v.data);
-      return out[0];
+      return _mm_reduce_add_pd(v.data);
     }
     friend double norm(const vec & v) {                         // L2 norm squared
-      union {
-        __m128d temp;
-        double out[2];
-      };
-      temp = _mm_mul_pd(v.data,v.data);
-      temp = _mm_hadd_pd(temp,temp);
-      return out[0];
+      __m128d temp = _mm_mul_pd(v.data,v.data);
+      return _mm_reduce_add_pd(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
       return vec(_mm_min_pd(v.data,w.data));

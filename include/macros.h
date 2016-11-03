@@ -2,7 +2,7 @@
 #define macros_h
 
 // Detect SIMD Byte length of architecture
-#if __MIC__ | __AVX512F__
+#if __AVX512F__ | __MIC__
 const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC and AVX512
 #elif __AVX__ | __bgq__
 const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX and BG/Q
