@@ -1,6 +1,8 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
+#include "vectormath_trig.h"
+#include "vectormath_exp.h"
 #ifndef EXAFMM_VEC_NEWTON
 #define EXAFMM_VEC_NEWTON 1
 #endif
@@ -807,6 +809,7 @@ namespace exafmm {
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for AVX")
 #endif
+#include <immintrin.h>
   template<>
   class vec<8,float> {
   private:
@@ -1211,6 +1214,7 @@ namespace exafmm {
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for SSE")
 #endif
+#include <pmmintrin.h>
   template<>
   class vec<4,float> {
   private:
