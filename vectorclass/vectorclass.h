@@ -5,13 +5,13 @@
 * Version:       1.18
 * Project:       vector classes
 * Description:
-* Header file defining vector classes as interface to intrinsic functions 
+* Header file defining vector classes as interface to intrinsic functions
 * in x86 microprocessors with SSE2 and later instruction sets up to AVX512.
 *
 * Instructions:
-* Use Gnu, Clang, Intel or Microsoft C++ compiler. Compile for the desired 
-* instruction set, which must be at least SSE2. Specify the supported 
-* instruction set by a command line define, e.g. __SSE4_1__ if the 
+* Use Gnu, Clang, Intel or Microsoft C++ compiler. Compile for the desired
+* instruction set, which must be at least SSE2. Specify the supported
+* instruction set by a command line define, e.g. __SSE4_1__ if the
 * compiler does not automatically do so.
 *
 * Each vector object is represented internally in the CPU as a vector
@@ -32,38 +32,35 @@
 #define MAX_VECTOR_SIZE 512
 #endif
 
-#include "instrset.h"        // Select supported instruction set
+#include <x86intrin.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-#if INSTRSET < 2             // SSE2 required
-  #error Please compile for the SSE2 instruction set or higher
-#else
+#define __FMA__  1
+#define INSTRSET 9
+#define GCC_VERSION  ((__GNUC__) * 10000 + (__GNUC_MINOR__) * 100 + (__GNUC_PATCHLEVEL__))
 
-#include "vectori128.h"      // 128-bit integer vectors
-#include "vectorf128.h"      // 128-bit floating point vectors
+template <int32_t  n> class Const_int_t  {};
+template <uint32_t n> class Const_uint_t {};
+#define const_int(n)  (Const_int_t <n>())
+#define const_uint(n) (Const_uint_t<n>())
 
-#if MAX_VECTOR_SIZE >= 256
-#if INSTRSET >= 8
-  #include "vectori256.h"    // 256-bit integer vectors, requires AVX2 instruction set
-#else
-  #include "vectori256e.h"   // 256-bit integer vectors, emulated
-#endif  // INSTRSET >= 8
-#if INSTRSET >= 7
-  #include "vectorf256.h"    // 256-bit floating point vectors, requires AVX instruction set
-#else
-  #include "vectorf256e.h"   // 256-bit floating point vectors, emulated
-#endif  //  INSTRSET >= 7
-#endif  //  MAX_VECTOR_SIZE >= 256
+template <bool> class Static_error_check {
+public:  Static_error_check(){};
+};
+template <> class Static_error_check<false> {
+private: Static_error_check(){};
+};
 
-#if MAX_VECTOR_SIZE >= 512
-#if INSTRSET >= 9
-  #include "vectori512.h"    // 512-bit integer vectors, requires AVX512 instruction set
-  #include "vectorf512.h"    // 512-bit floating point vectors, requires AVX512 instruction set
-#else
-  #include "vectori512e.h"   // 512-bit integer vectors, emulated
-  #include "vectorf512e.h"   // 512-bit floating point vectors, emulated
-#endif  //  INSTRSET >= 9
-#endif  //  MAX_VECTOR_SIZE >= 512
-
-#endif  // INSTRSET < 2 
+#include "vectori128.h"
+#include "vectorf128.h"
+#if __AVX__
+#include "vectori256.h"
+#include "vectorf256.h"
+#endif
+#if __AVX512F__ | __MIC__
+#include "vectori512.h"
+#include "vectorf512.h"
+#endif
 
 #endif  // VECTORCLASS_H

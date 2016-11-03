@@ -5,14 +5,14 @@
 * Version:       1.18
 * Project:       vector classes
 * Description:
-* Header file defining integer vector classes as interface to intrinsic 
+* Header file defining integer vector classes as interface to intrinsic
 * functions in x86 microprocessors with SSE2 and later instruction sets
 * up to AVX.
 *
 * Instructions:
-* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired 
-* instruction set, which must be at least SSE2. Specify the supported 
-* instruction set by a command line define, e.g. __SSE4_1__ if the 
+* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired
+* instruction set, which must be at least SSE2. Specify the supported
+* instruction set by a command line define, e.g. __SSE4_1__ if the
 * compiler does not automatically do so.
 *
 * The following vector classes are defined here:
@@ -44,7 +44,7 @@
 #ifndef VECTORI128_H
 #define VECTORI128_H
 
-#include "instrset.h"  // Select supported instruction set
+//#include "instrset.h"  // Select supported instruction set
 
 #if INSTRSET < 2   // SSE2 required
 #error Please compile for the SSE2 instruction set or higher
@@ -133,7 +133,7 @@ public:
             __m128i x;
             uint8_t i[16];
         } u;
-        u.x = xmm; 
+        u.x = xmm;
         int w = (index >> 3) & 0xF;            // byte index
         int bi = index & 7;                    // bit index within byte w
         return (u.i[w] >> bi) & 1;
@@ -229,8 +229,8 @@ static inline __m128i constant4i() {
 // Corresponds to this pseudocode:
 // for (int i = 0; i < 16; i++) result[i] = s[i] ? a[i] : b[i];
 // Each byte in s must be either 0 (false) or 0xFF (true). No other values are allowed.
-// The implementation depends on the instruction set: 
-// If SSE4.1 is supported then only bit 7 in each byte of s is checked, 
+// The implementation depends on the instruction set:
+// If SSE4.1 is supported then only bit 7 in each byte of s is checked,
 // otherwise all bits in s are used.
 static inline __m128i selectb (__m128i const & s, __m128i const & a, __m128i const & b) {
 #if INSTRSET >= 5   // SSE4.1 supported
@@ -358,7 +358,7 @@ public:
         }
         if (n <= 0) return;
         // we are not using _mm_maskmoveu_si128 because it is too slow on many processors
-        union {        
+        union {
             int8_t  c[16];
             int16_t s[8];
             int32_t i[4];
@@ -429,7 +429,7 @@ public:
     // Constructor to build from all elements:
     Vec16cb(bool x0, bool x1, bool x2, bool x3, bool x4, bool x5, bool x6, bool x7,
         bool x8, bool x9, bool x10, bool x11, bool x12, bool x13, bool x14, bool x15) {
-        xmm = Vec16c(-int8_t(x0), -int8_t(x1), -int8_t(x2), -int8_t(x3), -int8_t(x4), -int8_t(x5), -int8_t(x6), -int8_t(x7), 
+        xmm = Vec16c(-int8_t(x0), -int8_t(x1), -int8_t(x2), -int8_t(x3), -int8_t(x4), -int8_t(x5), -int8_t(x6), -int8_t(x7),
             -int8_t(x8), -int8_t(x9), -int8_t(x10), -int8_t(x11), -int8_t(x12), -int8_t(x13), -int8_t(x14), -int8_t(x15));
     }
     // Constructor to convert from type __m128i used in intrinsics:
@@ -831,7 +831,7 @@ static inline Vec16c abs_saturated(Vec16c const & a) {
     return           _mm_add_epi8(absa,overfl);            // subtract 1 if 0x80
 }
 
-// function rotate_left: rotate each element left by b bits 
+// function rotate_left: rotate each element left by b bits
 // Use negative count to rotate right
 static inline Vec16c rotate_left(Vec16c const & a, int b) {
 #ifdef __XOP__  // AMD XOP instruction set
@@ -1069,7 +1069,7 @@ static inline Vec16uc min(Vec16uc const & a, Vec16uc const & b) {
 }
 
 
-    
+
 /*****************************************************************************
 *
 *          Vector of 8 16-bit signed integers
@@ -1137,7 +1137,7 @@ public:
         }
         if (n <= 0) return;
         // we are not using _mm_maskmoveu_si128 because it is too slow on many processors
-        union {        
+        union {
             int8_t  c[16];
             int16_t s[8];
             int32_t i[4];
@@ -1623,7 +1623,7 @@ static inline Vec8s rotate_left(Vec8s const & a, int b) {
 #ifdef __XOP__  // AMD XOP instruction set
     return _mm_rot_epi16(a,_mm_set1_epi16(b));
 #else  // SSE2 instruction set
-    __m128i left  = _mm_sll_epi16(a,_mm_cvtsi32_si128(b & 0x0F));      // a << b 
+    __m128i left  = _mm_sll_epi16(a,_mm_cvtsi32_si128(b & 0x0F));      // a << b
     __m128i right = _mm_srl_epi16(a,_mm_cvtsi32_si128((16-b) & 0x0F)); // a >> (16 - b)
     __m128i rot   = _mm_or_si128(left,right);                          // or
     return  rot;
@@ -1708,7 +1708,7 @@ static inline Vec8us operator * (Vec8us const & a, Vec8us const & b) {
 
 // vector operator >> : shift right logical all elements
 static inline Vec8us operator >> (Vec8us const & a, uint32_t b) {
-    return _mm_srl_epi16(a,_mm_cvtsi32_si128(b)); 
+    return _mm_srl_epi16(a,_mm_cvtsi32_si128(b));
 }
 
 // vector operator >> : shift right logical all elements
@@ -1724,7 +1724,7 @@ static inline Vec8us & operator >>= (Vec8us & a, int b) {
 
 // vector operator << : shift left all elements
 static inline Vec8us operator << (Vec8us const & a, uint32_t b) {
-    return _mm_sll_epi16(a,_mm_cvtsi32_si128(b)); 
+    return _mm_sll_epi16(a,_mm_cvtsi32_si128(b));
 }
 
 // vector operator << : shift left all elements
@@ -1741,7 +1741,7 @@ static inline Vec8s operator >= (Vec8us const & a, Vec8us const & b) {
     return _mm_cmpeq_epi16(a,max_ab);                      // a == max(a,b)
 #else  // SSE2 instruction set
     __m128i s = _mm_subs_epu16(b,a);                       // b-a, saturated
-    return  _mm_cmpeq_epi16(s, _mm_setzero_si128());       // s == 0 
+    return  _mm_cmpeq_epi16(s, _mm_setzero_si128());       // s == 0
 #endif
 }
 
@@ -1955,14 +1955,14 @@ public:
             xmm = _mm_setr_epi32(((int32_t*)p)[0], ((int32_t*)p)[1], ((int32_t*)p)[2], 0);  break;
         case 4:
             load(p);  break;
-        default: 
+        default:
             break;
         }
         return *this;
     }
     // Partial store. Store n elements
     void store_partial(int n, void * p) const {
-        union {        
+        union {
             int32_t i[4];
             int64_t q[2];
         } u;
@@ -1975,7 +1975,7 @@ public:
             *(int64_t*)p = u.q[0];  break;
         case 3:
             store(u.i);
-            *(int64_t*)p     = u.q[0];  
+            *(int64_t*)p     = u.q[0];
             ((int32_t*)p)[2] = u.i[2];  break;
         case 4:
             store(p);  break;
@@ -2052,7 +2052,7 @@ public:
     Vec4ib & insert (int index, bool a) {
         Vec4i::insert(index, -(int)a);
         return *this;
-    }    
+    }
     // Member function extract a single element from vector
     bool extract(uint32_t index) const {
         return Vec4i::extract(index) != 0;
@@ -2191,8 +2191,8 @@ static inline Vec4i operator * (Vec4i const & a, Vec4i const & b) {
    __m128i b13    = _mm_shuffle_epi32(b, 0xF5);          // (-,b3,-,b1)
    __m128i prod02 = _mm_mul_epu32(a, b);                 // (-,a2*b2,-,a0*b0)
    __m128i prod13 = _mm_mul_epu32(a13, b13);             // (-,a3*b3,-,a1*b1)
-   __m128i prod01 = _mm_unpacklo_epi32(prod02,prod13);   // (-,-,a1*b1,a0*b0) 
-   __m128i prod23 = _mm_unpackhi_epi32(prod02,prod13);   // (-,-,a3*b3,a2*b2) 
+   __m128i prod01 = _mm_unpacklo_epi32(prod02,prod13);   // (-,-,a1*b1,a0*b0)
+   __m128i prod23 = _mm_unpackhi_epi32(prod02,prod13);   // (-,-,a3*b3,a2*b2)
    return           _mm_unpacklo_epi64(prod01,prod23);   // (ab3,ab2,ab1,ab0)
 #endif
 }
@@ -2242,7 +2242,7 @@ static inline Vec4ib operator != (Vec4i const & a, Vec4i const & b) {
     return Vec4ib(Vec4i (~(a == b)));
 #endif
 }
-  
+
 // vector operator > : returns true for elements for which a > b
 static inline Vec4ib operator > (Vec4i const & a, Vec4i const & b) {
     return _mm_cmpgt_epi32(a, b);
@@ -2444,7 +2444,7 @@ static inline Vec4i rotate_left(Vec4i const & a, int b) {
 #ifdef __XOP__  // AMD XOP instruction set
     return _mm_rot_epi32(a,_mm_set1_epi32(b));
 #else  // SSE2 instruction set
-    __m128i left  = _mm_sll_epi32(a,_mm_cvtsi32_si128(b & 0x1F));      // a << b 
+    __m128i left  = _mm_sll_epi32(a,_mm_cvtsi32_si128(b & 0x1F));      // a << b
     __m128i right = _mm_srl_epi32(a,_mm_cvtsi32_si128((32-b) & 0x1F)); // a >> (32 - b)
     __m128i rot   = _mm_or_si128(left,right);                          // or
     return  rot;
@@ -2529,7 +2529,7 @@ static inline Vec4ui operator * (Vec4ui const & a, Vec4ui const & b) {
 
 // vector operator >> : shift right logical all elements
 static inline Vec4ui operator >> (Vec4ui const & a, uint32_t b) {
-    return _mm_srl_epi32(a,_mm_cvtsi32_si128(b)); 
+    return _mm_srl_epi32(a,_mm_cvtsi32_si128(b));
 }
 
 // vector operator >> : shift right logical all elements
@@ -2794,7 +2794,7 @@ public:
             *this = Vec2q(*(int64_t*)p, 0);  break;
         case 2:
             load(p);  break;
-        default: 
+        default:
             break;
         }
         return *this;
@@ -2840,7 +2840,7 @@ public:
         __m128i v = _mm_loadl_epi64(&u.m);
 #endif
         if (index == 0) {
-            v = _mm_unpacklo_epi64(v,v);     
+            v = _mm_unpacklo_epi64(v,v);
             xmm = _mm_unpackhi_epi64(v,xmm);
         }
         else {  // index = 1
@@ -2904,7 +2904,7 @@ public:
     Vec2qb & insert (int index, bool a) {
         Vec2q::insert(index, -(int64_t)a);
         return *this;
-    }    
+    }
     // Member function extract a single element from vector
     bool extract(uint32_t index) const {
         return Vec2q::extract(index) != 0;
@@ -3120,7 +3120,7 @@ static inline Vec2qb operator != (Vec2q const & a, Vec2q const & b) {
     return Vec2qb(Vec2q(~(a == b)));
 #endif
 }
-  
+
 // vector operator < : returns true for elements for which a < b
 static inline Vec2qb operator < (Vec2q const & a, Vec2q const & b) {
 #if INSTRSET >= 6   // SSE4.2 supported
@@ -3277,7 +3277,7 @@ static inline Vec2q rotate_left(Vec2q const & a, int b) {
 #ifdef __XOP__  // AMD XOP instruction set
     return _mm_rot_epi64(a,Vec2q(b));
 #else  // SSE2 instruction set
-    __m128i left  = _mm_sll_epi64(a,_mm_cvtsi32_si128(b & 0x3F));      // a << b 
+    __m128i left  = _mm_sll_epi64(a,_mm_cvtsi32_si128(b & 0x3F));      // a << b
     __m128i right = _mm_srl_epi64(a,_mm_cvtsi32_si128((64-b) & 0x3F)); // a >> (64 - b)
     __m128i rot   = _mm_or_si128(left,right);                          // or
     return  rot;
@@ -3359,7 +3359,7 @@ static inline Vec2uq operator * (Vec2uq const & a, Vec2uq const & b) {
 
 // vector operator >> : shift right logical all elements
 static inline Vec2uq operator >> (Vec2uq const & a, uint32_t b) {
-    return _mm_srl_epi64(a,_mm_cvtsi32_si128(b)); 
+    return _mm_srl_epi64(a,_mm_cvtsi32_si128(b));
 }
 
 // vector operator >> : shift right logical all elements
@@ -3492,10 +3492,10 @@ static inline Vec2uq min(Vec2uq const & a, Vec2uq const & b) {
 ******************************************************************************
 *
 * These permute functions can reorder the elements of a vector and optionally
-* set some elements to zero. 
+* set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select. A negative index will generate zero. an index of -256 means don't care.
 *
 * Example:
@@ -3504,7 +3504,7 @@ static inline Vec2uq min(Vec2uq const & a, Vec2uq const & b) {
 * b = permute4i<0,0,2,2>(a);    // b is (10,10,12,12)
 * c = permute4i<3,2,-1,-1>(a);  // c is (13,12, 0, 0)
 *
-* The permute functions for vectors of 8-bit integers are inefficient if 
+* The permute functions for vectors of 8-bit integers are inefficient if
 * the SSSE3 instruction set or later is not enabled.
 *
 * A lot of the code here is metaprogramming aiming to find the instructions
@@ -3562,7 +3562,7 @@ template <int i0, int i1, int i2, int i3>
 static inline Vec4i permute4i(Vec4i const & a) {
 
     // Combine all the indexes into a single bitfield, with 4 bits for each
-    const int m1 = (i0&3) | (i1&3)<<4 | (i2&3)<<8 | (i3&3)<<12; 
+    const int m1 = (i0&3) | (i1&3)<<4 | (i2&3)<<8 | (i3&3)<<12;
 
     // Mask to zero out negative indexes
     const int mz = (i0<0?0:0xF) | (i1<0?0:0xF)<<4 | (i2<0?0:0xF)<<8 | (i3<0?0:0xF)<<12;
@@ -3637,8 +3637,8 @@ static inline Vec8s permute8s(Vec8s const & a) {
     if (i0>=0 && i0 < 8 && i1==((i0+1)&7) && i2==((i0+2)&7) && i3==((i0+3)&7) && i4==((i0+4)&7) && i5==((i0+5)&7) && i6==((i0+6)&7) && i7==((i0+7)&7)) {
         if (i0 == 0) return a;  // do nothing
         return _mm_alignr_epi8(a, a, (i0 & 7) * 2);
-    }    
-    
+    }
+
     // General case: Use PSHUFB
     const int j0 = i0 < 0 ? 0xFFFF : ( (i0 & 7) * 2 | ((i0 & 7) * 2 + 1) << 8 );
     const int j1 = i1 < 0 ? 0xFFFF : ( (i1 & 7) * 2 | ((i1 & 7) * 2 + 1) << 8 );
@@ -3652,7 +3652,7 @@ static inline Vec8s permute8s(Vec8s const & a) {
     return _mm_shuffle_epi8(a,mask);
 
 #else   // SSE2 has no simple solution. Find the optimal permute method.
-    // Without proper metaprogramming features, we have to use constant expressions 
+    // Without proper metaprogramming features, we have to use constant expressions
     // and if-statements to make sure these calculations are resolved at compile time.
     // All this should produce at most 8 instructions in the final code, depending
     // on the template parameters.
@@ -3661,8 +3661,8 @@ static inline Vec8s permute8s(Vec8s const & a) {
     __m128i t1, t2, t3, t4, t5, t6, t7;
 
     // Combine all the indexes into a single bitfield, with 4 bits for each
-    const int m1 = (i0&7) | (i1&7)<<4 | (i2&7)<<8 | (i3&7)<<12 
-        | (i4&7)<<16 | (i5&7)<<20 | (i6&7)<<24 | (i7&7)<<28; 
+    const int m1 = (i0&7) | (i1&7)<<4 | (i2&7)<<8 | (i3&7)<<12
+        | (i4&7)<<16 | (i5&7)<<20 | (i6&7)<<24 | (i7&7)<<28;
 
     // Mask to zero out negative indexes
     const int m2 = (i0<0?0:0xF) | (i1<0?0:0xF)<<4 | (i2<0?0:0xF)<<8 | (i3<0?0:0xF)<<12
@@ -3672,13 +3672,13 @@ static inline Vec8s permute8s(Vec8s const & a) {
     const bool case0 = ((m1 ^ 0x76543210) & m2) == 0; // all indexes point to their own place or negative
 
     // Test if we can do with 32-bit permute only
-    const bool case1 = 
+    const bool case1 =
         (m1 & 0x01010101 & m2) == 0        // even indexes are even or negative
         && (~m1 & 0x10101010 & m2) == 0    // odd  indexes are odd  or negative
         && ((m1 ^ ((m1 + 0x01010101) << 4)) & 0xF0F0F0F0 & m2 & (m2 << 4)) == 0; // odd index == preceding even index +1 or at least one of them negative
 
     // Test if we can do with 16-bit permute only
-    const bool case2 = 
+    const bool case2 =
         (((m1 & 0x44444444) ^ 0x44440000) & m2) == 0;  // indexes 0-3 point to lower 64 bits, 1-7 to higher 64 bits, or negative
 
     if (case0) {
@@ -3703,11 +3703,11 @@ static inline Vec8s permute8s(Vec8s const & a) {
         const int j5 = i5 >= 0 ? i5&3 : 1;
         const int j6 = i6 >= 0 ? i6&3 : 2;
         const int j7 = i7 >= 0 ? i7&3 : 3;
-        if (j0!=0 || j1!=1 || j2!=2 || j3!=3) {            
+        if (j0!=0 || j1!=1 || j2!=2 || j3!=3) {
             t1 = _mm_shufflelo_epi16(a, j0 | j1<<2 | j2<<4 | j3<<6);
         }
         else t1 = a;
-        if (j4!=0 || j5!=1 || j6!=2 || j7!=3) {            
+        if (j4!=0 || j5!=1 || j6!=2 || j7!=3) {
             t7 = _mm_shufflehi_epi16(t1, j4 | j5<<2 | j6<<4 | j7<<6);
         }
         else t7 = t1;
@@ -3762,7 +3762,7 @@ static inline Vec8s permute8s(Vec8s const & a) {
                 t2 = _mm_shufflelo_epi16(t1, r0 | r1<<2 | r2<<4 | r3<<6);
             }
             else t2 = t1;
-            if (s0!=0 || s1!=1 || s2!=2 || s3!=3) {  // 16 bit permute of high half                
+            if (s0!=0 || s1!=1 || s2!=2 || s3!=3) {  // 16 bit permute of high half
                 t7 = _mm_shufflehi_epi16(t2, s0 | s1<<2 | s2<<4 | s3<<6);
             }
             else t7 = t2;
@@ -3840,19 +3840,19 @@ static inline Vec8us permute8us(Vec8us const & a) {
 }
 
 
-template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7, 
-          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 > 
+template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7,
+          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 >
 static inline Vec16c permute16c(Vec16c const & a) {
 
     __m128i temp;
 
     // Combine all even indexes into a single bitfield, with 4 bits for each
-    const uint32_t me = (i0&15) | (i2&15)<<4 | (i4&15)<<8 | (i6&15)<<12 
-        | (i8&15)<<16 | (i10&15)<<20 | (i12&15)<<24 | (i14&15)<<28; 
+    const uint32_t me = (i0&15) | (i2&15)<<4 | (i4&15)<<8 | (i6&15)<<12
+        | (i8&15)<<16 | (i10&15)<<20 | (i12&15)<<24 | (i14&15)<<28;
 
     // Combine all odd indexes into a single bitfield, with 4 bits for each
-    const uint32_t mo = (i1&15) | (i3&15)<<4 | (i5&15)<<8 | (i7&15)<<12 
-        | (i9&15)<<16 | (i11&15)<<20 | (i13&15)<<24 | (i15&15)<<28; 
+    const uint32_t mo = (i1&15) | (i3&15)<<4 | (i5&15)<<8 | (i7&15)<<12
+        | (i9&15)<<16 | (i11&15)<<20 | (i13&15)<<24 | (i15&15)<<28;
 
     // Mask indicating sign of all even indexes, with 4 bits for each, 0 for negative, 0xF for non-negative
     const uint32_t se = (i0<0?0:0xF) | (i2<0?0:0xF)<<4 | (i4<0?0:0xF)<<8 | (i6<0?0:0xF)<<12
@@ -3866,9 +3866,9 @@ static inline Vec16c permute16c(Vec16c const & a) {
     const uint32_t ss = (se & 0x33333333) | (so & 0xCCCCCCCC);
 
     // Mask indicating required zeroing of all indexes, with 2 bits for each, 0 for index = -1, 3 for index >= 0 or -256
-    const uint32_t ssz = ((i0&0x80)?0:3) | ((i1 &0x80)?0:3)<< 2 | ((i2 &0x80)?0:3)<< 4 | ((i3 &0x80)?0:3)<< 6 | 
-                    ((i4 &0x80)?0:3)<< 8 | ((i5 &0x80)?0:3)<<10 | ((i6 &0x80)?0:3)<<12 | ((i7 &0x80)?0:3)<<14 | 
-                    ((i8 &0x80)?0:3)<<16 | ((i9 &0x80)?0:3)<<18 | ((i10&0x80)?0:3)<<20 | ((i11&0x80)?0:3)<<22 | 
+    const uint32_t ssz = ((i0&0x80)?0:3) | ((i1 &0x80)?0:3)<< 2 | ((i2 &0x80)?0:3)<< 4 | ((i3 &0x80)?0:3)<< 6 |
+                    ((i4 &0x80)?0:3)<< 8 | ((i5 &0x80)?0:3)<<10 | ((i6 &0x80)?0:3)<<12 | ((i7 &0x80)?0:3)<<14 |
+                    ((i8 &0x80)?0:3)<<16 | ((i9 &0x80)?0:3)<<18 | ((i10&0x80)?0:3)<<20 | ((i11&0x80)?0:3)<<22 |
                     ((i12&0x80)?0:3)<<24 | ((i13&0x80)?0:3)<<26 | ((i14&0x80)?0:3)<<28 | ((i15&0x80)?0:3)<<30 ;
 
     // These indexes are used only to avoid bogus compiler warnings in false branches
@@ -3877,7 +3877,7 @@ static inline Vec16c permute16c(Vec16c const & a) {
 
     // special case: all zero
     if (ss == 0) {
-        return _mm_setzero_si128();  
+        return _mm_setzero_si128();
     }
 
     // remember if extra zeroing is needed
@@ -3904,14 +3904,14 @@ static inline Vec16c permute16c(Vec16c const & a) {
     #endif
 
     // check if we can use byte shift right
-    else if (i0 > 0 && ((me ^ (uint32_t(I0)*0x11111111u + 0xECA86420u)) & se) == 0 && 
+    else if (i0 > 0 && ((me ^ (uint32_t(I0)*0x11111111u + 0xECA86420u)) & se) == 0 &&
     ((mo ^ (uint32_t(I0)*0x11111111u + 0xFDB97531u)) & so) == 0) {
         shortcut = 4;
         do_and_zero = ((0xFFFFFFFFu >> 2*I0) & ~ ssz) != 0;
     }
     // check if we can use byte shift left
-    else if (i15 >= 0 && i15 < 15 &&         
-    ((mo ^ (uint32_t(I15*0x11111111u) - (0x02468ACEu & so))) & so) == 0 && 
+    else if (i15 >= 0 && i15 < 15 &&
+    ((mo ^ (uint32_t(I15*0x11111111u) - (0x02468ACEu & so))) & so) == 0 &&
     ((me ^ (uint32_t(I15*0x11111111u) - (0x13579BDFu & se))) & se) == 0) {
         shortcut = 5;
         do_and_zero = ((0xFFFFFFFFu << 2*(15-I15)) & ~ ssz) != 0;
@@ -3920,14 +3920,14 @@ static inline Vec16c permute16c(Vec16c const & a) {
 #if  INSTRSET >= 4  // SSSE3 (PSHUFB available only under SSSE3)
 
     // special case: rotate
-    if (i0>0 && i0 < 16    && i1==((i0+1)&15) && i2 ==((i0+2 )&15) && i3 ==((i0+3 )&15) && i4 ==((i0+4 )&15) && i5 ==((i0+5 )&15) && i6 ==((i0+6 )&15) && i7 ==((i0+7 )&15) 
+    if (i0>0 && i0 < 16    && i1==((i0+1)&15) && i2 ==((i0+2 )&15) && i3 ==((i0+3 )&15) && i4 ==((i0+4 )&15) && i5 ==((i0+5 )&15) && i6 ==((i0+6 )&15) && i7 ==((i0+7 )&15)
     && i8==((i0+8)&15) && i9==((i0+9)&15) && i10==((i0+10)&15) && i11==((i0+11)&15) && i12==((i0+12)&15) && i13==((i0+13)&15) && i14==((i0+14)&15) && i15==((i0+15)&15)) {
         temp = _mm_alignr_epi8(a, a, i0 & 15);
         shortcut = -1;
     }
     if (shortcut == 0 || do_and_zero) {
         // general case: use PSHUFB
-        __m128i mask = constant4i< 
+        __m128i mask = constant4i<
             (i0  & 0xFF) | (i1  & 0xFF) << 8 | (i2  & 0xFF) << 16 | (i3  & 0xFF) << 24 ,
             (i4  & 0xFF) | (i5  & 0xFF) << 8 | (i6  & 0xFF) << 16 | (i7  & 0xFF) << 24 ,
             (i8  & 0xFF) | (i9  & 0xFF) << 8 | (i10 & 0xFF) << 16 | (i11 & 0xFF) << 24 ,
@@ -3954,8 +3954,8 @@ static inline Vec16c permute16c(Vec16c const & a) {
         shortcut = 100;
         do_and_zero = (se != so && ssz != 0xFFFFFFFFu);
     }
-  
-    // Check if we can use 16-bit permute with bytes swapped. Even numbered indexes must be odd and odd 
+
+    // Check if we can use 16-bit permute with bytes swapped. Even numbered indexes must be odd and odd
     // numbered indexes must be equal to the preceding index - 1, except for negative indexes.
     // (this case occurs when reversing byte order)
     if (shortcut == 0 && ((me ^ 0x11111111) & 0x11111111 & se) == 0 && (mo & 0x11111111 & so) == 0 && ((me ^ mo) & 0xEEEEEEEE & se & so) == 0) {
@@ -3991,7 +3991,7 @@ static inline Vec16c permute16c(Vec16c const & a) {
         }
         if (do_and_zero) {
             // additional zeroing needed
-            __m128i maskz = constant4i < 
+            __m128i maskz = constant4i <
                 (i0  < 0 ? 0 : 0xFF) | (i1  < 0 ? 0 : 0xFF00) | (i2  < 0 ? 0 : 0xFF0000) | (i3  < 0 ? 0 : 0xFF000000) ,
                 (i4  < 0 ? 0 : 0xFF) | (i5  < 0 ? 0 : 0xFF00) | (i6  < 0 ? 0 : 0xFF0000) | (i7  < 0 ? 0 : 0xFF000000) ,
                 (i8  < 0 ? 0 : 0xFF) | (i9  < 0 ? 0 : 0xFF00) | (i10 < 0 ? 0 : 0xFF0000) | (i11 < 0 ? 0 : 0xFF000000) ,
@@ -4006,19 +4006,19 @@ static inline Vec16c permute16c(Vec16c const & a) {
     const bool e2o = (~mo & 0x11111111 & so) != 0;  // even bytes of source to odd  bytes of destination
     const bool o2e = (me  & 0x11111111 & se) != 0;  // odd  bytes of source to even bytes of destination
     const bool o2o = (mo  & 0x11111111 & so) != 0;  // odd  bytes of source to odd  bytes of destination
-    
+
     Vec16c swapped, te2e, te2o, to2e, to2o, combeven, combodd;
 
     if (e2o || o2e) swapped = rotate_left(Vec8s(a), 8); // swap odd and even bytes
 
     // even-to-even bytes
     if (e2e) te2e = permute8s <(i0&1)?-1:i0/2, (i2&1)?-1:i2/2, (i4&1)?-1:i4/2, (i6&1)?-1:i6/2,
-        (i8&1)?-1:i8/2, (i10&1)?-1:i10/2, (i12&1)?-1:i12/2, (i14&1)?-1:i14/2> (Vec8s(a));                 
+        (i8&1)?-1:i8/2, (i10&1)?-1:i10/2, (i12&1)?-1:i12/2, (i14&1)?-1:i14/2> (Vec8s(a));
     // odd-to-even bytes
     if (o2e) to2e = permute8s <(i0&1)?i0/2:-1, (i2&1)?i2/2:-1, (i4&1)?i4/2:-1, (i6&1)?i6/2:-1,
         (i8&1)?i8/2:-1, (i10&1)?i10/2:-1, (i12&1)?i12/2:-1, (i14&1)?i14/2:-1> (Vec8s(swapped));
     // even-to-odd bytes
-    if (e2o) te2o = permute8s <(i1&1)?-1:i1/2, (i3&1)?-1:i3/2, (i5&1)?-1:i5/2, (i7&1)?-1:i7/2, 
+    if (e2o) te2o = permute8s <(i1&1)?-1:i1/2, (i3&1)?-1:i3/2, (i5&1)?-1:i5/2, (i7&1)?-1:i7/2,
         (i9&1)?-1:i9/2, (i11&1)?-1:i11/2, (i13&1)?-1:i13/2, (i15&1)?-1:i15/2> (Vec8s(swapped));
     // odd-to-odd bytes
     if (o2o) to2o = permute8s <(i1&1)?i1/2:-1, (i3&1)?i3/2:-1, (i5&1)?i5/2:-1, (i7&1)?i7/2:-1,
@@ -4050,8 +4050,8 @@ static inline Vec16c permute16c(Vec16c const & a) {
         _mm_and_si128(combodd, masko));
 }
 
-template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7, 
-          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 > 
+template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7,
+          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 >
 static inline Vec16uc permute16uc(Vec16uc const & a) {
     return Vec16uc (permute16c <i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15> (a));
 }
@@ -4064,16 +4064,16 @@ static inline Vec16uc permute16uc(Vec16uc const & a) {
 ******************************************************************************
 *
 * These blend functions can mix elements from two different vectors and
-* optionally set some elements to zero. 
+* optionally set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select, where higher indexes indicate an element from the second source
 * vector. For example, if each vector has 4 elements, then indexes 0 - 3
-* will select an element from the first vector and indexes 4 - 7 will select 
+* will select an element from the first vector and indexes 4 - 7 will select
 * an element from the second vector. A negative index will generate zero.
 *
-* The blend functions for vectors of 8-bit integers are inefficient if 
+* The blend functions for vectors of 8-bit integers are inefficient if
 * the SSSE3 instruction set or later is not enabled.
 *
 * Example:
@@ -4088,17 +4088,17 @@ static inline Vec16uc permute16uc(Vec16uc const & a) {
 * mode with optimization on.
 *****************************************************************************/
 
-template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7, 
-          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 > 
+template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7,
+          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 >
 static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
 
     // Combine bit 0-3 of all even indexes into a single bitfield, with 4 bits for each
-    const int me = (i0&15) | (i2&15)<<4 | (i4&15)<<8 | (i6&15)<<12 
-        | (i8&15)<<16 | (i10&15)<<20 | (i12&15)<<24 | (i14&15)<<28; 
+    const int me = (i0&15) | (i2&15)<<4 | (i4&15)<<8 | (i6&15)<<12
+        | (i8&15)<<16 | (i10&15)<<20 | (i12&15)<<24 | (i14&15)<<28;
 
     // Combine bit 0-3 of all odd indexes into a single bitfield, with 4 bits for each
-    const int mo = (i1&15) | (i3&15)<<4 | (i5&15)<<8 | (i7&15)<<12 
-        | (i9&15)<<16 | (i11&15)<<20 | (i13&15)<<24 | (i15&15)<<28; 
+    const int mo = (i1&15) | (i3&15)<<4 | (i5&15)<<8 | (i7&15)<<12
+        | (i9&15)<<16 | (i11&15)<<20 | (i13&15)<<24 | (i15&15)<<28;
 
     // Mask indicating sign of all even indexes, with 4 bits for each, 0 for negative, 0xF for non-negative
     const int se = (i0<0?0:0xF) | (i2<0?0:0xF)<<4 | (i4<0?0:0xF)<<8 | (i6<0?0:0xF)<<12
@@ -4109,12 +4109,12 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
         | (i9<0?0:0xF)<<16 | (i11<0?0:0xF)<<20 | (i13<0?0:0xF)<<24 | (i15<0?0:0xF)<<28;
 
     // Combine bit 4 of all even indexes into a single bitfield, with 4 bits for each
-    const int ne = (i0&16)>>4 | (i2&16) | (i4&16)<<4 | (i6&16)<<8 
-        | (i8&16)<<12 | (i10&16)<<16 | (i12&16)<<20 | (i14&16)<<24; 
+    const int ne = (i0&16)>>4 | (i2&16) | (i4&16)<<4 | (i6&16)<<8
+        | (i8&16)<<12 | (i10&16)<<16 | (i12&16)<<20 | (i14&16)<<24;
 
     // Combine bit 4 of all odd indexes into a single bitfield, with 4 bits for each
     const int no = (i1&16)>>4 | (i3&16) | (i5&16)<<4 | (i7&16)<<8
-        | (i9&16)<<12 | (i11&16)<<16 | (i13&16)<<20 | (i15&16)<<24; 
+        | (i9&16)<<12 | (i11&16)<<16 | (i13&16)<<20 | (i15&16)<<24;
 
     // Check if zeroing needed
     const bool do_zero = ((i0|i1|i2|i3|i4|i5|i6|i7|i8|i9|i10|i11|i12|i13|i14|i15) & 0x80) != 0; // needs zeroing
@@ -4132,15 +4132,15 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
 
     // check if we can use punpcklbw
     if (((me ^ 0x76543210) & se) == 0 && ((mo ^ 0x76543210) & so) == 0) {
-        if ((ne & se) == 0 && ((no ^ 0x11111111) & so) == 0) {        
+        if ((ne & se) == 0 && ((no ^ 0x11111111) & so) == 0) {
             t = _mm_unpacklo_epi8(a,b);
         }
-        if ((no & so) == 0 && ((ne ^ 0x11111111) & se) == 0) {        
+        if ((no & so) == 0 && ((ne ^ 0x11111111) & se) == 0) {
             t = _mm_unpacklo_epi8(b,a);
         }
         if (do_zero) {
             // additional zeroing needed
-            __m128i maskz = constant4i < 
+            __m128i maskz = constant4i <
                 (i0  < 0 ? 0 : 0xFF) | (i1  < 0 ? 0 : 0xFF00) | (i2  < 0 ? 0 : 0xFF0000) | (i3  < 0 ? 0 : 0xFF000000) ,
                 (i4  < 0 ? 0 : 0xFF) | (i5  < 0 ? 0 : 0xFF00) | (i6  < 0 ? 0 : 0xFF0000) | (i7  < 0 ? 0 : 0xFF000000) ,
                 (i8  < 0 ? 0 : 0xFF) | (i9  < 0 ? 0 : 0xFF00) | (i10 < 0 ? 0 : 0xFF0000) | (i11 < 0 ? 0 : 0xFF000000) ,
@@ -4152,15 +4152,15 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
 
     // check if we can use punpckhbw
     if (((me ^ 0xFEDCBA98) & se) == 0 && ((mo ^ 0xFEDCBA98) & so) == 0) {
-        if ((ne & se) == 0 && ((no ^ 0x11111111) & so) == 0) {        
+        if ((ne & se) == 0 && ((no ^ 0x11111111) & so) == 0) {
             t = _mm_unpackhi_epi8(a,b);
         }
-        if ((no & so) == 0 && ((ne ^ 0x11111111) & se) == 0) {        
+        if ((no & so) == 0 && ((ne ^ 0x11111111) & se) == 0) {
             t = _mm_unpackhi_epi8(b,a);
         }
         if (do_zero) {
             // additional zeroing needed
-            __m128i maskz = constant4i < 
+            __m128i maskz = constant4i <
                 (i0  < 0 ? 0 : 0xFF) | (i1  < 0 ? 0 : 0xFF00) | (i2  < 0 ? 0 : 0xFF0000) | (i3  < 0 ? 0 : 0xFF000000) ,
                 (i4  < 0 ? 0 : 0xFF) | (i5  < 0 ? 0 : 0xFF00) | (i6  < 0 ? 0 : 0xFF0000) | (i7  < 0 ? 0 : 0xFF000000) ,
                 (i8  < 0 ? 0 : 0xFF) | (i9  < 0 ? 0 : 0xFF00) | (i10 < 0 ? 0 : 0xFF0000) | (i11 < 0 ? 0 : 0xFF000000) ,
@@ -4169,16 +4169,16 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
         }
         return t;
     }
-    
+
 #if  INSTRSET >= 4  // SSSE3
     // special case: shift left
-    if (i0 > 0 && i0 < 16 && i1==i0+1 && i2==i0+2 && i3==i0+3 && i4==i0+4 && i5==i0+5 && i6==i0+6 && i7==i0+7 && 
+    if (i0 > 0 && i0 < 16 && i1==i0+1 && i2==i0+2 && i3==i0+3 && i4==i0+4 && i5==i0+5 && i6==i0+6 && i7==i0+7 &&
         i8==i0+8 && i9==i0+9 && i10==i0+10 && i11==i0+11 && i12==i0+12 && i13==i0+13 && i14==i0+14 && i15==i0+15) {
         return _mm_alignr_epi8(b, a, (i0 & 15));
     }
 
     // special case: shift right
-    if (i0 > 15 && i0 < 32 && i1==((i0+1)&31) && i2 ==((i0+2 )&31) && i3 ==((i0+3 )&31) && i4 ==((i0+4 )&31) && i5 ==((i0+5 )&31) && i6 ==((i0+6 )&31) && i7 ==((i0+7 )&31) && 
+    if (i0 > 15 && i0 < 32 && i1==((i0+1)&31) && i2 ==((i0+2 )&31) && i3 ==((i0+3 )&31) && i4 ==((i0+4 )&31) && i5 ==((i0+5 )&31) && i6 ==((i0+6 )&31) && i7 ==((i0+7 )&31) &&
         i8==((i0+8 )&31)   && i9==((i0+9)&31) && i10==((i0+10)&31) && i11==((i0+11)&31) && i12==((i0+12)&31) && i13==((i0+13)&31) && i14==((i0+14)&31) && i15==((i0+15)&31)) {
         return _mm_alignr_epi8(a, b, (i0 & 15));
     }
@@ -4195,7 +4195,7 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
         t = _mm_blendv_epi8(a, b, maskbl);
         if (do_zero) {
             // additional zeroing needed
-            __m128i maskz = constant4i < 
+            __m128i maskz = constant4i <
                 (i0  < 0 ? 0 : 0xFF) | (i1  < 0 ? 0 : 0xFF00) | (i2  < 0 ? 0 : 0xFF0000) | (i3  < 0 ? 0 : 0xFF000000) ,
                 (i4  < 0 ? 0 : 0xFF) | (i5  < 0 ? 0 : 0xFF00) | (i6  < 0 ? 0 : 0xFF0000) | (i7  < 0 ? 0 : 0xFF000000) ,
                 (i8  < 0 ? 0 : 0xFF) | (i9  < 0 ? 0 : 0xFF00) | (i10 < 0 ? 0 : 0xFF0000) | (i11 < 0 ? 0 : 0xFF000000) ,
@@ -4215,7 +4215,7 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
     return _mm_perm_epi8(a, b, mask);
 
 #elif  INSTRSET >= 4  // SSSE3
-   
+
     // general case. Use PSHUFB
     __m128i maska = constant4i<
         ((i0 & 0x90) ? 0xFF : (i0 &15)) | ((i1 & 0x90) ? 0xFF : (i1 &15)) << 8 | ((i2 & 0x90) ? 0xFF : (i2 &15)) << 16 | ((i3 & 0x90) ? 0xFF : (i3 &15)) << 24,
@@ -4258,7 +4258,7 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
         (uint32_t)(i4 ^16) < 16 ? (i4 ^16) : -1,
         (uint32_t)(i5 ^16) < 16 ? (i5 ^16) : -1,
         (uint32_t)(i6 ^16) < 16 ? (i6 ^16) : -1,
-        (uint32_t)(i7 ^16) < 16 ? (i7 ^16) : -1,        
+        (uint32_t)(i7 ^16) < 16 ? (i7 ^16) : -1,
         (uint32_t)(i8 ^16) < 16 ? (i8 ^16) : -1,
         (uint32_t)(i9 ^16) < 16 ? (i9 ^16) : -1,
         (uint32_t)(i10^16) < 16 ? (i10^16) : -1,
@@ -4272,8 +4272,8 @@ static inline Vec16c blend16c(Vec16c const & a, Vec16c const & b) {
 #endif
 }
 
-template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7, 
-          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 > 
+template <int i0, int i1, int i2,  int i3,  int i4,  int i5,  int i6,  int i7,
+          int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15 >
 static inline Vec16uc blend16uc(Vec16uc const & a, Vec16uc const & b) {
     return Vec16uc( blend16c<i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15> (a,b));
 }
@@ -4283,8 +4283,8 @@ template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7>
 static inline Vec8s blend8s(Vec8s const & a, Vec8s const & b) {
 
     // Combine all the indexes into a single bitfield, with 4 bits for each
-    const int m1 = (i0&0xF) | (i1&0xF)<<4 | (i2&0xF)<<8 | (i3&0xF)<<12 
-        | (i4&0xF)<<16 | (i5&0xF)<<20 | (i6&0xF)<<24 | (i7&0xF)<<28; 
+    const int m1 = (i0&0xF) | (i1&0xF)<<4 | (i2&0xF)<<8 | (i3&0xF)<<12
+        | (i4&0xF)<<16 | (i5&0xF)<<20 | (i6&0xF)<<24 | (i7&0xF)<<28;
 
     // Mask to zero out negative indexes
     const int mz = (i0<0?0:0xF) | (i1<0?0:0xF)<<4 | (i2<0?0:0xF)<<8 | (i3<0?0:0xF)<<12
@@ -4309,7 +4309,7 @@ static inline Vec8s blend8s(Vec8s const & a, Vec8s const & b) {
         return permute8s <i0&~8, i1&~8, i2&~8, i3&~8, i4&~8, i5&~8, i6&~8, i7&~8> (b);
     }
 
-    // special case: PUNPCKLWD 
+    // special case: PUNPCKLWD
     if (((m1 ^ 0xB3A29180) & mz) == 0) {
         temp = _mm_unpacklo_epi16(a, b);
         if (do_zero) zeroing_pending = true; else return temp;
@@ -4318,7 +4318,7 @@ static inline Vec8s blend8s(Vec8s const & a, Vec8s const & b) {
         temp = _mm_unpacklo_epi16(b, a);
         if (do_zero) zeroing_pending = true; else return temp;
     }
-    // special case: PUNPCKHWD 
+    // special case: PUNPCKHWD
     if (((m1 ^ 0xF7E6D5C4) & mz) == 0) {
         temp = _mm_unpackhi_epi16(a, b);
         if (do_zero) zeroing_pending = true; else return temp;
@@ -4345,7 +4345,7 @@ static inline Vec8s blend8s(Vec8s const & a, Vec8s const & b) {
 #if INSTRSET >= 5   // SSE4.1 supported
     // special case: blending without permuting
     if ((((m1 & ~0x88888888) ^ 0x76543210) & mz) == 0) {
-        temp = _mm_blend_epi16(a, b, (i0>>3&1) | (i1>>3&1)<<1 | (i2>>3&1)<<2 | (i3>>3&1)<<3 
+        temp = _mm_blend_epi16(a, b, (i0>>3&1) | (i1>>3&1)<<1 | (i2>>3&1)<<2 | (i3>>3&1)<<3
             | (i4>>3&1)<<4 | (i5>>3&1)<<5 | (i6>>3&1)<<6 | (i7>>3&1)<<7);
         if (do_zero) zeroing_pending = true; else return temp;
     }
@@ -4353,13 +4353,13 @@ static inline Vec8s blend8s(Vec8s const & a, Vec8s const & b) {
 
     if (zeroing_pending) {
         // additional zeroing of temp needed
-        __m128i maskz = constant4i < 
+        __m128i maskz = constant4i <
             (i0 < 0 ? 0 : 0xFFFF) | (i1 < 0 ? 0 : 0xFFFF0000) ,
             (i2 < 0 ? 0 : 0xFFFF) | (i3 < 0 ? 0 : 0xFFFF0000) ,
             (i4 < 0 ? 0 : 0xFFFF) | (i5 < 0 ? 0 : 0xFFFF0000) ,
             (i6 < 0 ? 0 : 0xFFFF) | (i7 < 0 ? 0 : 0xFFFF0000) > ();
         return _mm_and_si128(temp, maskz);
-    }        
+    }
 
     // general case
 #ifdef __XOP__     // Use AMD XOP instruction PPERM
@@ -4369,7 +4369,7 @@ static inline Vec8s blend8s(Vec8s const & a, Vec8s const & b) {
         (i4 < 0 ? 0x8080 : (i4*2 & 31) | ((i4*2 & 31)+1)<<8) | (i5 < 0 ? 0x80800000 : ((i5*2 & 31)<<16) | ((i5*2 & 31)+1)<<24),
         (i6 < 0 ? 0x8080 : (i6*2 & 31) | ((i6*2 & 31)+1)<<8) | (i7 < 0 ? 0x80800000 : ((i7*2 & 31)<<16) | ((i7*2 & 31)+1)<<24) > ();
     return _mm_perm_epi8(a, b, mask);
-#else  
+#else
     // combine two permutes
     __m128i a1 = permute8s <
         (uint32_t)i0 < 8 ? i0 : -1,
@@ -4403,7 +4403,7 @@ template <int i0, int i1, int i2, int i3>
 static inline Vec4i blend4i(Vec4i const & a, Vec4i const & b) {
 
     // Combine all the indexes into a single bitfield, with 8 bits for each
-    const int m1 = (i0 & 7) | (i1 & 7) << 8 | (i2 & 7) << 16 | (i3 & 7) << 24; 
+    const int m1 = (i0 & 7) | (i1 & 7) << 8 | (i2 & 7) << 16 | (i3 & 7) << 24;
 
     // Mask to zero out negative indexes
     const int mz = (i0 < 0 ? 0 : 0xFF) | (i1 < 0 ? 0 : 0xFF) << 8 | (i2 < 0 ? 0 : 0xFF) << 16 | (i3 < 0 ? 0 : 0xFF) << 24;
@@ -4440,7 +4440,7 @@ static inline Vec4i blend4i(Vec4i const & a, Vec4i const & b) {
         if (do_zero) zeroing_pending = true; else return temp;
     }
 
-    // special case: PUNPCKHDQ 
+    // special case: PUNPCKHDQ
     if (((m1 ^ 0x07030602) & mz) == 0) {
         temp = _mm_unpackhi_epi32(a, b);
         if (do_zero) zeroing_pending = true; else return temp;
@@ -4476,7 +4476,7 @@ static inline Vec4i blend4i(Vec4i const & a, Vec4i const & b) {
         // additional zeroing of temp needed
         __m128i maskz = constant4i < (i0 < 0 ? 0 : -1), (i1 < 0 ? 0 : -1), (i2 < 0 ? 0 : -1), (i3 < 0 ? 0 : -1) > ();
         return _mm_and_si128(temp, maskz);
-    }        
+    }
 
     // general case
 #ifdef __XOP__     // Use AMD XOP instruction PPERM
@@ -4511,7 +4511,7 @@ template <int i0, int i1>
 static inline Vec2q blend2q(Vec2q const & a, Vec2q const & b) {
 
     // Combine all the indexes into a single bitfield, with 8 bits for each
-    const int m1 = (i0&3) | (i1&3)<<8; 
+    const int m1 = (i0&3) | (i1&3)<<8;
 
     // Mask to zero out negative indexes
     const int mz = (i0 < 0 ? 0 : 0xFF) | (i1 < 0 ? 0 : 0xFF) << 8;
@@ -4526,14 +4526,14 @@ static inline Vec2q blend2q(Vec2q const & a, Vec2q const & b) {
     }
     // (all cases where one index is -1 or -256 would go to the above cases)
 
-    // special case: PUNPCKLQDQ 
+    // special case: PUNPCKLQDQ
     if (i0 == 0 && i1 == 2) {
         return _mm_unpacklo_epi64(a, b);
     }
     if (i0 == 2 && i1 == 0) {
         return _mm_unpacklo_epi64(b, a);
     }
-    // special case: PUNPCKHQDQ 
+    // special case: PUNPCKHQDQ
     if (i0 == 1 && i1 == 3) {
         return _mm_unpackhi_epi64(a, b);
     }
@@ -4559,7 +4559,7 @@ static inline Vec2q blend2q(Vec2q const & a, Vec2q const & b) {
     }
 #endif // SSE4.1
 
-    // general case. combine two permutes 
+    // general case. combine two permutes
     // (all cases are caught by the above special cases if SSE4.1 or higher is supported)
     __m128i a1, b1;
     a1 = permute2q <(uint32_t)i0 < 2 ? i0 : -1, (uint32_t)i1 < 2 ? i1 : -1 > (a);
@@ -4848,11 +4848,11 @@ static inline Vec2q lookup(Vec2q const & index, void const * table) {
 static inline Vec16c shift_bytes_up(Vec16c const & a, int b) {
     if ((uint32_t)b > 15) return _mm_setzero_si128();
 #if INSTRSET >= 4    // SSSE3
-    static const char mask[32] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};    
+    static const char mask[32] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     return Vec16c(_mm_shuffle_epi8(a, Vec16c().load(mask+16-b)));
 #else
     Vec2uq a1 = Vec2uq(a);
-    if (b < 8) {    
+    if (b < 8) {
         a1 = (a1 << (b*8)) | (permute2uq<-1,0>(a1) >> (64 - (b*8)));
     }
     else {
@@ -4871,11 +4871,11 @@ static inline Vec16c shift_bytes_down(Vec16c const & a, int b) {
     return Vec16c(_mm_shuffle_epi8(a, Vec16c().load(mask+b)));
 #else
     Vec2uq a1 = Vec2uq(a);
-    if (b < 8) {    
+    if (b < 8) {
         a1 = (a1 >> (b*8)) | (permute2uq<1,-1>(a1) << (64 - (b*8)));
     }
     else {
-        a1 = permute2uq<1,-1>(a1) >> ((b-8)*8); 
+        a1 = permute2uq<1,-1>(a1) >> ((b-8)*8);
     }
     return Vec16c(a1);
 #endif
@@ -5191,18 +5191,18 @@ static inline Vec4ui compress_saturated (Vec2uq const & low, Vec2uq const & high
     // but available in all known processors with SSE4.2
 #if defined (__GNUC__) || defined(__clang__)
 static inline uint32_t vml_popcnt (uint32_t a) __attribute__ ((pure));
-static inline uint32_t vml_popcnt (uint32_t a) {	
+static inline uint32_t vml_popcnt (uint32_t a) {
     uint32_t r;
     __asm("popcnt %1, %0" : "=r"(r) : "r"(a) : );
     return r;
 }
 #else
-static inline uint32_t vml_popcnt (uint32_t a) {	
+static inline uint32_t vml_popcnt (uint32_t a) {
     return _mm_popcnt_u32(a);  // MS intrinsic
 }
 #endif // platform
 #else  // no SSE4.2
-static inline uint32_t vml_popcnt (uint32_t a) {	
+static inline uint32_t vml_popcnt (uint32_t a) {
     // popcnt instruction not available
     uint32_t b = a - ((a >> 1) & 0x55555555);
     uint32_t c = (b & 0x33333333) + ((b >> 2) & 0x33333333);
@@ -5216,13 +5216,13 @@ static inline uint32_t vml_popcnt (uint32_t a) {
 // Define bit-scan-forward function. Gives index to lowest set bit
 #if defined (__GNUC__) || defined(__clang__)
 static inline uint32_t bit_scan_forward (uint32_t a) __attribute__ ((pure));
-static inline uint32_t bit_scan_forward (uint32_t a) {	
+static inline uint32_t bit_scan_forward (uint32_t a) {
     uint32_t r;
     __asm("bsfl %1, %0" : "=r"(r) : "r"(a) : );
     return r;
 }
 #else
-static inline uint32_t bit_scan_forward (uint32_t a) {	
+static inline uint32_t bit_scan_forward (uint32_t a) {
     unsigned long r;
     _BitScanForward(&r, a);                      // defined in intrin.h for MS and Intel compilers
     return r;
@@ -5232,13 +5232,13 @@ static inline uint32_t bit_scan_forward (uint32_t a) {
 // Define bit-scan-reverse function. Gives index to highest set bit = floor(log2(a))
 #if defined (__GNUC__) || defined(__clang__)
 static inline uint32_t bit_scan_reverse (uint32_t a) __attribute__ ((pure));
-static inline uint32_t bit_scan_reverse (uint32_t a) {	
+static inline uint32_t bit_scan_reverse (uint32_t a) {
     uint32_t r;
     __asm("bsrl %1, %0" : "=r"(r) : "r"(a) : );
     return r;
 }
 #else
-static inline uint32_t bit_scan_reverse (uint32_t a) {	
+static inline uint32_t bit_scan_reverse (uint32_t a) {
     unsigned long r;
     _BitScanReverse(&r, a);                      // defined in intrin.h for MS and Intel compilers
     return r;
@@ -5249,7 +5249,7 @@ static inline uint32_t bit_scan_reverse (uint32_t a) {
 // We need template metaprogramming for calculating this function at compile time.
 // This may take a long time to compile because of the template recursion.
 // Todo: replace this with a constexpr function when C++14 becomes available
-template <uint32_t n> 
+template <uint32_t n>
 struct BitScanR {
     enum {val = (
         n >= 0x10 ? 4 + (BitScanR<(n>>4)>::val) :
@@ -5276,7 +5276,7 @@ template <> struct BitScanR<0> {enum {val = 0};};          // Avoid infinite tem
 * All elements in a vector are divided by the same divisor. It is not possible
 * to divide different elements of the same vector by different divisors.
 *
-* The parameters used for fast division are stored in an object of a 
+* The parameters used for fast division are stored in an object of a
 * Divisor class. This object can be created implicitly, for example in:
 *        Vec4i a, b; int c;
 *        a = b / c;
@@ -5295,7 +5295,7 @@ template <> struct BitScanR<0> {enum {val = 0};};          // Avoid infinite tem
 *            temp /= div10;                             // divide each element by 10
 *            temp.store(quotients+i);                   // store 4 elements
 *        }
-* 
+*
 * The parameters for fast division can also be computed at compile time. This is
 * an advantage if the divisor is known at compile time. Use the const_int or const_uint
 * macro to do this. For example, for signed integers:
@@ -5305,10 +5305,10 @@ template <> struct BitScanR<0> {enum {val = 0};};          // Avoid infinite tem
 *        Vec8us a, b;
 *        a = b / const_uint(10);
 *
-* The division of a vector of 16-bit integers is faster than division of a vector 
+* The division of a vector of 16-bit integers is faster than division of a vector
 * of other integer sizes.
 *
-* 
+*
 * Mathematical formula, used for signed division with fixed or variable divisor:
 * (From T. Granlund and P. L. Montgomery: Division by Invariant Integers Using Multiplication,
 * Proceedings of the SIGPLAN 1994 Conference on Programming Language Design and Implementation.
@@ -5322,7 +5322,7 @@ template <> struct BitScanR<0> {enum {val = 0};};          // Avoid infinite tem
 * sh1 = L-1
 * q = x + (m*x >> w)                             [high part of signed multiplication with 2w bits]
 * q = (q >> sh1) - (x<0 ? -1 : 0)
-* if (divisor < 0) q = -q 
+* if (divisor < 0) q = -q
 * result trunc(x/d) = q
 *
 * Mathematical formula, used for unsigned division with variable divisor:
@@ -5574,7 +5574,7 @@ static inline Vec4i operator / (Vec4i const & a, Divisor_i const & d) {
     __m128i t12 = _mm_sub_epi32(t9,t11);                   // + 1 if a < 0, -1 if d < 0
     return        _mm_xor_si128(t12,d.getsign());          // change sign if divisor negative
 
-#elif INSTRSET >= 5 && !defined (XOP_MUL_BUG)  // SSE4.1 supported 
+#elif INSTRSET >= 5 && !defined (XOP_MUL_BUG)  // SSE4.1 supported
     __m128i t1  = _mm_mul_epi32(a,d.getm());               // 32x32->64 bit signed multiplication of a[0] and a[2]
     __m128i t2  = _mm_srli_epi64(t1,32);                   // high dword of result 0 and 2
     __m128i t3  = _mm_srli_epi64(a,32);                    // get a[1] and a[3] into position for multiplication
@@ -5626,7 +5626,7 @@ static inline Vec4ui operator / (Vec4ui const & a, Divisor_ui const & d) {
     __m128i t8  = _mm_sub_epi32(a,t7);                     // subtract
     __m128i t9  = _mm_srl_epi32(t8,d.gets1());             // shift right logical
     __m128i t10 = _mm_add_epi32(t7,t9);                    // add
-    return        _mm_srl_epi32(t10,d.gets2());            // shift right logical 
+    return        _mm_srl_epi32(t10,d.gets2());            // shift right logical
 }
 
 // vector of 8 16-bit signed integers
@@ -5646,10 +5646,10 @@ static inline Vec8us operator / (Vec8us const & a, Divisor_us const & d) {
     __m128i t2  = _mm_sub_epi16(a,t1);                     // subtract
     __m128i t3  = _mm_srl_epi16(t2,d.gets1());             // shift right logical
     __m128i t4  = _mm_add_epi16(t1,t3);                    // add
-    return        _mm_srl_epi16(t4,d.gets2());             // shift right logical 
+    return        _mm_srl_epi16(t4,d.gets2());             // shift right logical
 }
 
- 
+
 // vector of 16 8-bit signed integers
 static inline Vec16c operator / (Vec16c const & a, Divisor_s const & d) {
     // expand into two Vec8s
@@ -5830,7 +5830,7 @@ static inline Vec4ui & operator /= (Vec4ui & a, Const_int_t<d> b) {
 }
 
 
-// Divide Vec8s by compile-time constant 
+// Divide Vec8s by compile-time constant
 template <int d>
 static inline Vec8s divide_by_i(Vec8s const & x) {
     const int16_t d0 = int16_t(d);                                   // truncate d to 16 bits
@@ -6067,10 +6067,10 @@ static inline uint16_t to_bits(Vec16cb const & x) {
 // to_Vec16bc: convert integer bitfield to boolean vector
 static inline Vec16cb to_Vec16cb(uint16_t x) {
     static const uint32_t table[16] = {  // lookup-table
-        0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF, 
-        0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF, 
-        0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 
-        0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF}; 
+        0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
+        0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF,
+        0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF,
+        0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF};
     uint32_t a0 = table[x       & 0xF];
     uint32_t a1 = table[(x>>4)  & 0xF];
     uint32_t a2 = table[(x>>8)  & 0xF];
@@ -6087,10 +6087,10 @@ static inline uint8_t to_bits(Vec8sb const & x) {
 // to_Vec8sb: convert integer bitfield to boolean vector
 static inline Vec8sb to_Vec8sb(uint8_t x) {
     static const uint32_t table[16] = {  // lookup-table
-        0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF, 
-        0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF, 
-        0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 
-        0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF}; 
+        0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
+        0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF,
+        0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF,
+        0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF};
     uint32_t a0 = table[x       & 0xF];
     uint32_t a1 = table[(x>>4)  & 0xF];
     Vec4ui   b  = Vec4ui(a0, a1, a0, a1);
@@ -6110,10 +6110,10 @@ static inline uint8_t to_bits(Vec4ib const & x) {
 // to_Vec4ib: convert integer bitfield to boolean vector
 static inline Vec4ib to_Vec4ib(uint8_t x) {
     static const uint32_t table[16] = {    // lookup-table
-        0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF, 
-        0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF, 
-        0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 
-        0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF}; 
+        0x00000000, 0x000000FF, 0x0000FF00, 0x0000FFFF,
+        0x00FF0000, 0x00FF00FF, 0x00FFFF00, 0x00FFFFFF,
+        0xFF000000, 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF,
+        0xFFFF0000, 0xFFFF00FF, 0xFFFFFF00, 0xFFFFFFFF};
     uint32_t a = table[x & 0xF];           // 4 bytes
     __m128i b = _mm_cvtsi32_si128(a);      // transfer to vector register
     __m128i c = _mm_unpacklo_epi8(b, b);   // duplicate bytes to 16-bit words
