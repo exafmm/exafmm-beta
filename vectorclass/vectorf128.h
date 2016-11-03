@@ -5,14 +5,14 @@
 * Version:       1.16
 * Project:       vector classes
 * Description:
-* Header file defining floating point vector classes as interface to 
+* Header file defining floating point vector classes as interface to
 * intrinsic functions in x86 microprocessors with SSE2 and later instruction
 * sets up to AVX.
 *
 * Instructions:
-* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired 
-* instruction set, which must be at least SSE2. Specify the supported 
-* instruction set by a command line define, e.g. __SSE4_1__ if the 
+* Use Gnu, Intel or Microsoft C++ compiler. Compile for the desired
+* instruction set, which must be at least SSE2. Specify the supported
+* instruction set by a command line define, e.g. __SSE4_1__ if the
 * compiler does not automatically do so.
 *
 * The following vector classes are defined here:
@@ -44,12 +44,12 @@
 *          select functions
 *
 *****************************************************************************/
-// Select between two __m128 sources, element by element. Used in various functions 
+// Select between two __m128 sources, element by element. Used in various functions
 // and operators. Corresponds to this pseudocode:
 // for (int i = 0; i < 4; i++) result[i] = s[i] ? a[i] : b[i];
-// Each element in s must be either 0 (false) or 0xFFFFFFFF (true). No other values are 
-// allowed. The implementation depends on the instruction set: 
-// If SSE4.1 is supported then only bit 31 in each dword of s is checked, 
+// Each element in s must be either 0 (false) or 0xFFFFFFFF (true). No other values are
+// allowed. The implementation depends on the instruction set:
+// If SSE4.1 is supported then only bit 31 in each dword of s is checked,
 // otherwise all bits in s are used.
 static inline __m128 selectf (__m128 const & s, __m128 const & a, __m128 const & b) {
 #if INSTRSET >= 5   // SSE4.1 supported
@@ -64,9 +64,9 @@ static inline __m128 selectf (__m128 const & s, __m128 const & a, __m128 const &
 // Same, with two __m128d sources.
 // and operators. Corresponds to this pseudocode:
 // for (int i = 0; i < 2; i++) result[i] = s[i] ? a[i] : b[i];
-// Each element in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). No other 
-// values are allowed. The implementation depends on the instruction set: 
-// If SSE4.1 is supported then only bit 63 in each dword of s is checked, 
+// Each element in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). No other
+// values are allowed. The implementation depends on the instruction set:
+// If SSE4.1 is supported then only bit 63 in each dword of s is checked,
 // otherwise all bits in s are used.
 static inline __m128d selectd (__m128d const & s, __m128d const & a, __m128d const & b) {
 #if INSTRSET >= 5   // SSE4.1 supported
@@ -76,7 +76,7 @@ static inline __m128d selectd (__m128d const & s, __m128d const & a, __m128d con
         _mm_and_pd(s,a),
         _mm_andnot_pd(s,b));
 #endif
-} 
+}
 
 
 /*****************************************************************************
@@ -94,7 +94,7 @@ public:
     }
     // Constructor to build from all elements:
     Vec4fb(bool b0, bool b1, bool b2, bool b3) {
-        xmm = _mm_castsi128_ps(_mm_setr_epi32(-(int)b0, -(int)b1, -(int)b2, -(int)b3)); 
+        xmm = _mm_castsi128_ps(_mm_setr_epi32(-(int)b0, -(int)b1, -(int)b2, -(int)b3));
     }
     // Constructor to convert from type __m128 used in intrinsics:
     Vec4fb(__m128 const & x) {
@@ -132,7 +132,7 @@ public:
         return xmm;
     }
 #if defined (__clang__) && CLANG_VERSION < 30900 || defined(__apple_build_version__)
-#define FIX_CLANG_VECTOR_ALIAS_AMBIGUITY  // clang 3.3 - 3.5 has silent conversion between intrinsic vector types. 
+#define FIX_CLANG_VECTOR_ALIAS_AMBIGUITY  // clang 3.3 - 3.5 has silent conversion between intrinsic vector types.
                                           // I expected this to be fixed in version 3.4 but it still exists!
                                           // http://llvm.org/bugs/show_bug.cgi?id=17164
                                           // Problem: The version number is not consistent across platforms
@@ -271,7 +271,7 @@ public:
     // Constructor to broadcast the same value into all elements:
     // Constructor to build from all elements:
     Vec2db(bool b0, bool b1) {
-        xmm = _mm_castsi128_pd(_mm_setr_epi32(-(int)b0, -(int)b0, -(int)b1, -(int)b1)); 
+        xmm = _mm_castsi128_pd(_mm_setr_epi32(-(int)b0, -(int)b0, -(int)b1, -(int)b1));
     }
     // Constructor to convert from type __m128d used in intrinsics:
     Vec2db(__m128d const & x) {
@@ -443,7 +443,7 @@ public:
     }
     // Constructor to build from all elements:
     Vec4f(float f0, float f1, float f2, float f3) {
-        xmm = _mm_setr_ps(f0, f1, f2, f3); 
+        xmm = _mm_setr_ps(f0, f1, f2, f3);
     }
     // Constructor to convert from type __m128 used in intrinsics:
     Vec4f(__m128 const & x) {
@@ -523,7 +523,7 @@ public:
     // cut off vector to n elements. The last 4-n elements are set to zero
     Vec4f & cutoff(int n) {
         if (uint32_t(n) >= 4) return *this;
-        static const union {        
+        static const union {
             int32_t i[8];
             float   f[8];
         } mask = {{1,-1,-1,-1,0,0,0,0}};
@@ -793,7 +793,7 @@ static inline float horizontal_add (Vec4f const & a) {
 #if  INSTRSET >= 3  // SSE3
     __m128 t1 = _mm_hadd_ps(a,a);
     __m128 t2 = _mm_hadd_ps(t1,t1);
-    return _mm_cvtss_f32(t2);        
+    return _mm_cvtss_f32(t2);
 #else
     __m128 t1 = _mm_movehl_ps(a,a);
     __m128 t2 = _mm_add_ps(a,t1);
@@ -933,7 +933,7 @@ static inline Vec4f round(Vec4f const & a) __attribute__ ((optimize("-fno-unsafe
 // This doesn't work, but current versions of Clang (3.5) don't optimize away signedmagic, even with -funsafe-math-optimizations
 // Add volatile to b if future versions fail
 #elif defined (_MSC_VER) || defined(__INTEL_COMPILER) && INSTRSET < 5
-#pragma float_control(push) 
+#pragma float_control(push)
 #pragma float_control(precise,on)
 #define FLOAT_CONTROL_PRECISE_FOR_ROUND
 #endif
@@ -1063,7 +1063,7 @@ static inline Vec4f nmul_add(Vec4f const & a, Vec4f const & b, Vec4f const & c) 
 }
 
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec4f mul_sub_x(Vec4f const & a, Vec4f const & b, Vec4f const & c) {
 #ifdef __FMA__
@@ -1194,7 +1194,7 @@ static inline Vec4f sign_combine(Vec4f const & a, Vec4f const & b) {
     return a ^ (b & signmask);
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 // (the underscore in the name avoids a conflict with a macro in Intel's mathimf.h)
 static inline Vec4fb is_finite(Vec4f const & a) {
@@ -1262,10 +1262,10 @@ static inline Vec4f nan4f(int n = 0x10) {
 ******************************************************************************
 *
 * The permute function can reorder the elements of a vector and optionally
-* set some elements to zero. 
+* set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select. A negative index will generate zero.
 *
 * Example:
@@ -1276,10 +1276,10 @@ static inline Vec4f nan4f(int n = 0x10) {
 *
 *
 * The blend function can mix elements from two different vectors and
-* optionally set some elements to zero. 
+* optionally set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select, where indexes 0 - 3 indicate an element from the first source
 * vector and indexes 4 - 7 indicate an element from the second source vector.
 * A negative index will generate zero.
@@ -1312,7 +1312,7 @@ static inline Vec4f permute4f(Vec4f const & a) {
         __m128i mask1 = constant4i< -int(i0>=0), -int(i1>=0), -int(i2>=0), -int(i3>=0) >();
         return  _mm_and_ps(a,_mm_castsi128_ps(mask1));     // zero with AND mask
     }
-    if (do_shuffle && !do_zero) {                          // shuffling, not zeroing        
+    if (do_shuffle && !do_zero) {                          // shuffling, not zeroing
         return _mm_shuffle_ps(a, a, (i0&3) | (i1&3)<<2 | (i2&3)<<4 | (i3&3)<<6);
     }
     // both shuffle and zero
@@ -1347,7 +1347,7 @@ template <int i0, int i1, int i2, int i3>
 static inline Vec4f blend4f(Vec4f const & a, Vec4f const & b) {
 
     // Combine all the indexes into a single bitfield, with 8 bits for each
-    const int m1 = (i0&7) | (i1&7)<<8 | (i2&7)<<16 | (i3&7)<<24; 
+    const int m1 = (i0&7) | (i1&7)<<8 | (i2&7)<<16 | (i3&7)<<24;
 
     // Mask to zero out negative indexes
     const int m2 = (i0<0?0:0xFF) | (i1<0?0:0xFF)<<8 | (i2<0?0:0xFF)<<16 | (i3<0?0:0xFF)<<24;
@@ -1397,12 +1397,12 @@ static inline Vec4f blend4f(Vec4f const & a, Vec4f const & b) {
     if (((m1 ^ 0x03070206) & m2) == 0) {
         t = _mm_unpackhi_ps(b, a);
         goto DOZERO;
-    }    
+    }
     // first two elements from a, last two from b
     if (((m1^0x04040000) & 0x04040404 & m2) == 0) {
         t = _mm_shuffle_ps(a, b, (i0&3) + ((i1&3)<<2) + ((i2&3)<<4) + ((i3&3)<<6));
         goto DOZERO;
-    } 
+    }
     // first two elements from b, last two from a
     if (((m1^0x00000404) & 0x04040404 & m2) == 0) {
         t = _mm_shuffle_ps(b, a, (i0&3) + ((i1&3)<<2) + ((i2&3)<<4) + ((i3&3)<<6));
@@ -1426,7 +1426,7 @@ DOZERO:
         // zero some elements
         __m128i mask1 = constant4i< -int(i0>=0), -int(i1>=0), -int(i2>=0), -int(i3>=0) >();
         t = _mm_and_ps(t,_mm_castsi128_ps(mask1));     // zero with AND mask
-    }        
+    }
     return t;
 
 #endif // __XOP__
@@ -1461,7 +1461,7 @@ public:
     }
     // Constructor to build from all elements:
     Vec2d(double d0, double d1) {
-        xmm = _mm_setr_pd(d0, d1); 
+        xmm = _mm_setr_pd(d0, d1);
     }
     // Constructor to convert from type __m128d used in intrinsics:
     Vec2d(__m128d const & x) {
@@ -1759,7 +1759,7 @@ static inline Vec2db operator ! (Vec2d const & a) {
 
 // Select between two operands. Corresponds to this pseudocode:
 // for (int i = 0; i < 2; i++) result[i] = s[i] ? a[i] : b[i];
-// Each byte in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true). 
+// Each byte in s must be either 0 (false) or 0xFFFFFFFFFFFFFFFF (true).
 // No other values are allowed.
 static inline Vec2d select (Vec2db const & s, Vec2d const & a, Vec2d const & b) {
     return selectd(s,a,b);
@@ -1782,7 +1782,7 @@ static inline Vec2d if_mul (Vec2db const & f, Vec2d const & a, Vec2d const & b) 
 static inline double horizontal_add (Vec2d const & a) {
 #if  INSTRSET >= 3  // SSE3
     __m128d t1 = _mm_hadd_pd(a,a);
-    return _mm_cvtsd_f64(t1);        
+    return _mm_cvtsd_f64(t1);
 #else
     __m128  t0 = _mm_castpd_ps(a);
     __m128d t1 = _mm_castps_pd(_mm_movehl_ps(t0,t0));
@@ -1896,7 +1896,7 @@ static inline Vec2d pow(Vec2d const & a, Const_int_t<n>) {
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && !defined(__clang__) && INSTRSET < 5
 static inline Vec4f round(Vec4f const & a) __attribute__ ((optimize("-fno-unsafe-math-optimizations")));
 #elif defined (FLOAT_CONTROL_PRECISE_FOR_ROUND)
-#pragma float_control(push) 
+#pragma float_control(push)
 #pragma float_control(precise,on)
 #endif
 // function round: round to nearest integer (even). (result as double vector)
@@ -2089,7 +2089,7 @@ static inline Vec2d nmul_add(Vec2d const & a, Vec2d const & b, Vec2d const & c) 
 }
 
 
-// Multiply and subtract with extra precision on the intermediate calculations, 
+// Multiply and subtract with extra precision on the intermediate calculations,
 // even if FMA instructions not supported, using Veltkamp-Dekker split
 static inline Vec2d mul_sub_x(Vec2d const & a, Vec2d const & b, Vec2d const & c) {
 #ifdef __FMA__
@@ -2167,7 +2167,7 @@ static inline Vec2d sign_combine(Vec2d const & a, Vec2d const & b) {
     return a ^ (b & signmask);
 }
 
-// Function is_finite: gives true for elements that are normal, denormal or zero, 
+// Function is_finite: gives true for elements that are normal, denormal or zero,
 // false for INF and NAN
 static inline Vec2db is_finite(Vec2d const & a) {
     Vec2q t1 = _mm_castpd_si128(a);    // reinterpret as integer
@@ -2276,10 +2276,10 @@ static inline __m128d reinterpret_d (__m128d const & x) {
 ******************************************************************************
 *
 * The permute function can reorder the elements of a vector and optionally
-* set some elements to zero. 
+* set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select. An index of -1 will generate zero. An index of -256 means don't care.
 *
 * Example:
@@ -2290,10 +2290,10 @@ static inline __m128d reinterpret_d (__m128d const & x) {
 *
 *
 * The blend function can mix elements from two different vectors and
-* optionally set some elements to zero. 
+* optionally set some elements to zero.
 *
 * The indexes are inserted as template parameters in <>. These indexes must be
-* constants. Each template parameter is an index to the element you want to 
+* constants. Each template parameter is an index to the element you want to
 * select, where indexes 0 - 1 indicate an element from the first source
 * vector and indexes 2 - 3 indicate an element from the second source vector.
 * An index of -1 will generate zero.
@@ -2325,10 +2325,10 @@ static inline Vec2d permute2d(Vec2d const & a) {
         __m128i mask1 = constant4i< -int(i0>=0), -int(i0>=0), -int(i1>=0), -int(i1>=0) >();
         return  _mm_and_pd(a,_mm_castsi128_pd(mask1));     // zero with AND mask
     }
-    else if (do_shuffle && !do_zero) {                     // shuffling, not zeroing        
+    else if (do_shuffle && !do_zero) {                     // shuffling, not zeroing
         return _mm_shuffle_pd(a, a, (i0&1) | (i1&1)<<1);
     }
-    else if (do_shuffle && do_zero) {                      // shuffling and zeroing        
+    else if (do_shuffle && do_zero) {                      // shuffling and zeroing
         // both shuffle and zero
         if (i0 < 0 && i1 >= 0) {                           // zero low half, shuffle high half
             return _mm_shuffle_pd(_mm_setzero_pd(), a, (i1 & 1) << 1);
@@ -2346,7 +2346,7 @@ template <int i0, int i1>
 static inline Vec2d blend2d(Vec2d const & a, Vec2d const & b) {
 
     // Combine all the indexes into a single bitfield, with 8 bits for each
-    const int m1 = (i0 & 3) | (i1 & 3) << 8; 
+    const int m1 = (i0 & 3) | (i1 & 3) << 8;
 
     // Mask to zero out negative indexes
     const int m2 = (i0 < 0 ? 0 : 0xFF) | (i1 < 0 ? 0 : 0xFF) << 8;
@@ -2422,20 +2422,20 @@ static inline Vec4f lookup8(Vec4i const & index, Vec4f const & table0, Vec4f con
 #if INSTRSET >= 8  // AVX2
     __m256 tt = _mm256_insertf128_ps(_mm256_castps128_ps256(table0), table1, 1); // combine tables
 
-#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)        
+#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)
     // bug in MS VS 11 beta: operands in wrong order
-    __m128 r = _mm256_castps256_ps128(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(_mm256_castsi128_si256(index)), _mm256_castps_si256(tt))); 
+    __m128 r = _mm256_castps256_ps128(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(_mm256_castsi128_si256(index)), _mm256_castps_si256(tt)));
     r = _mm_and_ps(r,r); // fix another bug in VS 11 beta (would store r as 256 bits aligned by 16)
 #elif defined (GCC_VERSION) && GCC_VERSION <= 40700 && !defined(__INTEL_COMPILER) && !defined(__clang__)
     // Gcc 4.7.0 has wrong parameter type and operands in wrong order
-    __m128 r = _mm256_castps256_ps128(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(_mm256_castsi128_si256(index)), tt)); 
+    __m128 r = _mm256_castps256_ps128(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(_mm256_castsi128_si256(index)), tt));
 #else
     // no bug version
     __m128 r = _mm256_castps256_ps128(_mm256_permutevar8x32_ps(tt, _mm256_castsi128_si256(index)));
 #endif
     return r;
 
-#elif INSTRSET >= 7  // AVX 
+#elif INSTRSET >= 7  // AVX
     __m128  r0 = _mm_permutevar_ps(table0, index);
     __m128  r1 = _mm_permutevar_ps(table1, index);
     __m128i i4 = _mm_slli_epi32(index, 29);
@@ -2462,7 +2462,7 @@ static inline Vec4f lookup(Vec4i const & index, float const * table) {
     if (n <= 8) {
 #if INSTRSET >= 8  // AVX2
         __m256 tt = _mm256_loadu_ps(table);
-#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)        
+#if defined (_MSC_VER) && _MSC_VER < 1700 && ! defined(__INTEL_COMPILER)
         // bug in MS VS 11 beta: operands in wrong order
         __m128 r = _mm256_castps256_ps128(_mm256_permutevar8x32_ps(_mm256_castsi256_ps(_mm256_castsi128_si256(index)), _mm256_castps_si256(tt)));
         r = _mm_and_ps(r,r); // fix another bug in VS 11 beta (would store r as 256 bits aligned by 16)
@@ -2517,7 +2517,7 @@ static inline Vec2d lookup4(Vec2q const & index, Vec2d const & table0, Vec2d con
 #else
     int32_t ii[4];
     double  tt[4];
-    table0.store(tt);  table1.store(tt + 2);  
+    table0.store(tt);  table1.store(tt + 2);
     (index & 3).store(ii);
     return Vec2d(tt[ii[0]], tt[ii[2]]);
 #endif
