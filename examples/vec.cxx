@@ -1,4 +1,3 @@
-#define EXAFMM_VEC_VERBOSE 1
 #include <assert.h>
 #include <cmath>
 #include <iostream>
