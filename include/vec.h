@@ -571,7 +571,7 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const float & a, const float & b, const float & c, const float & d,
 	const float & e, const float & f, const float & g, const float & h,
@@ -592,23 +592,23 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = _mm512_add_ps(data,v.data);
+      data = _mm512_add_ps(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = _mm512_sub_ps(data,v.data);
+      data = _mm512_sub_ps(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = _mm512_mul_ps(data,v.data);
+      data = _mm512_mul_ps(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = _mm512_div_ps(data,v.data);
+      data = _mm512_div_ps(data,v);
       return *this;
     }
     const vec &operator&=(const __mmask16 & v) {                // Vector compound assignment (and)
@@ -616,22 +616,22 @@ namespace exafmm {
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(_mm512_add_ps(data,v.data));
+      return vec(_mm512_add_ps(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(_mm512_sub_ps(data,v.data));
+      return vec(_mm512_sub_ps(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(_mm512_mul_ps(data,v.data));
+      return vec(_mm512_mul_ps(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(_mm512_div_ps(data,v.data));
+      return vec(_mm512_div_ps(data,v));
     }
     __mmask16 operator>(const vec & v) const {                  // Vector arithmetic (greater than)
-      return _mm512_cmp_ps_mask(data,v.data,_MM_CMPINT_GT);
+      return _mm512_cmp_ps_mask(data,v,_MM_CMPINT_GT);
     }
     __mmask16 operator<(const vec & v) const {                  // Vector arithmetic (less than)
-      return _mm512_cmp_ps_mask(data,v.data,_MM_CMPINT_LT);
+      return _mm512_cmp_ps_mask(data,v,_MM_CMPINT_LT);
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(_mm512_sub_ps(_mm512_setzero_ps(),data));
@@ -647,43 +647,43 @@ namespace exafmm {
       return s;
     }
     friend float sum(const vec & v) {                           // Sum vector
-      return _mm512_reduce_add_ps(v.data);
+      return _mm512_reduce_add_ps(v);
     }
     friend float norm(const vec & v) {                          // L2 norm squared
-      __m512 temp = _mm512_mul_ps(v.data,v.data);
+      __m512 temp = _mm512_mul_ps(v,v);
       return _mm512_reduce_add_ps(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(_mm512_min_ps(v.data,w.data));
+      return vec(_mm512_min_ps(v,w));
     }
     friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(_mm512_max_ps(v.data,w.data));
+      return vec(_mm512_max_ps(v,w));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
 #ifdef __MIC__
-      vec temp = vec(_mm512_rsqrt23_ps(v.data));
+      vec temp = vec(_mm512_rsqrt23_ps(v));
 #else
-      vec temp = vec(_mm512_rsqrt14_ps(v.data));
+      vec temp = vec(_mm512_rsqrt14_ps(v));
 #endif
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(_mm512_div_ps(one.data,_mm512_sqrt_ps(v.data)));
+      return vec(_mm512_div_ps(one,_mm512_sqrt_ps(v)));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(_mm512_sin_ps(v.data));
+      return vec(_mm512_sin_ps(v));
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(_mm512_cos_ps(v.data));
+      return vec(_mm512_cos_ps(v));
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      s.data = _mm512_sincos_ps(&c.data, v.data);
+      s = _mm512_sincos_ps(&c.data, v);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(_mm512_exp_ps(v.data));
+      return vec(_mm512_exp_ps(v));
     }
   };
 
@@ -703,13 +703,16 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const double & a, const double & b, const double & c, const double & d,
 	const double & e, const double & f, const double & g, const double & h) {// Copy constructor (component-wise)
       data = _mm512_setr_pd(a,b,c,d,e,f,g,h);
     }
     ~vec(){}                                                    // Destructor
+    operator __m512d() const {                                  // Type cast to SIMD register
+      return data;
+    }
     const vec &operator=(const double & v) {                    // Scalar assignment
       data = _mm512_set1_pd(v);
       return *this;
@@ -719,23 +722,23 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = _mm512_add_pd(data,v.data);
+      data = _mm512_add_pd(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = _mm512_sub_pd(data,v.data);
+      data = _mm512_sub_pd(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = _mm512_mul_pd(data,v.data);
+      data = _mm512_mul_pd(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = _mm512_div_pd(data,v.data);
+      data = _mm512_div_pd(data,v);
       return *this;
     }
     const vec &operator&=(const __mmask8 & v) {                 // Vector compound assignment (and)
@@ -743,22 +746,22 @@ namespace exafmm {
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(_mm512_add_pd(data,v.data));
+      return vec(_mm512_add_pd(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(_mm512_sub_pd(data,v.data));
+      return vec(_mm512_sub_pd(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(_mm512_mul_pd(data,v.data));
+      return vec(_mm512_mul_pd(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(_mm512_div_pd(data,v.data));
+      return vec(_mm512_div_pd(data,v));
     }
     __mmask8 operator>(const vec & v) const {                   // Vector arithmetic (greater than)
-      return _mm512_cmp_pd_mask(data,v.data,_MM_CMPINT_GT);
+      return _mm512_cmp_pd_mask(data,v,_MM_CMPINT_GT);
     }
     __mmask8 operator<(const vec & v) const {                   // Vector arithmetic (less than)
-      return _mm512_cmp_pd_mask(data,v.data,_MM_CMPINT_LT);
+      return _mm512_cmp_pd_mask(data,v,_MM_CMPINT_LT);
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(_mm512_sub_pd(_mm512_setzero_pd(),data));
@@ -774,44 +777,44 @@ namespace exafmm {
       return s;
     }
     friend double sum(const vec & v) {                          // Sum vector
-      return _mm512_reduce_add_pd(v.data);
+      return _mm512_reduce_add_pd(v);
     }
     friend double norm(const vec & v) {                         // L2 norm squared
-      __m512d temp = _mm512_mul_pd(v.data,v.data);;
+      __m512d temp = _mm512_mul_pd(v,v);;
       return _mm512_reduce_add_pd(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(_mm512_min_pd(v.data,w.data));
+      return vec(_mm512_min_pd(v,w));
     }
     friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(_mm512_max_pd(v.data,w.data));
+      return vec(_mm512_max_pd(v,w));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON
 #ifdef __MIC__
-      vec temp = vec(_mm512_cvtps_pd(_mm256_rsqrt_ps(_mm512_cvtpd_ps(v.data))));
+      vec temp = vec(_mm512_cvtps_pd(_mm256_rsqrt_ps(_mm512_cvtpd_ps(v))));
 #else
-      vec temp = vec(_mm512_cvtps_pd(_mm256_rsqrt_ps(_mm512_cvtpd_ps(v.data))));
+      vec temp = vec(_mm512_cvtps_pd(_mm256_rsqrt_ps(_mm512_cvtpd_ps(v))));
 #endif
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(_mm512_div_pd(one.data,_mm512_sqrt_pd(v.data)));
+      return vec(_mm512_div_pd(one,_mm512_sqrt_pd(v)));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(_mm512_sin_pd(v.data));
+      return vec(_mm512_sin_pd(v));
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(_mm512_cos_pd(v.data));
+      return vec(_mm512_cos_pd(v));
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      s.data = _mm512_sincos_pd(&c.data, v.data);
+      s = _mm512_sincos_pd(&c.data, v);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(_mm512_exp_pd(v.data));
+      return vec(_mm512_exp_pd(v));
     }
   };
 #endif
@@ -837,13 +840,16 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const float & a, const float & b, const float & c, const float & d,
         const float & e, const float & f, const float & g, const float & h) {// Copy constructor (component-wise)
       data = _mm256_setr_ps(a,b,c,d,e,f,g,h);
     }
     ~vec(){}                                                    // Destructor
+    operator __m256() const {                                   // Type cast to SIMD register
+      return data;
+    }
     const vec &operator=(const float & v) {                     // Scalar assignment
       data = _mm256_set1_ps(v);
       return *this;
@@ -853,46 +859,46 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = _mm256_add_ps(data,v.data);
+      data = _mm256_add_ps(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = _mm256_sub_ps(data,v.data);
+      data = _mm256_sub_ps(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = _mm256_mul_ps(data,v.data);
+      data = _mm256_mul_ps(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = _mm256_div_ps(data,v.data);
+      data = _mm256_div_ps(data,v);
       return *this;
     }
     const vec &operator&=(const vec & v) {                      // Vector compound assignment (bitwise and)
-      data = _mm256_and_ps(data,v.data);
+      data = _mm256_and_ps(data,v);
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(_mm256_add_ps(data,v.data));
+      return vec(_mm256_add_ps(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(_mm256_sub_ps(data,v.data));
+      return vec(_mm256_sub_ps(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(_mm256_mul_ps(data,v.data));
+      return vec(_mm256_mul_ps(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(_mm256_div_ps(data,v.data));
+      return vec(_mm256_div_ps(data,v));
     }
     vec operator>(const vec & v) const {                        // Vector arithmetic (greater than)
-      return vec(_mm256_cmp_ps(data,v.data,_CMP_GT_OQ));
+      return vec(_mm256_cmp_ps(data,v,_CMP_GT_OQ));
     }
     vec operator<(const vec & v) const {                        // Vector arithmetic (less than)
-      return vec(_mm256_cmp_ps(data,v.data,_CMP_LT_OQ));
+      return vec(_mm256_cmp_ps(data,v,_CMP_LT_OQ));
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(_mm256_sub_ps(_mm256_setzero_ps(),data));
@@ -908,39 +914,39 @@ namespace exafmm {
       return s;
     }
     friend float sum(const vec & v) {                           // Sum vector
-      return _mm256_reduce_add_ps(v.data);
+      return _mm256_reduce_add_ps(v);
     }
     friend float norm(const vec & v) {                          // L2 norm squared
-      __m256 temp = _mm256_mul_ps(v.data,v.data);
+      __m256 temp = _mm256_mul_ps(v,v);
       return _mm256_reduce_add_ps(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(_mm256_min_ps(v.data,w.data));
+      return vec(_mm256_min_ps(v,w));
     }
     friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(_mm256_max_ps(v.data,w.data));
+      return vec(_mm256_max_ps(v,w));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec temp = vec(_mm256_rsqrt_ps(v.data));
+      vec temp = vec(_mm256_rsqrt_ps(v));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(_mm256_div_ps(one.data,_mm256_sqrt_ps(v.data)));
+      return vec(_mm256_div_ps(one,_mm256_sqrt_ps(v)));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(_mm256_sin_ps(v.data));
+      return vec(_mm256_sin_ps(v));
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(_mm256_cos_ps(v.data));
+      return vec(_mm256_cos_ps(v));
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      s.data = _mm256_sincos_ps(&c.data, v.data);
+      s = _mm256_sincos_ps(&c.data, v);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(_mm256_exp_ps(v.data));
+      return vec(_mm256_exp_ps(v));
     }
   };
 
@@ -960,12 +966,15 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const double & a, const double & b, const double & c, const double & d) {// Copy constructor (component-wise)
       data = _mm256_setr_pd(a,b,c,d);
     }
     ~vec(){}                                                    // Destructor
+    operator __m256d() const {                                  // Type cast to SIMD register
+      return data;
+    }
     const vec &operator=(const double & v) {                    // Scalar assignment
       data = _mm256_set1_pd(v);
       return *this;
@@ -975,46 +984,46 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = _mm256_add_pd(data,v.data);
+      data = _mm256_add_pd(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = _mm256_sub_pd(data,v.data);
+      data = _mm256_sub_pd(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = _mm256_mul_pd(data,v.data);
+      data = _mm256_mul_pd(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = _mm256_div_pd(data,v.data);
+      data = _mm256_div_pd(data,v);
       return *this;
     }
     const vec &operator&=(const vec & v) {                      // Vector compound assignment (bitwise and)
-      data = _mm256_and_pd(data,v.data);
+      data = _mm256_and_pd(data,v);
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(_mm256_add_pd(data,v.data));
+      return vec(_mm256_add_pd(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(_mm256_sub_pd(data,v.data));
+      return vec(_mm256_sub_pd(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(_mm256_mul_pd(data,v.data));
+      return vec(_mm256_mul_pd(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(_mm256_div_pd(data,v.data));
+      return vec(_mm256_div_pd(data,v));
     }
     vec operator>(const vec & v) const {                        // Vector arithmetic (greater than)
-      return vec(_mm256_cmp_pd(data,v.data,_CMP_GT_OQ));
+      return vec(_mm256_cmp_pd(data,v,_CMP_GT_OQ));
     }
     vec operator<(const vec & v) const {                        // Vector arithmetic (less than)
-      return vec(_mm256_cmp_pd(data,v.data,_CMP_LT_OQ));
+      return vec(_mm256_cmp_pd(data,v,_CMP_LT_OQ));
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(_mm256_sub_pd(_mm256_setzero_pd(),data));
@@ -1030,40 +1039,40 @@ namespace exafmm {
       return s;
     }
     friend double sum(const vec & v) {                          // Sum vector
-      return _mm256_reduce_add_pd(v.data);
+      return _mm256_reduce_add_pd(v);
     }
     friend double norm(const vec & v) {                         // L2 norm squared
-      __m256d temp = _mm256_mul_pd(v.data,v.data);
+      __m256d temp = _mm256_mul_pd(v,v);
       return _mm256_reduce_add_pd(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(_mm256_min_pd(v.data,w.data));
+      return vec(_mm256_min_pd(v,w));
     }
     friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(_mm256_max_pd(v.data,w.data));
+      return vec(_mm256_max_pd(v,w));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec temp = vec(_mm256_cvtps_pd(_mm_rsqrt_ps(_mm256_cvtpd_ps(v.data))));
+      vec temp = vec(_mm256_cvtps_pd(_mm_rsqrt_ps(_mm256_cvtpd_ps(v))));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(_mm256_div_pd(one.data,_mm256_sqrt_pd(v.data)));
+      return vec(_mm256_div_pd(one,_mm256_sqrt_pd(v)));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(_mm256_sin_pd(v.data));
+      return vec(_mm256_sin_pd(v));
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(_mm256_cos_pd(v.data));
+      return vec(_mm256_cos_pd(v));
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      s.data = _mm256_sincos_pd(&c.data, v.data);
+      s = _mm256_sincos_pd(&c.data, v);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(_mm256_exp_pd(v.data));
+      return vec(_mm256_exp_pd(v));
     }
   };
 #endif
@@ -1086,13 +1095,16 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const double & a, const double & b, const double & c, const double & d) {// Copy constructor (component-wise)
       vector4double temp = {a,b,c,d};
       data = temp;
     }
     ~vec(){}                                                    // Destructor
+    operator vector4double() const {                            // Type cast to SIMD register
+      return data;
+    }
     const vec &operator=(double & v) {                          // Scalar assignment
       vector4double temp = {v};
       data = temp;
@@ -1103,46 +1115,46 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = vec_add(data,v.data);
+      data = vec_add(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = vec_sub(data,v.data);
+      data = vec_sub(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = vec_mul(data,v.data);
+      data = vec_mul(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = vec_swdiv_nochk(data,v.data);
+      data = vec_swdiv_nochk(data,v);
       return *this;
     }
     const vec &operator&=(const vec & v) {                      // Vector compound assignment (bitwise and)
-      data = vec_and(data,v.data);
+      data = vec_and(data,v);
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(vec_add(data,v.data));
+      return vec(vec_add(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(vec_sub(data,v.data));
+      return vec(vec_sub(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(vec_mul(data,v.data));
+      return vec(vec_mul(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(vec_swdiv_nochk(data,v.data));
+      return vec(vec_swdiv_nochk(data,v));
     }
     vec operator>(const vec & v) const {                        // Vector arithmetic (greater than)
-      return vec(vec_cmpgt(data,v.data));
+      return vec(vec_cmpgt(data,v));
     }
     vec operator<(const vec & v) const {                        // Vector arithmetic (less than)
-      return vec(vec_cmplt(data,v.data));
+      return vec(vec_cmplt(data,v));
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(vec_sub((vector4double)(0),data));
@@ -1154,7 +1166,7 @@ namespace exafmm {
       return array[i];
     }
     friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
-      for (int i=0; i<4; i++) s << vec_extract(v.data,i) << ' ';
+      for (int i=0; i<4; i++) s << vec_extract(v,i) << ' ';
       return s;
     }
     friend double sum(const vec & v) {                          // Sum vector
@@ -1179,26 +1191,26 @@ namespace exafmm {
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec temp = vec(vec_rsqrtes(v.data));
+      vec temp = vec(vec_rsqrtes(v));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(one.data / vec_sqrt(v.data));
+      return vec(one / vec_sqrt(v));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(sind4(v.data));
+      return vec(sind4(v));
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(cosd4(v.data));
+      return vec(cosd4(v));
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      sincosd4(v.data, s.data, c.data);
+      sincosd4(v, s, c);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(expd4(v.data));
+      return vec(expd4(v));
     }
   };
 #endif
@@ -1224,12 +1236,15 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const float & a, const float & b, const float & c, const float & d) {// Copy constructor (component-wise)
       data = _mm_setr_ps(a,b,c,d);
     }
     ~vec(){}                                                    // Destructor
+    operator __m128() const {                                   // Type cast to SIMD register
+      return data;
+    }
     const vec &operator=(const float & v) {                     // Scalar assignment
       data = _mm_set1_ps(v);
       return *this;
@@ -1239,46 +1254,46 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = _mm_add_ps(data,v.data);
+      data = _mm_add_ps(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = _mm_sub_ps(data,v.data);
+      data = _mm_sub_ps(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = _mm_mul_ps(data,v.data);
+      data = _mm_mul_ps(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = _mm_div_ps(data,v.data);
+      data = _mm_div_ps(data,v);
       return *this;
     }
     const vec &operator&=(const vec & v) {                      // Vector compound assignment (bitwise and)
-      data = _mm_and_ps(data,v.data);
+      data = _mm_and_ps(data,v);
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(_mm_add_ps(data,v.data));
+      return vec(_mm_add_ps(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(_mm_sub_ps(data,v.data));
+      return vec(_mm_sub_ps(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(_mm_mul_ps(data,v.data));
+      return vec(_mm_mul_ps(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(_mm_div_ps(data,v.data));
+      return vec(_mm_div_ps(data,v));
     }
     vec operator>(const vec & v) const {                        // Vector arithmetic (greater than)
-      return vec(_mm_cmpgt_ps(data,v.data));
+      return vec(_mm_cmpgt_ps(data,v));
     }
     vec operator<(const vec & v) const {                        // Vector arithmetic (less than)
-      return vec(_mm_cmplt_ps(data,v.data));
+      return vec(_mm_cmplt_ps(data,v));
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(_mm_sub_ps(_mm_setzero_ps(),data));
@@ -1294,39 +1309,39 @@ namespace exafmm {
       return s;
     }
     friend float sum(const vec & v) {                           // Sum vector
-      return _mm_reduce_add_ps(v.data);
+      return _mm_reduce_add_ps(v);
     }
     friend float norm(const vec & v) {                          // L2 norm squared
-      __m128 temp = _mm_mul_ps(v.data,v.data);
+      __m128 temp = _mm_mul_ps(v,v);
       return _mm_reduce_add_ps(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(_mm_min_ps(v.data,w.data));
+      return vec(_mm_min_ps(v,w));
     }
     friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(_mm_max_ps(v.data,w.data));
+      return vec(_mm_max_ps(v,w));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec temp = vec(_mm_rsqrt_ps(v.data));
+      vec temp = vec(_mm_rsqrt_ps(v));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(_mm_div_ps(one.data,_mm_sqrt_ps(v.data)));
+      return vec(_mm_div_ps(one,_mm_sqrt_ps(v)));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(_mm_sin_ps(v.data));
+      return vec(_mm_sin_ps(v));
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(_mm_cos_ps(v.data));
+      return vec(_mm_cos_ps(v));
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      s.data = _mm_sincos_ps(&c.data, v.data);
+      s = _mm_sincos_ps(&c.data, v);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(_mm_exp_ps(v.data));
+      return vec(_mm_exp_ps(v));
     }
   };
 
@@ -1346,12 +1361,15 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const double & a, const double & b) {                   // Copy constructor (component-wise)
       data = _mm_setr_pd(a,b);
     }
     ~vec(){}                                                    // Destructor
+    operator __m128d() const {                                   // Type cast to SIMD register
+      return data;
+    }
     const vec &operator=(const double & v) {                    // Scalar assignment
       data = _mm_set1_pd(v);
       return *this;
@@ -1361,46 +1379,46 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = _mm_add_pd(data,v.data);
+      data = _mm_add_pd(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = _mm_sub_pd(data,v.data);
+      data = _mm_sub_pd(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = _mm_mul_pd(data,v.data);
+      data = _mm_mul_pd(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = _mm_div_pd(data,v.data);
+      data = _mm_div_pd(data,v);
       return *this;
     }
     const vec &operator&=(const vec & v) {                      // Vector compound assignment (bitwise and)
-      data = _mm_and_pd(data,v.data);
+      data = _mm_and_pd(data,v);
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(_mm_add_pd(data,v.data));
+      return vec(_mm_add_pd(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(_mm_sub_pd(data,v.data));
+      return vec(_mm_sub_pd(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(_mm_mul_pd(data,v.data));
+      return vec(_mm_mul_pd(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(_mm_div_pd(data,v.data));
+      return vec(_mm_div_pd(data,v));
     }
     vec operator>(const vec & v) const {                        // Vector arithmetic (greater than)
-      return vec(_mm_cmpgt_pd(data,v.data));
+      return vec(_mm_cmpgt_pd(data,v));
     }
     vec operator<(const vec & v) const {                        // Vector arithmetic (less than)
-      return vec(_mm_cmplt_pd(data,v.data));
+      return vec(_mm_cmplt_pd(data,v));
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(_mm_sub_pd(_mm_setzero_pd(),data));
@@ -1416,40 +1434,40 @@ namespace exafmm {
       return s;
     }
     friend double sum(const vec & v) {                          // Sum vector
-      return _mm_reduce_add_pd(v.data);
+      return _mm_reduce_add_pd(v);
     }
     friend double norm(const vec & v) {                         // L2 norm squared
-      __m128d temp = _mm_mul_pd(v.data,v.data);
+      __m128d temp = _mm_mul_pd(v,v);
       return _mm_reduce_add_pd(temp);
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(_mm_min_pd(v.data,w.data));
+      return vec(_mm_min_pd(v,w));
     }
     friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(_mm_max_pd(v.data,w.data));
+      return vec(_mm_max_pd(v,w));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec temp = vec(_mm_cvtps_pd(_mm_rsqrt_ps(_mm_cvtpd_ps(v.data))));
+      vec temp = vec(_mm_cvtps_pd(_mm_rsqrt_ps(_mm_cvtpd_ps(v))));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(_mm_div_pd(one.data,_mm_sqrt_pd(v.data)));
+      return vec(_mm_div_pd(one,_mm_sqrt_pd(v)));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(_mm_sin_pd(v.data));
+      return vec(_mm_sin_pd(v));
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(_mm_cos_pd(v.data));
+      return vec(_mm_cos_pd(v));
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      s.data = _mm_sincos_pd(&c.data, v.data);
+      s = _mm_sincos_pd(&c.data, v);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(_mm_exp_pd(v.data));
+      return vec(_mm_exp_pd(v));
     }
   };
 #endif
@@ -1473,12 +1491,15 @@ namespace exafmm {
       data = v;
     }
     vec(const vec & v) {                                        // Copy constructor (vector)
-      data = v.data;
+      data = v;
     }
     vec(const double & a, const double & b) {                   // Copy constructor (component-wise)
       data = _mm_set_pd(b,a);
     }
     ~vec(){}                                                    // Destructor
+    operator __m128d() const {                                  // Type cast to SIMD register
+      return data;
+    }
     const vec &operator=(const double & v) {                    // Scalar assignment
       data = _mm_set_pd(v,v);
       return *this;
@@ -1488,46 +1509,46 @@ namespace exafmm {
       return *this;
     }
     const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
+      data = v;
       return *this;
     }
     const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = _mm_add_pd(data,v.data);
+      data = _mm_add_pd(data,v);
       return *this;
     }
     const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = _mm_sub_pd(data,v.data);
+      data = _mm_sub_pd(data,v);
       return *this;
     }
     const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = _mm_mul_pd(data,v.data);
+      data = _mm_mul_pd(data,v);
       return *this;
     }
     const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = _mm_mul_pd(data,_fjsp_rcpa_v2r8(v.data));
+      data = _mm_mul_pd(data,_fjsp_rcpa_v2r8(v));
       return *this;
     }
     const vec &operator&=(const vec & v) {                      // Vector compound assignment (bitwise and)
-      data = _mm_and_pd(data,v.data);
+      data = _mm_and_pd(data,v);
       return *this;
     }
     vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(_mm_add_pd(data,v.data));
+      return vec(_mm_add_pd(data,v));
     }
     vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(_mm_sub_pd(data,v.data));
+      return vec(_mm_sub_pd(data,v));
     }
     vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(_mm_mul_pd(data,v.data));
+      return vec(_mm_mul_pd(data,v));
     }
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(_mm_mul_pd(data,_fjsp_rcpa_v2r8(v.data)));
+      return vec(_mm_mul_pd(data,_fjsp_rcpa_v2r8(v)));
     }
     vec operator>(const vec & v) const {                        // Vector arithmetic (greater than)
-      return vec(_mm_cmpgt_pd(data,v.data));
+      return vec(_mm_cmpgt_pd(data,v));
     }
     vec operator<(const vec & v) const {                        // Vector arithmetic (less than)
-      return vec(_mm_cmplt_pd(data,v.data));
+      return vec(_mm_cmplt_pd(data,v));
     }
     vec operator-() const {                                     // Vector arithmetic (negation)
       return vec(_mm_sub_pd(_mm_setzero_pd(),data));
@@ -1549,20 +1570,20 @@ namespace exafmm {
       return v[0] * v[0] + v[1] * v[1];
     }
     friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(_mm_min_pd(v.data,w.data));
+      return vec(_mm_min_pd(v,w));
     }
     friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(_mm_max_pd(v.data,w.data));
+      return vec(_mm_max_pd(v,w));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
 #if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec temp = vec(_fjsp_rsqrta_v2r8(v.data));
+      vec temp = vec(_fjsp_rsqrta_v2r8(v));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
 #else
       vec one = 1;
-      return vec(one.data / _mm_sqrt_pd(v.data));
+      return vec(one / _mm_sqrt_pd(v));
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function

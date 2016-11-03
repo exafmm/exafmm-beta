@@ -225,7 +225,7 @@ static inline __m256d _mm256_cos_pd(__m256d const & x) {
   return __m256d(sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 2>(0, Vec4d(x)));
 }
 
-static inline __m256d _mm256_sincos_pd(__m256d * cosret, Vec4d const & x) {
+static inline __m256d _mm256_sincos_pd(__m256d * cosret, __m256d const & x) {
   return __m256d(sincos_d<Vec4d, Vec4q, Vec4i, Vec4db, 3>((Vec4d*)cosret, Vec4d(x)));
 }
 #endif
