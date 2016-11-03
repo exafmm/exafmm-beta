@@ -5434,7 +5434,8 @@ $as_echo "#define EXAFMM_HAVE_AVX512 1" >>confdefs.h
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       as_fn_error $? "AVX512 requires single or double precision" "$LINENO" 5
    fi
-   AVX512_CXXFLAGS=-xMIC-AVX512
+   AVX512_CXXFLAGS="-mavx512f -mavx512cd -mavx512er -mavx512pf"
+   AVX512_CXXFLAGS_INTEL=-xMIC-AVX512
 fi
  if test "$have_avx512" = "yes"; then
   EXAFMM_HAVE_AVX512_TRUE=
