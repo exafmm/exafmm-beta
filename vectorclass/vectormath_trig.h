@@ -38,8 +38,14 @@
 // Vec4d | Vec4q | Vec4i
 // Vec8d | Vec8q | Vec8i
 
+static inline __m128i vec_and(__m128i const & a, __m128i const & b) {
+  return _mm_and_si128(a, b);
+}
 static inline __m128 vec_xor(__m128 const & a, __m128 const & b) {
   return _mm_xor_ps(a, b);
+}
+static inline Vec4fb vec_neq(__m128i const & a, __m128i const & b) {
+  return Vec4fb(_mm_xor_si128(_mm_cmpeq_epi32(a, b), _mm_set1_epi32(-1)));
 }
 template<class ITYPE>
 static inline ITYPE vec_set_i32(int const & a);
@@ -66,8 +72,14 @@ inline Vec2q vm_half_int_vector_to_full<Vec2q,Vec4i>(Vec4i const & x) {
 }
 
 #if MAX_VECTOR_SIZE >= 256
+static inline __m256i vec_and(__m256i const & a, __m256i const & b) {
+  return _mm256_and_si256(a, b);
+}
 static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
   return _mm256_xor_ps(a, b);
+}
+static inline Vec8fb vec_neq(__m256i const & a, __m256i const & b) {
+  return Vec8fb(_mm256_xor_si256(_mm256_cmpeq_epi32(a, b), _mm256_set1_epi32(-1)));
 }
 template<>
 inline __m256i vec_set_i32(int const & a) {
@@ -87,8 +99,14 @@ inline Vec4q vm_half_int_vector_to_full<Vec4q,Vec4i>(Vec4i const & x) {
 #endif // MAX_VECTOR_SIZE >= 256
 
 #if MAX_VECTOR_SIZE >= 512
+static inline __m512i vec_and(__m512i const & a, __m512i const & b) {
+  return _mm512_and_epi32(a, b);
+}
 static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
   return _mm512_castsi512_ps(Vec16i(_mm512_castps_si512(a)) ^ Vec16i(_mm512_castps_si512(b)));
+}
+static inline Vec16fb vec_neq(__m512i const & a, __m512i const & b) {
+  return Vec16fb(_mm512_cmpneq_epi32_mask(a,b));
 }
 template<>
 inline __m512i vec_set_i32(int const & a) {
@@ -277,8 +295,8 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
     const float P2cosf =  2.443315711809948E-5f;
 
     VTYPE  xa, x, y, x2, s, c, sin1, cos1;  // data vectors
-    ITYPE  signsin, signcos;                // integer vectors
-    ITYPE2 q;
+    ITYPE  q, signsin, signcos;             // integer vectors
+    ITYPE2 qq;
     BVTYPE swap, overflow;                  // boolean vectors
 
     xa = abs(xx);
@@ -306,10 +324,11 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
     c = polynomial_2(x2, P0cosf, P1cosf, P2cosf) * (x2*x2) + nmul_add(0.5f, x2, 1.0f);
 
     // correct for quadrant
-    swap = BVTYPE((q & 2) != 0);
+    qq = q;
+    swap = BVTYPE(vec_neq(vec_and(q,vec_set_i32<ITYPE>(2)),vec_set_i32<ITYPE>(0)));
 
     // check for overflow
-    overflow = BVTYPE(q < 0);  // q = 0x80000000 if overflow
+    overflow = BVTYPE(qq < 0);  // q = 0x80000000 if overflow
     if (horizontal_or(overflow & is_finite(xa))) {
         s = select(overflow, 0.f, s);
         c = select(overflow, 1.f, c);
@@ -317,12 +336,12 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
 
     if (SC & 5) {  // calculate sin
         sin1 = select(swap, c, s);
-        signsin = ((q << 29) ^ reinterpret_i(xx)) & vec_set_i32<ITYPE>(1 << 31);
+        signsin = ((qq << 29) ^ reinterpret_i(xx)) & vec_set_i32<ITYPE>(1 << 31);
         sin1 = vec_xor(sin1,reinterpret_f(signsin));
     }
     if (SC & 6) {  // calculate cos
         cos1 = select(swap, s, c);
-        signcos = ((q + 2) << 29) & (1 << 31);
+        signcos = ((qq + 2) << 29) & (1 << 31);
         cos1 = vec_xor(cos1,reinterpret_f(signcos));
     }
     if      (SC == 1) return sin1;
