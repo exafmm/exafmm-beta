@@ -174,7 +174,7 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
     qq = q;
     if (SC & 5) {  // calculate sin
         sin1 = select(swap, c, s);
-        signsin = (vec_xor(vec_sll(qq,29),reinterpret_i(xx))) & vec_set_i32<ITYPE>(1 << 31);
+        signsin = vec_and(vec_xor(vec_sll(qq,29),reinterpret_i(xx))),vec_set_i32<ITYPE>(1 << 31));
         sin1 = vec_xor(sin1,reinterpret_f(signsin));
     }
     if (SC & 6) {  // calculate cos
