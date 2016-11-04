@@ -3,16 +3,22 @@
 #include "vectormath_common.h"
 
 static inline __m128i vec_and(__m128i const & a, __m128i const & b) {
-  return _mm_and_si128(a, b);
+  return _mm_and_si128(a,b);
 }
 static inline __m128 vec_xor(__m128 const & a, __m128 const & b) {
-  return _mm_xor_ps(a, b);
+  return _mm_xor_ps(a,b);
+}
+static inline __m128i vec_xor(__m128i const & a, __m128i const & b) {
+  return _mm_xor_si128(a,b);
 }
 static inline Vec4fb vec_neq(__m128i const & a, __m128i const & b) {
-  return Vec4fb(_mm_xor_si128(_mm_cmpeq_epi32(a, b), _mm_set1_epi32(-1)));
+  return Vec4fb(_mm_xor_si128(_mm_cmpeq_epi32(a,b), _mm_set1_epi32(-1)));
 }
 static inline Vec4fb vec_lt(__m128i const & a, __m128i const & b) {
   return Vec4fb(_mm_cmpgt_epi32(b, a));
+}
+static inline __m128i vec_sll(__m128i const & a, int const & b) {
+  return _mm_sll_epi32(a,_mm_cvtsi32_si128(b));
 }
 template<class ITYPE>
 static inline ITYPE vec_set_i32(int const & a);
@@ -40,16 +46,22 @@ inline Vec2q vm_half_int_vector_to_full<Vec2q,Vec4i>(Vec4i const & x) {
 
 #if __AVX__
 static inline __m256i vec_and(__m256i const & a, __m256i const & b) {
-  return _mm256_and_si256(a, b);
+  return _mm256_and_si256(a,b);
 }
 static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
-  return _mm256_xor_ps(a, b);
+  return _mm256_xor_ps(a,b);
+}
+static inline __m256i vec_xor(__m256i const & a, __m256i const & b) {
+  return _mm256_xor_si256(a,b);
 }
 static inline Vec8fb vec_neq(__m256i const & a, __m256i const & b) {
-  return Vec8fb(_mm256_xor_si256(_mm256_cmpeq_epi32(a, b), _mm256_set1_epi32(-1)));
+  return Vec8fb(_mm256_xor_si256(_mm256_cmpeq_epi32(a,b), _mm256_set1_epi32(-1)));
 }
 static inline Vec8fb vec_lt(__m256i const & a, __m256i const & b) {
   return Vec8fb(_mm256_cmpgt_epi32(b, a));
+}
+static inline __m256i vec_sll(__m256i const & a, int const & b) {
+  return _mm256_sll_epi32(a, _mm_cvtsi32_si128(b));
 }
 template<>
 inline __m256i vec_set_i32(int const & a) {
@@ -70,16 +82,22 @@ inline Vec4q vm_half_int_vector_to_full<Vec4q,Vec4i>(Vec4i const & x) {
 
 #if __AVX512F__ | __MIC__
 static inline __m512i vec_and(__m512i const & a, __m512i const & b) {
-  return _mm512_and_epi32(a, b);
+  return _mm512_and_epi32(a,b);
 }
 static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
   return _mm512_castsi512_ps(Vec16i(_mm512_castps_si512(a)) ^ Vec16i(_mm512_castps_si512(b)));
+}
+static inline __m512i vec_xor(__m512i const & a, __m512i const & b) {
+  return _mm512_xor_epi32(a,b);
 }
 static inline Vec16fb vec_neq(__m512i const & a, __m512i const & b) {
   return Vec16fb(_mm512_cmpneq_epi32_mask(a,b));
 }
 static inline Vec16fb vec_lt(__m512i const & a, __m512i const & b) {
   return Vec16fb(_mm512_cmpgt_epi32_mask(b, a));
+}
+static inline __m512i vec_sll(__m512i const & a, int const & b) {
+  return _mm512_sll_epi32(a, _mm_cvtsi32_si128(b));
 }
 template<>
 inline __m512i vec_set_i32(int const & a) {
@@ -156,7 +174,7 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
     qq = q;
     if (SC & 5) {  // calculate sin
         sin1 = select(swap, c, s);
-        signsin = ((qq << 29) ^ reinterpret_i(xx)) & vec_set_i32<ITYPE>(1 << 31);
+        signsin = (vec_xor(vec_sll(qq,29),reinterpret_i(xx))) & vec_set_i32<ITYPE>(1 << 31);
         sin1 = vec_xor(sin1,reinterpret_f(signsin));
     }
     if (SC & 6) {  // calculate cos

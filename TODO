@@ -3,6 +3,7 @@
 
 - #if __INTEL_COMPILER were possible
 - #ifdef > #if
+- int const > const int
 - PetIGA no macro
 - Helmholtz breaks for very low P
 - Helmholtz breaks for -D
