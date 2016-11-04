@@ -145,15 +145,15 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
 
     // correct for quadrant
     swap = vec_neq(vec_and(q,vec_set_i32<ITYPE>(2)),vec_set_i32<ITYPE>(0));
-    qq = q;
 
     // check for overflow
-    overflow = vec_lt(qq,vec_set_i32<ITYPE>(0));
+    overflow = vec_lt(q,vec_set_i32<ITYPE>(0));
     if (horizontal_or(overflow & is_finite(xa))) {
         s = select(overflow, 0.f, s);
         c = select(overflow, 1.f, c);
     }
 
+    qq = q;
     if (SC & 5) {  // calculate sin
         sin1 = select(swap, c, s);
         signsin = ((qq << 29) ^ reinterpret_i(xx)) & vec_set_i32<ITYPE>(1 << 31);
