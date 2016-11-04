@@ -5,48 +5,63 @@
 static inline __m128i vec_and(__m128i const & a, int const & b) {
   return _mm_and_si128(a,_mm_set1_epi32(b));
 }
+static inline __m128i vec_and(__m128i const & a, __m128i const & b) {
+  return _mm_and_si128(a,b);
+}
 static inline __m128 vec_xor(__m128 const & a, __m128 const & b) {
   return _mm_xor_ps(a,b);
 }
 static inline __m128i vec_xor(__m128i const & a, __m128i const & b) {
   return _mm_xor_si128(a,b);
 }
-static inline Vec4fb vec_neq(__m128i const & a, int const & b) {
-  return Vec4fb(_mm_xor_si128(_mm_cmpeq_epi32(a,_mm_set1_epi32(b)), _mm_set1_epi32(-1)));
+static inline __m128i vec_neq(__m128i const & a, int const & b) {
+  return _mm_xor_si128(_mm_cmpeq_epi32(a,_mm_set1_epi32(b)), _mm_set1_epi32(-1));
 }
-static inline Vec4fb vec_lt(__m128i const & a, int const & b) {
-  return Vec4fb(_mm_cmpgt_epi32(_mm_set1_epi32(b), a));
+static inline __m128i vec_lt(__m128i const & a, int const & b) {
+  return _mm_cmpgt_epi32(_mm_set1_epi32(b), a);
 }
 static inline __m128i vec_sll(__m128i const & a, int const & b) {
   return _mm_sll_epi32(a,_mm_cvtsi32_si128(b));
 }
-template<class ITYPE>
-static inline ITYPE vec_set_i32(int const & a);
+template<class VTYPE>
+static inline VTYPE vec_set1_ps(float const & a);
 template<>
-inline __m128i vec_set_i32(int const & a) {
-  return _mm_set1_epi32(a);
+inline __m128 vec_set1_ps(float const & a) {
+  return _mm_set1_ps(a);
+}
+static inline __m128 select(__m128i const & s, __m128 const & a, __m128 const & b) {
+  return _mm_blendv_ps(b,a,_mm_castsi128_ps(s));
+}
+static inline __m128i is_finite(__m128 const & a) {
+  return vec_neq(vec_and(vec_sll(_mm_castps_si128(a),1),0xFF000000),0xFF000000);
+}
+static inline bool horizontal_or (__m128i const & a) {
+  return ! _mm_testz_si128(a,a);
 }
 static inline Vec4i vm_truncate_low_to_int(Vec2d const & x) {
-    return truncate_to_int(x,x);
+  return truncate_to_int(x,x);
 }
 template<class VTYPE, class ITYPE>
 static inline VTYPE vm_half_int_vector_to_double(ITYPE const & x);
 
 template<>
 inline Vec2d vm_half_int_vector_to_double<Vec2d, Vec4i>(Vec4i const & x) {
-    return to_double_low(x);
+  return to_double_low(x);
 }
 template<class ITYPE, class ITYPEH>
 static inline ITYPE vm_half_int_vector_to_full(ITYPEH const & x);
 
 template<>
 inline Vec2q vm_half_int_vector_to_full<Vec2q,Vec4i>(Vec4i const & x) {
-    return extend_low(x);
+  return extend_low(x);
 }
 
 #if __AVX__
 static inline __m256i vec_and(__m256i const & a, int const & b) {
   return _mm256_and_si256(a,_mm256_set1_epi32(b));
+}
+static inline __m256i vec_and(__m256i const & a, __m256i const & b) {
+  return _mm256_and_si256(a,b);
 }
 static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
   return _mm256_xor_ps(a,b);
@@ -54,29 +69,38 @@ static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
 static inline __m256i vec_xor(__m256i const & a, __m256i const & b) {
   return _mm256_xor_si256(a,b);
 }
-static inline Vec8fb vec_neq(__m256i const & a, int const & b) {
-  return Vec8fb(_mm256_xor_si256(_mm256_cmpeq_epi32(a,_mm256_set1_epi32(b)), _mm256_set1_epi32(-1)));
+static inline __m256i vec_neq(__m256i const & a, int const & b) {
+  return _mm256_xor_si256(_mm256_cmpeq_epi32(a,_mm256_set1_epi32(b)), _mm256_set1_epi32(-1));
 }
-static inline Vec8fb vec_lt(__m256i const & a, int const & b) {
-  return Vec8fb(_mm256_cmpgt_epi32(_mm256_set1_epi32(b), a));
+static inline __m256i vec_lt(__m256i const & a, int const & b) {
+  return _mm256_cmpgt_epi32(_mm256_set1_epi32(b), a);
 }
 static inline __m256i vec_sll(__m256i const & a, int const & b) {
   return _mm256_sll_epi32(a, _mm_cvtsi32_si128(b));
 }
 template<>
-inline __m256i vec_set_i32(int const & a) {
-  return _mm256_set1_epi32(a);
+inline __m256 vec_set1_ps(float const & a) {
+  return _mm256_set1_ps(a);
+}
+static inline __m256 select(__m256i const & s, __m256 const & a, __m256 const & b) {
+  return _mm256_blendv_ps(b,a,_mm256_castsi256_ps(s));
+}
+static inline __m256i is_finite(__m256 const & a) {
+  return vec_neq(vec_and(vec_sll(_mm256_castps_si256(a),1),0xFF000000),0xFF000000);
+}
+static inline bool horizontal_or (__m256i const & a) {
+  return ! _mm256_testz_si256(a,a);
 }
 static inline Vec4i vm_truncate_low_to_int(Vec4d const & x) {
-    return truncate_to_int(x);
+  return truncate_to_int(x);
 }
 template<>
 inline Vec4d vm_half_int_vector_to_double<Vec4d, Vec4i>(Vec4i const & x) {
-    return to_double(x);
+  return to_double(x);
 }
 template<>
 inline Vec4q vm_half_int_vector_to_full<Vec4q,Vec4i>(Vec4i const & x) {
-    return extend_low(Vec8i(x,x));
+  return extend_low(Vec8i(x,x));
 }
 #endif
 
@@ -84,39 +108,51 @@ inline Vec4q vm_half_int_vector_to_full<Vec4q,Vec4i>(Vec4i const & x) {
 static inline __m512i vec_and(__m512i const & a, int const & b) {
   return _mm512_and_epi32(a,_mm512_set1_epi32(b));
 }
+static inline __mmask16 vec_and(__mmask16 const & a, __mmask16 const & b) {
+  return _mm512_kand(a,b);
+}
 static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
   return _mm512_castsi512_ps(Vec16i(_mm512_castps_si512(a)) ^ Vec16i(_mm512_castps_si512(b)));
 }
 static inline __m512i vec_xor(__m512i const & a, __m512i const & b) {
   return _mm512_xor_epi32(a,b);
 }
-static inline Vec16fb vec_neq(__m512i const & a, int const & b) {
-  return Vec16fb(_mm512_cmpneq_epi32_mask(a,_mm512_set1_epi32(b)));
+static inline __mmask16 vec_neq(__m512i const & a, int const & b) {
+  return _mm512_cmpneq_epi32_mask(a,_mm512_set1_epi32(b));
 }
-static inline Vec16fb vec_lt(__m512i const & a, int const & b) {
+static inline __mmask16 vec_lt(__m512i const & a, int const & b) {
   return Vec16fb(_mm512_cmpgt_epi32_mask(_mm512_set1_epi32(b), a));
 }
 static inline __m512i vec_sll(__m512i const & a, int const & b) {
   return _mm512_sll_epi32(a, _mm_cvtsi32_si128(b));
 }
 template<>
-inline __m512i vec_set_i32(int const & a) {
-  return _mm512_set1_epi32(a);
+inline __m512 vec_set1_ps(float const & a) {
+  return _mm512_set1_ps(a);
+}
+static inline __m512 select(__mmask16 const & s, __m512 const & a, __m512 const & b) {
+  return _mm512_mask_mov_ps(b, s, a);
+}
+static inline __mmask16 is_finite(__m512 const & a) {
+  return vec_neq(vec_and(vec_sll(_mm512_castps_si512(a),1),0xFF000000),0xFF000000);
+}
+static inline bool horizontal_or (__mmask16 const & a) {
+  return (uint16_t)a != 0;
 }
 static inline Vec8i vm_truncate_low_to_int(Vec8d const & x) {
-    return truncate_to_int(x);
+  return truncate_to_int(x);
 }
 template<>
 inline Vec8d vm_half_int_vector_to_double<Vec8d, Vec8i>(Vec8i const & x) {
-    return to_double(x);
+  return to_double(x);
 }
 template<>
 inline Vec8q vm_half_int_vector_to_full<Vec8q,Vec8i>(Vec8i const & x) {
-    return extend_low(Vec16i(x,x));
+  return extend_low(Vec16i(x,x));
 }
 #endif
 
-template<class VTYPE, class ITYPE, class ITYPE2, class BVTYPE, int SC>
+template<class VTYPE, class ITYPE, class BVTYPE, int SC>
 static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
     const float ONEOPIO4f = (float)(4./VM_PI);
 
@@ -132,10 +168,9 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
     const float P1cosf = -1.388731625493765E-3f;
     const float P2cosf =  2.443315711809948E-5f;
 
-    VTYPE  xa, x, y, x2, s, c, sin1, cos1;  // data vectors
-    ITYPE  q, signsin, signcos;             // integer vectors
-    ITYPE2 qq;
-    BVTYPE swap, overflow;                  // boolean vectors
+    VTYPE  xa, x, y, x2, s, c, sin1, cos1;
+    ITYPE  q, signsin, signcos;
+    BVTYPE swap, overflow;
 
     xa = abs(xx);
 
@@ -166,9 +201,9 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
 
     // check for overflow
     overflow = vec_lt(q,0);
-    if (horizontal_or(overflow & is_finite(xa))) {
-        s = select(overflow, 0.f, s);
-        c = select(overflow, 1.f, c);
+    if (horizontal_or(vec_and(overflow,is_finite(xa)))) {
+      s = select(overflow, vec_set1_ps<VTYPE>(0.f), s);
+      c = select(overflow, vec_set1_ps<VTYPE>(1.f), c);
     }
 
     if (SC & 5) {  // calculate sin
@@ -176,10 +211,9 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
         signsin = vec_and(vec_xor(vec_sll(q,29),reinterpret_i(xx)),1 << 31);
         sin1 = vec_xor(sin1,reinterpret_f(signsin));
     }
-    qq = q;
     if (SC & 6) {  // calculate cos
         cos1 = select(swap, s, c);
-        signcos = ((qq + 2) << 29) & (1 << 31);
+        signcos = vec_and(vec_sll(q+2,29),1 << 31);
         cos1 = vec_xor(cos1,reinterpret_f(signcos));
     }
     if      (SC == 1) return sin1;
@@ -193,13 +227,13 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
 // instantiations of sincos_f template:
 
 static inline __m128 _mm_sin_ps(__m128 const & x) {
-  return sincos_f<__m128, __m128i, Vec4i, Vec4fb, 1>(0, x);
+  return sincos_f<__m128, __m128i, __m128i, 1>(0, x);
 }
 static inline __m128 _mm_cos_ps(__m128 const & x) {
-  return sincos_f<__m128, __m128i, Vec4i, Vec4fb, 2>(0, x);
+  return sincos_f<__m128, __m128i, __m128i, 2>(0, x);
 }
 static inline __m128 _mm_sincos_ps(__m128 * cosret, __m128 const & x) {
-  return sincos_f<__m128, __m128i, Vec4i, Vec4fb, 3>(cosret, x);
+  return sincos_f<__m128, __m128i, __m128i, 3>(cosret, x);
 }
 static inline float _mm_reduce_add_ps(__m128 const & in) {
   union {
@@ -213,13 +247,13 @@ static inline float _mm_reduce_add_ps(__m128 const & in) {
 
 #ifdef __AVX__
 static inline __m256 _mm256_sin_ps(__m256 const & x) {
-  return sincos_f<__m256, __m256i, Vec8i, Vec8fb, 1>(0, x);
+  return sincos_f<__m256, __m256i, __m256i, 1>(0, x);
 }
 static inline __m256 _mm256_cos_ps(__m256 const & x) {
-  return sincos_f<__m256, __m256i, Vec8i, Vec8fb, 2>(0, x);
+  return sincos_f<__m256, __m256i, __m256i, 2>(0, x);
 }
 static inline __m256 _mm256_sincos_ps(__m256 * cosret, __m256 const & x) {
-  return sincos_f<__m256, __m256i, Vec8i, Vec8fb, 3>(cosret, x);
+  return sincos_f<__m256, __m256i, __m256i, 3>(cosret, x);
 }
 static inline float _mm256_reduce_add_ps(__m256 const &in) {
   union {
@@ -236,13 +270,13 @@ static inline float _mm256_reduce_add_ps(__m256 const &in) {
 
 #if __AVX512F__ | __MIC__
 static inline __m512 _mm512_sin_ps(__m512 const & x) {
-  return sincos_f<__m512, __m512i, Vec16i, Vec16fb, 1>(0, x);
+  return sincos_f<__m512, __m512i, __mmask16, 1>(0, x);
 }
 static inline __m512 _mm512_cos_ps(__m512 const & x) {
-  return sincos_f<__m512, __m512i, Vec16i, Vec16fb, 2>(0, x);
+  return sincos_f<__m512, __m512i, __mmask16, 2>(0, x);
 }
 static inline __m512 _mm512_sincos_ps(__m512 * cosret, __m512 const & x) {
-  return sincos_f<__m512, __m512i, Vec16i, Vec16fb, 3>(cosret, x);
+  return sincos_f<__m512, __m512i, __mmask16, 3>(cosret, x);
 }
 static inline float _mm512_reduce_add_ps(__m512 const & in) {
   __m256 temp = _mm256_castpd_ps(_mm512_extractf64x4_pd(_mm512_castps_pd(in),1));

@@ -1198,9 +1198,9 @@ static inline Vec4f sign_combine(Vec4f const & a, Vec4f const & b) {
 // false for INF and NAN
 // (the underscore in the name avoids a conflict with a macro in Intel's mathimf.h)
 static inline Vec4fb is_finite(Vec4f const & a) {
-    Vec4i t1 = _mm_castps_si128(a);    // reinterpret as 32-bit integer
-    Vec4i t2 = t1 << 1;                // shift out sign bit
-    Vec4i t3 = Vec4i(t2 & 0xFF000000) != 0xFF000000; // exponent field is not all 1s
+    Vec4i t1 = _mm_castps_si128(a);
+    Vec4i t2 = t1 << 1;
+    Vec4i t3 = Vec4i(t2 & 0xFF000000) != 0xFF000000;
     return Vec4ib(t3);
 }
 
