@@ -323,8 +323,8 @@ static inline VTYPE sincos_d(VTYPE2 * cosret, VTYPE const & xx) {
     const double DP2sc = 3.77489470793079817668E-8;
     const double DP3sc = 2.69515142907905952645E-15;
   */
-  VTYPE  x2, s, c, sin1, cos1;       // data vectors
-  VTYPE2 xa, x, y;
+  VTYPE  s, c, sin1, cos1;       // data vectors
+  VTYPE2 xa, x, y, x2;
   ITYPEH q;                                    // integer vectors, 32 bit
   ITYPE  qq, signsin, signcos;                 // integer vectors, 64 bit
   BVTYPE swap, overflow;                       // boolean vectors
