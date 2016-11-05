@@ -52,7 +52,7 @@ template<class VTYPE, class ITYPE>
 static inline VTYPE vm_half_int_vector_to_double(ITYPE const & x);
 
 template<>
-inline Vec2d vm_half_int_vector_to_double<Vec2d, Vec4i>(Vec4i const & x) {
+inline __m128d vm_half_int_vector_to_double<__m128d, Vec4i>(Vec4i const & x) {
   return to_double_low(x);
 }
 template<class ITYPE, class ITYPEH>
@@ -108,7 +108,7 @@ static inline Vec4i vm_truncate_low_to_int(Vec4d const & x) {
   return truncate_to_int(x);
 }
 template<>
-inline Vec4d vm_half_int_vector_to_double<Vec4d, Vec4i>(Vec4i const & x) {
+inline __m256d vm_half_int_vector_to_double<__m256d, Vec4i>(Vec4i const & x) {
   return to_double(x);
 }
 template<>
@@ -163,7 +163,7 @@ static inline Vec8i vm_truncate_low_to_int(Vec8d const & x) {
   return truncate_to_int(x);
 }
 template<>
-inline Vec8d vm_half_int_vector_to_double<Vec8d, Vec8i>(Vec8i const & x) {
+inline __m512d vm_half_int_vector_to_double<__m512d, Vec8i>(Vec8i const & x) {
   return to_double(x);
 }
 template<>
@@ -350,7 +350,7 @@ static inline VTYPE sincos_d(VTYPE2 * cosret, VTYPE const & xx) {
   q = vm_truncate_low_to_int(xa * ONEOPIO4);
   q = (q + 1) & ~1;
 
-  y = vm_half_int_vector_to_double<VTYPE>(q);  // quadrant, as double
+  y = vm_half_int_vector_to_double<VTYPE2>(q);  // quadrant, as double
 
   // Reduce by extended precision modular arithmetic
   x = nmul_add(y, DP3, nmul_add(y, DP2, nmul_add(y, DP1, xa)));    // x = ((xa - y * DP1) - y * DP2) - y * DP3;
