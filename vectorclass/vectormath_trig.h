@@ -14,6 +14,9 @@ static inline __m128 vec_xor(__m128 const & a, __m128 const & b) {
 static inline __m128i vec_xor(__m128i const & a, __m128i const & b) {
   return _mm_xor_si128(a,b);
 }
+static inline __m128d vec_xor(__m128d const & a, __m128d const & b) {
+  return _mm_xor_pd(a, b);
+}
 static inline __m128i vec_neq(__m128i const & a, int const & b) {
   return _mm_xor_si128(_mm_cmpeq_epi32(a,_mm_set1_epi32(b)), _mm_set1_epi32(-1));
 }
@@ -72,6 +75,9 @@ static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
 static inline __m256i vec_xor(__m256i const & a, __m256i const & b) {
   return _mm256_xor_si256(a,b);
 }
+static inline __m256d vec_xor(__m256d const & a, __m256d const & b) {
+  return _mm256_xor_pd(a, b);
+}
 static inline __m256i vec_neq(__m256i const & a, int const & b) {
   return _mm256_xor_si256(_mm256_cmpeq_epi32(a,_mm256_set1_epi32(b)), _mm256_set1_epi32(-1));
 }
@@ -123,6 +129,9 @@ static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
 }
 static inline __m512i vec_xor(__m512i const & a, __m512i const & b) {
   return _mm512_xor_epi32(a,b);
+}
+static inline __m512d vec_xor(__m512d const & a, __m512d const & b) {
+  return _mm512_castsi512_pd(Vec8q(_mm512_castpd_si512(a)) ^ Vec8q(_mm512_castpd_si512(b)));
 }
 static inline __mmask16 vec_neq(__m512i const & a, int const & b) {
   return _mm512_cmpneq_epi32_mask(a,_mm512_set1_epi32(b));
@@ -323,8 +332,7 @@ static inline VTYPE sincos_d(VTYPE2 * cosret, VTYPE const & xx) {
     const double DP2sc = 3.77489470793079817668E-8;
     const double DP3sc = 2.69515142907905952645E-15;
   */
-  VTYPE  s, c, sin1, cos1;       // data vectors
-  VTYPE2 xa, x, y, x2;
+  VTYPE2 xa, x, y, x2, s, c, sin1, cos1;
   ITYPEH q;                                    // integer vectors, 32 bit
   ITYPE  qq, signsin, signcos;                 // integer vectors, 64 bit
   BVTYPE swap, overflow;                       // boolean vectors
@@ -367,12 +375,12 @@ static inline VTYPE sincos_d(VTYPE2 * cosret, VTYPE const & xx) {
   if (SC & 1) {  // calculate sin
     sin1 = select(swap, c, s);
     signsin = ((qq << 61) ^ ITYPE(reinterpret_i(xx))) & ITYPE(1ULL << 63);
-    sin1 ^= reinterpret_d(signsin);
+    sin1 = vec_xor(sin1,reinterpret_d(signsin));
   }
   if (SC & 2) {  // calculate cos
     cos1 = select(swap, s, c);
     signcos = ((qq + 2) << 61) & (1ULL << 63);
-    cos1 ^= reinterpret_d(signcos);
+    cos1 = vec_xor(cos1,reinterpret_d(signcos));
   }
   if (SC == 3) {  // calculate both. cos returned through pointer
     *cosret = cos1;
