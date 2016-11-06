@@ -72,8 +72,14 @@ static inline bool horizontal_or (__m128i const & a) {
   return ! _mm_testz_si128(a,a);
 }
 
-static inline Vec4i vm_truncate_low_to_int(Vec2d const & x) {
-  return blend4i<0,1,4,5>(_mm_cvttpd_epi32(x),_mm_cvttpd_epi32(x));
+static inline Vec4i vm_truncate_low_to_int(__m128d const & x) {
+  static const union {
+    int     i[4];
+    __m128i xmm;
+  } u = {{-1,-1,0,0}};
+  __m128i a1 = _mm_and_si128(_mm_cvttpd_epi32(x), u.xmm);
+  __m128i b1 = _mm_slli_si128(_mm_cvttpd_epi32(x), 8);
+  return _mm_or_si128(a1,b1);
 }
 template<class VTYPE, class ITYPE>
 static inline VTYPE vm_half_int_vector_to_double(ITYPE const & x);
@@ -158,7 +164,7 @@ static inline bool horizontal_or (__m256i const & a) {
   return ! _mm256_testz_si256(a,a);
 }
 
-static inline Vec4i vm_truncate_low_to_int(Vec4d const & x) {
+static inline Vec4i vm_truncate_low_to_int(__m256d const & x) {
   return _mm256_cvttpd_epi32(x);
 }
 template<>
@@ -244,7 +250,7 @@ static inline bool horizontal_or (__mmask16 const & a) {
   return (uint16_t)(a != 0);
 }
 
-static inline Vec8i vm_truncate_low_to_int(Vec8d const & x) {
+static inline Vec8i vm_truncate_low_to_int(__m512d const & x) {
   return _mm512_cvtpd_epi32(x);
 }
 template<>
