@@ -32,8 +32,8 @@ static inline __m128i vec_neq_64(__m128i const & a, int64_t const & b) {
 static inline __m128i vec_lt(__m128i const & a, int const & b) {
   return _mm_cmpgt_epi32(_mm_set1_epi32(b),a);
 }
-static inline Vec2db vec_lt(__m128d const & a, double const & b) {
-  return _mm_cmplt_pd(_mm_set1_pd(b),a);
+static inline __m128i vec_lt(__m128d const & a, double const & b) {
+  return _mm_castpd_si128(_mm_cmplt_pd(_mm_set1_pd(b),a));
 }
 static inline __m128i vec_sll(__m128i const & a, int const & b) {
   return _mm_sll_epi32(a,_mm_cvtsi32_si128(b));
@@ -61,6 +61,9 @@ static inline __m128d selectd(__m128i const & s, __m128d const & a, __m128d cons
 }
 static inline __m128i is_finite(__m128 const & a) {
   return vec_neq(vec_and(vec_sll(_mm_castps_si128(a),1),0xFF000000),0xFF000000);
+}
+static inline __m128i is_finite(__m128d const & a) {
+  return vec_neq_64(vec_and_64(vec_sll_64(_mm_castpd_si128(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
 }
 static inline bool horizontal_or (__m128i const & a) {
   return ! _mm_testz_si128(a,a);
@@ -114,8 +117,8 @@ static inline __m256i vec_neq_64(__m256i const & a, int64_t const & b) {
 static inline __m256i vec_lt(__m256i const & a, int const & b) {
   return _mm256_cmpgt_epi32(_mm256_set1_epi32(b),a);
 }
-static inline Vec4db vec_lt(__m256d const & a, double const & b) {
-  return _mm256_cmp_pd(_mm256_set1_pd(b),a,1);
+static inline __m256i vec_lt(__m256d const & a, double const & b) {
+  return _mm256_castpd_si256(_mm256_cmp_pd(_mm256_set1_pd(b),a,1));
 }
 static inline __m256i vec_sll(__m256i const & a, int const & b) {
   return _mm256_sll_epi32(a,_mm_cvtsi32_si128(b));
@@ -140,6 +143,9 @@ static inline __m256d selectd(__m256i const & s, __m256d const & a, __m256d cons
 static inline __m256i is_finite(__m256 const & a) {
   return vec_neq(vec_and(vec_sll(_mm256_castps_si256(a),1),0xFF000000),0xFF000000);
 }
+static inline __m256i is_finite(__m256d const & a) {
+  return vec_neq_64(vec_and_64(vec_sll_64(_mm256_castpd_si256(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
+}
 static inline bool horizontal_or (__m256i const & a) {
   return ! _mm256_testz_si256(a,a);
 }
@@ -163,6 +169,9 @@ inline __m256i vm_half_int_vector_to_full<__m256i,Vec4i>(Vec4i const & x) {
 #if __AVX512F__ | __MIC__
 static inline __m512i vec_and(__m512i const & a, int const & b) {
   return _mm512_and_epi32(a,_mm512_set1_epi32(b));
+}
+static inline __mmask8 vec_and(__mmask8 const & a, __mmask8 const & b) {
+  return _mm512_kand(a,b);
 }
 static inline __mmask16 vec_and(__mmask16 const & a, __mmask16 const & b) {
   return _mm512_kand(a,b);
@@ -191,7 +200,7 @@ static inline __mmask8 vec_neq_64(__m512i const & a, int64_t const & b) {
 static inline __mmask16 vec_lt(__m512i const & a, int const & b) {
   return _mm512_cmpgt_epi32_mask(_mm512_set1_epi32(b),a);
 }
-static inline Vec8db vec_lt(__m512d const & a, double const & b) {
+static inline __mmask8 vec_lt(__m512d const & a, double const & b) {
   return _mm512_cmp_pd_mask(a,_mm512_set1_pd(b),1);
 }
 static inline __m512i vec_sll(__m512i const & a, int const & b) {
@@ -216,6 +225,9 @@ static inline __m512d selectd(__mmask8 const & s, __m512d const & a, __m512d con
 }
 static inline __mmask16 is_finite(__m512 const & a) {
   return vec_neq(vec_and(vec_sll(_mm512_castps_si512(a),1),0xFF000000),0xFF000000);
+}
+static inline __mmask8 is_finite(__m512d const & a) {
+  return vec_neq_64(vec_and_64(vec_sll_64(_mm512_castpd_si512(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
 }
 static inline bool horizontal_or (__mmask16 const & a) {
   return (uint16_t)(a != 0);
@@ -426,9 +438,9 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
 
   // check for overflow
   if (horizontal_or(q < 0)) {
-    overflow = vec_lt(y,0) & is_finite(xa);
-    s = selectd(overflow, vec_set1_pd<VTYPE>(0.), s);
-    c = selectd(overflow, vec_set1_pd<VTYPE>(1.), c);
+    overflow = vec_and(vec_lt(y,0),is_finite(xa));
+    s = selectd(overflow,vec_set1_pd<VTYPE>(0.),s);
+    c = selectd(overflow,vec_set1_pd<VTYPE>(1.),c);
   }
   if (SC & 1) {  // calculate sin
     sin1 = selectd(swap, c, s);
