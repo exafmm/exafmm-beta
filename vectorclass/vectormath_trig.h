@@ -53,11 +53,8 @@ template<>
 inline __m128d vec_set1_pd(double const & a) {
   return _mm_set1_pd(a);
 }
-static inline Vec4i truncate_to_int(Vec4f const & a) {
+static inline __m128i truncate_to_int(__m128 const & a) {
     return _mm_cvttps_epi32(a);
-}
-static inline Vec4i truncate_to_int(Vec2d const & a, Vec2d const & b) {
-  return blend4i<0,1,4,5>(_mm_cvttpd_epi32(a),_mm_cvttpd_epi32(b));
 }
 static inline __m128 select(__m128i const & s, __m128 const & a, __m128 const & b) {
   return _mm_blendv_ps(b,a,_mm_castsi128_ps(s));
@@ -140,11 +137,10 @@ template<>
 inline __m256d vec_set1_pd(double const & a) {
   return _mm256_set1_pd(a);
 }
-static inline Vec8i truncate_to_int(Vec8f const & a) {
-    return Vec8i(_mm_cvttps_epi32(a.get_low()), _mm_cvttps_epi32(a.get_high()));
-}
-static inline Vec4i truncate_to_int(Vec4d const & a) {
-    return _mm256_cvttpd_epi32(a);
+static inline __m256i truncate_to_int(__m256 const & a) {
+  __m128i lo = _mm_cvttps_epi32(_mm256_castps256_ps128(a));
+  __m128i hi = _mm_cvttps_epi32(_mm256_extractf128_ps(a,1));
+  return _mm256_inserti128_si256(_mm256_castsi128_si256(lo),(hi),1);
 }
 static inline __m256 select(__m256i const & s, __m256 const & a, __m256 const & b) {
   return _mm256_blendv_ps(b,a,_mm256_castsi256_ps(s));
@@ -229,11 +225,8 @@ template<>
 inline __m512d vec_set1_pd(double const & a) {
   return _mm512_set1_pd(a);
 }
-static inline Vec16i truncate_to_int(Vec16f const & a) {
+static inline __m512i truncate_to_int(__m512 const & a) {
     return _mm512_cvtt_roundps_epi32(a, _MM_FROUND_NO_EXC);
-}
-static inline Vec8i truncate_to_int(Vec8d const & a) {
-    return _mm512_cvttpd_epi32(a);
 }
 static inline __m512 select(__mmask16 const & s, __m512 const & a, __m512 const & b) {
   return _mm512_mask_mov_ps(b,s,a);
