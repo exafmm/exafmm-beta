@@ -269,7 +269,7 @@ public:
         m16 = Vec8b(b);
         return *this;
     }
-private: // Prevent constructing from int, etc.
+  private: // Prevent constructing from int, etc.
     Vec8db(int b);
     Vec8db & operator = (int x);
 public:

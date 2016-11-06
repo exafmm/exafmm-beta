@@ -8,6 +8,9 @@ static inline __m128i vec_and(__m128i const & a, int const & b) {
 static inline __m128i vec_and(__m128i const & a, __m128i const & b) {
   return _mm_and_si128(a,b);
 }
+static inline __m128i vec_and_64(__m128i const & a, int64_t const & b) {
+  return _mm_and_si128(a,_mm_set1_epi64x(b));
+}
 static inline __m128 vec_xor(__m128 const & a, __m128 const & b) {
   return _mm_xor_ps(a,b);
 }
@@ -19,6 +22,9 @@ static inline __m128d vec_xor(__m128d const & a, __m128d const & b) {
 }
 static inline __m128i vec_neq(__m128i const & a, int const & b) {
   return _mm_xor_si128(_mm_cmpeq_epi32(a,_mm_set1_epi32(b)), _mm_set1_epi32(-1));
+}
+static inline __m128i vec_neq_64(__m128i const & a, int64_t const & b) {
+  return _mm_xor_si128(_mm_cmpeq_epi64(a,_mm_set1_epi64x(b)), _mm_set1_epi64x(-1));
 }
 static inline __m128i vec_lt(__m128i const & a, int const & b) {
   return _mm_cmpgt_epi32(_mm_set1_epi32(b), a);
@@ -69,6 +75,9 @@ static inline __m256i vec_and(__m256i const & a, int const & b) {
 static inline __m256i vec_and(__m256i const & a, __m256i const & b) {
   return _mm256_and_si256(a,b);
 }
+static inline __m256i vec_and_64(__m256i const & a, int64_t const & b) {
+  return _mm256_and_si256(a,_mm256_set1_epi64x(b));
+}
 static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
   return _mm256_xor_ps(a,b);
 }
@@ -80,6 +89,9 @@ static inline __m256d vec_xor(__m256d const & a, __m256d const & b) {
 }
 static inline __m256i vec_neq(__m256i const & a, int const & b) {
   return _mm256_xor_si256(_mm256_cmpeq_epi32(a,_mm256_set1_epi32(b)), _mm256_set1_epi32(-1));
+}
+static inline __m256i vec_neq_64(__m256i const & a, int64_t const & b) {
+  return _mm256_xor_si256(_mm256_cmpeq_epi64(a,_mm256_set1_epi64x(b)), _mm256_set1_epi64x(-1));
 }
 static inline __m256i vec_lt(__m256i const & a, int const & b) {
   return _mm256_cmpgt_epi32(_mm256_set1_epi32(b), a);
@@ -124,6 +136,9 @@ static inline __m512i vec_and(__m512i const & a, int const & b) {
 static inline __mmask16 vec_and(__mmask16 const & a, __mmask16 const & b) {
   return _mm512_kand(a,b);
 }
+static inline __m512i vec_and_64(__m512i const & a, int64_t const & b) {
+  return _mm512_and_epi64(a,_mm512_set1_epi64(b));
+}
 static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
   return _mm512_castsi512_ps(Vec16i(_mm512_castps_si512(a)) ^ Vec16i(_mm512_castps_si512(b)));
 }
@@ -135,6 +150,9 @@ static inline __m512d vec_xor(__m512d const & a, __m512d const & b) {
 }
 static inline __mmask16 vec_neq(__m512i const & a, int const & b) {
   return _mm512_cmpneq_epi32_mask(a,_mm512_set1_epi32(b));
+}
+static inline __mmask8 vec_neq_64(__m512i const & a, int64_t const & b) {
+  return _mm512_cmpneq_epi64_mask(a,_mm512_set1_epi64(b));
 }
 static inline __mmask16 vec_lt(__m512i const & a, int const & b) {
   return _mm512_cmpgt_epi32_mask(_mm512_set1_epi32(b), a);
@@ -305,7 +323,7 @@ static inline float _mm512_reduce_add_ps(__m512 const & in) {
 }
 #endif
 
-template<class VTYPE, class ITYPE, class ITYPEH, class BVTYPE, int SC>
+template<class VTYPE, class ITYPE2, class ITYPE, class ITYPEH, class BVTYPE, int SC>
 static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
     // define constants
   const double ONEOPIO4 = 4./VM_PI;
@@ -329,9 +347,10 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   const double DP3 = 3.06161699786838294307E-17;
 
   VTYPE  xa, x, y, x2, s, c, sin1, cos1;
-  ITYPEH q;                                    // integer vectors, 32 bit
-  ITYPE  qq, signsin, signcos;                 // integer vectors, 64 bit
-  BVTYPE swap, overflow;                       // boolean vectors
+  ITYPEH q;
+  ITYPE  signsin, signcos;
+  ITYPE2 qq;
+  BVTYPE swap, overflow;
 
   xa = abs(xx);
 
@@ -360,7 +379,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
 
   // correct for quadrant
   qq = vm_half_int_vector_to_full<ITYPE,ITYPEH>(q);
-  swap = BVTYPE((qq & 2) != 0);
+  swap = vec_neq_64(vec_and_64(qq,2),int64_t(0));
 
   // check for overflow
   if (horizontal_or(q < 0)) {
@@ -387,13 +406,13 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
 // instantiations of sincos_d template:
 
 static inline __m128d _mm_sin_pd(__m128d const & x) {
-  return sincos_d<__m128d, Vec2q, Vec4i, Vec2db, 1>(0, x);
+  return sincos_d<__m128d, __m128i, Vec2q, Vec4i, Vec2db, 1>(0, x);
 }
 static inline __m128d _mm_cos_pd(__m128d const & x) {
-  return sincos_d<__m128d, Vec2q, Vec4i, Vec2db, 2>(0, x);
+  return sincos_d<__m128d, __m128i, Vec2q, Vec4i, Vec2db, 2>(0, x);
 }
 static inline __m128d _mm_sincos_pd(__m128d * cosret, __m128d const & x) {
-  return sincos_d<__m128d, Vec2q, Vec4i, Vec2db, 3>(cosret, x);
+  return sincos_d<__m128d, __m128i, Vec2q, Vec4i, Vec2db, 3>(cosret, x);
 }
 static inline double _mm_reduce_add_pd(__m128d const & in) {
   union {
@@ -406,13 +425,13 @@ static inline double _mm_reduce_add_pd(__m128d const & in) {
 
 #ifdef __AVX__
 static inline __m256d _mm256_sin_pd(__m256d const & x) {
-  return sincos_d<__m256d, Vec4q, Vec4i, Vec4db, 1>(0, x);
+  return sincos_d<__m256d, __m256i, Vec4q, Vec4i, Vec4db, 1>(0, x);
 }
 static inline __m256d _mm256_cos_pd(__m256d const & x) {
-  return sincos_d<__m256d, Vec4q, Vec4i, Vec4db, 2>(0, x);
+  return sincos_d<__m256d, __m256i, Vec4q, Vec4i, Vec4db, 2>(0, x);
 }
 static inline __m256d _mm256_sincos_pd(__m256d * cosret, __m256d const & x) {
-  return sincos_d<__m256d, Vec4q, Vec4i, Vec4db, 3>(cosret, x);
+  return sincos_d<__m256d, __m256i, Vec4q, Vec4i, Vec4db, 3>(cosret, x);
 }
 static inline double _mm256_reduce_add_pd(__m256d const & in) {
   union {
@@ -428,13 +447,13 @@ static inline double _mm256_reduce_add_pd(__m256d const & in) {
 
 #if __AVX512F__ | __MIC__
 static inline __m512d _mm512_sin_pd(__m512d const & x) {
-  return sincos_d<__m512d, Vec8q, Vec8i, Vec8db, 1>(0, x);
+  return sincos_d<__m512d, __m512i, Vec8q, Vec8i, Vec8db, 1>(0, x);
 }
 static inline __m512d _mm512_cos_pd(__m512d const & x) {
-  return sincos_d<__m512d, Vec8q, Vec8i, Vec8db, 2>(0, x);
+  return sincos_d<__m512d, __m512i, Vec8q, Vec8i, Vec8db, 2>(0, x);
 }
 static inline __m512d _mm512_sincos_pd(__m512d * cosret, __m512d const & x) {
-  return sincos_d<__m512d, Vec8q, Vec8i, Vec8db, 3>(cosret, x);
+  return sincos_d<__m512d, __m512i, Vec8q, Vec8i, Vec8db, 3>(cosret, x);
 }
 static inline double _mm512_reduce_add_pd(__m512d const & in) {
   __m256d temp = _mm512_extractf64x4_pd(in,1);
