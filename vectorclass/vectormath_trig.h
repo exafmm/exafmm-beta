@@ -18,22 +18,25 @@ static inline __m128i vec_xor(__m128i const & a, __m128i const & b) {
   return _mm_xor_si128(a,b);
 }
 static inline __m128d vec_xor(__m128d const & a, __m128d const & b) {
-  return _mm_xor_pd(a, b);
+  return _mm_xor_pd(a,b);
 }
 static inline __m128i vec_neq(__m128i const & a, int const & b) {
-  return _mm_xor_si128(_mm_cmpeq_epi32(a,_mm_set1_epi32(b)), _mm_set1_epi32(-1));
+  return _mm_xor_si128(_mm_cmpeq_epi32(a,_mm_set1_epi32(b)),_mm_set1_epi32(-1));
 }
 static inline __m128i vec_neq_64(__m128i const & a, int64_t const & b) {
-  return _mm_xor_si128(_mm_cmpeq_epi64(a,_mm_set1_epi64x(b)), _mm_set1_epi64x(-1));
+  return _mm_xor_si128(_mm_cmpeq_epi64(a,_mm_set1_epi64x(b)),_mm_set1_epi64x(-1));
 }
 static inline __m128i vec_lt(__m128i const & a, int const & b) {
-  return _mm_cmpgt_epi32(_mm_set1_epi32(b), a);
+  return _mm_cmpgt_epi32(_mm_set1_epi32(b),a);
 }
 static inline Vec2db vec_lt(__m128d const & a, double const & b) {
-  return _mm_cmplt_pd(_mm_set1_pd(b), a);
+  return _mm_cmplt_pd(_mm_set1_pd(b),a);
 }
 static inline __m128i vec_sll(__m128i const & a, int const & b) {
   return _mm_sll_epi32(a,_mm_cvtsi32_si128(b));
+}
+static inline __m128i vec_sll_64(__m128i const & a, int const & b) {
+  return _mm_sll_epi64(a,_mm_cvtsi32_si128(b));
 }
 template<class VTYPE>
 static inline VTYPE vec_set1_ps(float const & a);
@@ -94,7 +97,7 @@ static inline __m256i vec_xor(__m256i const & a, __m256i const & b) {
   return _mm256_xor_si256(a,b);
 }
 static inline __m256d vec_xor(__m256d const & a, __m256d const & b) {
-  return _mm256_xor_pd(a, b);
+  return _mm256_xor_pd(a,b);
 }
 static inline __m256i vec_neq(__m256i const & a, int const & b) {
   return _mm256_xor_si256(_mm256_cmpeq_epi32(a,_mm256_set1_epi32(b)), _mm256_set1_epi32(-1));
@@ -103,13 +106,16 @@ static inline __m256i vec_neq_64(__m256i const & a, int64_t const & b) {
   return _mm256_xor_si256(_mm256_cmpeq_epi64(a,_mm256_set1_epi64x(b)), _mm256_set1_epi64x(-1));
 }
 static inline __m256i vec_lt(__m256i const & a, int const & b) {
-  return _mm256_cmpgt_epi32(_mm256_set1_epi32(b), a);
+  return _mm256_cmpgt_epi32(_mm256_set1_epi32(b),a);
 }
 static inline Vec4db vec_lt(__m256d const & a, double const & b) {
-  return _mm256_cmp_pd(_mm256_set1_pd(b), a, 1);
+  return _mm256_cmp_pd(_mm256_set1_pd(b),a,1);
 }
 static inline __m256i vec_sll(__m256i const & a, int const & b) {
-  return _mm256_sll_epi32(a, _mm_cvtsi32_si128(b));
+  return _mm256_sll_epi32(a,_mm_cvtsi32_si128(b));
+}
+static inline __m256i vec_sll_64(__m256i const & a, int const & b) {
+  return _mm256_sll_epi64(a,_mm_cvtsi32_si128(b));
 }
 template<>
 inline __m256 vec_set1_ps(float const & a) {
@@ -159,13 +165,13 @@ static inline __m512i vec_and_64(__m512i const & a, int64_t const & b) {
   return _mm512_and_epi64(a,_mm512_set1_epi64(b));
 }
 static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
-  return _mm512_castsi512_ps(Vec16i(_mm512_castps_si512(a)) ^ Vec16i(_mm512_castps_si512(b)));
+  return _mm512_castsi512_ps(Vec16i(_mm512_castps_si512(a))^Vec16i(_mm512_castps_si512(b)));
 }
 static inline __m512i vec_xor(__m512i const & a, __m512i const & b) {
   return _mm512_xor_epi32(a,b);
 }
 static inline __m512d vec_xor(__m512d const & a, __m512d const & b) {
-  return _mm512_castsi512_pd(Vec8q(_mm512_castpd_si512(a)) ^ Vec8q(_mm512_castpd_si512(b)));
+  return _mm512_castsi512_pd(Vec8q(_mm512_castpd_si512(a))^Vec8q(_mm512_castpd_si512(b)));
 }
 static inline __mmask16 vec_neq(__m512i const & a, int const & b) {
   return _mm512_cmpneq_epi32_mask(a,_mm512_set1_epi32(b));
@@ -174,13 +180,16 @@ static inline __mmask8 vec_neq_64(__m512i const & a, int64_t const & b) {
   return _mm512_cmpneq_epi64_mask(a,_mm512_set1_epi64(b));
 }
 static inline __mmask16 vec_lt(__m512i const & a, int const & b) {
-  return _mm512_cmpgt_epi32_mask(_mm512_set1_epi32(b), a);
+  return _mm512_cmpgt_epi32_mask(_mm512_set1_epi32(b),a);
 }
 static inline Vec8db vec_lt(__m512d const & a, double const & b) {
-  return _mm512_cmp_pd_mask(a, _mm512_set1_pd(b), 1);
+  return _mm512_cmp_pd_mask(a,_mm512_set1_pd(b),1);
 }
 static inline __m512i vec_sll(__m512i const & a, int const & b) {
-  return _mm512_sll_epi32(a, _mm_cvtsi32_si128(b));
+  return _mm512_sll_epi32(a,_mm_cvtsi32_si128(b));
+}
+static inline __m512i vec_sll_64(__m512i const & a, int const & b) {
+  return _mm512_sll_epi64(a,_mm_cvtsi32_si128(b));
 }
 template<>
 inline __m512 vec_set1_ps(float const & a) {
@@ -414,7 +423,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   }
   if (SC & 1) {  // calculate sin
     sin1 = selectd(swap, c, s);
-    signsin = ((qq << 61) ^ ITYPE(reinterpret_i(xx))) & ITYPE(1ULL << 63);
+    signsin = (vec_sll_64(qq,61) ^ ITYPE2(reinterpret_i(xx))) & ITYPE(1ULL << 63);
     sin1 = vec_xor(sin1,reinterpret_d(signsin));
   }
   if (SC & 2) {  // calculate cos
