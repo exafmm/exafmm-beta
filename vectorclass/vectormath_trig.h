@@ -186,11 +186,11 @@ static inline Vec8i vm_truncate_low_to_int(Vec8d const & x) {
 }
 template<>
 inline __m512d vm_half_int_vector_to_double<__m512d,Vec8i>(Vec8i const & x) {
-  return to_double(x);
+  return _mm512_cvtepi32_pd(x);
 }
 template<>
 inline __m512i vm_half_int_vector_to_full<__m512i,Vec8i>(Vec8i const & x) {
-  return extend_low(Vec16i(x,x));
+  return _mm512_cvtepi32_epi64(_mm512_castsi512_si256(_mm512_inserti64x4(_mm512_castsi256_si512(x),x,1)));
 }
 #endif
 
