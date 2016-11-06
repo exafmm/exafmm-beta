@@ -52,21 +52,22 @@ static inline bool horizontal_or (__m128i const & a) {
 }
 
 static inline Vec4i vm_truncate_low_to_int(Vec2d const & x) {
-  return truncate_to_int(x,x);
+  return blend4i<0,1,4,5>(_mm_cvttpd_epi32(x),_mm_cvttpd_epi32(x));
 }
 template<class VTYPE, class ITYPE>
 static inline VTYPE vm_half_int_vector_to_double(ITYPE const & x);
 
 template<>
-inline __m128d vm_half_int_vector_to_double<__m128d, Vec4i>(Vec4i const & x) {
-  return to_double_low(x);
+inline __m128d vm_half_int_vector_to_double<__m128d,Vec4i>(Vec4i const & x) {
+  return _mm_cvtepi32_pd(x);
 }
 template<class ITYPE, class ITYPEH>
 static inline ITYPE vm_half_int_vector_to_full(ITYPEH const & x);
 
 template<>
-inline Vec2q vm_half_int_vector_to_full<Vec2q,Vec4i>(Vec4i const & x) {
-  return extend_low(x);
+inline __m128i vm_half_int_vector_to_full<__m128i,Vec4i>(Vec4i const & x) {
+  __m128i sign = _mm_srai_epi32(x,31);
+  return _mm_unpacklo_epi32(x,sign);
 }
 #if __AVX__
 static inline __m256i vec_and(__m256i const & a, int const & b) {
@@ -117,15 +118,18 @@ static inline bool horizontal_or (__m256i const & a) {
 }
 
 static inline Vec4i vm_truncate_low_to_int(Vec4d const & x) {
-  return truncate_to_int(x);
+  return _mm256_cvttpd_epi32(x);
 }
 template<>
-inline __m256d vm_half_int_vector_to_double<__m256d, Vec4i>(Vec4i const & x) {
-  return to_double(x);
+inline __m256d vm_half_int_vector_to_double<__m256d,Vec4i>(Vec4i const & x) {
+  return _mm256_cvtepi32_pd(x);
 }
 template<>
-inline Vec4q vm_half_int_vector_to_full<Vec4q,Vec4i>(Vec4i const & x) {
-  return extend_low(Vec8i(x,x));
+inline __m256i vm_half_int_vector_to_full<__m256i,Vec4i>(Vec4i const & x) {
+  __m256i a = _mm256_inserti128_si256(_mm256_castsi128_si256(x),x,1);
+  __m256i a2 = permute4q<0,-256,1,-256>(Vec4q(a));
+  __m256i sign = _mm256_srai_epi32(a2,31);
+  return _mm256_unpacklo_epi32(a2,sign);
 }
 #endif
 
@@ -178,14 +182,14 @@ static inline bool horizontal_or (__mmask16 const & a) {
 }
 
 static inline Vec8i vm_truncate_low_to_int(Vec8d const & x) {
-  return truncate_to_int(x);
+  return _mm512_cvtpd_epi32(x);
 }
 template<>
-inline __m512d vm_half_int_vector_to_double<__m512d, Vec8i>(Vec8i const & x) {
+inline __m512d vm_half_int_vector_to_double<__m512d,Vec8i>(Vec8i const & x) {
   return to_double(x);
 }
 template<>
-inline Vec8q vm_half_int_vector_to_full<Vec8q,Vec8i>(Vec8i const & x) {
+inline __m512i vm_half_int_vector_to_full<__m512i,Vec8i>(Vec8i const & x) {
   return extend_low(Vec16i(x,x));
 }
 #endif
@@ -348,8 +352,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
 
   VTYPE  xa, x, y, x2, s, c, sin1, cos1;
   ITYPEH q;
-  ITYPE  signsin, signcos;
-  ITYPE2 qq;
+  ITYPE2 qq, signsin, signcos;
   BVTYPE swap, overflow;
 
   xa = abs(xx);
@@ -378,7 +381,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   c = mul_add(x2 * x2, c, nmul_add(x2, 0.5, 1.0));                 // c = 1.0 - x2 * 0.5 + (x2 * x2) * c;
 
   // correct for quadrant
-  qq = vm_half_int_vector_to_full<ITYPE,ITYPEH>(q);
+  qq = vm_half_int_vector_to_full<ITYPE2,ITYPEH>(q);
   swap = vec_neq_64(vec_and_64(qq,2),int64_t(0));
 
   // check for overflow

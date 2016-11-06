@@ -1963,9 +1963,7 @@ static inline Vec2d ceil(Vec2d const & a) {
 
 // function truncate_to_int: round towards zero.
 static inline Vec4i truncate_to_int(Vec2d const & a, Vec2d const & b) {
-    Vec4i t1 = _mm_cvttpd_epi32(a);
-    Vec4i t2 = _mm_cvttpd_epi32(b);
-    return blend4i<0,1,4,5> (t1, t2);
+  return blend4i<0,1,4,5>(_mm_cvttpd_epi32(a),_mm_cvttpd_epi32(b));
 }
 
 // function truncate_to_int64: round towards zero. (inefficient)
