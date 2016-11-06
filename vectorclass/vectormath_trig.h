@@ -17,6 +17,9 @@ static inline __m128 vec_xor(__m128 const & a, __m128 const & b) {
 static inline __m128i vec_xor(__m128i const & a, __m128i const & b) {
   return _mm_xor_si128(a,b);
 }
+static inline __m128i vec_xor_64(__m128i const & a, __m128d const & b) {
+  return _mm_xor_si128(a,_mm_castpd_si128(b));
+}
 static inline __m128d vec_xor(__m128d const & a, __m128d const & b) {
   return _mm_xor_pd(a,b);
 }
@@ -96,6 +99,9 @@ static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
 static inline __m256i vec_xor(__m256i const & a, __m256i const & b) {
   return _mm256_xor_si256(a,b);
 }
+static inline __m256i vec_xor_64(__m256i const & a, __m256d const & b) {
+  return _mm256_xor_si256(a,_mm256_castpd_si256(b));
+}
 static inline __m256d vec_xor(__m256d const & a, __m256d const & b) {
   return _mm256_xor_pd(a,b);
 }
@@ -169,6 +175,9 @@ static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
 }
 static inline __m512i vec_xor(__m512i const & a, __m512i const & b) {
   return _mm512_xor_epi32(a,b);
+}
+static inline __m512i vec_xor_64(__m512i const & a, __m512d const & b) {
+  return _mm512_xor_epi64(a,_mm512_castpd_si512(b));
 }
 static inline __m512d vec_xor(__m512d const & a, __m512d const & b) {
   return _mm512_castsi512_pd(Vec8q(_mm512_castpd_si512(a))^Vec8q(_mm512_castpd_si512(b)));
@@ -423,7 +432,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   }
   if (SC & 1) {  // calculate sin
     sin1 = selectd(swap, c, s);
-    signsin = (vec_sll_64(qq,61) ^ ITYPE2(reinterpret_i(xx))) & ITYPE(1ULL << 63);
+    signsin = vec_and_64(vec_xor_64(vec_sll_64(qq,61),xx),1ULL << 63);
     sin1 = vec_xor(sin1,reinterpret_d(signsin));
   }
   if (SC & 2) {  // calculate cos
