@@ -1005,11 +1005,6 @@ static inline Vec4i round_to_int(Vec4f const & a) {
     return _mm_cvtps_epi32(a);
 }
 
-// function truncate_to_int: round towards zero. (result as integer vector)
-static inline Vec4i truncate_to_int(Vec4f const & a) {
-    return _mm_cvttps_epi32(a);
-}
-
 // function to_float: convert integer vector to float vector
 static inline Vec4f to_float(Vec4i const & a) {
     return _mm_cvtepi32_ps(a);
@@ -1959,11 +1954,6 @@ static inline Vec2d ceil(Vec2d const & a) {
     _mm_setcsr(t1);                    // restore MXCSR
     return r;
 #endif
-}
-
-// function truncate_to_int: round towards zero.
-static inline Vec4i truncate_to_int(Vec2d const & a, Vec2d const & b) {
-  return blend4i<0,1,4,5>(_mm_cvttpd_epi32(a),_mm_cvttpd_epi32(b));
 }
 
 // function truncate_to_int64: round towards zero. (inefficient)

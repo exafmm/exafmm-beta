@@ -782,11 +782,6 @@ static inline Vec16i round_to_int(Vec16f const & a) {
     return _mm512_cvt_roundps_epi32(a, _MM_FROUND_NO_EXC);
 }
 
-// function truncate_to_int: round towards zero. (result as integer vector)
-static inline Vec16i truncate_to_int(Vec16f const & a) {
-    return _mm512_cvtt_roundps_epi32(a, _MM_FROUND_NO_EXC);
-}
-
 // function to_float: convert integer vector to float vector
 static inline Vec16f to_float(Vec16i const & a) {
     return _mm512_cvtepi32_ps(a);
@@ -1424,11 +1419,6 @@ static inline Vec8d ceil(Vec8d const & a) {
 static inline Vec8i round_to_int(Vec8d const & a) {
     // Note: assume MXCSR control register is set to rounding
     return _mm512_cvtpd_epi32(a);
-}
-
-// function truncate_to_int: round towards zero. (result as integer vector)
-static inline Vec8i truncate_to_int(Vec8d const & a) {
-    return _mm512_cvttpd_epi32(a);
 }
 
 // function truncate_to_int64: round towards zero. (inefficient)
