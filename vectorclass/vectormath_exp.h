@@ -207,7 +207,7 @@ static inline VTYPE exp_d(VTYPE const & initial_x) {
     }
     else {
         // overflow, underflow and NAN
-        r = select(sign_bit(initial_x), 0.-M1, infinite_vec<VTYPE>()); // value in case of +/- overflow or INF
+      r = select(sign_bit(initial_x), 0.-M1, infinite_vec<VTYPE>()); // value in case of +/- overflow or INF
         z = select(inrange, z, r);                                     // +/- underflow
         z = select(is_nan(initial_x), initial_x, z);                   // NAN goes through
         return z;
@@ -280,7 +280,7 @@ static inline VTYPE exp_d(VTYPE const & initial_x) {
     }
     else {
         // overflow, underflow and NAN
-        r = select(sign_bit(initial_x), 0.-M1, infinite_vec<VTYPE>()); // value in case of overflow or INF
+      r = select(sign_bit(initial_x), 0.-M1, infinite_vec<VTYPE>()); // value in case of overflow or INF
         y = select(inrange, y, r);                                     // +/- overflow
         y = select(is_nan(initial_x), initial_x, y);                   // NAN goes through
         return y;

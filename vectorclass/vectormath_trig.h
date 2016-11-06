@@ -41,8 +41,17 @@ template<>
 inline __m128 vec_set1_ps(float const & a) {
   return _mm_set1_ps(a);
 }
+template<class VTYPE>
+static inline VTYPE vec_set1_pd(double const & a);
+template<>
+inline __m128d vec_set1_pd(double const & a) {
+  return _mm_set1_pd(a);
+}
 static inline __m128 select(__m128i const & s, __m128 const & a, __m128 const & b) {
   return _mm_blendv_ps(b,a,_mm_castsi128_ps(s));
+}
+static inline __m128d selectd(__m128i const & s, __m128d const & a, __m128d const & b) {
+  return _mm_blendv_pd(b,a,_mm_castsi128_pd(s));
 }
 static inline __m128i is_finite(__m128 const & a) {
   return vec_neq(vec_and(vec_sll(_mm_castps_si128(a),1),0xFF000000),0xFF000000);
@@ -56,19 +65,18 @@ static inline Vec4i vm_truncate_low_to_int(Vec2d const & x) {
 }
 template<class VTYPE, class ITYPE>
 static inline VTYPE vm_half_int_vector_to_double(ITYPE const & x);
-
 template<>
 inline __m128d vm_half_int_vector_to_double<__m128d,Vec4i>(Vec4i const & x) {
   return _mm_cvtepi32_pd(x);
 }
 template<class ITYPE, class ITYPEH>
 static inline ITYPE vm_half_int_vector_to_full(ITYPEH const & x);
-
 template<>
 inline __m128i vm_half_int_vector_to_full<__m128i,Vec4i>(Vec4i const & x) {
   __m128i sign = _mm_srai_epi32(x,31);
   return _mm_unpacklo_epi32(x,sign);
 }
+
 #if __AVX__
 static inline __m256i vec_and(__m256i const & a, int const & b) {
   return _mm256_and_si256(a,_mm256_set1_epi32(b));
@@ -107,8 +115,15 @@ template<>
 inline __m256 vec_set1_ps(float const & a) {
   return _mm256_set1_ps(a);
 }
+template<>
+inline __m256d vec_set1_pd(double const & a) {
+  return _mm256_set1_pd(a);
+}
 static inline __m256 select(__m256i const & s, __m256 const & a, __m256 const & b) {
   return _mm256_blendv_ps(b,a,_mm256_castsi256_ps(s));
+}
+static inline __m256d selectd(__m256i const & s, __m256d const & a, __m256d const & b) {
+  return _mm256_blendv_pd(b,a,_mm256_castsi256_pd(s));
 }
 static inline __m256i is_finite(__m256 const & a) {
   return vec_neq(vec_and(vec_sll(_mm256_castps_si256(a),1),0xFF000000),0xFF000000);
@@ -171,14 +186,21 @@ template<>
 inline __m512 vec_set1_ps(float const & a) {
   return _mm512_set1_ps(a);
 }
+template<>
+inline __m512d vec_set1_pd(double const & a) {
+  return _mm512_set1_pd(a);
+}
 static inline __m512 select(__mmask16 const & s, __m512 const & a, __m512 const & b) {
-  return _mm512_mask_mov_ps(b, s, a);
+  return _mm512_mask_mov_ps(b,s,a);
+}
+static inline __m512d selectd(__mmask8 const & s, __m512d const & a, __m512d const & b) {
+  return _mm512_mask_mov_pd(b,s,a);
 }
 static inline __mmask16 is_finite(__m512 const & a) {
   return vec_neq(vec_and(vec_sll(_mm512_castps_si512(a),1),0xFF000000),0xFF000000);
 }
 static inline bool horizontal_or (__mmask16 const & a) {
-  return (uint16_t)a != 0;
+  return (uint16_t)(a != 0);
 }
 
 static inline Vec8i vm_truncate_low_to_int(Vec8d const & x) {
@@ -387,16 +409,16 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   // check for overflow
   if (horizontal_or(q < 0)) {
     overflow = vec_lt(y,0) & is_finite(xa);
-    s = select(overflow, 0., s);
-    c = select(overflow, 1., c);
+    s = selectd(overflow, vec_set1_pd<VTYPE>(0.), s);
+    c = selectd(overflow, vec_set1_pd<VTYPE>(1.), c);
   }
   if (SC & 1) {  // calculate sin
-    sin1 = select(swap, c, s);
+    sin1 = selectd(swap, c, s);
     signsin = ((qq << 61) ^ ITYPE(reinterpret_i(xx))) & ITYPE(1ULL << 63);
     sin1 = vec_xor(sin1,reinterpret_d(signsin));
   }
   if (SC & 2) {  // calculate cos
-    cos1 = select(swap, s, c);
+    cos1 = selectd(swap, s, c);
     signcos = ((qq + 2) << 61) & (1ULL << 63);
     cos1 = vec_xor(cos1,reinterpret_d(signcos));
   }
