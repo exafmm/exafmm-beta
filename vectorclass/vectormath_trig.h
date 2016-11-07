@@ -32,6 +32,9 @@ static inline __m128i vec_neq_64(__m128i const & a, int64_t const & b) {
 static inline __m128i vec_lt(__m128i const & a, int const & b) {
   return _mm_cmpgt_epi32(_mm_set1_epi32(b),a);
 }
+static inline __m128i vec_lt(__m128 const & a, float const & b) {
+  return _mm_castps_si128(_mm_cmplt_ps(_mm_set1_ps(b),a));
+}
 static inline __m128i vec_lt(__m128d const & a, double const & b) {
   return _mm_castpd_si128(_mm_cmplt_pd(_mm_set1_pd(b),a));
 }
@@ -40,6 +43,14 @@ static inline __m128i vec_sll(__m128i const & a, int const & b) {
 }
 static inline __m128i vec_sll_64(__m128i const & a, int const & b) {
   return _mm_sll_epi64(a,_mm_cvtsi32_si128(b));
+}
+static inline __m128 vec_abs(__m128 const & a) {
+  __m128 mask = _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF));
+  return _mm_and_ps(a,mask);
+}
+static inline __m128d vec_abs(__m128d const & a) {
+  __m128d mask = _mm_castsi128_pd(_mm_setr_epi32(-1,0x7FFFFFFF,-1,0x7FFFFFFF));
+  return _mm_and_pd(a,mask);
 }
 template<class VTYPE>
 static inline VTYPE vec_set1_ps(float const & a);
@@ -129,11 +140,22 @@ static inline __m256i vec_lt(__m256i const & a, int const & b) {
 static inline __m256i vec_lt(__m256d const & a, double const & b) {
   return _mm256_castpd_si256(_mm256_cmp_pd(_mm256_set1_pd(b),a,1));
 }
+static inline __m256i vec_lt(__m256 const & a, float const & b) {
+  return _mm256_castps_si256(_mm256_cmp_ps(_mm256_set1_ps(b),a,1));
+}
 static inline __m256i vec_sll(__m256i const & a, int const & b) {
   return _mm256_sll_epi32(a,_mm_cvtsi32_si128(b));
 }
 static inline __m256i vec_sll_64(__m256i const & a, int const & b) {
   return _mm256_sll_epi64(a,_mm_cvtsi32_si128(b));
+}
+static inline __m256 vec_abs(__m256 const & a) {
+  __m256 mask = constant8f<0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF>();
+  return _mm256_and_ps(a,mask);
+}
+static inline __m256d vec_abs(__m256d const & a) {
+  __m256d mask = _mm256_castps_pd(constant8f<-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF>());
+  return _mm256_and_pd(a,mask);
 }
 template<>
 inline __m256 vec_set1_ps(float const & a) {
@@ -214,6 +236,9 @@ static inline __mmask8 vec_neq_64(__m512i const & a, int64_t const & b) {
 static inline __mmask16 vec_lt(__m512i const & a, int const & b) {
   return _mm512_cmpgt_epi32_mask(_mm512_set1_epi32(b),a);
 }
+static inline __mmask16 vec_lt(__m512 const & a, float const & b) {
+  return _mm512_cmp_ps_mask(a,_mm512_set1_ps(b),1);
+}
 static inline __mmask8 vec_lt(__m512d const & a, double const & b) {
   return _mm512_cmp_pd_mask(a,_mm512_set1_pd(b),1);
 }
@@ -222,6 +247,16 @@ static inline __m512i vec_sll(__m512i const & a, int const & b) {
 }
 static inline __m512i vec_sll_64(__m512i const & a, int const & b) {
   return _mm512_sll_epi64(a,_mm_cvtsi32_si128(b));
+}
+static inline __m512 vec_abs(__m512 const & a) {
+  union {
+    int32_t i;
+    float   f;
+  } u = {0x7FFFFFFF};
+  return _mm512_castsi512_ps(_mm512_and_epi32(_mm512_castps_si512(a),_mm512_castps_si512(_mm512_set1_ps(u.f))));
+}
+static inline __m512d vec_abs(__m512d const & a) {
+  return _mm512_castsi512_pd(vec_and_64(_mm512_castpd_si512(a),0x7FFFFFFFFFFFFFFF));
 }
 template<>
 inline __m512 vec_set1_ps(float const & a) {

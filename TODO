@@ -1,6 +1,9 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+- don't use vec_* inside vec_* functions
+- remove constant*<>
+- remove infinity*<>
 - sra > srai
 - Remove BA branch in exp_f/d
 - vec_set1 at the beginning
