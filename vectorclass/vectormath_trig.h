@@ -325,7 +325,7 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
   q = truncate_to_int(xa * ONEOPIO4f);
   q = (q + 1) & ~1;
   y = to_float(q);
-  x = nmul_add(y, DP3F, nmul_add(y, DP2F, nmul_add(y, DP1F, xa)));
+  x = mul_add(-y, DP3F, nmul_add(y, DP2F, nmul_add(y, DP1F, xa)));
   x2 = x * x;
   s = mul_add(x2, s2, mul_add(x, s1, s0)) * (x * x2)  + x;
   c = mul_add(x2, c2, mul_add(x, c1, c0)) * (x2 * x2) + nmul_add(0.5f, x2, 1.0f);
