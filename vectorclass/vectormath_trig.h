@@ -29,17 +29,17 @@ static inline __m128i vec_and(__m128i const & a, __m128i const & b) {
 static inline __m128i vec_and_64(__m128i const & a, int64_t const & b) {
   return _mm_and_si128(a,_mm_set1_epi64x(b));
 }
-static inline __m128i vec_xor(__m128i const & a, __m128i const & b) {
-  return _mm_xor_si128(a,b);
+static inline __m128i vec_xor(__m128i const & a, __m128 const & b) {
+  return _mm_xor_si128(a,_mm_castps_si128(b));
 }
-static inline __m128 vec_xor(__m128 const & a, __m128 const & b) {
-  return _mm_xor_ps(a,b);
-}
-static inline __m128i vec_xor_64(__m128i const & a, __m128d const & b) {
+static inline __m128i vec_xor(__m128i const & a, __m128d const & b) {
   return _mm_xor_si128(a,_mm_castpd_si128(b));
 }
-static inline __m128d vec_xor(__m128d const & a, __m128d const & b) {
-  return _mm_xor_pd(a,b);
+static inline __m128 vec_xor(__m128 const & a, __m128i const & b) {
+  return _mm_xor_ps(a,_mm_castsi128_ps(b));
+}
+static inline __m128d vec_xor(__m128d const & a, __m128i const & b) {
+  return _mm_xor_pd(a,_mm_castsi128_pd(b));
 }
 static inline __m128i vec_neq(__m128i const & a, int const & b) {
   return _mm_xor_si128(_mm_cmpeq_epi32(a,_mm_set1_epi32(b)),_mm_set1_epi32(-1));
@@ -157,17 +157,17 @@ static inline __m256i vec_and(__m256i const & a, __m256i const & b) {
 static inline __m256i vec_and_64(__m256i const & a, int64_t const & b) {
   return _mm256_and_si256(a,_mm256_set1_epi64x(b));
 }
-static inline __m256i vec_xor(__m256i const & a, __m256i const & b) {
-  return _mm256_xor_si256(a,b);
+static inline __m256i vec_xor(__m256i const & a, __m256 const & b) {
+  return _mm256_xor_si256(a,_mm256_castps_si256(b));
 }
-static inline __m256 vec_xor(__m256 const & a, __m256 const & b) {
-  return _mm256_xor_ps(a,b);
-}
-static inline __m256i vec_xor_64(__m256i const & a, __m256d const & b) {
+static inline __m256i vec_xor(__m256i const & a, __m256d const & b) {
   return _mm256_xor_si256(a,_mm256_castpd_si256(b));
 }
-static inline __m256d vec_xor(__m256d const & a, __m256d const & b) {
-  return _mm256_xor_pd(a,b);
+static inline __m256 vec_xor(__m256 const & a, __m256i const & b) {
+  return _mm256_xor_ps(a,_mm256_castsi256_ps(b));
+}
+static inline __m256d vec_xor(__m256d const & a, __m256i const & b) {
+  return _mm256_xor_pd(a,_mm256_castsi256_pd(b));
 }
 static inline __m256i vec_neq(__m256i const & a, int const & b) {
   return _mm256_xor_si256(_mm256_cmpeq_epi32(a,_mm256_set1_epi32(b)), _mm256_set1_epi32(-1));
@@ -267,17 +267,17 @@ static inline __mmask16 vec_and(__mmask16 const & a, __mmask16 const & b) {
 static inline __m512i vec_and_64(__m512i const & a, int64_t const & b) {
   return _mm512_and_epi64(a,_mm512_set1_epi64(b));
 }
-static inline __m512i vec_xor(__m512i const & a, __m512i const & b) {
-  return _mm512_xor_epi32(a,b);
+static inline __m512i vec_xor(__m512i const & a, __m512 const & b) {
+  return _mm512_xor_epi32(a,_mm512_castps_si512(b));
 }
-static inline __m512 vec_xor(__m512 const & a, __m512 const & b) {
-  return _mm512_castsi512_ps(vec_xor(_mm512_castps_si512(a),_mm512_castps_si512(b)));
-}
-static inline __m512i vec_xor_64(__m512i const & a, __m512d const & b) {
+static inline __m512i vec_xor(__m512i const & a, __m512d const & b) {
   return _mm512_xor_epi64(a,_mm512_castpd_si512(b));
 }
-static inline __m512d vec_xor(__m512d const & a, __m512d const & b) {
-  return _mm512_castsi512_pd(vec_xor(_mm512_castpd_si512(a),_mm512_castpd_si512(b)));
+static inline __m512 vec_xor(__m512 const & a, __m512i const & b) {
+  return _mm512_castsi512_ps(_mm512_xor_epi32(_mm512_castps_si512(a),b));
+}
+static inline __m512d vec_xor(__m512d const & a, __m512i const & b) {
+  return _mm512_castsi512_pd(_mm512_xor_epi32(_mm512_castpd_si512(a),b));
 }
 static inline __mmask16 vec_neq(__m512i const & a, int const & b) {
   return _mm512_cmpneq_epi32_mask(a,_mm512_set1_epi32(b));
@@ -389,13 +389,13 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
   }
   if (SC & 5) {
     sin1 = vec_select(swap, c, s);
-    signsin = vec_and(vec_xor(vec_sll(q,29),reinterpret_i(xx)),1 << 31);
-    sin1 = vec_xor(sin1,reinterpret_f(signsin));
+    signsin = vec_and(vec_xor(vec_sll(q,29),xx),1 << 31);
+    sin1 = vec_xor(sin1,signsin);
   }
   if (SC & 6) {
     cos1 = vec_select(swap, s, c);
     signcos = vec_and(vec_sll(q+2,29),1 << 31);
-    cos1 = vec_xor(cos1,reinterpret_f(signcos));
+    cos1 = vec_xor(cos1,signcos);
   }
   if      (SC == 1) return sin1;
   else if (SC == 2) return cos1;
@@ -510,13 +510,13 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   }
   if (SC & 1) {
     sin1 = vec_select(swap, c, s);
-    signsin = vec_and_64(vec_xor_64(vec_sll_64(qq,61),xx),1ULL << 63);
-    sin1 = vec_xor(sin1,reinterpret_d(signsin));
+    signsin = vec_and_64(vec_xor(vec_sll_64(qq,61),xx),1ULL << 63);
+    sin1 = vec_xor(sin1,signsin);
   }
   if (SC & 2) {
     cos1 = vec_select(swap, s, c);
     signcos = vec_and_64(vec_sll_64(qq+2,61),1ULL << 63);
-    cos1 = vec_xor(cos1,reinterpret_d(signcos));
+    cos1 = vec_xor(cos1,signcos);
   }
   if (SC == 3) {
     *cosret = cos1;
