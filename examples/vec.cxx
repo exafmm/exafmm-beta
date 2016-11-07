@@ -159,15 +159,14 @@ void test() {
     assert(std::abs(b[i]-2*S)/2/S<EPS);
     assert(std::abs(c[i]-4*S)/4/S<EPS);
   }
-  a = M_PI/2;
-  b = 0;
-  a = sin(a);
+  a = sin(b);
   b = cos(b);
-  c = exp(a);
+  c = exp(c);
   for (int i=0; i<S; i++) {
-    assert(std::abs(a[i]-1)<EPS);
-    assert(std::abs(b[i]-1)<EPS);
-    assert(std::abs(c[i]-M_E)/M_E<EPS);
+    std::cout << a[i] << " " << std::sin(2*S) << std::endl;
+    assert(std::abs(a[i]-std::sin(2*S))/std::sin(2*S)<EPS);
+    assert(std::abs(b[i]-std::cos(2*S))/std::cos(2*S)<EPS);
+    assert(std::abs(c[i]-std::exp(4*S))/std::exp(4*S)<EPS);
   }
   c = M_PI/2;
   sincos(a,b,c);
