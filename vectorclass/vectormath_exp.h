@@ -34,11 +34,19 @@ inline __m128d vec_inf() {
 }
 template<>
 inline __m256 vec_inf() {
-  return constant8f<0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000>();
+  static const union {
+    int i[8];
+    __m256 ymm;
+  } u = {{0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000}};
+  return u.ymm;
 }
 template<>
 inline __m256d vec_inf() {
-  return _mm256_castps_pd(constant8f<0,0x7FF00000,0,0x7FF00000,0,0x7FF00000,0,0x7FF00000>());
+  static const union {
+    int i[8];
+    __m256 ymm;
+  } u = {{0,0x7FF00000,0,0x7FF00000,0,0x7FF00000,0,0x7FF00000}};
+  return _mm256_castps_pd(u.ymm);
 }
 template<>
 inline __m512 vec_inf() {
