@@ -2,6 +2,24 @@
 #define VECTORMATH_TRIG_H  1
 #include "vectormath_common.h"
 
+static inline __m128 vec_fmadd(__m128 const & a, __m128 const & b, __m128 const & c) {
+#ifdef __FMA__
+  return _mm_fmadd_ps(a, b, c);
+#elif defined (__FMA4__)
+  return _mm_macc_ps(a, b, c);
+#else
+  return a * b + c;
+#endif
+}
+static inline __m128d vec_fmadd(__m128d const & a, __m128d const & b, __m128d const & c) {
+#ifdef __FMA__
+  return _mm_fmadd_pd(a, b, c);
+#elif defined (__FMA4__)
+  return _mm_macc_pd(a, b, c);
+#else
+  return a * b + c;
+#endif
+}
 static inline __m128i vec_and(__m128i const & a, int const & b) {
   return _mm_and_si128(a,_mm_set1_epi32(b));
 }
@@ -109,6 +127,24 @@ inline __m128i vec_cvtepi32_epi64<__m128i,__m128i>(__m128i const & x) {
 }
 
 #if __AVX__
+static inline __m256 vec_fmadd(__m256 const & a, __m256 const & b, __m256 const & c) {
+#ifdef __FMA__
+  return _mm256_fmadd_ps(a, b, c);
+#elif defined (__FMA4__)
+  return _mm256_macc_ps(a, b, c);
+#else
+  return a * b + c;
+#endif
+}
+static inline __m256d vec_fmadd(__m256d const & a, __m256d const & b, __m256d const & c) {
+#ifdef __FMA__
+  return _mm256_fmadd_pd(a, b, c);
+#elif defined (__FMA4__)
+  return _mm256_macc_pd(a, b, c);
+#else
+  return a * b + c;
+#endif
+}
 static inline __m256i vec_and(__m256i const & a, int const & b) {
   return _mm256_and_si256(a,_mm256_set1_epi32(b));
 }
@@ -207,6 +243,12 @@ inline __m256i vec_cvtepi32_epi64<__m256i,__m128i>(__m128i const & x) {
 #endif
 
 #if __AVX512F__ | __MIC__
+static inline __m512 vec_fmadd(__m512 const & a, __m512 const & b, __m512 const & c) {
+  return _mm512_fmadd_ps(a, b, c);
+}
+static inline __m512d vec_fmadd(__m512d const & a, __m512d const & b, __m512d const & c) {
+  return _mm512_fmadd_pd(a, b, c);
+}
 static inline __m512i vec_and(__m512i const & a, int const & b) {
   return _mm512_and_epi32(a,_mm512_set1_epi32(b));
 }
@@ -326,10 +368,10 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
   q = vec_round(xa * pi4);
   q = (q + 1) & ~1;
   y = -to_float(q);
-  x = mul_add(y, d2, mul_add(y, d1, mul_add(y, d0, xa)));
+  x = vec_fmadd(y, d2, vec_fmadd(y, d1, vec_fmadd(y, d0, xa)));
   x2 = x * x;
-  s = mul_add(x2 * x2, s2, mul_add(x2, s1, s0)) * (x * x2) + x;
-  c = mul_add(x2 * x2, c2, mul_add(x2, c1, c0)) * (x2 * x2) + mul_add(half, x2, one);
+  s = vec_fmadd(x2 * x2, s2, vec_fmadd(x2, s1, s0)) * (x * x2) + x;
+  c = vec_fmadd(x2 * x2, c2, vec_fmadd(x2, c1, c0)) * (x2 * x2) + vec_fmadd(half, x2, one);
   swap = vec_neq(vec_and(q,2),0);
   overflow = vec_lt(q,0);
   if (horizontal_or(vec_and(overflow,is_finite(xa)))) {
@@ -442,14 +484,14 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   q = vec_round(xa * pi4);
   q = (q + 1) & ~1;
   y = -vec_cvtepi32_pd<VTYPE>(q);
-  x = mul_add(y, d2, mul_add(y, d1, mul_add(y, d0, xa)));
+  x = vec_fmadd(y, d2, vec_fmadd(y, d1, vec_fmadd(y, d0, xa)));
   x2 = x * x;
   x4 = x2 * x2;
   x8 = x4 * x4;
-  s = mul_add(mul_add(s3,x2,s2), x4, mul_add(mul_add(s5,x2,s4), x8, mul_add(s1,x2,s0)));
-  c = mul_add(mul_add(c3,x2,c2), x4, mul_add(mul_add(c5,x2,c4), x8, mul_add(c1,x2,c0)));
-  s = mul_add(x * x2, s, x);
-  c = mul_add(x2 * x2, c, mul_add(x2, half, one));
+  s = vec_fmadd(vec_fmadd(s3,x2,s2), x4, vec_fmadd(vec_fmadd(s5,x2,s4), x8, vec_fmadd(s1,x2,s0)));
+  c = vec_fmadd(vec_fmadd(c3,x2,c2), x4, vec_fmadd(vec_fmadd(c5,x2,c4), x8, vec_fmadd(c1,x2,c0)));
+  s = vec_fmadd(x * x2, s, x);
+  c = vec_fmadd(x2 * x2, c, vec_fmadd(x2, half, one));
   qq = vec_cvtepi32_epi64<ITYPE>(q);
   swap = vec_neq_64(vec_and_64(qq,2),int64_t(0));
   if (horizontal_or(q < 0)) {
