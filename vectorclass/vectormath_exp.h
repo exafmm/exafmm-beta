@@ -32,38 +32,6 @@ template<>
 inline __m128d vec_inf() {
   return _mm_castsi128_pd(_mm_setr_epi32(0,0x7FF00000,0,0x7FF00000));
 }
-template<>
-inline __m256 vec_inf() {
-  static const union {
-    int i[8];
-    __m256 ymm;
-  } u = {{0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000}};
-  return u.ymm;
-}
-template<>
-inline __m256d vec_inf() {
-  static const union {
-    int i[8];
-    __m256 ymm;
-  } u = {{0,0x7FF00000,0,0x7FF00000,0,0x7FF00000,0,0x7FF00000}};
-  return _mm256_castps_pd(u.ymm);
-}
-template<>
-inline __m512 vec_inf() {
-  union {
-    int32_t i;
-    float f;
-  } u = {0x7F800000};
-  return _mm512_set1_ps(u.f);
-}
-template<>
-inline __m512d vec_inf() {
-  union {
-    uint64_t i;
-    double f;
-  } u = {0x7FF0000000000000};
-  return _mm512_set1_pd(u.f);
-}
 
 #if __AVX__
 static inline Vec4d vec_pow2n (Vec4d const & n) {
@@ -83,6 +51,22 @@ static inline Vec8f vec_pow2n (Vec8f const & n) {
   Vec8i c = b << 23;
   Vec8f d = reinterpret_f(c);
   return d;
+}
+template<>
+inline __m256 vec_inf() {
+  static const union {
+    int i[8];
+    __m256 ymm;
+  } u = {{0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000,0x7F800000}};
+  return u.ymm;
+}
+template<>
+inline __m256d vec_inf() {
+  static const union {
+    int i[8];
+    __m256 ymm;
+  } u = {{0,0x7FF00000,0,0x7FF00000,0,0x7FF00000,0,0x7FF00000}};
+  return _mm256_castps_pd(u.ymm);
 }
 #endif
 
@@ -105,33 +89,49 @@ static inline Vec16f vec_pow2n (Vec16f const & n) {
   Vec16f d = Vec16f(reinterpret_f(c));
   return d;
 }
+template<>
+inline __m512 vec_inf() {
+  union {
+    int32_t i;
+    float f;
+  } u = {0x7F800000};
+  return _mm512_set1_ps(u.f);
+}
+template<>
+inline __m512d vec_inf() {
+  union {
+    uint64_t i;
+    double f;
+  } u = {0x7FF0000000000000};
+  return _mm512_set1_pd(u.f);
+}
 #endif
 
 template<class VTYPE, class VTYPE2, class BVTYPE, class BVTYPE2>
 static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
-  const float p2 = 1.f/2.f;
-  const float p3 = 1.f/6.f;
-  const float p4 = 1.f/24.f;
-  const float p5 = 1.f/120.f;
-  const float p6 = 1.f/720.f;
-  const float p7 = 1.f/5040.f;
-  const float log2e = 1.44269504088896340736;
-  VTYPE2  x, r, x2, z, n2;
+  const VTYPE p2 = vec_set1_ps<VTYPE>(1.f/2.f);
+  const VTYPE p3 = vec_set1_ps<VTYPE>(1.f/6.f);
+  const VTYPE p4 = vec_set1_ps<VTYPE>(1.f/24.f);
+  const VTYPE p5 = vec_set1_ps<VTYPE>(1.f/120.f);
+  const VTYPE p6 = vec_set1_ps<VTYPE>(1.f/720.f);
+  const VTYPE p7 = vec_set1_ps<VTYPE>(1.f/5040.f);
+  const VTYPE log2e = vec_set1_ps<VTYPE>(1.44269504088896340736);
+  const VTYPE ln2f_hi  = vec_set1_ps<VTYPE>(-0.693359375f);
+  const VTYPE ln2f_lo  = vec_set1_ps<VTYPE>(2.12194440e-4f);
+  const float max_x = 87.3f;
+  VTYPE2  r, x, x2, x4, z, n2;
   VTYPE initial_x = initial_x2;
   BVTYPE2 inrange2;
   BVTYPE inrange;
-  float max_x;
 
-  const float ln2f_hi  =  0.693359375f;
-  const float ln2f_lo  = -2.12194440e-4f;
-  max_x = 87.3f;
   x = initial_x;
   r = round(initial_x * log2e);
-  x = nmul_add(r, VTYPE2(ln2f_hi), x);
-  x = nmul_add(r, VTYPE2(ln2f_lo), x);
+  x = mul_add(r, ln2f_hi, x);
+  x = mul_add(r, ln2f_lo, x);
 
   x2 = x * x;
-  z = polynomial_5(x,p2,p3,p4,p5,p6,p7);
+  x4 = x2 * x2;
+  z = mul_add(mul_add(p5,x,p4), x2, mul_add(mul_add(p7,x,p6), x4, mul_add(p3,x,p2)));
   z = mul_add(z, x2, x);
   n2 = vec_pow2n(r);
   z = (z + 1.0f) * n2;
@@ -162,33 +162,37 @@ static inline __m512 _mm512_exp_ps(__m512 const & x) {
 #endif
 
 template<class VTYPE, class VTYPE2, class BVTYPE>
-static inline VTYPE exp_d(VTYPE2 const & initial_x2) {
-  const double p2  = 1./2.;
-  const double p3  = 1./6.;
-  const double p4  = 1./24.;
-  const double p5  = 1./120.;
-  const double p6  = 1./720.;
-  const double p7  = 1./5040.;
-  const double p8  = 1./40320.;
-  const double p9  = 1./362880.;
-  const double p10 = 1./3628800.;
-  const double p11 = 1./39916800.;
-  const double p12 = 1./479001600.;
-  const double p13 = 1./6227020800.;
+ inline VTYPE exp_d(VTYPE2 const & initial_x2) {
+  const VTYPE p2  = vec_set1_pd<VTYPE>(1./2.);
+  const VTYPE p3  = vec_set1_pd<VTYPE>(1./6.);
+  const VTYPE p4  = vec_set1_pd<VTYPE>(1./24.);
+  const VTYPE p5  = vec_set1_pd<VTYPE>(1./120.);
+  const VTYPE p6  = vec_set1_pd<VTYPE>(1./720.);
+  const VTYPE p7  = vec_set1_pd<VTYPE>(1./5040.);
+  const VTYPE p8  = vec_set1_pd<VTYPE>(1./40320.);
+  const VTYPE p9  = vec_set1_pd<VTYPE>(1./362880.);
+  const VTYPE p10 = vec_set1_pd<VTYPE>(1./3628800.);
+  const VTYPE p11 = vec_set1_pd<VTYPE>(1./39916800.);
+  const VTYPE p12 = vec_set1_pd<VTYPE>(1./479001600.);
+  const VTYPE p13 = vec_set1_pd<VTYPE>(1./6227020800.);
+  const VTYPE log2e = vec_set1_pd<VTYPE>(1.44269504088896340736);
+  const VTYPE ln2d_hi = vec_set1_pd<VTYPE>(-0.693145751953125);
+  const VTYPE ln2d_lo = vec_set1_pd<VTYPE>(-1.42860682030941723212E-6);
   const double max_x = 708.39;
-  const double log2e = 1.44269504088896340736;
-  const double ln2d_hi = 0.693145751953125;
-  const double ln2d_lo = 1.42860682030941723212E-6;
-  VTYPE2  x, r, z, n2;
+  VTYPE2  x, x2, x4, x8, r, z, n2;
   VTYPE initial_x = initial_x2;
   BVTYPE inrange;
 
-  x  = initial_x2;
-  r  = round(initial_x2*log2e);
-  x = nmul_add(r, ln2d_hi, x);
-  x = nmul_add(r, ln2d_lo, x);
+  x = initial_x2;
+  r = round(initial_x2*log2e);
+  x = mul_add(r, ln2d_hi, x);
+  x = mul_add(r, ln2d_lo, x);
 
-  z = polynomial_13m(x, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13);
+  x2 = x * x;
+  x4 = x2 * x2;
+  x8 = x4 * x4;
+  z = mul_add(mul_add(mul_add(p13,x,p12), x4, mul_add(mul_add(p11,x,p10), x2, mul_add(p9,x,p8))), x8,
+              mul_add(mul_add(mul_add(p7,x,p6), x2, mul_add(p5,x,p4)), x4, mul_add(mul_add(p3,x,p2),x2,x)));
   n2 = vec_pow2n(r);
   z = (z + 1.0) * n2;
   inrange  = abs(initial_x2) < max_x;
@@ -196,7 +200,7 @@ static inline VTYPE exp_d(VTYPE2 const & initial_x2) {
   if (horizontal_and(inrange)) {
     return z;
   } else {
-    r = select(sign_bit(initial_x2), 0., infinite_vec<VTYPE2>());
+    r = select(sign_bit(initial_x2), 0., vec_inf<VTYPE>());
     z = select(inrange, z, r);
     z = select(is_nan(initial_x2), initial_x2, z);
     return z;
