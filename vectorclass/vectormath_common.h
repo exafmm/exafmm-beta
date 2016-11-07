@@ -150,17 +150,13 @@ Using Estrin's scheme to make shorter dependency chains and use FMA, starting
 longest dependency chains first.
 ******************************************************************************/
 
-// template <typedef VECTYPE, typedef CTYPE> 
-template <class VTYPE, class CTYPE> 
+// template <typedef VECTYPE, typedef CTYPE>
+template <class VTYPE, class CTYPE>
 static inline VTYPE polynomial_2(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2) {
-    // calculates polynomial c2*x^2 + c1*x + c0
-    // VTYPE may be a vector type, CTYPE is a scalar type
-    VTYPE x2 = x * x;
-    //return = x2 * c2 + (x * c1 + c0);
-    return mul_add(x2, c2, mul_add(x, c1, c0));
+  return mul_add(x * x, c2, mul_add(x, c1, c0));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_3(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3) {
     // calculates polynomial c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -169,7 +165,7 @@ static inline VTYPE polynomial_3(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, 
     return mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_4(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4) {
     // calculates polynomial c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -179,7 +175,7 @@ static inline VTYPE polynomial_4(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, 
     return mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0) + c4*x4);
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_4n(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3) {
     // calculates polynomial 1*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -189,17 +185,14 @@ static inline VTYPE polynomial_4n(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2,
     return mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0) + x4);
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_5(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5) {
-    // calculates polynomial c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
-    // VTYPE may be a vector type, CTYPE is a scalar type
     VTYPE x2 = x * x;
     VTYPE x4 = x2 * x2;
-    //return (c2+c3*x)*x2 + ((c4+c5*x)*x4 + (c0+c1*x));
     return mul_add(mul_add(c3,x,c2), x2, mul_add(mul_add(c5,x,c4), x4, mul_add(c1,x,c0)));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_5n(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4) {
     // calculates polynomial 1*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -209,7 +202,7 @@ static inline VTYPE polynomial_5n(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2,
     return mul_add( mul_add(c3,x,c2), x2, mul_add(c4+x,x4,mul_add(c1,x,c0)) );
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_6(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5, CTYPE c6) {
     // calculates polynomial c6*x^6 + c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -219,7 +212,7 @@ static inline VTYPE polynomial_6(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, 
     return mul_add(mul_add(c6,x2,mul_add(c5,x,c4)), x4, mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0)));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_6n(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5) {
     // calculates polynomial 1*x^6 + c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -229,7 +222,7 @@ static inline VTYPE polynomial_6n(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2,
     return mul_add(mul_add(c5,x,c4+x2), x4, mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0)));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_7(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5, CTYPE c6, CTYPE c7) {
     // calculates polynomial c7*x^7 + c6*x^6 + c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -239,7 +232,7 @@ static inline VTYPE polynomial_7(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, 
     return mul_add(mul_add(mul_add(c7,x,c6), x2, mul_add(c5,x,c4)), x4, mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0)));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_8(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5, CTYPE c6, CTYPE c7, CTYPE c8) {
     // calculates polynomial c8*x^8 + c7*x^7 + c6*x^6 + c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -251,7 +244,7 @@ static inline VTYPE polynomial_8(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, 
            mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0)+c8*x8));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_9(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5, CTYPE c6, CTYPE c7, CTYPE c8, CTYPE c9) {
     // calculates polynomial c9*x^9 + c8*x^8 + c7*x^7 + c6*x^6 + c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -264,7 +257,7 @@ static inline VTYPE polynomial_9(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, 
         mul_add(mul_add(c3,x,c2), x2, mul_add(c1,x,c0))));
 }
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_10(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5, CTYPE c6, CTYPE c7, CTYPE c8, CTYPE c9, CTYPE c10) {
     // calculates polynomial c10*x^10 + c9*x^9 + c8*x^8 + c7*x^7 + c6*x^6 + c5*x^5 + c4*x^4 + c3*x^3 + c2*x^2 + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
@@ -275,16 +268,16 @@ static inline VTYPE polynomial_10(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2,
     return mul_add(mul_add(x2,c10,mul_add(c9,x,c8)), x8,
                    mul_add(mul_add(mul_add(c7,x,c6),x2,mul_add(c5,x,c4)), x4,
                            mul_add(mul_add(c3,x,c2),x2,mul_add(c1,x,c0))));
-} 
+}
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_13(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5, CTYPE c6, CTYPE c7, CTYPE c8, CTYPE c9, CTYPE c10, CTYPE c11, CTYPE c12, CTYPE c13) {
     // calculates polynomial c13*x^13 + c12*x^12 + ... + c1*x + c0
     // VTYPE may be a vector type, CTYPE is a scalar type
     VTYPE x2 = x  * x;
     VTYPE x4 = x2 * x2;
     VTYPE x8 = x4 * x4;
-    return mul_add(        
+    return mul_add(
              mul_add(
                mul_add(c13,x,c12), x4,
                  mul_add(mul_add(c11,x,c10), x2, mul_add(c9,x,c8))), x8,
@@ -294,7 +287,7 @@ static inline VTYPE polynomial_13(VTYPE const & x, CTYPE c0, CTYPE c1, CTYPE c2,
 }
 
 
-template<class VTYPE, class CTYPE> 
+template<class VTYPE, class CTYPE>
 static inline VTYPE polynomial_13m(VTYPE const & x, CTYPE c2, CTYPE c3, CTYPE c4, CTYPE c5, CTYPE c6, CTYPE c7, CTYPE c8, CTYPE c9, CTYPE c10, CTYPE c11, CTYPE c12, CTYPE c13) {
     // calculates polynomial c13*x^13 + c12*x^12 + ... + x + 0
     // VTYPE may be a vector type, CTYPE is a scalar type
