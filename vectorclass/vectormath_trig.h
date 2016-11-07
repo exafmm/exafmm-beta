@@ -1,6 +1,6 @@
 #ifndef VECTORMATH_TRIG_H
 #define VECTORMATH_TRIG_H  1
-#include "vectormath_common.h"
+#include "vectorclass.h"
 
 static inline __m128 vec_fmadd(__m128 const & a, __m128 const & b, __m128 const & c) {
 #ifdef __FMA__
@@ -95,7 +95,11 @@ static inline __m128i is_finite(__m128d const & a) {
   return vec_neq_64(vec_and_64(vec_sll_64(_mm_castpd_si128(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
 }
 static inline bool horizontal_and(__m128i const & a) {
-  return _mm_testc_si128(a,constant4i<-1,-1,-1,-1>()) != 0;
+  static const union {
+    int i[4];
+    __m128i xmm;
+  } u = {{-1,-1,-1,-1}};
+  return _mm_testc_si128(a,u.xmm) != 0;
 }
 static inline bool horizontal_or(__m128i const & a) {
   return ! _mm_testz_si128(a,a);
@@ -191,12 +195,18 @@ static inline __m256i vec_sll_64(__m256i const & a, int const & b) {
   return _mm256_sll_epi64(a,_mm_cvtsi32_si128(b));
 }
 static inline __m256 vec_abs(__m256 const & a) {
-  __m256 mask = constant8f<0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF>();
-  return _mm256_and_ps(a,mask);
+  static const union {
+    int i[8];
+    __m256 ymm;
+  } u = {{0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF,0x7FFFFFFF}};
+  return _mm256_and_ps(a,u.ymm);
 }
 static inline __m256d vec_abs(__m256d const & a) {
-  __m256d mask = _mm256_castps_pd(constant8f<-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF>());
-  return _mm256_and_pd(a,mask);
+  static const union {
+    int i[8];
+    __m256 ymm;
+  } u = {{-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF}};
+  return _mm256_and_pd(a,_mm256_castps_pd(u.ymm));
 }
 static inline __m256i vec_round(__m256 const & a) {
   __m128i lo = _mm_cvttps_epi32(_mm256_castps256_ps128(a));
@@ -219,7 +229,11 @@ static inline __m256i is_finite(__m256d const & a) {
   return vec_neq_64(vec_and_64(vec_sll_64(_mm256_castpd_si256(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
 }
 static inline bool horizontal_and(__m256i const & a) {
-    return _mm256_testc_si256(a,constant8i<-1,-1,-1,-1,-1,-1,-1,-1>()) != 0;
+  static const union {
+    int32_t i[8];
+    __m256i ymm;
+  } u = {{-1,-1,-1,-1,-1,-1,-1,-1}};
+  return _mm256_testc_si256(a,u.ymm) != 0;
 }
 static inline bool horizontal_or(__m256i const & a) {
   return ! _mm256_testz_si256(a,a);
@@ -469,7 +483,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   const VTYPE zero = vec_set1_pd<VTYPE>(0.);
   const VTYPE half = vec_set1_pd<VTYPE>(-.5);
   const VTYPE one = vec_set1_pd<VTYPE>(1.);
-  const VTYPE pi4 = vec_set1_pd<VTYPE>(4./VM_PI);
+  const VTYPE pi4 = vec_set1_pd<VTYPE>(4./M_PI);
   const VTYPE d0 = vec_set1_pd<VTYPE>( 7.853981554508209228515625E-1);
   const VTYPE d1 = vec_set1_pd<VTYPE>( 7.94662735614792836714E-9);
   const VTYPE d2 = vec_set1_pd<VTYPE>( 3.06161699786838294307E-17);
@@ -503,7 +517,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   c = vec_fmadd(x2 * x2, c, vec_fmadd(x2, half, one));
   qq = vec_cvtepi32_epi64<ITYPE>(q);
   swap = vec_neq_64(vec_and_64(qq,2),int64_t(0));
-  if (horizontal_or(q < 0)) {
+  if (horizontal_or(vec_lt(q,0))) {
     overflow = vec_and(vec_lt(y,0),is_finite(xa));
     s = vec_select(overflow, zero, s);
     c = vec_select(overflow, one, c);
