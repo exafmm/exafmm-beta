@@ -308,32 +308,35 @@ inline __m512i vm_half_int_vector_to_full<__m512i,__m256i>(__m256i const & x) {
 
 template<class VTYPE, class ITYPE, class BVTYPE, int SC>
 static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
-  const VTYPE ONEOPIO4f = vec_set1_ps<VTYPE>(4./VM_PI);
-  const VTYPE DP1F = vec_set1_ps<VTYPE>(0.78515625f);
-  const VTYPE DP2F = vec_set1_ps<VTYPE>(2.4187564849853515625E-4f);
-  const VTYPE DP3F = vec_set1_ps<VTYPE>(3.77489497744594108E-8f);
+  const VTYPE zero = vec_set1_ps<VTYPE>(0.f);
+  const VTYPE half = vec_set1_ps<VTYPE>(.5f);
+  const VTYPE one = vec_set1_ps<VTYPE>(1.f);
+  const VTYPE pi4 = vec_set1_ps<VTYPE>(4./M_PI);
+  const VTYPE d0 = vec_set1_ps<VTYPE>(0.78515625f);
+  const VTYPE d1 = vec_set1_ps<VTYPE>(2.4187564849853515625E-4f);
+  const VTYPE d2 = vec_set1_ps<VTYPE>(3.77489497744594108E-8f);
   const VTYPE s0 = vec_set1_ps<VTYPE>(-1.6666654611E-1f);
   const VTYPE s1 = vec_set1_ps<VTYPE>( 8.3321608736E-3f);
   const VTYPE s2 = vec_set1_ps<VTYPE>(-1.9515295891E-4f);
   const VTYPE c0 = vec_set1_ps<VTYPE>( 4.166664568298827E-2f);
   const VTYPE c1 = vec_set1_ps<VTYPE>(-1.388731625493765E-3f);
   const VTYPE c2 = vec_set1_ps<VTYPE>( 2.443315711809948E-5f);
-  VTYPE  xa, x, y, x2, s, c, sin1, cos1;
-  ITYPE  q, signsin, signcos;
+  VTYPE xa, x, y, x2, s, c, sin1, cos1;
+  ITYPE q, signsin, signcos;
   BVTYPE swap, overflow;
   xa = abs(xx);
-  q = truncate_to_int(xa * ONEOPIO4f);
+  q = truncate_to_int(xa * pi4);
   q = (q + 1) & ~1;
-  y = to_float(q);
-  x = mul_add(-y, DP3F, nmul_add(y, DP2F, nmul_add(y, DP1F, xa)));
+  y = -to_float(q);
+  x = mul_add(y, d2, mul_add(y, d1, mul_add(y, d0, xa)));
   x2 = x * x;
-  s = polynomial_2(x2, s0, s1, s2) * (x*x2)  + x;
-  c = polynomial_2(x2, c0, c1, c2) * (x2*x2) + nmul_add(0.5f, x2, 1.0f);
+  s = mul_add(x2 * x2, s2, mul_add(x2, s1, s0)) * (x * x2) + x;
+  c = mul_add(x2 * x2, c2, mul_add(x2, c1, c0)) * (x2 * x2) + nmul_add(half, x2, one);
   swap = vec_neq(vec_and(q,2),0);
   overflow = vec_lt(q,0);
   if (horizontal_or(vec_and(overflow,is_finite(xa)))) {
-    s = select(overflow, vec_set1_ps<VTYPE>(0.f), s);
-    c = select(overflow, vec_set1_ps<VTYPE>(1.f), c);
+    s = select(overflow, zero, s);
+    c = select(overflow, one, c);
   }
   if (SC & 5) {
     sin1 = select(swap, c, s);
@@ -414,7 +417,13 @@ static inline float _mm512_reduce_add_ps(__m512 const & in) {
 
 template<class VTYPE, class ITYPE, class ITYPEH, class BVTYPE, int SC>
 static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
-  const VTYPE ONEOPIO4 = vec_set1_pd<VTYPE>(4./VM_PI);
+  const VTYPE zero = vec_set1_pd<VTYPE>(0.);
+  const VTYPE half = vec_set1_pd<VTYPE>(.5);
+  const VTYPE one = vec_set1_pd<VTYPE>(1.);
+  const VTYPE pi4 = vec_set1_pd<VTYPE>(4./VM_PI);
+  const VTYPE d0 = vec_set1_pd<VTYPE>( 7.853981554508209228515625E-1);
+  const VTYPE d1 = vec_set1_pd<VTYPE>( 7.94662735614792836714E-9);
+  const VTYPE d2 = vec_set1_pd<VTYPE>( 3.06161699786838294307E-17);
   const VTYPE s0 = vec_set1_pd<VTYPE>(-1.66666666666666307295E-1);
   const VTYPE s1 = vec_set1_pd<VTYPE>( 8.33333333332211858878E-3);
   const VTYPE s2 = vec_set1_pd<VTYPE>(-1.98412698295895385996E-4);
@@ -427,30 +436,28 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   const VTYPE c3 = vec_set1_pd<VTYPE>(-2.75573141792967388112E-7);
   const VTYPE c4 = vec_set1_pd<VTYPE>( 2.08757008419747316778E-9);
   const VTYPE c5 = vec_set1_pd<VTYPE>(-1.13585365213876817300E-11);
-  const VTYPE DP1 = vec_set1_pd<VTYPE>( 7.853981554508209228515625E-1);
-  const VTYPE DP2 = vec_set1_pd<VTYPE>( 7.94662735614792836714E-9);
-  const VTYPE DP3 = vec_set1_pd<VTYPE>( 3.06161699786838294307E-17);
-  VTYPE xa, x, y, x2, x4, s, c, sin1, cos1;
+  VTYPE xa, x, y, x2, x4, x8, s, c, sin1, cos1;
   ITYPE qq, signsin, signcos;
   ITYPEH q;
   BVTYPE swap, overflow;
   xa = abs(xx);
-  q = vm_truncate_low_to_int(xa * ONEOPIO4);
+  q = vm_truncate_low_to_int(xa * pi4);
   q = (q + 1) & ~1;
   y = vm_half_int_vector_to_double<VTYPE>(q);
-  x = nmul_add(y, DP3, nmul_add(y, DP2, nmul_add(y, DP1, xa)));
+  x = nmul_add(y, d2, nmul_add(y, d1, nmul_add(y, d0, xa)));
   x2 = x * x;
   x4 = x2 * x2;
-  s = polynomial_5(x2, s0, s1, s2, s3, s4, s5);
-  c = polynomial_5(x2, c0, c1, c2, c3, c4, c5);
+  x8 = x4 * x4;
+  s = mul_add(mul_add(s3,x2,s2), x4, mul_add(mul_add(s5,x2,s4), x8, mul_add(s1,x2,s0)));
+  c = mul_add(mul_add(c3,x2,c2), x4, mul_add(mul_add(c5,x2,c4), x8, mul_add(c1,x2,c0)));
   s = mul_add(x * x2, s, x);
-  c = mul_add(x2 * x2, c, nmul_add(x2, 0.5, 1.0));
+  c = mul_add(x2 * x2, c, nmul_add(x2, half, one));
   qq = vm_half_int_vector_to_full<ITYPE,ITYPEH>(q);
   swap = vec_neq_64(vec_and_64(qq,2),int64_t(0));
   if (horizontal_or(q < 0)) {
     overflow = vec_and(vec_lt(y,0),is_finite(xa));
-    s = selectd(overflow,vec_set1_pd<VTYPE>(0.),s);
-    c = selectd(overflow,vec_set1_pd<VTYPE>(1.),c);
+    s = selectd(overflow, zero, s);
+    c = selectd(overflow, one, c);
   }
   if (SC & 1) {
     sin1 = selectd(swap, c, s);
