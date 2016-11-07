@@ -112,6 +112,9 @@ template<>
 inline __m128d vec_set1_pd(double const & a) {
   return _mm_set1_pd(a);
 }
+static inline __m128 vec_cvtepi32_ps(__m128i const & a) {
+  return _mm_cvtepi32_ps(a);
+}
 template<class VTYPE, class ITYPE>
 static inline VTYPE vec_cvtepi32_pd(ITYPE const & x);
 template<>
@@ -229,6 +232,9 @@ template<>
 inline __m256d vec_set1_pd(double const & a) {
   return _mm256_set1_pd(a);
 }
+static inline __m256 vec_cvtepi32_ps(__m256i const & a) {
+  return _mm256_cvtepi32_ps(a);
+}
 template<>
 inline __m256d vec_cvtepi32_pd<__m256d,__m128i>(__m128i const & x) {
   return _mm256_cvtepi32_pd(x);
@@ -336,6 +342,9 @@ template<>
 inline __m512d vec_set1_pd(double const & a) {
   return _mm512_set1_pd(a);
 }
+static inline __m512 vec_cvtepi32_ps(__m512i const & a) {
+  return _mm512_cvtepi32_ps(a);
+}
 template<>
 inline __m512d vec_cvtepi32_pd<__m512d,__m256i>(__m256i const & x) {
   return _mm512_cvtepi32_pd(x);
@@ -364,10 +373,10 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
   VTYPE xa, x, y, x2, s, c, sin1, cos1;
   ITYPE q, signsin, signcos;
   BVTYPE swap, overflow;
-  xa = abs(xx);
+  xa = vec_abs(xx);
   q = vec_round(xa * pi4);
   q = (q + 1) & ~1;
-  y = -to_float(q);
+  y = -vec_cvtepi32_ps(q);
   x = vec_fmadd(y, d2, vec_fmadd(y, d1, vec_fmadd(y, d0, xa)));
   x2 = x * x;
   s = vec_fmadd(x2 * x2, s2, vec_fmadd(x2, s1, s0)) * (x * x2) + x;
@@ -480,7 +489,7 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   ITYPE qq, signsin, signcos;
   ITYPEH q;
   BVTYPE swap, overflow;
-  xa = abs(xx);
+  xa = vec_abs(xx);
   q = vec_round(xa * pi4);
   q = (q + 1) & ~1;
   y = -vec_cvtepi32_pd<VTYPE>(q);
