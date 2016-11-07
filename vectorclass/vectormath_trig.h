@@ -33,10 +33,10 @@ static inline __m128i vec_lt(__m128i const & a, int const & b) {
   return _mm_cmpgt_epi32(_mm_set1_epi32(b),a);
 }
 static inline __m128i vec_lt(__m128 const & a, float const & b) {
-  return _mm_castps_si128(_mm_cmplt_ps(_mm_set1_ps(b),a));
+  return _mm_castps_si128(_mm_cmpgt_ps(_mm_set1_ps(b),a));
 }
 static inline __m128i vec_lt(__m128d const & a, double const & b) {
-  return _mm_castpd_si128(_mm_cmplt_pd(_mm_set1_pd(b),a));
+  return _mm_castpd_si128(_mm_cmpgt_pd(_mm_set1_pd(b),a));
 }
 static inline __m128i vec_sll(__m128i const & a, int const & b) {
   return _mm_sll_epi32(a,_mm_cvtsi32_si128(b));
@@ -137,11 +137,11 @@ static inline __m256i vec_neq_64(__m256i const & a, int64_t const & b) {
 static inline __m256i vec_lt(__m256i const & a, int const & b) {
   return _mm256_cmpgt_epi32(_mm256_set1_epi32(b),a);
 }
-static inline __m256i vec_lt(__m256d const & a, double const & b) {
-  return _mm256_castpd_si256(_mm256_cmp_pd(_mm256_set1_pd(b),a,1));
-}
 static inline __m256i vec_lt(__m256 const & a, float const & b) {
-  return _mm256_castps_si256(_mm256_cmp_ps(_mm256_set1_ps(b),a,1));
+  return _mm256_castps_si256(_mm256_cmp_ps(a,_mm256_set1_ps(b),1));
+}
+static inline __m256i vec_lt(__m256d const & a, double const & b) {
+  return _mm256_castpd_si256(_mm256_cmp_pd(a,_mm256_set1_pd(b),1));
 }
 static inline __m256i vec_sll(__m256i const & a, int const & b) {
   return _mm256_sll_epi32(a,_mm_cvtsi32_si128(b));
