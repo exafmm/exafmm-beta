@@ -153,20 +153,19 @@ void test() {
   }
   a = a[0]/5;
   b = sum(a);
-  c = norm(a);
+  c = norm(a)/40;
   for (int i=0; i<S; i++) {
     assert(std::abs(a[i]-2)/2<EPS);
     assert(std::abs(b[i]-2*S)/2/S<EPS);
-    assert(std::abs(c[i]-4*S)/4/S<EPS);
+    assert(std::abs(c[i]-S*.1)*10./S<EPS);
   }
   a = sin(b);
   b = cos(b);
   c = exp(c);
   for (int i=0; i<S; i++) {
-    std::cout << a[i] << " " << std::sin(2*S) << std::endl;
     assert(std::abs(a[i]-std::sin(2*S))/std::sin(2*S)<EPS);
     assert(std::abs(b[i]-std::cos(2*S))/std::cos(2*S)<EPS);
-    assert(std::abs(c[i]-std::exp(4*S))/std::exp(4*S)<EPS);
+    assert(std::abs(c[i]-std::exp(S*.1))/std::exp(S*.1)<EPS);
   }
   c = M_PI/2;
   sincos(a,b,c);

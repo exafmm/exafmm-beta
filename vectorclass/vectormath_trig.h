@@ -325,10 +325,10 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
   q = truncate_to_int(xa * ONEOPIO4f);
   q = (q + 1) & ~1;
   y = to_float(q);
-  x = nmul_add(y, DP3F, nmul_add(y, DP2F, nmul_add(y, DP1F, xa)));
+  x = mul_add(-y, DP3F, nmul_add(y, DP2F, nmul_add(y, DP1F, xa)));
   x2 = x * x;
-  s = mul_add(x2, s2, mul_add(x, s1, s0)) * (x * x2)  + x;
-  c = mul_add(x2, c2, mul_add(x, c1, c0)) * (x2 * x2) + nmul_add(0.5f, x2, 1.0f);
+  s = polynomial_2(x2, s0, s1, s2) * (x*x2)  + x;
+  c = polynomial_2(x2, c0, c1, c2) * (x2*x2) + nmul_add(0.5f, x2, 1.0f);
   swap = vec_neq(vec_and(q,2),0);
   overflow = vec_lt(q,0);
   if (horizontal_or(vec_and(overflow,is_finite(xa)))) {
@@ -441,8 +441,8 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   x = nmul_add(y, DP3, nmul_add(y, DP2, nmul_add(y, DP1, xa)));
   x2 = x * x;
   x4 = x2 * x2;
-  s = mul_add(mul_add(s3,x,s2), x2, mul_add(mul_add(s5,x,s4), x4, mul_add(s1,x,s0)));
-  c = mul_add(mul_add(c3,x,c2), x2, mul_add(mul_add(c5,x,c4), x4, mul_add(c1,x,c0)));
+  s = polynomial_5(x2, s0, s1, s2, s3, s4, s5);
+  c = polynomial_5(x2, c0, c1, c2, c3, c4, c5);
   s = mul_add(x * x2, s, x);
   c = mul_add(x2 * x2, c, nmul_add(x2, 0.5, 1.0));
   qq = vm_half_int_vector_to_full<ITYPE,ITYPEH>(q);
