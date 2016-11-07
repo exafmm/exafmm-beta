@@ -1,8 +1,7 @@
 #ifndef VECTORMATH_EXP_H
 #define VECTORMATH_EXP_H  1
 
-#include "vectormath_common.h"
-//#include "vectormath_trig.h"
+#include "vectormath_trig.h"
 
 static inline Vec2d vec_pow2n (Vec2d const & n) {
   const double pow2_52 = 4503599627370496.0;
