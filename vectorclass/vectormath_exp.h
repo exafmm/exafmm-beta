@@ -94,9 +94,9 @@ static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
   z = mul_add(z, x2, x);
   n2 = vec_pow2n(r);
   z = (z + 1.0f) * n2;
-  inrange2 = vec_lt(vec_abs(initial_x),max_x);
-  inrange2 &= is_finite(initial_x2);
-  if (horizontal_and(inrange2)) {
+  inrange = vec_lt(vec_abs(initial_x),max_x);
+  inrange = vec_and(inrange,is_finite(initial_x));
+  if (horizontal_and(inrange)) {
     return z;
   } else {
     r = select(sign_bit(initial_x2), 0.f, infinite_vec<VTYPE2>());

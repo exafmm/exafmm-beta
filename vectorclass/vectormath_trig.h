@@ -79,6 +79,9 @@ static inline __m128i is_finite(__m128 const & a) {
 static inline __m128i is_finite(__m128d const & a) {
   return vec_neq_64(vec_and_64(vec_sll_64(_mm_castpd_si128(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
 }
+static inline bool horizontal_and(__m128i const & a) {
+  return _mm_testc_si128(a,constant4i<-1,-1,-1,-1>()) != 0;
+}
 static inline bool horizontal_or(__m128i const & a) {
   return ! _mm_testz_si128(a,a);
 }
@@ -182,6 +185,9 @@ static inline __m256i is_finite(__m256 const & a) {
 static inline __m256i is_finite(__m256d const & a) {
   return vec_neq_64(vec_and_64(vec_sll_64(_mm256_castpd_si256(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
 }
+static inline bool horizontal_and(__m256i const & a) {
+    return _mm256_testc_si256(a,constant8i<-1,-1,-1,-1,-1,-1,-1,-1>()) != 0;
+}
 static inline bool horizontal_or(__m256i const & a) {
   return ! _mm256_testz_si256(a,a);
 }
@@ -281,10 +287,12 @@ static inline __mmask16 is_finite(__m512 const & a) {
 static inline __mmask8 is_finite(__m512d const & a) {
   return vec_neq_64(vec_and_64(vec_sll_64(_mm512_castpd_si512(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
 }
+static inline bool horizontal_and(__mmask16 const & a) {
+  return (uint16_t)(a == 0xFFFF);
+}
 static inline bool horizontal_or(__mmask16 const & a) {
   return (uint16_t)(a != 0);
 }
-
 static inline __m256i vm_truncate_low_to_int(__m512d const & x) {
   return _mm512_cvtpd_epi32(x);
 }
@@ -300,16 +308,16 @@ inline __m512i vm_half_int_vector_to_full<__m512i,__m256i>(__m256i const & x) {
 
 template<class VTYPE, class ITYPE, class BVTYPE, int SC>
 static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
-  const float ONEOPIO4f = (float)(4./VM_PI);
-  const float DP1F = 0.78515625f;
-  const float DP2F = 2.4187564849853515625E-4f;
-  const float DP3F = 3.77489497744594108E-8f;
-  const float s0 = -1.6666654611E-1f;
-  const float s1 =  8.3321608736E-3f;
-  const float s2 = -1.9515295891E-4f;
-  const float c0 =  4.166664568298827E-2f;
-  const float c1 = -1.388731625493765E-3f;
-  const float c2 =  2.443315711809948E-5f;
+  const VTYPE ONEOPIO4f = vec_set1_ps<VTYPE>(4./VM_PI);
+  const VTYPE DP1F = vec_set1_ps<VTYPE>(0.78515625f);
+  const VTYPE DP2F = vec_set1_ps<VTYPE>(2.4187564849853515625E-4f);
+  const VTYPE DP3F = vec_set1_ps<VTYPE>(3.77489497744594108E-8f);
+  const VTYPE s0 = vec_set1_ps<VTYPE>(-1.6666654611E-1f);
+  const VTYPE s1 = vec_set1_ps<VTYPE>( 8.3321608736E-3f);
+  const VTYPE s2 = vec_set1_ps<VTYPE>(-1.9515295891E-4f);
+  const VTYPE c0 = vec_set1_ps<VTYPE>( 4.166664568298827E-2f);
+  const VTYPE c1 = vec_set1_ps<VTYPE>(-1.388731625493765E-3f);
+  const VTYPE c2 = vec_set1_ps<VTYPE>( 2.443315711809948E-5f);
   VTYPE  xa, x, y, x2, s, c, sin1, cos1;
   ITYPE  q, signsin, signcos;
   BVTYPE swap, overflow;
@@ -406,22 +414,22 @@ static inline float _mm512_reduce_add_ps(__m512 const & in) {
 
 template<class VTYPE, class ITYPE, class ITYPEH, class BVTYPE, int SC>
 static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
-  const double ONEOPIO4 = 4./VM_PI;
-  const double s0 =-1.66666666666666307295E-1;
-  const double s1 = 8.33333333332211858878E-3;
-  const double s2 =-1.98412698295895385996E-4;
-  const double s3 = 2.75573136213857245213E-6;
-  const double s4 =-2.50507477628578072866E-8;
-  const double s5 = 1.58962301576546568060E-10;
-  const double c0 = 4.16666666666665929218E-2;
-  const double c1 =-1.38888888888730564116E-3;
-  const double c2 = 2.48015872888517045348E-5;
-  const double c3 =-2.75573141792967388112E-7;
-  const double c4 = 2.08757008419747316778E-9;
-  const double c5 =-1.13585365213876817300E-11;
-  const double DP1 = 7.853981554508209228515625E-1;
-  const double DP2 = 7.94662735614792836714E-9;
-  const double DP3 = 3.06161699786838294307E-17;
+  const VTYPE ONEOPIO4 = vec_set1_pd<VTYPE>(4./VM_PI);
+  const VTYPE s0 = vec_set1_pd<VTYPE>(-1.66666666666666307295E-1);
+  const VTYPE s1 = vec_set1_pd<VTYPE>( 8.33333333332211858878E-3);
+  const VTYPE s2 = vec_set1_pd<VTYPE>(-1.98412698295895385996E-4);
+  const VTYPE s3 = vec_set1_pd<VTYPE>( 2.75573136213857245213E-6);
+  const VTYPE s4 = vec_set1_pd<VTYPE>(-2.50507477628578072866E-8);
+  const VTYPE s5 = vec_set1_pd<VTYPE>( 1.58962301576546568060E-10);
+  const VTYPE c0 = vec_set1_pd<VTYPE>( 4.16666666666665929218E-2);
+  const VTYPE c1 = vec_set1_pd<VTYPE>(-1.38888888888730564116E-3);
+  const VTYPE c2 = vec_set1_pd<VTYPE>( 2.48015872888517045348E-5);
+  const VTYPE c3 = vec_set1_pd<VTYPE>(-2.75573141792967388112E-7);
+  const VTYPE c4 = vec_set1_pd<VTYPE>( 2.08757008419747316778E-9);
+  const VTYPE c5 = vec_set1_pd<VTYPE>(-1.13585365213876817300E-11);
+  const VTYPE DP1 = vec_set1_pd<VTYPE>( 7.853981554508209228515625E-1);
+  const VTYPE DP2 = vec_set1_pd<VTYPE>( 7.94662735614792836714E-9);
+  const VTYPE DP3 = vec_set1_pd<VTYPE>( 3.06161699786838294307E-17);
   VTYPE xa, x, y, x2, x4, s, c, sin1, cos1;
   ITYPE qq, signsin, signcos;
   ITYPEH q;
