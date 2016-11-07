@@ -1,6 +1,7 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+- mul_add > vec_fmadd
 - don't use vec_* inside vec_* functions
 - remove constant*<>
 - remove infinity*<>

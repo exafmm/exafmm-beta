@@ -52,25 +52,22 @@ static inline __m128d vec_abs(__m128d const & a) {
   __m128d mask = _mm_castsi128_pd(_mm_setr_epi32(-1,0x7FFFFFFF,-1,0x7FFFFFFF));
   return _mm_and_pd(a,mask);
 }
-template<class VTYPE>
-static inline VTYPE vec_set1_ps(float const & a);
-template<>
-inline __m128 vec_set1_ps(float const & a) {
-  return _mm_set1_ps(a);
-}
-template<class VTYPE>
-static inline VTYPE vec_set1_pd(double const & a);
-template<>
-inline __m128d vec_set1_pd(double const & a) {
-  return _mm_set1_pd(a);
-}
-static inline __m128i truncate_to_int(__m128 const & a) {
+static inline __m128i vec_round(__m128 const & a) {
     return _mm_cvttps_epi32(a);
 }
-static inline __m128 select(__m128i const & s, __m128 const & a, __m128 const & b) {
+static inline __m128i vec_round(__m128d const & x) {
+  static const union {
+    int i[4];
+    __m128i xmm;
+  } u = {{-1,-1,0,0}};
+  __m128i a1 = _mm_and_si128(_mm_cvttpd_epi32(x), u.xmm);
+  __m128i b1 = _mm_slli_si128(_mm_cvttpd_epi32(x), 8);
+  return _mm_or_si128(a1,b1);
+}
+static inline __m128 vec_select(__m128i const & s, __m128 const & a, __m128 const & b) {
   return _mm_blendv_ps(b,a,_mm_castsi128_ps(s));
 }
-static inline __m128d selectd(__m128i const & s, __m128d const & a, __m128d const & b) {
+static inline __m128d vec_select(__m128i const & s, __m128d const & a, __m128d const & b) {
   return _mm_blendv_pd(b,a,_mm_castsi128_pd(s));
 }
 static inline __m128i is_finite(__m128 const & a) {
@@ -85,26 +82,28 @@ static inline bool horizontal_and(__m128i const & a) {
 static inline bool horizontal_or(__m128i const & a) {
   return ! _mm_testz_si128(a,a);
 }
-
-static inline __m128i vm_truncate_low_to_int(__m128d const & x) {
-  static const union {
-    int     i[4];
-    __m128i xmm;
-  } u = {{-1,-1,0,0}};
-  __m128i a1 = _mm_and_si128(_mm_cvttpd_epi32(x), u.xmm);
-  __m128i b1 = _mm_slli_si128(_mm_cvttpd_epi32(x), 8);
-  return _mm_or_si128(a1,b1);
+template<class VTYPE>
+static inline VTYPE vec_set1_ps(float const & a);
+template<>
+inline __m128 vec_set1_ps(float const & a) {
+  return _mm_set1_ps(a);
+}
+template<class VTYPE>
+static inline VTYPE vec_set1_pd(double const & a);
+template<>
+inline __m128d vec_set1_pd(double const & a) {
+  return _mm_set1_pd(a);
 }
 template<class VTYPE, class ITYPE>
-static inline VTYPE vm_half_int_vector_to_double(ITYPE const & x);
+static inline VTYPE vec_cvtepi32_pd(ITYPE const & x);
 template<>
-inline __m128d vm_half_int_vector_to_double<__m128d,__m128i>(__m128i const & x) {
+inline __m128d vec_cvtepi32_pd<__m128d,__m128i>(__m128i const & x) {
   return _mm_cvtepi32_pd(x);
 }
 template<class ITYPE, class ITYPEH>
-static inline ITYPE vm_half_int_vector_to_full(ITYPEH const & x);
+static inline ITYPE vec_cvtepi32_epi64(ITYPEH const & x);
 template<>
-inline __m128i vm_half_int_vector_to_full<__m128i,__m128i>(__m128i const & x) {
+inline __m128i vec_cvtepi32_epi64<__m128i,__m128i>(__m128i const & x) {
   __m128i sign = _mm_srai_epi32(x,31);
   return _mm_unpacklo_epi32(x,sign);
 }
@@ -160,23 +159,18 @@ static inline __m256d vec_abs(__m256d const & a) {
   __m256d mask = _mm256_castps_pd(constant8f<-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF,-1,0x7FFFFFFF>());
   return _mm256_and_pd(a,mask);
 }
-template<>
-inline __m256 vec_set1_ps(float const & a) {
-  return _mm256_set1_ps(a);
-}
-template<>
-inline __m256d vec_set1_pd(double const & a) {
-  return _mm256_set1_pd(a);
-}
-static inline __m256i truncate_to_int(__m256 const & a) {
+static inline __m256i vec_round(__m256 const & a) {
   __m128i lo = _mm_cvttps_epi32(_mm256_castps256_ps128(a));
   __m128i hi = _mm_cvttps_epi32(_mm256_extractf128_ps(a,1));
   return _mm256_inserti128_si256(_mm256_castsi128_si256(lo),(hi),1);
 }
-static inline __m256 select(__m256i const & s, __m256 const & a, __m256 const & b) {
+static inline __m128i vec_round(__m256d const & x) {
+  return _mm256_cvttpd_epi32(x);
+}
+static inline __m256 vec_select(__m256i const & s, __m256 const & a, __m256 const & b) {
   return _mm256_blendv_ps(b,a,_mm256_castsi256_ps(s));
 }
-static inline __m256d selectd(__m256i const & s, __m256d const & a, __m256d const & b) {
+static inline __m256d vec_select(__m256i const & s, __m256d const & a, __m256d const & b) {
   return _mm256_blendv_pd(b,a,_mm256_castsi256_pd(s));
 }
 static inline __m256i is_finite(__m256 const & a) {
@@ -191,16 +185,20 @@ static inline bool horizontal_and(__m256i const & a) {
 static inline bool horizontal_or(__m256i const & a) {
   return ! _mm256_testz_si256(a,a);
 }
-
-static inline __m128i vm_truncate_low_to_int(__m256d const & x) {
-  return _mm256_cvttpd_epi32(x);
+template<>
+inline __m256 vec_set1_ps(float const & a) {
+  return _mm256_set1_ps(a);
 }
 template<>
-inline __m256d vm_half_int_vector_to_double<__m256d,__m128i>(__m128i const & x) {
+inline __m256d vec_set1_pd(double const & a) {
+  return _mm256_set1_pd(a);
+}
+template<>
+inline __m256d vec_cvtepi32_pd<__m256d,__m128i>(__m128i const & x) {
   return _mm256_cvtepi32_pd(x);
 }
 template<>
-inline __m256i vm_half_int_vector_to_full<__m256i,__m128i>(__m128i const & x) {
+inline __m256i vec_cvtepi32_epi64<__m256i,__m128i>(__m128i const & x) {
   __m256i a = _mm256_inserti128_si256(_mm256_castsi128_si256(x),x,1);
   __m256i a2 = _mm256_permute4x64_epi64(a, 16);
   __m256i sign = _mm256_srai_epi32(a2,31);
@@ -257,28 +255,23 @@ static inline __m512i vec_sll_64(__m512i const & a, int const & b) {
 static inline __m512 vec_abs(__m512 const & a) {
   union {
     int32_t i;
-    float   f;
+    float f;
   } u = {0x7FFFFFFF};
   return _mm512_castsi512_ps(_mm512_and_epi32(_mm512_castps_si512(a),_mm512_castps_si512(_mm512_set1_ps(u.f))));
 }
 static inline __m512d vec_abs(__m512d const & a) {
   return _mm512_castsi512_pd(vec_and_64(_mm512_castpd_si512(a),0x7FFFFFFFFFFFFFFF));
 }
-template<>
-inline __m512 vec_set1_ps(float const & a) {
-  return _mm512_set1_ps(a);
-}
-template<>
-inline __m512d vec_set1_pd(double const & a) {
-  return _mm512_set1_pd(a);
-}
-static inline __m512i truncate_to_int(__m512 const & a) {
+static inline __m512i vec_round(__m512 const & a) {
     return _mm512_cvtt_roundps_epi32(a, _MM_FROUND_NO_EXC);
 }
-static inline __m512 select(__mmask16 const & s, __m512 const & a, __m512 const & b) {
+static inline __m256i vec_round(__m512d const & x) {
+  return _mm512_cvtpd_epi32(x);
+}
+static inline __m512 vec_select(__mmask16 const & s, __m512 const & a, __m512 const & b) {
   return _mm512_mask_mov_ps(b,s,a);
 }
-static inline __m512d selectd(__mmask8 const & s, __m512d const & a, __m512d const & b) {
+static inline __m512d vec_select(__mmask8 const & s, __m512d const & a, __m512d const & b) {
   return _mm512_mask_mov_pd(b,s,a);
 }
 static inline __mmask16 is_finite(__m512 const & a) {
@@ -293,15 +286,20 @@ static inline bool horizontal_and(__mmask16 const & a) {
 static inline bool horizontal_or(__mmask16 const & a) {
   return (uint16_t)(a != 0);
 }
-static inline __m256i vm_truncate_low_to_int(__m512d const & x) {
-  return _mm512_cvtpd_epi32(x);
+template<>
+inline __m512 vec_set1_ps(float const & a) {
+  return _mm512_set1_ps(a);
 }
 template<>
-inline __m512d vm_half_int_vector_to_double<__m512d,__m256i>(__m256i const & x) {
+inline __m512d vec_set1_pd(double const & a) {
+  return _mm512_set1_pd(a);
+}
+template<>
+inline __m512d vec_cvtepi32_pd<__m512d,__m256i>(__m256i const & x) {
   return _mm512_cvtepi32_pd(x);
 }
 template<>
-inline __m512i vm_half_int_vector_to_full<__m512i,__m256i>(__m256i const & x) {
+inline __m512i vec_cvtepi32_epi64<__m512i,__m256i>(__m256i const & x) {
   return _mm512_cvtepi32_epi64(_mm512_castsi512_si256(_mm512_inserti64x4(_mm512_castsi256_si512(x),x,1)));
 }
 #endif
@@ -309,7 +307,7 @@ inline __m512i vm_half_int_vector_to_full<__m512i,__m256i>(__m256i const & x) {
 template<class VTYPE, class ITYPE, class BVTYPE, int SC>
 static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
   const VTYPE zero = vec_set1_ps<VTYPE>(0.f);
-  const VTYPE half = vec_set1_ps<VTYPE>(.5f);
+  const VTYPE half = vec_set1_ps<VTYPE>(-.5f);
   const VTYPE one = vec_set1_ps<VTYPE>(1.f);
   const VTYPE pi4 = vec_set1_ps<VTYPE>(4./M_PI);
   const VTYPE d0 = vec_set1_ps<VTYPE>(0.78515625f);
@@ -325,26 +323,26 @@ static inline VTYPE sincos_f(VTYPE * cosret, VTYPE const & xx) {
   ITYPE q, signsin, signcos;
   BVTYPE swap, overflow;
   xa = abs(xx);
-  q = truncate_to_int(xa * pi4);
+  q = vec_round(xa * pi4);
   q = (q + 1) & ~1;
   y = -to_float(q);
   x = mul_add(y, d2, mul_add(y, d1, mul_add(y, d0, xa)));
   x2 = x * x;
   s = mul_add(x2 * x2, s2, mul_add(x2, s1, s0)) * (x * x2) + x;
-  c = mul_add(x2 * x2, c2, mul_add(x2, c1, c0)) * (x2 * x2) + nmul_add(half, x2, one);
+  c = mul_add(x2 * x2, c2, mul_add(x2, c1, c0)) * (x2 * x2) + mul_add(half, x2, one);
   swap = vec_neq(vec_and(q,2),0);
   overflow = vec_lt(q,0);
   if (horizontal_or(vec_and(overflow,is_finite(xa)))) {
-    s = select(overflow, zero, s);
-    c = select(overflow, one, c);
+    s = vec_select(overflow, zero, s);
+    c = vec_select(overflow, one, c);
   }
   if (SC & 5) {
-    sin1 = select(swap, c, s);
+    sin1 = vec_select(swap, c, s);
     signsin = vec_and(vec_xor(vec_sll(q,29),reinterpret_i(xx)),1 << 31);
     sin1 = vec_xor(sin1,reinterpret_f(signsin));
   }
   if (SC & 6) {
-    cos1 = select(swap, s, c);
+    cos1 = vec_select(swap, s, c);
     signcos = vec_and(vec_sll(q+2,29),1 << 31);
     cos1 = vec_xor(cos1,reinterpret_f(signcos));
   }
@@ -418,7 +416,7 @@ static inline float _mm512_reduce_add_ps(__m512 const & in) {
 template<class VTYPE, class ITYPE, class ITYPEH, class BVTYPE, int SC>
 static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   const VTYPE zero = vec_set1_pd<VTYPE>(0.);
-  const VTYPE half = vec_set1_pd<VTYPE>(.5);
+  const VTYPE half = vec_set1_pd<VTYPE>(-.5);
   const VTYPE one = vec_set1_pd<VTYPE>(1.);
   const VTYPE pi4 = vec_set1_pd<VTYPE>(4./VM_PI);
   const VTYPE d0 = vec_set1_pd<VTYPE>( 7.853981554508209228515625E-1);
@@ -441,31 +439,31 @@ static inline VTYPE sincos_d(VTYPE * cosret, VTYPE const & xx) {
   ITYPEH q;
   BVTYPE swap, overflow;
   xa = abs(xx);
-  q = vm_truncate_low_to_int(xa * pi4);
+  q = vec_round(xa * pi4);
   q = (q + 1) & ~1;
-  y = vm_half_int_vector_to_double<VTYPE>(q);
-  x = nmul_add(y, d2, nmul_add(y, d1, nmul_add(y, d0, xa)));
+  y = -vec_cvtepi32_pd<VTYPE>(q);
+  x = mul_add(y, d2, mul_add(y, d1, mul_add(y, d0, xa)));
   x2 = x * x;
   x4 = x2 * x2;
   x8 = x4 * x4;
   s = mul_add(mul_add(s3,x2,s2), x4, mul_add(mul_add(s5,x2,s4), x8, mul_add(s1,x2,s0)));
   c = mul_add(mul_add(c3,x2,c2), x4, mul_add(mul_add(c5,x2,c4), x8, mul_add(c1,x2,c0)));
   s = mul_add(x * x2, s, x);
-  c = mul_add(x2 * x2, c, nmul_add(x2, half, one));
-  qq = vm_half_int_vector_to_full<ITYPE,ITYPEH>(q);
+  c = mul_add(x2 * x2, c, mul_add(x2, half, one));
+  qq = vec_cvtepi32_epi64<ITYPE>(q);
   swap = vec_neq_64(vec_and_64(qq,2),int64_t(0));
   if (horizontal_or(q < 0)) {
     overflow = vec_and(vec_lt(y,0),is_finite(xa));
-    s = selectd(overflow, zero, s);
-    c = selectd(overflow, one, c);
+    s = vec_select(overflow, zero, s);
+    c = vec_select(overflow, one, c);
   }
   if (SC & 1) {
-    sin1 = selectd(swap, c, s);
+    sin1 = vec_select(swap, c, s);
     signsin = vec_and_64(vec_xor_64(vec_sll_64(qq,61),xx),1ULL << 63);
     sin1 = vec_xor(sin1,reinterpret_d(signsin));
   }
   if (SC & 2) {
-    cos1 = selectd(swap, s, c);
+    cos1 = vec_select(swap, s, c);
     signcos = vec_and_64(vec_sll_64(qq+2,61),1ULL << 63);
     cos1 = vec_xor(cos1,reinterpret_d(signcos));
   }
