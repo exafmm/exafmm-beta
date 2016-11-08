@@ -115,10 +115,10 @@ static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
   const VTYPE p6 = vec_set1_ps<VTYPE>(1.f/720.f);
   const VTYPE p7 = vec_set1_ps<VTYPE>(1.f/5040.f);
   const VTYPE log2e = vec_set1_ps<VTYPE>(1.44269504088896340736);
-  const VTYPE ln2f_hi  = vec_set1_ps<VTYPE>(-0.693359375f);
-  const VTYPE ln2f_lo  = vec_set1_ps<VTYPE>(2.12194440e-4f);
+  const VTYPE ln2f_hi = vec_set1_ps<VTYPE>(-0.693359375f);
+  const VTYPE ln2f_lo = vec_set1_ps<VTYPE>(2.12194440e-4f);
   const float max_x = 87.3f;
-  VTYPE2  r, x, x2, x4, z, n2;
+  VTYPE2 r, x, x2, x4, z, n2;
   VTYPE initial_x = initial_x2;
   BVTYPE2 inrange2;
   BVTYPE inrange;
@@ -194,7 +194,7 @@ template<class VTYPE, class VTYPE2, class BVTYPE>
               mul_add(mul_add(mul_add(p7,x,p6), x2, mul_add(p5,x,p4)), x4, mul_add(mul_add(p3,x,p2),x2,x)));
   n2 = vec_pow2n(r);
   z = (z + 1.0) * n2;
-  inrange  = abs(initial_x2) < max_x;
+  inrange = vec_lt(vec_abs(initial_x2),max_x);
   inrange &= is_finite(initial_x2);
   if (horizontal_and(inrange)) {
     return z;
