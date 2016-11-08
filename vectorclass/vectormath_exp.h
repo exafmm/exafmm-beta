@@ -124,7 +124,7 @@ static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
   BVTYPE inrange;
 
   x = initial_x;
-  r = round(initial_x * log2e);
+  r = vec_round(initial_x * log2e);
   x = mul_add(r, ln2f_hi, x);
   x = mul_add(r, ln2f_lo, x);
 
@@ -183,7 +183,7 @@ template<class VTYPE, class VTYPE2, class BVTYPE>
   BVTYPE inrange;
 
   x = initial_x2;
-  r = round(initial_x2*log2e);
+  r = vec_round(initial_x2*log2e);
   x = mul_add(r, ln2d_hi, x);
   x = mul_add(r, ln2d_lo, x);
 
