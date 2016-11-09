@@ -38,8 +38,8 @@ private:
   KeyPair assignSFCtoBodies(Bodies& bodies, Bounds const& bounds, uint32_t& order) {
     real_t const& _min = min(bounds.Xmin);                    // get min of all dimensions
     real_t const& _max = max(bounds.Xmax);                    // get max of all dimensions
-    uint64_t min_h = UINTMAX_MAX;                                     // initialize min Hilbert order
-    uint64_t max_h = 0ull;                                     // initialize max Hilbert order
+    uint64_t min_h = 0xFFFFFFFFFFFFFFFF;                      // initialize min Hilbert order
+    uint64_t max_h = 0ull;                                    // initialize max Hilbert order
     order = cast_coord(ceil(log(mpisize) / log(8))) + 1;      // get needed bits to represent Hilbert order in each dimension   
     uint32_t nbins = 1 << order;
     real_t diameter = _max - _min;                            // set domain's diameter
