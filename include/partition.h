@@ -36,22 +36,21 @@ private:
 private:
   //! Generate Space-filling order (Hilbert) from given the particles structure  and returns min/max orders
   KeyPair assignSFCtoBodies(Bodies& bodies, Bounds const& bounds, uint32_t& order) {
-    const int accuracy = 10000;
     real_t const& _min = min(bounds.Xmin);                    // get min of all dimensions
     real_t const& _max = max(bounds.Xmax);                    // get max of all dimensions
-    int64_t min_h = 0ull;                                     // initialize min Hilbert order
-    int64_t max_h = 0ull;                                     // initialize max Hilbert order
-    //order = cast_coord(ceil(log(accuracy) / log(2)));         // get needed bits to represent Hilbert order in each dimension    
-    order = log2(mpisize);
+    uint64_t min_h = UINTMAX_MAX;                                     // initialize min Hilbert order
+    uint64_t max_h = 0ull;                                     // initialize max Hilbert order
+    order = cast_coord(ceil(log(mpisize) / log(8))) + 1;      // get needed bits to represent Hilbert order in each dimension   
+    uint32_t nbins = 1 << order;
     real_t diameter = _max - _min;                            // set domain's diameter
     assert(order <= 21);                                      // maximum key is 63 bits
     B_iter begin = bodies.begin();                            // bodies begin iterator
     for (int i = 0; i < bodies.size(); ++i) {                 // loop over bodies
       B_iter B = begin + i;                                   // Capture body iterator
       int position[3] = {                                     // initialize shifted position
-        cast_coord((B->X[0] - _min) / diameter * accuracy),
-        cast_coord((B->X[1] - _min) / diameter * accuracy),
-        cast_coord((B->X[2] - _min) / diameter * accuracy)
+        cast_coord((B->X[0] - _min) / diameter * nbins),
+        cast_coord((B->X[1] - _min) / diameter * nbins),
+        cast_coord((B->X[2] - _min) / diameter * nbins)
       };
 #if 1
       axesToTranspose(position, order);                       // get transposed Hilbert order
@@ -59,16 +58,10 @@ private:
 #else
       B->ICELL = getHilbert(position, order);
 #endif
-      if (min_h != 0ull) {
-        if (B->ICELL > max_h)                                 // update min/max hilbert orders
-          max_h = B->ICELL;
-        else if (B->ICELL < min_h)
-          min_h = B->ICELL;
-      }
-      else {
-        min_h = max_h = B->ICELL;
-        assert(min_h != 0ull);
-      }
+      if (B->ICELL > max_h)                                 // update min/max hilbert orders
+        max_h = B->ICELL;
+      else if (B->ICELL < min_h)
+        min_h = B->ICELL;
     }                                                         // end loop
     return std::make_pair(min_h, max_h);                      // return min/max tuple
   }
@@ -106,13 +99,12 @@ private:
     size_t size_d[2];
     MPI_Allreduce(sendSize, size_d, 2, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD); // Reduce domain SUM
     float diff = 0.0f;
-    bool recurse = true;
     size_t max = std::max(size_d[0], size_d[1]);
     size_t min = std::min(size_d[0], size_d[1]);
     diff = (max - min) / float(max);
     size_t templ = lbound;
     size_t tempr = rbound;
-    while (diff > 0.05f) {
+    while (diff > 0.05f && tempr - templ > 1) {
       if (size_d[0] > size_d[1]) {
         templ = pivot;
         pivot += (tempr - pivot) >> 1;
@@ -135,12 +127,10 @@ private:
       min = std::min(size_d[0], size_d[1]);
       diff = (max - min) / float(max);
     }
-    if (recurse) {
-      rq.push_back(pivot);
-      if (2 << depth < mpisize) {
-        hilbertPartitionSort(left , lbound, pivot, rq, lbound + ((pivot - lbound) >> 1), depth + 1);
-        hilbertPartitionSort(right, pivot, rbound, rq, pivot  + ((rbound - pivot) >> 1), depth + 1);
-      }
+    rq.push_back(pivot);
+    if (2 << depth < mpisize) {
+      hilbertPartitionSort(left , lbound, pivot, rq, lbound + ((pivot - lbound) >> 1), depth + 1);
+      hilbertPartitionSort(right, pivot, rbound, rq, pivot  + ((rbound - pivot) >> 1), depth + 1);
     }
   }
 
@@ -396,7 +386,7 @@ public:
       }
     }
     B_iter B0 = bodies.begin();
-  //  std::cout<<"avgLoad: " << avgLoad << std::endl;
+    //std::cout<<"avgLoad: " << avgLoad << std::endl;
     int rebalanceSize = ranksToBalance.size();
     bool repartition = (rebalanceSize > 0);
     std::vector<uint16_t> allocatedCells(cells.size(),0);
@@ -405,21 +395,17 @@ public:
       int irecv = ranksToBalance[i];
       int interactionCount = remoteInteractionList.size();
       double rightLoad = remoteLoad[irecv];
-//      std::cout<<" rank " << mpirank << " is balancing " << irecv <<" with load " << rightLoad << std::endl;
+      std::cout<<" rank " << mpirank << " is balancing " << irecv <<" with load " << rightLoad << std::endl;
       for (int cc = 0; cc < interactionCount; ++cc) {        
         if(allocatedCells[cc]) continue;
         std::vector<int> const& cellInteraction = remoteInteractionList[cc];
         int maxDiff = 0;
         int index = 0;
-        if (cellInteraction[irecv] > cellInteraction[mpirank]) {
+        if (cellInteraction[irecv]*10 > cellInteraction[mpirank]) {
           double cellLoad = std::accumulate(cellInteraction.begin(), cellInteraction.end(), 0.0);
-          loadDificit += cellLoad - cellInteraction[irecv];
-          rightLoad -= cellLoad - cellInteraction[mpirank];
-          // std::cout<< mpirank << " and " << irecv << std::endl;
-          // for(int irank = 0; irank < mpisize; ++irank){
-          //   std::cout<<"irank: " << irank << " load: "<< cellInteraction[irank] <<std::endl;
-          // }
-          if (loadDificit > 0 || rightLoad <= avgLoad)
+          loadDificit += (cellLoad - cellInteraction[irecv])/avgLoad;
+          rightLoad -= (cellLoad - cellInteraction[mpirank])/avgLoad;
+          if (/*loadDificit > 0 ||*/rightLoad <= avgLoad)
             break;
           allocatedCells[cc] = 1;
           int ibody = cells[cc].IBODY;
@@ -427,9 +413,11 @@ public:
           for (int ii = ibody; ii < nbody; ++ii) {
             (B0 + ii)->IRANK = irecv;
           }
+          //remoteInteractionList.erase(remoteInteractionList.begin() + cc);
+          //interactionCount--;
         }
       }
-      ///std::cout<<" rank " << mpirank << " reduced load of " << irecv <<" to  " << rightLoad << std::endl;
+      std::cout<<" rank " << mpirank << " reduced load of " << irecv <<" to  " << rightLoad << std::endl;
     }
     logger::stopTimer("Partition");                           // Start timer
     logger::startTimer("Sort");                               // Start timer
