@@ -110,6 +110,19 @@ static inline bool horizontal_and(__m128i const & a) {
 static inline bool horizontal_or(__m128i const & a) {
   return ! _mm_testz_si128(a,a);
 }
+static inline __m128i sign_bit(__m128 const & a) {
+  __m128i t1 = _mm_castps_si128(a);
+  return _mm_sra_epi32(t1,_mm_cvtsi32_si128(31));
+}
+static inline __m128i sign_bit(__m128d const & a) {
+  Vec2q t1 = _mm_castpd_si128(a);
+  __m128i bm32 = _mm_cvtsi32_si128(31);
+  __m128i sign = _mm_srai_epi32(t1,31);
+  __m128i sra2 = _mm_sra_epi32(t1,bm32);
+  __m128i sra3 = _mm_srli_epi64(sra2,32);
+  __m128i mask = _mm_setr_epi32(0,-1,0,-1);
+  return selectb(mask,sign,sra3);
+}
 template<class VTYPE>
 static inline VTYPE vec_set1_ps(float const & a);
 template<>
@@ -250,6 +263,19 @@ static inline bool horizontal_and(__m256i const & a) {
 static inline bool horizontal_or(__m256i const & a) {
   return ! _mm256_testz_si256(a,a);
 }
+static inline __m256i sign_bit(__m256 const & a) {
+  __m256i t1 = _mm256_castps_si256(a);
+  return _mm256_sra_epi32(t1, _mm_cvtsi32_si128(31));
+}
+static inline __m256i sign_bit(__m256d const & a) {
+  __m256i t1 = _mm256_castpd_si256(a);
+  __m128i bm32 = _mm_cvtsi32_si128(31);
+  __m256i sign = _mm256_srai_epi32(t1,31);
+  __m256i sra2 = _mm256_sra_epi32(t1,bm32);
+  __m256i sra3 = _mm256_srli_epi64(sra2,32);
+  __m256i mask = constant8i<0,-1,0,-1,0,-1,0,-1>();
+  return selectb(mask,sign,sra3);
+}
 template<>
 inline __m256 vec_set1_ps(float const & a) {
   return _mm256_set1_ps(a);
@@ -365,6 +391,14 @@ static inline bool horizontal_and(__mmask16 const & a) {
 }
 static inline bool horizontal_or(__mmask16 const & a) {
   return (uint16_t)(a != 0);
+}
+static inline __mmask16 sign_bit(__m512 const & a) {
+  __m512i t1 = _mm512_castps_si512(a);
+  return _mm512_cmp_ps_mask(t1,_mm512_set1_ps(0),1);
+}
+static inline __mmask8 sign_bit(__m512d const & a) {
+  __m512i t1 = _mm512_castpd_si512(a);
+  return _mm512_cmp_pd_mask(t1,_mm512_set1_pd(0),1);
 }
 template<>
 inline __m512 vec_set1_ps(float const & a) {

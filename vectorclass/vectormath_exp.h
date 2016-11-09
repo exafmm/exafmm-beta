@@ -162,6 +162,7 @@ static inline __m512 _mm512_exp_ps(__m512 const & x) {
 
 template<class VTYPE, class VTYPE2, class BVTYPE>
  inline VTYPE exp_d(VTYPE2 const & initial_x2) {
+  const VTYPE zero = vec_set1_pd<VTYPE>(0.);
   const VTYPE p2  = vec_set1_pd<VTYPE>(1./2.);
   const VTYPE p3  = vec_set1_pd<VTYPE>(1./6.);
   const VTYPE p4  = vec_set1_pd<VTYPE>(1./24.);
@@ -199,7 +200,7 @@ template<class VTYPE, class VTYPE2, class BVTYPE>
   if (horizontal_and(inrange)) {
     return z;
   } else {
-    r = select(sign_bit(initial_x2), 0., vec_inf<VTYPE>());
+    r = select(sign_bit(initial_x2), zero, vec_inf<VTYPE>());
     z = select(inrange, z, r);
     z = select(is_nan(initial_x2), initial_x2, z);
     return z;
