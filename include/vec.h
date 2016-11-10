@@ -2,7 +2,6 @@
 #define vec_h
 #include <ostream>
 #include "../vectorclass/vectormath_trig.h"
-#include "../vectorclass/vectormath_exp.h"
 #ifndef EXAFMM_VEC_NEWTON
 #define EXAFMM_VEC_NEWTON 1
 #endif
