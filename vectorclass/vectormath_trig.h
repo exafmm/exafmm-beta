@@ -415,13 +415,23 @@ static inline __m512i vec_and_64(__m512i const & a, int64_t const & b) {
   return _mm512_and_epi64(a,_mm512_set1_epi64(b));
 }
 static inline __m512i vec_xor(__m512i const & a, __m512 const & b) {
-  return _mm512_xor_epi32(a,_mm512_castps_si512(b));
+  union {
+    __m512  a;
+    __m512i b;
+  } u;
+  u.a = b;
+  return _mm512_xor_epi32(a,u.b);
 }
 static inline __m512i vec_xor(__m512i const & a, __m512d const & b) {
   return _mm512_xor_epi64(a,_mm512_castpd_si512(b));
 }
 static inline __m512 vec_xor(__m512 const & a, __m512i const & b) {
-  return _mm512_castsi512_ps(_mm512_xor_epi32(_mm512_castps_si512(a),b));
+  union {
+    __m512  a;
+    __m512i b;
+  } u;
+  u.a = a;
+  return _mm512_castsi512_ps(_mm512_xor_epi32(u.b,b));
 }
 static inline __m512d vec_xor(__m512d const & a, __m512i const & b) {
   return _mm512_castsi512_pd(_mm512_xor_epi32(_mm512_castpd_si512(a),b));
@@ -452,10 +462,27 @@ static inline __m512 vec_abs(__m512 const & a) {
     int32_t i;
     float f;
   } u = {0x7FFFFFFF};
-  return _mm512_castsi512_ps(_mm512_and_epi32(_mm512_castps_si512(a),_mm512_castps_si512(_mm512_set1_ps(u.f))));
+  union {
+    __m512  a;
+    __m512i b;
+  } v;
+  union {
+    __m512  a;
+    __m512i b;
+  } w;
+  v.a = _mm512_set1_ps(u.f);
+  w.a = a;
+  v.b = _mm512_and_epi32(w.b,v.b);
+  return v.a;
 }
 static inline __m512d vec_abs(__m512d const & a) {
-  return _mm512_castsi512_pd(vec_and_64(_mm512_castpd_si512(a),0x7FFFFFFFFFFFFFFF));
+  union {
+    __m512d a;
+    __m512i b;
+  } u;
+  u.a = a;
+  u.b = vec_and_64(u.b,0x7FFFFFFFFFFFFFFF);
+  return u.a;
 }
 static inline __m512 vec_round(__m512 const & a) {
   return _mm512_roundscale_ps(a, 0);
@@ -516,7 +543,7 @@ static inline __m512 vec_pow2n (__m512 const & n) {
   const float bias = 127.0;
   __m512 a = n + (bias + pow2_23);
   __m512i b = _mm512_castps_si512(a);
-  __m512i c = _mm512_sll_epi32(a,_mm_cvtsi32_si128(23));
+  __m512i c = _mm512_sll_epi32(b,_mm_cvtsi32_si128(23));
   return _mm512_castsi512_ps(c);
 }
 static inline __m512d vec_pow2n (__m512d const & n) {
@@ -524,7 +551,7 @@ static inline __m512d vec_pow2n (__m512d const & n) {
   const double bias = 1023.0;
   __m512d a = n + (bias + pow2_52);
   __m512i b = _mm512_castpd_si512(a);
-  __m512i c = _mm512_sll_epi64(a,_mm_cvtsi32_si128(52));
+  __m512i c = _mm512_sll_epi64(b,_mm_cvtsi32_si128(52));
   return _mm512_castsi512_pd(c);
 }
 template<>

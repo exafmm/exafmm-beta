@@ -52,8 +52,8 @@ template <> class Static_error_check<false> {
 private: Static_error_check(){};
 };
 
-#include "vectori128.h"
-#include "vectorf128.h"
+//#include "vectori128.h"
+//#include "vectorf128.h"
 #if __AVX__
 #include "vectori256.h"
 #include "vectorf256.h"
