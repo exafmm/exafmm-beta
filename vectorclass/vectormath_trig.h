@@ -141,23 +141,21 @@ static inline __m128i sign_bit(__m128d const & a) {
   __m128i mask = _mm_setr_epi32(0,-1,0,-1);
   return selectb(mask,sign,sra3);
 }
-static inline Vec2d vec_pow2n (Vec2d const & n) {
-  const double pow2_52 = 4503599627370496.0;
-  const double bias = 1023.0;
-  Vec2d a = n + (bias + pow2_52);
-  Vec2q b = reinterpret_i(a);
-  Vec2q c = b << 52;
-  Vec2d d = reinterpret_d(c);
-  return d;
-}
-static inline Vec4f vec_pow2n (Vec4f const & n) {
+static inline __m128 vec_pow2n (__m128 const & n) {
   const float pow2_23 =  8388608.0;
   const float bias = 127.0;
-  Vec4f a = n + (bias + pow2_23);
-  Vec4i b = reinterpret_i(a);
-  Vec4i c = b << 23;
-  Vec4f d = reinterpret_f(c);
-  return d;
+  __m128 a = n + (bias + pow2_23);
+  __m128i b = _mm_castps_si128(a);
+  __m128i c = _mm_sll_epi32(b,_mm_cvtsi32_si128(23));
+  return _mm_castsi128_ps(c);
+}
+static inline __m128d vec_pow2n (__m128d const & n) {
+  const double pow2_52 = 4503599627370496.0;
+  const double bias = 1023.0;
+  __m128d a = n + (bias + pow2_52);
+  __m128i b = _mm_castpd_si128(a);
+  __m128i c = _mm_sll_epi64(b,_mm_cvtsi32_si128(52));
+  return _mm_castsi128_pd(c);
 }
 template<class VTYPE>
 static inline VTYPE vec_inf();
@@ -340,23 +338,22 @@ static inline __m256i sign_bit(__m256d const & a) {
   __m256i mask = constant8i<0,-1,0,-1,0,-1,0,-1>();
   return selectb(mask,sign,sra3);
 }
-static inline Vec4d vec_pow2n (Vec4d const & n) {
-  const double pow2_52 = 4503599627370496.0;
-  const double bias = 1023.0;
-  Vec4d a = n + (bias + pow2_52);
-  Vec4q b = reinterpret_i(a);
-  Vec4q c = b << 52;
-  Vec4d d = reinterpret_d(c);
-  return d;
-}
-static inline Vec8f vec_pow2n (Vec8f const & n) {
+static inline __m256 vec_pow2n (__m256 const & n) {
   const float pow2_23 =  8388608.0;
   const float bias = 127.0;
-  Vec8f a = n + (bias + pow2_23);
-  Vec8i b = reinterpret_i(a);
-  Vec8i c = b << 23;
-  Vec8f d = reinterpret_f(c);
+  __m256 a = n + (bias + pow2_23);
+  __m256i b = _mm256_castps_si256(a);
+  __m256i c = _mm256_sll_epi32(b,_mm_cvtsi32_si128(23));
+  __m256 d = _mm256_castsi256_ps(c);
   return d;
+}
+static inline __m256d vec_pow2n (__m256d const & n) {
+  const double pow2_52 = 4503599627370496.0;
+  const double bias = 1023.0;
+  __m256d a = n + (bias + pow2_52);
+  __m256i b = _mm256_castpd_si256(a);
+  __m256i c = _mm256_sll_epi64(b,_mm_cvtsi32_si128(52));
+  return _mm256_castsi256_pd(c);
 }
 template<>
 inline __m256 vec_inf() {
