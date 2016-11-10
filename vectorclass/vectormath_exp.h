@@ -157,17 +157,17 @@ static inline __m512 _mm512_exp_ps(__m512 const & x) {
 }
 #endif
 
-template<class VTYPE, class VTYPE2, class BVTYPE, class BVTYPE2>
-inline VTYPE exp_d(VTYPE2 const & initial_x2) {
+template<class VTYPE, class BVTYPE>
+inline VTYPE exp_d(VTYPE const & initial_x) {
   const VTYPE zero = vec_set1_pd<VTYPE>(0.);
-  const VTYPE p2  = vec_set1_pd<VTYPE>(1./2.);
-  const VTYPE p3  = vec_set1_pd<VTYPE>(1./6.);
-  const VTYPE p4  = vec_set1_pd<VTYPE>(1./24.);
-  const VTYPE p5  = vec_set1_pd<VTYPE>(1./120.);
-  const VTYPE p6  = vec_set1_pd<VTYPE>(1./720.);
-  const VTYPE p7  = vec_set1_pd<VTYPE>(1./5040.);
-  const VTYPE p8  = vec_set1_pd<VTYPE>(1./40320.);
-  const VTYPE p9  = vec_set1_pd<VTYPE>(1./362880.);
+  const VTYPE p2 = vec_set1_pd<VTYPE>(1./2.);
+  const VTYPE p3 = vec_set1_pd<VTYPE>(1./6.);
+  const VTYPE p4 = vec_set1_pd<VTYPE>(1./24.);
+  const VTYPE p5 = vec_set1_pd<VTYPE>(1./120.);
+  const VTYPE p6 = vec_set1_pd<VTYPE>(1./720.);
+  const VTYPE p7 = vec_set1_pd<VTYPE>(1./5040.);
+  const VTYPE p8 = vec_set1_pd<VTYPE>(1./40320.);
+  const VTYPE p9 = vec_set1_pd<VTYPE>(1./362880.);
   const VTYPE p10 = vec_set1_pd<VTYPE>(1./3628800.);
   const VTYPE p11 = vec_set1_pd<VTYPE>(1./39916800.);
   const VTYPE p12 = vec_set1_pd<VTYPE>(1./479001600.);
@@ -176,16 +176,13 @@ inline VTYPE exp_d(VTYPE2 const & initial_x2) {
   const VTYPE ln2d_hi = vec_set1_pd<VTYPE>(-0.693145751953125);
   const VTYPE ln2d_lo = vec_set1_pd<VTYPE>(-1.42860682030941723212E-6);
   const double max_x = 708.39;
-  VTYPE2  x, x2, x4, x8, r, z, n2;
-  VTYPE initial_x = initial_x2;
-  BVTYPE2 inrange2;
+  VTYPE x, x2, x4, x8, r, z, n2;
   BVTYPE inrange;
 
-  x = initial_x2;
-  r = vec_round(initial_x2*log2e);
+  x = initial_x;
+  r = vec_round(initial_x*log2e);
   x = mul_add(r, ln2d_hi, x);
   x = mul_add(r, ln2d_lo, x);
-
   x2 = x * x;
   x4 = x2 * x2;
   x8 = x4 * x4;
@@ -193,29 +190,29 @@ inline VTYPE exp_d(VTYPE2 const & initial_x2) {
               mul_add(mul_add(mul_add(p7,x,p6), x2, mul_add(p5,x,p4)), x4, mul_add(mul_add(p3,x,p2),x2,x)));
   n2 = vec_pow2n(r);
   z = (z + 1.0) * n2;
-  inrange2 = vec_lt(vec_abs(initial_x2),max_x);
-  inrange2 &= is_finite(initial_x2);
-  if (horizontal_and(inrange2)) {
+  inrange = vec_lt(vec_abs(initial_x),max_x);
+  inrange &= is_finite(initial_x);
+  if (horizontal_and(inrange)) {
     return z;
   } else {
-    r = select(sign_bit(initial_x2), zero, vec_inf<VTYPE>());
-    z = select(inrange2, z, r);
-    z = select(is_nan(initial_x2), initial_x2, z);
+    r = vec_select(sign_bit(initial_x), zero, vec_inf<VTYPE>());
+    z = vec_select(inrange, z, r);
+    z = vec_select(is_nan(initial_x), initial_x, z);
     return z;
   }
 }
 
 static inline __m128d _mm_exp_pd(__m128d const & x) {
-  return exp_d<__m128d, Vec2d, __m128i, Vec2db>(Vec2d(x));
+  return exp_d<__m128d, __m128i>(x);
 }
 #ifdef __AVX__
 static inline __m256d _mm256_exp_pd(__m256d const & x) {
-  return exp_d<__m256d, Vec4d, __m256i, Vec4db>(Vec4d(x));
+  return exp_d<__m256d, __m256i>(x);
 }
 #endif
 #if __AVX512F__ | __MIC__
 static inline __m512d _mm512_exp_pd(__m512d const & x) {
-  return exp_d<__m512d, Vec8d, __mmask8, Vec8db>(Vec8d(x));
+  return exp_d<__m512d, __mmask8>(x);
 }
 #endif
 
