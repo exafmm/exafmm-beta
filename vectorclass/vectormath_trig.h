@@ -95,10 +95,18 @@ static inline __m128d vec_select(__m128i const & s, __m128d const & a, __m128d c
   return _mm_blendv_pd(b,a,_mm_castsi128_pd(s));
 }
 static inline __m128i is_finite(__m128 const & a) {
-  return vec_neq(vec_and(vec_sll(_mm_castps_si128(a),1),0xFF000000),0xFF000000);
+  __m128i t1 = _mm_castps_si128(a);
+  __m128i t2 = _mm_sll_epi32(t1,_mm_cvtsi32_si128(1));
+  __m128i t3 = _mm_set1_epi32(0xFF000000);
+  __m128i t4 = _mm_and_si128(t2,t3);
+  return _mm_xor_si128(_mm_cmpeq_epi32(t4,_mm_set1_epi32(0xFF000000)),_mm_set1_epi32(-1));
 }
 static inline __m128i is_finite(__m128d const & a) {
-  return vec_neq_64(vec_and_64(vec_sll_64(_mm_castpd_si128(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
+  __m128i t1 = _mm_castpd_si128(a);
+  __m128i t2 = _mm_sll_epi64(t1,_mm_cvtsi32_si128(1));
+  __m128i t3 = _mm_set1_epi64x(0xFFE0000000000000ll);
+  __m128i t4 = _mm_and_si128(t2,t3);
+  return _mm_xor_si128(_mm_cmpeq_epi64(t4,_mm_set1_epi64x(0xFFE0000000000000ll)),_mm_set1_epi64x(-1));
 }
 static inline __m128i is_nan(__m128 const & a) {
   __m128i t1 = _mm_castps_si128(a);
@@ -139,7 +147,7 @@ static inline __m128i sign_bit(__m128d const & a) {
   __m128i sra2 = _mm_sra_epi32(t1,bm32);
   __m128i sra3 = _mm_srli_epi64(sra2,32);
   __m128i mask = _mm_setr_epi32(0,-1,0,-1);
-  return selectb(mask,sign,sra3);
+  return _mm_blendv_epi8(sra3,sign,mask);
 }
 static inline __m128 vec_pow2n (__m128 const & n) {
   const float pow2_23 =  8388608.0;
@@ -292,10 +300,18 @@ static inline __m256d vec_select(__m256i const & s, __m256d const & a, __m256d c
   return _mm256_blendv_pd(b,a,_mm256_castsi256_pd(s));
 }
 static inline __m256i is_finite(__m256 const & a) {
-  return vec_neq(vec_and(vec_sll(_mm256_castps_si256(a),1),0xFF000000),0xFF000000);
+  __m256i t1 = _mm256_castps_si256(a);
+  __m256i t2 = _mm256_sll_epi32(t1,_mm_cvtsi32_si128(1));
+  __m256i t3 = _mm256_set1_epi32(0xFF000000);
+  __m256i t4 = _mm256_and_si256(t2,t3);
+  return _mm256_xor_si256(_mm256_cmpeq_epi32(t4,_mm256_set1_epi32(0xFF000000)),_mm256_set1_epi32(-1));
 }
 static inline __m256i is_finite(__m256d const & a) {
-  return vec_neq_64(vec_and_64(vec_sll_64(_mm256_castpd_si256(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
+  __m256i t1 = _mm256_castpd_si256(a);
+  __m256i t2 = _mm256_sll_epi64(t1,_mm_cvtsi32_si128(1));
+  __m256i t3 = _mm256_set1_epi64x(0xFFE0000000000000);
+  __m256i t4 = _mm256_and_si256(t2,t3);
+  return _mm256_xor_si256(_mm256_cmpeq_epi64(t4,_mm256_set1_epi64x(0xFFE0000000000000ll)), _mm256_set1_epi64x(-1));
 }
 static inline __m256i is_nan(__m256 const & a) {
   __m256i t1 = _mm256_castps_si256(a);
@@ -330,13 +346,16 @@ static inline __m256i sign_bit(__m256 const & a) {
   return _mm256_sra_epi32(t1, _mm_cvtsi32_si128(31));
 }
 static inline __m256i sign_bit(__m256d const & a) {
+  static const union {
+    int32_t i[8];
+    __m256i ymm;
+  } u = {{0,-1,0,-1,0,-1,0,-1}};
   __m256i t1 = _mm256_castpd_si256(a);
   __m128i bm32 = _mm_cvtsi32_si128(31);
   __m256i sign = _mm256_srai_epi32(t1,31);
   __m256i sra2 = _mm256_sra_epi32(t1,bm32);
   __m256i sra3 = _mm256_srli_epi64(sra2,32);
-  __m256i mask = constant8i<0,-1,0,-1,0,-1,0,-1>();
-  return selectb(mask,sign,sra3);
+  return _mm256_blendv_epi8(sra3,sign,u.ymm);
 }
 static inline __m256 vec_pow2n (__m256 const & n) {
   const float pow2_23 =  8388608.0;
@@ -481,7 +500,7 @@ static inline __m512d vec_abs(__m512d const & a) {
     __m512i b;
   } u;
   u.a = a;
-  u.b = vec_and_64(u.b,0x7FFFFFFFFFFFFFFF);
+  u.b = _mm512_and_epi64(u.b,_mm512_set1_epi64(0x7FFFFFFFFFFFFFFF));
   return u.a;
 }
 static inline __m512 vec_round(__m512 const & a) {
@@ -503,10 +522,18 @@ static inline __m512d vec_select(__mmask8 const & s, __m512d const & a, __m512d 
   return _mm512_mask_mov_pd(b,s,a);
 }
 static inline __mmask16 is_finite(__m512 const & a) {
-  return vec_neq(vec_and(vec_sll(_mm512_castps_si512(a),1),0xFF000000),0xFF000000);
+  __m512i t1 = _mm512_castps_si512(a);
+  __m512i t2 = _mm512_sll_epi32(t1,_mm_cvtsi32_si128(1));
+  __m512i t3 = _mm512_set1_epi32(0xFF000000);
+  __m512i t4 = _mm512_and_epi32(t2,t3);
+  return _mm512_cmpneq_epi32_mask(t4,_mm512_set1_epi32(0xFF000000));
 }
 static inline __mmask8 is_finite(__m512d const & a) {
-  return vec_neq_64(vec_and_64(vec_sll_64(_mm512_castpd_si512(a),1),0xFFE0000000000000ll),0xFFE0000000000000ll);
+  __m512i t1 = _mm512_castpd_si512(a);
+  __m512i t2 = _mm512_sll_epi64(t1,_mm_cvtsi32_si128(1));
+  __m512i t3 = _mm512_set1_epi64(0xFFE0000000000000);
+  __m512i t4 = _mm512_and_epi32(t2,t3);
+  return _mm512_cmpneq_epi64_mask(t4,_mm512_set1_epi64(0xFFE0000000000000ll));
 }
 static inline __mmask16 is_nan(__m512 const & a) {
   __m512i t1 = _mm512_castps_si512(a);
