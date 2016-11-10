@@ -1,6 +1,12 @@
-#ifndef VECTORMATH_TRIG_H
-#define VECTORMATH_TRIG_H  1
-#include "vectorclass.h"
+#ifndef intrinsics_h
+#define intrinsics_h
+#include <x86intrin.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#if __AVX__ | __AVX512F__ | __MIC__
+#define __FMA__ 1
+#endif
 
 static inline __m128 vec_fmadd(__m128 const & a, __m128 const & b, __m128 const & c) {
 #ifdef __FMA__

@@ -1,7 +1,7 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
-#include "../vectorclass/vectormath_trig.h"
+#include "intrinsics.h"
 #ifndef EXAFMM_VEC_NEWTON
 #define EXAFMM_VEC_NEWTON 1
 #endif
