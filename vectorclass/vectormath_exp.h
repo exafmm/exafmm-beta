@@ -106,8 +106,8 @@ inline __m512d vec_inf() {
 }
 #endif
 
-template<class VTYPE, class VTYPE2, class BVTYPE, class BVTYPE2>
-static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
+template<class VTYPE, class BVTYPE>
+static inline VTYPE exp_f(VTYPE const & initial_x) {
   const VTYPE zero = vec_set1_ps<VTYPE>(0.f);
   const VTYPE p2 = vec_set1_ps<VTYPE>(1.f/2.f);
   const VTYPE p3 = vec_set1_ps<VTYPE>(1.f/6.f);
@@ -119,16 +119,12 @@ static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
   const VTYPE ln2f_hi = vec_set1_ps<VTYPE>(-0.693359375f);
   const VTYPE ln2f_lo = vec_set1_ps<VTYPE>(2.12194440e-4f);
   const float max_x = 87.3f;
-  VTYPE2 r, x, x2, x4, z, n2;
-  VTYPE initial_x = initial_x2;
-  BVTYPE2 inrange2;
+  VTYPE r, x, x2, x4, z, n2;
   BVTYPE inrange;
-
   x = initial_x;
   r = vec_round(initial_x * log2e);
   x = mul_add(r, ln2f_hi, x);
   x = mul_add(r, ln2f_lo, x);
-
   x2 = x * x;
   x4 = x2 * x2;
   z = mul_add(mul_add(p5,x,p4), x2, mul_add(mul_add(p7,x,p6), x4, mul_add(p3,x,p2)));
@@ -148,21 +144,21 @@ static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
 }
 
 static inline __m128 _mm_exp_ps(__m128 const & x) {
-  return exp_f<__m128, Vec4f, __m128i, Vec4fb>(Vec4f(x));
+  return exp_f<__m128, __m128i>(x);
 }
 #ifdef __AVX__
 static inline __m256 _mm256_exp_ps(__m256 const & x) {
-  return exp_f<__m256, Vec8f, __m256i, Vec8fb>(Vec8f(x));
+  return exp_f<__m256, __m256i>(x);
 }
 #endif
 #if __AVX512F__ | __MIC__
 static inline __m512 _mm512_exp_ps(__m512 const & x) {
-  return exp_f<__m512, Vec16f, __mmask16, Vec16fb>(Vec16f(x));
+  return exp_f<__m512, __mmask16>(x);
 }
 #endif
 
-template<class VTYPE, class VTYPE2, class BVTYPE>
- inline VTYPE exp_d(VTYPE2 const & initial_x2) {
+template<class VTYPE, class VTYPE2, class BVTYPE, class BVTYPE2>
+inline VTYPE exp_d(VTYPE2 const & initial_x2) {
   const VTYPE zero = vec_set1_pd<VTYPE>(0.);
   const VTYPE p2  = vec_set1_pd<VTYPE>(1./2.);
   const VTYPE p3  = vec_set1_pd<VTYPE>(1./6.);
@@ -182,6 +178,7 @@ template<class VTYPE, class VTYPE2, class BVTYPE>
   const double max_x = 708.39;
   VTYPE2  x, x2, x4, x8, r, z, n2;
   VTYPE initial_x = initial_x2;
+  BVTYPE2 inrange2;
   BVTYPE inrange;
 
   x = initial_x2;
@@ -196,29 +193,29 @@ template<class VTYPE, class VTYPE2, class BVTYPE>
               mul_add(mul_add(mul_add(p7,x,p6), x2, mul_add(p5,x,p4)), x4, mul_add(mul_add(p3,x,p2),x2,x)));
   n2 = vec_pow2n(r);
   z = (z + 1.0) * n2;
-  inrange = vec_lt(vec_abs(initial_x2),max_x);
-  inrange &= is_finite(initial_x2);
-  if (horizontal_and(inrange)) {
+  inrange2 = vec_lt(vec_abs(initial_x2),max_x);
+  inrange2 &= is_finite(initial_x2);
+  if (horizontal_and(inrange2)) {
     return z;
   } else {
     r = select(sign_bit(initial_x2), zero, vec_inf<VTYPE>());
-    z = select(inrange, z, r);
+    z = select(inrange2, z, r);
     z = select(is_nan(initial_x2), initial_x2, z);
     return z;
   }
 }
 
 static inline __m128d _mm_exp_pd(__m128d const & x) {
-  return exp_d<__m128d, Vec2d, Vec2db>(Vec2d(x));
+  return exp_d<__m128d, Vec2d, __m128i, Vec2db>(Vec2d(x));
 }
 #ifdef __AVX__
 static inline __m256d _mm256_exp_pd(__m256d const & x) {
-  return exp_d<__m256d, Vec4d, Vec4db>(Vec4d(x));
+  return exp_d<__m256d, Vec4d, __m256i, Vec4db>(Vec4d(x));
 }
 #endif
 #if __AVX512F__ | __MIC__
 static inline __m512d _mm512_exp_pd(__m512d const & x) {
-  return exp_d<__m512d, Vec8d, Vec8db>(Vec8d(x));
+  return exp_d<__m512d, Vec8d, __mmask8, Vec8db>(Vec8d(x));
 }
 #endif
 
