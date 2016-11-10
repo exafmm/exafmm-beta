@@ -108,6 +108,7 @@ inline __m512d vec_inf() {
 
 template<class VTYPE, class VTYPE2, class BVTYPE, class BVTYPE2>
 static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
+  const VTYPE zero = vec_set1_ps<VTYPE>(0.f);
   const VTYPE p2 = vec_set1_ps<VTYPE>(1.f/2.f);
   const VTYPE p3 = vec_set1_ps<VTYPE>(1.f/6.f);
   const VTYPE p4 = vec_set1_ps<VTYPE>(1.f/24.f);
@@ -139,9 +140,9 @@ static inline VTYPE exp_f(VTYPE2 const & initial_x2) {
   if (horizontal_and(inrange)) {
     return z;
   } else {
-    r = select(sign_bit(initial_x2), 0.f, vec_inf<VTYPE>());
-    z = select(inrange2, z, r);
-    z = select(is_nan(initial_x2), initial_x2, z);
+    r = vec_select(sign_bit(initial_x), zero, vec_inf<VTYPE>());
+    z = vec_select(inrange, z, r);
+    z = vec_select(is_nan(initial_x), initial_x, z);
     return z;
   }
 }
