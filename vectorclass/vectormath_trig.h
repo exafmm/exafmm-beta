@@ -511,23 +511,21 @@ static inline __mmask8 sign_bit(__m512d const & a) {
   __m512i t1 = _mm512_castpd_si512(a);
   return _mm512_cmp_pd_mask(t1,_mm512_set1_pd(0),1);
 }
-static inline Vec8d vec_pow2n (Vec8d const & n) {
-  const double pow2_52 = 4503599627370496.0;
-  const double bias = 1023.0;
-  Vec8d a = n + (bias + pow2_52);
-  Vec8q b = Vec8q(reinterpret_i(a));
-  Vec8q c = b << 52;
-  Vec8d d = Vec8d(reinterpret_d(c));
-  return d;
-}
-static inline Vec16f vec_pow2n (Vec16f const & n) {
+static inline __m512 vec_pow2n (__m512 const & n) {
   const float pow2_23 =  8388608.0;
   const float bias = 127.0;
-  Vec16f a = n + (bias + pow2_23);
-  Vec16i b = Vec16i(reinterpret_i(a));
-  Vec16i c = b << 23;
-  Vec16f d = Vec16f(reinterpret_f(c));
-  return d;
+  __m512 a = n + (bias + pow2_23);
+  __m512i b = _mm512_castps_si512(a);
+  __m512i c = _mm512_sll_epi32(a,_mm_cvtsi32_si128(23));
+  return _mm512_castsi512_ps(c);
+}
+static inline __m512d vec_pow2n (__m512d const & n) {
+  const double pow2_52 = 4503599627370496.0;
+  const double bias = 1023.0;
+  __m512d a = n + (bias + pow2_52);
+  __m512i b = _mm512_castpd_si512(a);
+  __m512i c = _mm512_sll_epi64(a,_mm_cvtsi32_si128(52));
+  return _mm512_castsi512_pd(c);
 }
 template<>
 inline __m512 vec_inf() {
