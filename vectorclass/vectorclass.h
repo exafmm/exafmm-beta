@@ -55,12 +55,12 @@ private: Static_error_check(){};
 //#include "vectori128.h"
 //#include "vectorf128.h"
 #if __AVX__
-#include "vectori256.h"
-#include "vectorf256.h"
+//#include "vectori256.h"
+//#include "vectorf256.h"
 #endif
 #if __AVX512F__ | __MIC__
-#include "vectori512.h"
-#include "vectorf512.h"
+//#include "vectori512.h"
+//#include "vectorf512.h"
 #endif
 
 #endif  // VECTORCLASS_H

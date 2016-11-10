@@ -415,6 +415,102 @@ inline __m256i vec_cvtepi32_epi64<__m256i,__m128i>(__m128i const & a) {
 #endif
 
 #if __AVX512F__ | __MIC__
+static inline __m512 _mm512_castpd_ps(__m512d x) {
+  union {
+    __m512d a;
+    __m512  b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512d _mm512_castps_pd(__m512 x) {
+  union {
+    __m512  a;
+    __m512d b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512 _mm512_castps256_ps512(__m256 x) {
+  union {
+    __m256 a;
+    __m512 b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512d _mm512_castpd256_pd512(__m256d x) {
+  union {
+    __m256d a;
+    __m512d b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m256d _mm512_castpd512_pd256(__m512d x) {
+  union {
+    __m512d a;
+    __m256d b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m256 _mm512_castps512_ps256(__m512 x) {
+  union {
+    __m512 a;
+    __m256 b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512i _mm512_castps_si512(__m512 x) {
+  union {
+    __m512  a;
+    __m512i b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512 _mm512_castsi512_ps(__m512i x) {
+  union {
+    __m512i a;
+    __m512  b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512i _mm512_castpd_si512(__m512d x) {
+  union {
+    __m512d a;
+    __m512i b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512d _mm512_castsi512_pd(__m512i x) {
+  union {
+    __m512i a;
+    __m512d b;
+  } u;
+  u.a = x;
+  return u.b;
+}
+static inline __m512i _mm512_castsi256_si512(__m256i x) {
+  union {
+    __m512i a;
+    __m256i b;
+  } u;
+  u.b = x;
+  return u.a;
+}
+static inline __m256i _mm512_castsi512_si256(__m512i x) {
+  union {
+    __m512i a;
+    __m256i b;
+  } u;
+  u.a = x;
+  return u.b;
+}
 static inline __m512 vec_fmadd(__m512 const & a, __m512 const & b, __m512 const & c) {
   return _mm512_fmadd_ps(a, b, c);
 }
@@ -434,23 +530,13 @@ static inline __m512i vec_and_64(__m512i const & a, int64_t const & b) {
   return _mm512_and_epi64(a,_mm512_set1_epi64(b));
 }
 static inline __m512i vec_xor(__m512i const & a, __m512 const & b) {
-  union {
-    __m512  a;
-    __m512i b;
-  } u;
-  u.a = b;
-  return _mm512_xor_epi32(a,u.b);
+  return _mm512_xor_epi32(a,_mm512_castps_si512(b));
 }
 static inline __m512i vec_xor(__m512i const & a, __m512d const & b) {
   return _mm512_xor_epi64(a,_mm512_castpd_si512(b));
 }
 static inline __m512 vec_xor(__m512 const & a, __m512i const & b) {
-  union {
-    __m512  a;
-    __m512i b;
-  } u;
-  u.a = a;
-  return _mm512_castsi512_ps(_mm512_xor_epi32(u.b,b));
+  return _mm512_castsi512_ps(_mm512_xor_epi32(_mm512_castps_si512(a),b));
 }
 static inline __m512d vec_xor(__m512d const & a, __m512i const & b) {
   return _mm512_castsi512_pd(_mm512_xor_epi32(_mm512_castpd_si512(a),b));
@@ -861,12 +947,12 @@ static inline VTYPE exp_f(VTYPE const & initial_x) {
   BVTYPE inrange;
   x = initial_x;
   r = vec_round(initial_x * log2e);
-  x = mul_add(r, ln2f_hi, x);
-  x = mul_add(r, ln2f_lo, x);
+  x = vec_fmadd(r, ln2f_hi, x);
+  x = vec_fmadd(r, ln2f_lo, x);
   x2 = x * x;
   x4 = x2 * x2;
-  z = mul_add(mul_add(p5,x,p4), x2, mul_add(mul_add(p7,x,p6), x4, mul_add(p3,x,p2)));
-  z = mul_add(z, x2, x);
+  z = vec_fmadd(vec_fmadd(p5,x,p4), x2, vec_fmadd(vec_fmadd(p7,x,p6), x4, vec_fmadd(p3,x,p2)));
+  z = vec_fmadd(z, x2, x);
   n2 = vec_pow2n(r);
   z = (z + 1.0f) * n2;
   inrange = vec_lt(vec_abs(initial_x),max_x);
@@ -919,13 +1005,14 @@ inline VTYPE exp_d(VTYPE const & initial_x) {
 
   x = initial_x;
   r = vec_round(initial_x*log2e);
-  x = mul_add(r, ln2d_hi, x);
-  x = mul_add(r, ln2d_lo, x);
+  x = vec_fmadd(r, ln2d_hi, x);
+  x = vec_fmadd(r, ln2d_lo, x);
   x2 = x * x;
   x4 = x2 * x2;
   x8 = x4 * x4;
-  z = mul_add(mul_add(mul_add(p13,x,p12), x4, mul_add(mul_add(p11,x,p10), x2, mul_add(p9,x,p8))), x8,
-              mul_add(mul_add(mul_add(p7,x,p6), x2, mul_add(p5,x,p4)), x4, mul_add(mul_add(p3,x,p2),x2,x)));
+  z = vec_fmadd(vec_fmadd(vec_fmadd(p13,x,p12), x4, vec_fmadd(vec_fmadd(p11,x,p10), x2,
+      vec_fmadd(p9,x,p8))), x8, vec_fmadd(vec_fmadd(vec_fmadd(p7,x,p6), x2,
+      vec_fmadd(p5,x,p4)), x4, vec_fmadd(vec_fmadd(p3,x,p2),x2,x)));
   n2 = vec_pow2n(r);
   z = (z + 1.0) * n2;
   inrange = vec_lt(vec_abs(initial_x),max_x);
