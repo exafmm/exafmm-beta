@@ -1,8 +1,10 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
+#ifndef __sparc_v9__
 #include "vectormath_trig.h"
 #include "vectormath_exp.h"
+#endif
 #ifndef EXAFMM_VEC_NEWTON
 #define EXAFMM_VEC_NEWTON 1
 #endif
