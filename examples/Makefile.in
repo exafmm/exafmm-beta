@@ -135,9 +135,10 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 # Use all possible debugging flags
 @EXAFMM_DEBUG_TRUE@am__append_30 = $(COMPILER_CXXFLAGS) -DEXAFMM_DEBUG
 @EXAFMM_DEBUG_TRUE@am__append_31 = $(COMPILER_FCFLAGS) -DEXAFMM_DEBUG
-bin_PROGRAMS = fmm$(EXEEXT) tree$(EXEEXT) vec$(EXEEXT) kernel$(EXEEXT) \
-	$(am__EXEEXT_1)
-@EXAFMM_HAVE_MPI_TRUE@am__append_32 = fmm_mpi ewald_mpi
+bin_PROGRAMS = fmm$(EXEEXT) tree$(EXEEXT) $(am__EXEEXT_1) \
+	kernel$(EXEEXT) $(am__EXEEXT_2)
+@EXAFMM_HAVE_FX_FALSE@am__append_32 = vec
+@EXAFMM_HAVE_MPI_TRUE@am__append_33 = fmm_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_flags.m4 \
@@ -150,7 +151,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@EXAFMM_HAVE_MPI_TRUE@am__EXEEXT_1 = fmm_mpi$(EXEEXT) \
+@EXAFMM_HAVE_FX_FALSE@am__EXEEXT_1 = vec$(EXEEXT)
+@EXAFMM_HAVE_MPI_TRUE@am__EXEEXT_2 = fmm_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	ewald_mpi$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)

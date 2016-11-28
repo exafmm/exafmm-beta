@@ -1,10 +1,11 @@
 include ../Makefile.am.include
 
-bin_PROGRAMS = fmm tree vec
+bin_PROGRAMS = fmm tree
 fmm_SOURCES = fmm.cxx
 if EXAFMM_HAVE_FX
 fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=7
 else
+bin_PROGRAMS += vec
 fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=10
 endif
 tree_SOURCES = tree.cxx
