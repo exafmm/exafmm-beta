@@ -336,11 +336,11 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # Optimization flags
-AM_CPPFLAGS = -I../include -I../kernels $(am__append_5) \
-	$(am__append_11) $(am__append_12) $(am__append_20) \
-	$(am__append_21) $(am__append_22) $(am__append_24) \
-	$(am__append_25) $(am__append_27) $(am__append_28) \
-	$(am__append_29)
+AM_CPPFLAGS = -I../include -I../vectorclass -I../kernels \
+	$(am__append_5) $(am__append_11) $(am__append_12) \
+	$(am__append_20) $(am__append_21) $(am__append_22) \
+	$(am__append_24) $(am__append_25) $(am__append_27) \
+	$(am__append_28) $(am__append_29)
 @EXAFMM_HAVE_BG_FALSE@@EXAFMM_HAVE_CLANG_FALSE@@EXAFMM_HAVE_CRAY_FALSE@@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_GNU_FALSE@@EXAFMM_HAVE_INTEL_FALSE@@EXAFMM_HAVE_SX_FALSE@AM_CXXFLAGS = $(am__append_6) \
 @EXAFMM_HAVE_BG_FALSE@@EXAFMM_HAVE_CLANG_FALSE@@EXAFMM_HAVE_CRAY_FALSE@@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_GNU_FALSE@@EXAFMM_HAVE_INTEL_FALSE@@EXAFMM_HAVE_SX_FALSE@	$(am__append_13) \
 @EXAFMM_HAVE_BG_FALSE@@EXAFMM_HAVE_CLANG_FALSE@@EXAFMM_HAVE_CRAY_FALSE@@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_GNU_FALSE@@EXAFMM_HAVE_INTEL_FALSE@@EXAFMM_HAVE_SX_FALSE@	$(am__append_14) \
