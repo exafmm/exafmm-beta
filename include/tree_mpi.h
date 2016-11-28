@@ -245,7 +245,7 @@ private:
     std::vector<MPI_Request*> pendingRequests;                 //!< Buffer for non-blocking requests
     std::vector<T*>  pendingBuffers;                           //!< Buffer for non-blocking cell sends
     std::vector<std::vector<int> > path = getHypercubeMatrix(mpisize);
-    recvB.clear();
+    recvB.resize(maxSize*mpisize); 
     assert( (sizeof(sendB[0]) & 3) == 0 );
     int word = sizeof(sendB[0]) / 4;
     int* sendBuff = (int*)&sendB[0];    
@@ -330,7 +330,7 @@ private:
         int count = intCount/word;
         if(dest == mpirank) {
           if(count>0) {
-            recvB.insert(recvB.end(),irecvBuff[index]->begin(),irecvBuff[index]->begin() + count);
+            std::copy(irecvBuff[index]->begin(),irecvBuff[index]->begin() + count, recvB.begin() + ownDataCursor);            
             recvDispl[irecvBuff[index]->begin()->IRANK] = ownDataCursor;
             recvCount[irecvBuff[index]->begin()->IRANK] = count;
             ownDataCursor+=count;
@@ -348,10 +348,11 @@ private:
     assert(ownDataIndex == mpisize - 1);
     assert(pendingBuffers.size() == 0);
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
-    recvB.insert(recvB.end(),localBuffer, localBuffer + sendCount[mpirank]);
+    std::copy(localBuffer, localBuffer + sendCount[mpirank],recvB.begin() + ownDataCursor);    
     recvDispl[mpirank] = ownDataCursor;
     recvCount[mpirank] = sendCount[mpirank];
     sendB.clear();
+    recvB.resize(recvDispl[mpirank] + recvCount[mpirank]);
     for (int i = 0; i < logPReceiveSize; ++i) {
       delete irecvBuff[i];  
     }
