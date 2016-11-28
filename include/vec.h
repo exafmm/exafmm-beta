@@ -1,7 +1,8 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
-#ifndef __sparc_v9__
+#if defined __sparc_v9__ || defined __INTEL_COMPILER
+#else
 #include "vectormath_trig.h"
 #include "vectormath_exp.h"
 #endif
