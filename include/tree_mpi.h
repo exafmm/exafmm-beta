@@ -269,6 +269,7 @@ private:
       route.push_back(sendRecvRank);
       getMessageInfo(path, route,sendRecvRank, i+1,  logP);
       MPI_Request request;
+      MPI_Barrier(MPI_COMM_WORLD);
       for (int s = 0; s < logPReceiveSize; ++s) {
         MPI_Irecv((int*)&(*irecvBuff[s])[0], maxSize*word , MPI_INT, sendRecvRank, MPI_ANY_TAG, MPI_COMM_WORLD, &rreq[s]);
       }
