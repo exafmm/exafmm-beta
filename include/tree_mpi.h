@@ -169,79 +169,79 @@ private:
 
     //! Exchange bodies in a point-to-point manner using Non-blocking Consensus (NBX) from Torston Hoefler paper  
   template<typename T> 
-  void alltoallv_p2p_nbx(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount, bool updateSendCounts) {        
+  void alltoallv_p2p_nbx(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount, bool updateSendCounts, int tag) {        
     for (int i = 0; i < mpisize; i++) {                        // Loop over ranks
       if(updateSendCounts) sendCount[i] = 0;                   //  Initialize send counts
       recvCount[i] = 0;
       recvDispl[i] = 0;
     }                                                          // End loop over ranks
-    for (int i = 0; i < sendB.size(); ++i) { 									 // Loop over bodies
+    for (int i = 0; i < sendB.size(); ++i) {                   // Loop over bodies
       if(updateSendCounts) sendCount[sendB[i].IRANK]++;          //  Fill send count bucket
       sendB[i].IRANK = mpirank;                                  //  Tag for sending back to original rank
     }  
     if(updateSendCounts) {
-			sendDispl[0] = 0;                                         // Initialize send displacements
-    	for (int irank = 1; irank < mpisize ; irank++) {          // Loop over ranks
-      	sendDispl[irank] = sendDispl[irank-1] + sendCount[irank-1]; //  Set send displacement
-    	} 
-		}
-		bool done = false;
+      sendDispl[0] = 0;                                         // Initialize send displacements
+      for (int irank = 1; irank < mpisize ; irank++) {          // Loop over ranks
+        sendDispl[irank] = sendDispl[irank-1] + sendCount[irank-1]; //  Set send displacement
+      } 
+    }
+    bool done = false;
     bool barr_act = false; 
     int word = sizeof(sendB[0]) / 4;
     int* sendBuff = (int*)&sendB[0];
     int* recvBuff = (int*)&recvB[0];
-		int ready;
-		int count;
-		int send_count = 0;
-		int send_flag;
-		int* send_flags = new int[mpisize];
-		int send_idx;
-		MPI_Request barr_request;
-		MPI_Request* req = new MPI_Request[mpisize];
-		int barr_complete;
-		MPI_Status status;
-		std::vector<T> recvBuffers(mpisize);
+    int ready;
+    int count;
+    int send_count = 0;
+    int send_flag;
+    int* send_flags = new int[mpisize];
+    int send_idx;
+    MPI_Request barr_request;
+    MPI_Request* req = new MPI_Request[mpisize];
+    int barr_complete;
+    MPI_Status status;
+    std::vector<T> recvBuffers(mpisize);
     for (int irank = 0; irank < mpisize; ++irank) {
-			send_flags[irank] = 0;
+      send_flags[irank] = 0;
       MPI_Issend(sendBuff + sendDispl[irank]*word,
-                      sendCount[irank]*word, MPI_INT, irank, 0, MPI_COMM_WORLD, &req[irank]);
+                      sendCount[irank]*word, MPI_INT, irank, tag, MPI_COMM_WORLD, &req[irank]);
     }
-		int dataSize = 0;
+    int dataSize = 0;
     while(!done) {
-      MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &ready, &status);
-		 	if(ready){
-				MPI_Get_count(&status, MPI_INT, &count);
-				int source = status.MPI_SOURCE;
-				int tCount = count/word;
-				recvBuffers[source].resize(tCount);
-				T& data = recvBuffers[source];
-				MPI_Recv(&data[0], count, MPI_INT, source, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				dataSize += tCount;
-			}
-			if(barr_act) {
-				MPI_Test(&barr_request, &barr_complete, MPI_STATUS_IGNORE);
-				if(barr_complete) done = true;
-			} else {
-				MPI_Testany(mpisize, req, &send_idx, &send_flag, MPI_STATUS_IGNORE);
-				if(send_flag && !send_flags[send_idx]) send_count++;
-				if(send_count == mpisize){
-					MPI_Ibarrier(MPI_COMM_WORLD, &barr_request);
-					barr_act = true;
-			  }
-			}
+      MPI_Iprobe(MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &ready, &status);
+      if(ready){
+        MPI_Get_count(&status, MPI_INT, &count);
+        int source = status.MPI_SOURCE;
+        int tCount = count/word;
+        recvBuffers[source].resize(tCount);
+        T& data = recvBuffers[source];
+        MPI_Recv(&data[0], count, MPI_INT, source, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        dataSize += tCount;
+      }
+      if(barr_act) {
+        MPI_Test(&barr_request, &barr_complete, MPI_STATUS_IGNORE);
+        if(barr_complete) done = true;
+      } else {
+        MPI_Testany(mpisize, req, &send_idx, &send_flag, MPI_STATUS_IGNORE);
+        if(send_flag && !send_flags[send_idx]) send_count++;
+        if(send_count == mpisize){
+          MPI_Ibarrier(MPI_COMM_WORLD, &barr_request);
+          barr_act = true;
+        }
+      }
     }
-  	recvB.resize(dataSize);
-		recvCount[0] = recvBuffers[0].size();
-		recvDispl[0] = 0;
- 		std::copy(recvBuffers[0].begin(), recvBuffers[0].end(), recvB.begin());
-		for(int i = 1; i < mpisize; ++i) {
-			recvCount[i] = recvBuffers[i].size();
-			recvDispl[i] = recvDispl[i-1] + recvCount[i-1];
- 		  std::copy(recvBuffers[i].begin(), recvBuffers[i].end(), recvB.begin() + recvDispl[i]);
-		}
-		delete[] req;
-		delete[] send_flags;
-	}	
+    recvB.resize(dataSize);
+    recvCount[0] = recvBuffers[0].size();
+    recvDispl[0] = 0;
+    std::copy(recvBuffers[0].begin(), recvBuffers[0].end(), recvB.begin());
+    for(int i = 1; i < mpisize; ++i) {
+      recvCount[i] = recvBuffers[i].size();
+      recvDispl[i] = recvDispl[i-1] + recvCount[i-1];
+      std::copy(recvBuffers[i].begin(), recvBuffers[i].end(), recvB.begin() + recvDispl[i]);
+    }
+    delete[] req;
+    delete[] send_flags;
+  } 
 
   //! Exchange bodies/cells in a point-to-point manner
   template<typename T>
@@ -1380,7 +1380,7 @@ public:
 //     alltoall(bodies);                                     // Send body count       
 //     alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
 #elif EXAFMM_USE_NBX
-    alltoallv_p2p_nbx(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount,true);
+    alltoallv_p2p_nbx(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount,true,1);
 #elif EXAFMM_USE_P2P
     alltoall(bodies);                                         // Send body count    
     alltoallv_p2p(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
@@ -1401,7 +1401,7 @@ public:
 #elif EXAFMM_USE_BUTTERFLY    
     alltoallv_p2p_hypercube(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount,true);
 #elif EXAFMM_USE_NBX    
-    alltoallv_p2p_nbx(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount,true);
+    alltoallv_p2p_nbx(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount,true,2);
 #elif EXAFMM_USE_ONESIDED
      alltoall(sendBodies);                                     // Send body count       
      alltoallv_p2p_onesided(sendBodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
@@ -1425,7 +1425,7 @@ public:
 #elif EXAFMM_USE_BUTTERFLY
     alltoallv_p2p_hypercube(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount,false);
 #elif EXAFMM_USE_NBX
-    alltoallv_p2p_nbx(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount,false);
+    alltoallv_p2p_nbx(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount,false,3);
 #elif EXAFMM_USE_ONESIDED
     alltoall(sendCells);                                     // Send body count       
     alltoallv_p2p_onesided(sendCells,recvCells,recvCellDispl,recvCellCount,sendCellDispl,sendCellCount);      
