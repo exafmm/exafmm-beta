@@ -194,7 +194,6 @@ private:
     int count;
     int send_count = 0;
     int send_flag;
-    int* send_flags = new int[mpisize];
     int send_idx;
     MPI_Request barr_request;
     MPI_Request* req = new MPI_Request[mpisize];
@@ -202,7 +201,6 @@ private:
     MPI_Status status;
     std::vector<T> recvBuffers(mpisize);
     for (int irank = 0; irank < mpisize; ++irank) {
-      send_flags[irank] = 0;
       MPI_Issend(sendBuff + sendDispl[irank]*word,
                       sendCount[irank]*word, MPI_INT, irank, tag, MPI_COMM_WORLD, &req[irank]);
     }
@@ -222,11 +220,15 @@ private:
         MPI_Test(&barr_request, &barr_complete, MPI_STATUS_IGNORE);
         if(barr_complete) done = true;
       } else {
-        MPI_Testany(mpisize, req, &send_idx, &send_flag, MPI_STATUS_IGNORE);
-        if(send_flag && !send_flags[send_idx]) send_count++;
-        if(send_count == mpisize){
-          MPI_Ibarrier(MPI_COMM_WORLD, &barr_request);
-          barr_act = true;
+        send_flag = 1;
+        while(send_flag) {
+          MPI_Testany(mpisize, req, &send_idx, &send_flag, MPI_STATUS_IGNORE);
+          if(send_flag) send_count++;
+          if(send_count == mpisize){ // local work finished
+            MPI_Ibarrier(MPI_COMM_WORLD, &barr_request);
+            barr_act = true;
+            break;
+          }
         }
       }
     }
@@ -240,7 +242,6 @@ private:
       std::copy(recvBuffers[i].begin(), recvBuffers[i].end(), recvB.begin() + recvDispl[i]);
     }
     delete[] req;
-    delete[] send_flags;
   } 
 
   //! Exchange bodies/cells in a point-to-point manner
