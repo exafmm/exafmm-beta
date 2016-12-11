@@ -353,7 +353,7 @@ private:
     T** irecvBuff = new T*[logPReceiveSize];    
     for (int i = 0; i < logPReceiveSize; ++i) 
       irecvBuff[i] = new T(maxSize);    
-
+    logger::startTimer("Comm LET");
     for (int i = 0; i < logP; ++i) {
       int sendRecvSize = mpisize>>(i+1);      
       int sendRecvRank = path[mpirank][i];
@@ -437,6 +437,7 @@ private:
       previousSendBufferSize = sendRecvBuffer.size();    
       deallocateCompletedRequests(pendingRequests, pendingBuffers);
     }
+    logger::stopTimer("Comm LET");
     deallocateCompletedRequests(pendingRequests, pendingBuffers, true,true);
     assert(ownDataIndex == mpisize - 1);
     assert(pendingBuffers.size() == 0);
@@ -1372,23 +1373,8 @@ public:
   //! Send bodies
   Bodies commBodies(Bodies bodies) {
     logger::startTimer("Comm partition");                     // Start timer
-#if EXAFMM_USE_H_ALLTOALL    
-    alltoall(bodies);                                         // Send body count    
-    alltoallv_heirarchical(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);    
-#elif EXAFMM_USE_BUTTERFLY   
-    alltoallv_p2p_hypercube(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount,true);
-// #elif EXAFMM_USE_ONESIDED
-//     alltoall(bodies);                                     // Send body count       
-//     alltoallv_p2p_onesided(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
-#elif EXAFMM_USE_NBX
-    alltoallv_p2p_nbx(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount,true,1);
-#elif EXAFMM_USE_P2P
-    alltoall(bodies);                                         // Send body count    
-    alltoallv_p2p(bodies,recvBodies,recvBodyDispl,recvBodyCount,sendBodyDispl,sendBodyCount);
-#else 
     alltoall(bodies);                                         // Send body count    
     alltoallv(bodies);                                        // Send bodies        
-#endif    
     logger::stopTimer("Comm partition");                      // Stop timer
     return recvBodies;                                        // Return received bodies
   }
