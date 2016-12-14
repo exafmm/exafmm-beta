@@ -632,7 +632,7 @@ contains
     integer,allocatable,dimension(:) :: ires,icpumap
     real(8),allocatable,dimension(:) :: x
 
-    ! only simple translations, so velocities stay the same! "?"
+!!! only simple translations, so velocities stay the same! "?"
 
     xmin=-pcycle/2.0
     ymin=-pcycle/2.0
@@ -751,7 +751,7 @@ program main
   cutoff = 3 * nglobal ** (1. / 6)
   cuton = 0.95 * cutoff
   alpha = 4 / cutoff
-  ksize = 4 / pi * alpha * pcycle
+  ksize = int(4 / pi * alpha * pcycle)
   sigma = .25 / pi
   nat = 16
   time = 100. ! first 100ps was equilibration with standard CHARMM
@@ -767,7 +767,7 @@ program main
      cutoff = 3 * nglobal ** (1. / 6)
      cuton = 0.95 * cutoff
      alpha = 4 / cutoff
-     ksize = 4 / pi * alpha * pcycle
+     ksize = int(4 / pi * alpha * pcycle)
      sigma = .25 / pi
      allocate( p(nglobal),f(3*nglobal),icpumap(nglobal) )
      allocate( p2(nglobal),f2(3*nglobal) )

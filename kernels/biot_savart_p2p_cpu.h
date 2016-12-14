@@ -1,14 +1,21 @@
-#include "kernel.h"
+#ifndef biot_savart_p2p_cpu_h
+#define biot_savart_p2p_cpu_h
+#include "types.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
 #endif
 
 namespace exafmm {
-  namespace kernel {
-    real_t eps2;
-    vec3 Xperiodic;
+  template<typename vecP,Basis basis>
+  class BiotSavartP2PCPU : public KernelBase {
+  public:
+    static const Equation equation = BiotSavart;                //!< Set equation to BiotSavart
+    typedef std::vector<Body<BiotSavart> > Bodies;              //!< Vector of bodies for BiotSavart
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef std::vector<Cell<B_iter,vecP,BiotSavart,basis> > Cells;//!< Vector of cells for BiotSavart
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
-    void P2P(C_iter Ci, C_iter Cj, bool mutual) {
+    static void P2P(C_iter Ci, C_iter Cj, bool ) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
       int ni = Ci->NBODY;
@@ -38,7 +45,7 @@ namespace exafmm {
       }
     }
 
-    void P2P(C_iter C) {
+    static void P2P(C_iter C) {
       B_iter B = C->BODY;
       int n = C->NBODY;
       int i = 0;
@@ -65,5 +72,8 @@ namespace exafmm {
 	B[i].TRG[3] += az;
       }
     }
-  }
+
+    static void normalize(Bodies) {}
+  };
 }
+#endif

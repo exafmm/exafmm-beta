@@ -144,10 +144,10 @@ namespace exafmm {
     }
 
   public:
-    void allocate(int N, int L, int I) {
+    void allocate(int N, int L, int Im) {
       maxLevel = L;
       numBodies = N;
-      numImages = I;
+      numImages = Im;
       numCells = ((1 << 3 * (L + 1)) - 1) / 7;
       numLeafs = 1 << 3 * L;
       numSendCells = 64 * L + 48 * ((1 << (L + 1)) - 2) + 12 * (((1 << (2 * L + 2)) - 1) / 3 - 1);

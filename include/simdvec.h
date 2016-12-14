@@ -1,8 +1,9 @@
 #ifndef simdvec_h
 #define simdvec_h
+#include "types.h"
 
 namespace exafmm {
-  template<typename T, int D, int N>
+  template<typename T, typename B_iter, int D, int N>
   struct SIMD {
     static inline T setBody(B_iter, int) {
       T v;
@@ -13,8 +14,8 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,16> {
+  template<typename T, typename B_iter, int D>
+  struct SIMD<T,B_iter,D,16> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i   ].X[D],B[i+1 ].X[D],B[i+2 ].X[D],B[i+3 ].X[D],
 	  B[i+4 ].X[D],B[i+5 ].X[D],B[i+6 ].X[D],B[i+7 ].X[D],
@@ -27,8 +28,8 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,8> {
+  template<typename T, typename B_iter, int D>
+  struct SIMD<T,B_iter,D,8> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i  ].X[D],B[i+1].X[D],B[i+2].X[D],B[i+3].X[D],
 	  B[i+4].X[D],B[i+5].X[D],B[i+6].X[D],B[i+7].X[D]);
@@ -39,8 +40,8 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,4> {
+  template<typename T, typename B_iter, int D>
+  struct SIMD<T,B_iter,D,4> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i].X[D],B[i+1].X[D],B[i+2].X[D],B[i+3].X[D]);
       return v;
@@ -50,8 +51,8 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T, int D>
-  struct SIMD<T,D,2> {
+  template<typename T, typename B_iter, int D>
+  struct SIMD<T,B_iter,D,2> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i].X[D],B[i+1].X[D]);
       return v;
@@ -61,8 +62,8 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,16> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,3,16> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i   ].SRC,B[i+1 ].SRC,B[i+2 ].SRC,B[i+3 ].SRC,
 	  B[i+4 ].SRC,B[i+5 ].SRC,B[i+6 ].SRC,B[i+7 ].SRC,
@@ -71,31 +72,30 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,8> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,3,8> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i  ].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC,
 	  B[i+4].SRC,B[i+5].SRC,B[i+6].SRC,B[i+7].SRC);
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,4> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,3,4> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC);
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,3,2> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,3,2> {
     static inline T setBody(B_iter B, int i) {
       T v(B[i].SRC,B[i+1].SRC);
       return v;
     }
   };
-#if EXAFMM_HELMHOLTZ
-  template<typename T>
-  struct SIMD<T,4,16> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,4,16> {
     static inline T setBody(B_iter B, int i) {
       T v(std::real(B[i   ].SRC),std::real(B[i+1 ].SRC),
 	  std::real(B[i+2 ].SRC),std::real(B[i+3 ].SRC),
@@ -108,8 +108,8 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,4,8> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,4,8> {
     static inline T setBody(B_iter B, int i) {
       T v(std::real(B[i  ].SRC),std::real(B[i+1].SRC),
 	  std::real(B[i+2].SRC),std::real(B[i+3].SRC),
@@ -118,23 +118,23 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,4,4> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,4,4> {
     static inline T setBody(B_iter B, int i) {
       T v(std::real(B[i  ].SRC),std::real(B[i+1].SRC),
 	  std::real(B[i+2].SRC),std::real(B[i+3].SRC));
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,4,2> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,4,2> {
     static inline T setBody(B_iter B, int i) {
       T v(std::real(B[i].SRC),std::real(B[i+1].SRC));
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,16> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,5,16> {
     static inline T setBody(B_iter B, int i) {
       T v(std::imag(B[i   ].SRC),std::imag(B[i+1 ].SRC),
 	  std::imag(B[i+2 ].SRC),std::imag(B[i+3 ].SRC),
@@ -147,8 +147,8 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,8> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,5,8> {
     static inline T setBody(B_iter B, int i) {
       T v(std::imag(B[i  ].SRC),std::imag(B[i+1].SRC),
 	  std::imag(B[i+2].SRC),std::imag(B[i+3].SRC),
@@ -157,22 +157,21 @@ namespace exafmm {
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,4> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,5,4> {
     static inline T setBody(B_iter B, int i) {
       T v(std::imag(B[i  ].SRC),std::imag(B[i+1].SRC),
 	  std::imag(B[i+2].SRC),std::imag(B[i+3].SRC));
       return v;
     }
   };
-  template<typename T>
-  struct SIMD<T,5,2> {
+  template<typename T, typename B_iter>
+  struct SIMD<T,B_iter,5,2> {
     static inline T setBody(B_iter B, int i) {
       T v(std::imag(B[i].SRC),std::imag(B[i+1].SRC));
       return v;
     }
   };
-#endif
 
   kreal_t transpose(ksimdvec v, int i) {
 #if EXAFMM_USE_KAHAN
@@ -191,6 +190,7 @@ namespace exafmm {
     temp.s = complex_t(v_r.s[i], v_i.s[i]);
     temp.c = complex_t(v_r.c[i], v_i.c[i]);
     return temp;
+
 #else
     return kcomplex_t(v_r[i], v_i[i]);
 #endif

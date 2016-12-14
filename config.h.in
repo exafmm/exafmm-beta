@@ -15,6 +15,12 @@
 /* Define to enable AVX optimizations. */
 #undef EXAFMM_HAVE_AVX
 
+/* Define to enable AVX2 optimizations. */
+#undef EXAFMM_HAVE_AVX2
+
+/* Define to enable AVX512 optimizations. */
+#undef EXAFMM_HAVE_AVX512
+
 /* Define to enable MIC optimizations. */
 #undef EXAFMM_HAVE_MIC
 
@@ -24,7 +30,7 @@
 /* Define to enable ARM NEON optimizations. */
 #undef EXAFMM_HAVE_NEON
 
-/* Define if OpenMP is enabled */
+/* Use OpenMP */
 #undef EXAFMM_HAVE_OPENMP
 
 /* Define to enable SSE/SSE3 optimizations. */
@@ -62,6 +68,9 @@
 
 /* Use Intel TBB */
 #undef EXAFMM_WITH_TBB
+
+/* Define if OpenMP is enabled */
+#undef HAVE_OPENMP
 
 /* Name of package */
 #undef PACKAGE

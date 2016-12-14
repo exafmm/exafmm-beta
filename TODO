@@ -1,23 +1,21 @@
 -- Immediate --
-- Debug nightly for preconditioner branch
-- Use EXAFMM_CLUSTER
-- Configure on OSX
-- Wash out all corner case bugs
-- Representative case plot generator
+* Rank items in this list according to importance
+
+- Modylas wrapper
+- PetIGA no macro
+- Helmholtz breaks for very low P
+- Helmholtz breaks for -D
+- With strumpack
+- uniform/fmm.cxx accuracy problem
+- Use EXAFMM_CLUSTER in md_distributed
+- Add kernel.cxx vec.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
+- Full simdList, threadList, configList in nightly.py
+
 - Remove make cleanall from build
-- Merge git branches
-- Remove branches from master.cfg
 - Extend list based traversal to adaptive tree (UVWX-list)
-- Separate different algorithms into different files (create folder for build tree, partition, etc.)
-- Add kernel.cxx to nightly test
 
 -- MPI --
-- define mpisize, mpirank in types.h
-- benchmark against uniform on kyoto
-- match performance of uniform with non-uniform
-- merge partition and treeMPI
 - LBT MPI <- ICELL is being calculated from localBounds
-- Test difficult distributions for partitioning and LET
 MPI-3.0 lock all
 cycle counter based weights
 2:1 refinement for precomputation
@@ -25,47 +23,42 @@ non-orthogonal recursive bisection
 
 -- automake --
 - Add m4/ax_mpi variants from PVFMM
-- Theoretical error bound using kernel.cxx
-move contents of macros.h to configure.ac
-examples/Makefile options to args
-unit test for each header file in /unit_test
+Use docker to create virtual environment for buildbot
+Representative case plot generator
 
 -- types --
-args.h, verify.h from class to namespace
-logger.h split to print.h
+- logger.h split to print.h
+- __attribute__((always_inline))
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
 Remove M, L from Cell struct
-Improve vec.h - vectorclass interface
+Calculate EPS from test
 
 -- tree build --
-Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)
-Morton -> Hilbert
+- Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)
+- Morton, Hilbert in build_tree folder
+Separate different algorithms into different files (create folder for build tree, partition, etc.)
 
 -- kernels --
-- Define M, L inside kernel namespace and template over P
-- Use reinterpret_cast pointers to reference them inside Cell struct
-- Complie all P during make -> provide option to make for specific P value
-- Helmholtz breaks for very low P
-Stokes kernels
+- Calculate Flops, Cycle counter kernel timer
+- Separate LaplaceCartesianRecursion, LaplaceCartesianTemplate
+- Precomputation of translation matrix (import from PVFMM)
+- Hack vecmathlib and import essential features
+- Add back Stokes kernels
+- Theoretical error bound using kernel.cxx
 Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
-hack vecmathlib and import essential features
-Calculate Flops
-Cycle counter kernel timer
 FX10 sin, cos, exp intrinsic
 
 -- driver --
 - System benchmarking, HPCC, SPEC, for CPU, GPU, MPI performance
-Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
-TBB -> OpenMP with atomics -> flush
-splitRange defined in both dataset.h and partition.h
-UVWX-list with precomputation
+- TBB -> OpenMP with atomics -> flush
+- OMP_PLACES {threads,cores,sockets}
+MemAxes: Visualizing Memory Traffic
 Periodic B.C. by one precomputed translation matrix
 Teng's BH MAC with M2P option during DTT
-Interface with BEM code
 charmm2: remove repartition inside Ewald & VdW
 cutoff based traversal for md_distributed
 
@@ -84,6 +77,8 @@ Cartesian vs. Spherical vs. Planewave
 ORB vs. HOT
 OpenMP vs. TBB vs. Cilk vs. MThreads
 Geometric vs. Algebraic Mat-Vec
+benchmark against uniform on kyoto
 
 -- documentation --
+- JOSS paper
 ipython notebook tutorial (from Andreas)

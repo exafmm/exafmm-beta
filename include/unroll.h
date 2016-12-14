@@ -1,5 +1,6 @@
 #ifndef unroll_h
 #define unroll_h
+#include "macros.h"
 
 namespace exafmm {
   namespace Ops {

@@ -1,14 +1,68 @@
 #ifndef verify_h
 #define verify_h
 #include "logger.h"
-#include <unistd.h>
+#include "types.h"
 
 namespace exafmm {
+  //! Equation dependent part of verification
+  template<Equation equation=Laplace>
+  class VerifyEquation {
+  public:
+    typedef std::vector<Body<equation> > Bodies;                //!< Vector of bodies
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    //! Get sum of scalar component of a vector of target bodies
+    double getSumScalar(Bodies & bodies) {
+      double v = 0;                                             // Initialize difference
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
+	v += B->TRG[0] * B->SRC;                                //  Sum of scalar component
+      }                                                         // End loop over bodies
+      return v;                                                 // Return difference
+    }
+  };
+
+  //! Equation dependent part of verification
+  template<>
+  class VerifyEquation<Helmholtz> {
+  public:
+    typedef std::vector<Body<Helmholtz> > Bodies;               //!< Vector of bodies
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    //! Get sum of scalar component of a vector of target bodies
+    double getSumScalar(Bodies & bodies) {
+      double v = 0;                                             // Initialize difference
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
+	v += std::abs(B->TRG[0] * B->SRC);                      //  Sum of scalar component
+      }                                                         // End loop over bodies
+      return v;                                                 // Return difference
+    }
+  };
+
+  //! Equation dependent part of verification
+  template<>
+  class VerifyEquation<BiotSavart> {
+  public:
+    typedef std::vector<Body<BiotSavart> > Bodies;              //!< Vector of bodies
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    //! Get sum of scalar component of a vector of target bodies
+    double getSumScalar(Bodies & bodies) {
+      double v = 0;                                             // Initialize difference
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
+	v += B->TRG[0];                                         //  Sum of x component
+      }                                                         // End loop over bodies
+      return v;                                                 // Return difference
+    }
+  };
+
   //! Verify results
-  class Verify {
-  private:
+  template<typename Kernel>
+  class Verify : VerifyEquation<Kernel::equation> {
+  public:
     typedef std::map<uint64_t,double> Record;                   //!< Map of regression key value pair
     typedef Record::iterator R_iter;                            //!< Iterator of regression map
+    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
+    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
+    using VerifyEquation<Kernel::equation>::getSumScalar;       //!< Get sum of scalar component of a vector of target bodies
+
+  private:
     const char * path;                                          //!< Path to save files
 
   public:
@@ -20,21 +74,6 @@ namespace exafmm {
 
     //! Constructor with argument
     Verify(const char * _path) : path(_path), average(0), average2(0) {} 
-
-    //! Get sum of scalar component of a vector of target bodies
-    double getSumScalar(Bodies & bodies) {
-      double v = 0;                                             // Initialize difference
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-#if EXAFMM_HELMHOLTZ
-	v += std::abs(B->TRG[0] * B->SRC);                      //  Sum of scalar component
-#elif EXAFMM_BIOTSAVART
-	v += B->TRG[0];                                         //  Sum of x component
-#else
-	v += B->TRG[0] * B->SRC;                                //  Sum of scalar component
-#endif
-      }                                                         // End loop over bodies
-      return v;                                                 // Return difference
-    }
 
     //! Get norm of scalar component of a vector of target bodies
     double getNrmScalar(Bodies & bodies) {

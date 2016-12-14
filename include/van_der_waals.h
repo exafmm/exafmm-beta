@@ -4,7 +4,13 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename Kernel>
   class VanDerWaals {
+    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
+    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
+    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
+    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
+
   private:
     const real_t cuton;                                         //!< Cuton distance
     const real_t cutoff;                                        //!< Cutoff distance

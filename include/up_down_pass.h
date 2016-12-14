@@ -1,11 +1,18 @@
 #ifndef up_down_pass_h
 #define up_down_pass_h
-#include "kernel.h"
 #include "logger.h"
 #include "thread.h"
+#include "types.h"
 
 namespace exafmm {
+  template<typename Kernel>
   class UpDownPass {
+    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
+    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
+    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
+    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
+    static const int P = Kernel::P;                             //!< Set order of expansion
+
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria
     const bool useRmax;                                         //!< Use maximum distance for MAC
@@ -91,9 +98,9 @@ namespace exafmm {
 	wait_tasks;                                             //   Synchronize tasks
 	C->M = 0;                                               //  Initialize multipole expansion coefficients
 	C->L = 0;                                               //  Initialize local expansion coefficients
-	if(C->NCHILD==0) kernel::P2M(C);                        //  P2M kernel
+	if(C->NCHILD==0) Kernel::P2M(C);                        //  P2M kernel
 	else {                                                  //  If not leaf cell
-          kernel::M2M(C, C0);                                   //   M2M kernel
+          Kernel::M2M(C, C0);                                   //   M2M kernel
         }                                                       //  End if for non leaf cell
 	if (useRmax) setRmax();                                 //  Redefine cell radius R based on maximum distance
 	C->R /= theta;                                          //  Divide R by theta
@@ -107,9 +114,9 @@ namespace exafmm {
       PreOrderTraversal(C_iter _C, C_iter _C0) :                // Constructor
 	C(_C), C0(_C0) {}                                       // Initialize variables
       void operator() () const {                                // Overload operator()
-	kernel::L2L(C, C0);                                     //  L2L kernel
+	Kernel::L2L(C, C0);                                     //  L2L kernel
 	if (C->NCHILD==0) {                                     //  If leaf cell
-          kernel::L2P(C);                                       //  L2P kernel
+          Kernel::L2P(C);                                       //  L2P kernel
         }                                                       // End if for leaf cell
 #if EXAFMM_USE_WEIGHT
 	C_iter CP = C0 + C->IPARENT;                            // Parent cell
@@ -154,15 +161,13 @@ namespace exafmm {
     }
 
     //! Downward pass (L2L, L2P)
-    void downwardPass(Cells & cells) {
+    void downwardPass(Cells & cells, int mass=0) {
       logger::startTimer("Downward pass");                      // Start timer
       if (!cells.empty()) {                                     // If cell vector is not empty
 	C_iter C0 = cells.begin();                              //  Root cell
-	if (C0->NCHILD == 0) {                                  //  If root is the only cell
-#if EXAFMM_MASS
-          C0->L /= C0->M[0];                                    //   Denormalize local expansions
-#endif
-          kernel::L2P(C0);                                      //   L2P kernel
+	if (C0->NCHILD == 0 ) {                                 //  If root is the only cell
+          if (mass) C0->L /= C0->M[0];                          //   Denormalize local expansions
+          Kernel::L2P(C0);                                      //   L2P kernel
         }                                                       //  End if root is the only cell
 	mk_task_group;                                          //  Initialize tasks
 	for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
@@ -174,7 +179,6 @@ namespace exafmm {
       logger::stopTimer("Downward pass");                       // Stop timer
     }
 
-#if EXAFMM_LAPLACE
     //! Get dipole of entire system
     vec3 getDipole(Bodies & bodies, vec3 X0) {
       vec3 dipole = 0;                                          // Initialize dipole correction
@@ -194,7 +198,6 @@ namespace exafmm {
 	}                                                       //  End loop over dimensions
       }                                                         // End loop over bodies
     }
-#endif
   };
 }
 #endif

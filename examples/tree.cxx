@@ -4,20 +4,27 @@
 #include "dataset.h"
 #include "logger.h"
 using namespace exafmm;
+#include "laplace_cartesian_cpu.h"
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  typedef LaplaceCartesianCPU<4,0> Kernel;
+  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
+  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
+  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
+
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds bounds;
-  BuildTree buildTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
-  Dataset data;
+  Dataset<Kernel> data;
   num_threads(args.threads);
 
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, P);
+  args.print(logger::stringLength);
   buffer.reserve(args.numBodies);
   double * grow1 = new double [args.repeat+1];
   double * link1 = new double [args.repeat+1];

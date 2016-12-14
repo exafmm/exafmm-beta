@@ -11,6 +11,10 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
+#include "helmholtz_spherical_cpu.h"
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
+complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 /* Helmholtz, spherical coordinates example, 3D geometry.
  *
@@ -25,34 +29,38 @@ double elemops = 0.0;
 const complex_t I1(0.0,1.0);
 
 int main(int argc, char ** argv) {
-  const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
+  typedef exafmm::HelmholtzSphericalCPU<2*Pmax> Kernel;
+  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
+  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
+  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
+
+  const real_t cycle = 2 * M_PI;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree localTree(args.ncrit, args.nspawn);
-  BuildTree globalTree(1, args.nspawn);
+  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
-  Dataset data;
-  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify;
+  Dataset<Kernel> data;
+  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
+  Traversal<Kernel> traversal(args.nspawn, args.images);
+  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  Verify<Kernel> verify;
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  kernel::eps2 = 0.0;
-  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-  kernel::setup();
+  Kernel::setup();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, P);
+  args.print(logger::stringLength);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   buffer.reserve(bodies.size());
   for (int t=0; t<args.repeat; t++) {
@@ -216,9 +224,9 @@ int main(int argc, char ** argv) {
 	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
 	    B_iter Bi=bodies.begin()+globri-1;
 	    vec3 dX=Bi->X-Bj->X;
-	    real_t R2=norm(dX)+kernel::eps2;
+	    real_t R2=norm(dX)+Kernel::eps2;
 	    real_t R=sqrt(R2);
-	    A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
+	    A[i+nrows*j]=R2==0?0.0:exp(I1*(Kernel::wavek)*R)/R;
 	  }
 	}
 	gemm('N','N',nrows,locc,n,dcomplex(1.0),A,nrows,Rglob,n,dcomplex(0.0),&Sr[r],locr);
@@ -312,9 +320,9 @@ int main(int argc, char ** argv) {
 	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
 	    B_iter Bi=bodies.begin()+globri-1;
 	    vec3 dX=Bi->X-Bj->X;
-	    real_t R2=norm(dX)+kernel::eps2;
+	    real_t R2=norm(dX)+Kernel::eps2;
 	    real_t R=sqrt(R2);
-	    A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
+	    A[i+nrows*j]=R2==0?0.0:exp(I1*(Kernel::wavek)*R)/R;
 	    A[i+nrows*j]=std::conj(A[i+nrows*j]);
 	  }
 	}
@@ -324,7 +332,7 @@ int main(int argc, char ** argv) {
       }
       A=NULL;
 #else
-      kernel::wavek = complex_t(-std::real(kernel::wavek),std::imag(kernel::wavek));
+      Kernel::wavek = complex_t(-std::real(Kernel::wavek),std::imag(Kernel::wavek));
       for(int i=0;i<locr;i++) {
         int locri=i+1;
         int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
@@ -366,7 +374,7 @@ int main(int argc, char ** argv) {
       }
       bodies = gbodies;
       jbodies = gbodies;
-      kernel::wavek = complex_t(-std::real(kernel::wavek),std::imag(kernel::wavek));
+      Kernel::wavek = complex_t(-std::real(Kernel::wavek),std::imag(Kernel::wavek));
 #endif
 
       /* Compress the random vectors */
@@ -491,10 +499,10 @@ int main(int argc, char ** argv) {
 	    int locri=r+i+1;
 	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
 	    B_iter Bi=bodies.begin()+globri-1;
-	    vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
-	    real_t R2=norm(dX)+kernel::eps2;
+	    vec3 dX=Bi->X-Bj->X-Kernel::Xperiodic;
+	    real_t R2=norm(dX)+Kernel::eps2;
 	    real_t R=sqrt(R2);
-	    A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
+	    A[i+nrows*j]=R2==0?0.0:exp(I1*(Kernel::wavek)*R)/R;
 	  }
 	}
 	gemm('N','N',nrows,nrhs,n,dcomplex(1.0),A,nrows,Xglob,n,dcomplex(0.0),&Btrue[r],locr);
@@ -605,9 +613,9 @@ void elements(void * obj, int *I, int *J, dcomplex *B, int *descB) {
       B_iter Bi=bodies->begin()+iii-1;
       B_iter Bj=jbodies->begin()+jjj-1;
       vec3 dX=Bi->X-Bj->X;
-      real_t R2=norm(dX)+kernel::eps2;
+      real_t R2=norm(dX)+Kernel::eps2;
       real_t R=sqrt(R2);
-      B[locr*(j-1)+(i-1)]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
+      B[locr*(j-1)+(i-1)]=R2==0?0.0:exp(I1*(Kernel::wavek)*R)/R;
     }
   }
 

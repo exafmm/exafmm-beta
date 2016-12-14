@@ -1,99 +1,108 @@
-#include "kernel.h"
+#ifndef helmholtz_spherical_cpu_h
+#define helmholtz_spherical_cpu_h
+#include "helmholtz_p2p_cpu.h"
+#include "spherical.h"
 
 namespace exafmm {
-  namespace kernel {
-    const complex_t I(0.,1.);
-    int nquad, nquad2;
-    real_t xquad[P], xquad2[2*P];
-    real_t wquad[P], wquad2[2*P];
-    real_t Anm1[(P+1)*(P+2)/2];
-    real_t Anm2[(P+1)*(P+2)/2];
+  int nquad, nquad2;
+  real_t * xquad, * xquad2;
+  real_t * wquad, * wquad2;
+  real_t * Anm1, * Anm2;
 
-    void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
+  template<int _P>
+  class HelmholtzSphericalCPU : public HelmholtzP2PCPU<vec<_P*_P,complex_t>,Spherical> {
+  public:
+    static const Basis basis = Spherical;                       //!< Set basis to Spherical
+    static const int P = _P;                                    //!< Set order of expansion
+    static const int NTERM = P*P;                               //!< # of terms in Helmholtz Spherical expansion
+    typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
+    using typename HelmholtzP2PCPU<vecP,Spherical>::Bodies;     //!< Vector of bodies for Helmholtz
+    using typename HelmholtzP2PCPU<vecP,Spherical>::B_iter;     //!< Iterator of body vector
+    using typename HelmholtzP2PCPU<vecP,Spherical>::Cells;      //!< Vector of cells for Helmholtz
+    using typename HelmholtzP2PCPU<vecP,Spherical>::C_iter;     //!< Iterator of cell vector
+    using HelmholtzP2PCPU<vecP,Spherical>::Xperiodic;
+    using HelmholtzP2PCPU<vecP,Spherical>::wavek;
+
+  private:
+    static void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
       sum = 0.5 + x * x * 1.5;
       real_t pk = 1;
       real_t pkp1 = x;
       if (n < 2) {
-	der = 0;
-	sum = 0.5;
-	if (n == 0) return;
-	der = 1;
-	sum += x * x * 1.5;
-	return;
+        der = 0;
+        sum = 0.5;
+        if (n == 0) return;
+        der = 1;
+        sum += x * x * 1.5;
+        return;
       }
       for (int k=1; k<n; k++) {
-	real_t pkm1 = pk;
-	pk = pkp1;
-	pkp1 = ((2 * k + 1) * x * pk - k * pkm1) / (k + 1);
-	sum += pkp1 * pkp1 * (k + 1.5);
+        real_t pkm1 = pk;
+        pk = pkp1;
+        pkp1 = ((2 * k + 1) * x * pk - k * pkm1) / (k + 1);
+        sum += pkp1 * pkp1 * (k + 1.5);
       }
       pol = pkp1;
       der = n * (x * pkp1 - pk) / (x * x - 1);
     }
 
-    void legendre(int nq, real_t * xq, real_t * wq) {
+    static void legendre(int nq, real_t * xq, real_t * wq) {
       real_t pol = 0, der, sum;
       real_t h = M_PI / (2 * nq);
       for (int i=1; i<=nq; i++) {
-	xq[nq-i] = std::cos((2 * i - 1) * h);
+        xq[nq-i] = std::cos((2 * i - 1) * h);
       }
       xq[nq/2] = 0;
       for (int i=0; i<nq/2; i++) {
-	real_t xk = xq[i];
-	int ifout = 0;
-	for (int k=0; k<10; k++) {
-	  polynomial(xk,nq,pol,der,sum);
-	  real_t delta = -pol / der;
-	  xk += delta;
-	  if (fabs(delta) < EPS) ifout++;
-	  if (ifout == 3) break;
-	}
-	xq[i] = xk;
-	xq[nq-i-1] = -xk;
+        real_t xk = xq[i];
+        int ifout = 0;
+        for (int k=0; k<10; k++) {
+          polynomial(xk,nq,pol,der,sum);
+          real_t delta = -pol / der;
+          xk += delta;
+          if (fabs(delta) < EPS) ifout++;
+          if (ifout == 3) break;
+        }
+        xq[i] = xk;
+        xq[nq-i-1] = -xk;
       }
       for (int i=0; i<(nq+1)/2; i++) {
-	polynomial(xq[i],nq,pol,der,sum);
-	wq[i] = 1 / sum;
-	wq[nq-i-1] = wq[i];
+        polynomial(xq[i],nq,pol,der,sum);
+        wq[i] = 1 / sum;
+        wq[nq-i-1] = wq[i];
       }
     }
 
-    void getAnm() {
+    static void getAnm() {
       Anm1[0] = 1;
       Anm2[0] = 1;
       for (int m=0; m<=P; m++) {
-	int ms = m * (m + 1) / 2 + m;
-	int mps = (m + 1) * (m + 2) / 2 + m;
-	if(m>0) Anm1[ms] = sqrt((2 * m - 1.0) / (2 * m));
-	if(m<P) Anm1[mps] = sqrt(2 * m + 1.0);
-	for (int n=m+2; n<=P; n++) {
-	  int nms = n * (n + 1) / 2 + m;
-	  Anm1[nms] = 2 * n - 1;
-	  Anm2[nms] = sqrt((n + m - 1.0) * (n - m - 1.0));
-	  Anm1[nms] /= sqrt(real_t(n - m) * (n + m));
-	  Anm2[nms] /= sqrt(real_t(n - m) * (n + m));
-	}
+        int ms = m * (m + 1) / 2 + m;
+        int mps = (m + 1) * (m + 2) / 2 + m;
+        if(m>0) Anm1[ms] = sqrt((2 * m - 1.0) / (2 * m));
+        if(m<P) Anm1[mps] = sqrt(2 * m + 1.0);
+        for (int n=m+2; n<=P; n++) {
+          int nms = n * (n + 1) / 2 + m;
+          Anm1[nms] = 2 * n - 1;
+          Anm2[nms] = sqrt((n + m - 1.0) * (n - m - 1.0));
+          Anm1[nms] /= sqrt(real_t(n - m) * (n + m));
+          Anm2[nms] /= sqrt(real_t(n - m) * (n + m));
+        }
       }
     }
 
-    void cart2sph(vec3 dX, real_t & r, real_t & theta, real_t & phi) {
-      r = sqrt(norm(dX));
-      theta = r == 0 ? 0 : acos(dX[2] / r);
-      phi = atan2(dX[1], dX[0]);
-    }
-
-    void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
-		complex_t Mrot[P*P]) {
+    static void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
+                       complex_t Mrot[P*P]) {
       real_t Rnm1[P][2*P];
       real_t Rnm2[P][2*P];
       real_t sqrtCnm[2*P][2];
       for (int m=0; m<2*nterms; m++) {
-	sqrtCnm[m][0] = sqrt(m+0.0);
+        sqrtCnm[m][0] = sqrt(m+0.0);
       }
       sqrtCnm[0][1] = 0;
       sqrtCnm[1][1] = 0;
       for (int m=2; m<2*nterms; m++) {
-	sqrtCnm[m][1] = sqrt(m * (m - 1) / 2.0);
+        sqrtCnm[m][1] = sqrt(m * (m - 1) / 2.0);
       }
       real_t ctheta = std::cos(theta);
       if (fabs(ctheta) < EPS) ctheta = 0;
@@ -105,100 +114,100 @@ namespace exafmm {
       Rnm1[0][P] = 1;
       Mrot[0] = Mnm[0] * Rnm1[0][P];
       for (int n=1; n<nterms; n++) {
-	for (int m=-n; m<0; m++) {
-	  Rnm2[0][P+m] = -sqrtCnm[n-m][1] * Rnm1[0][P+m+1];
-	  if (m > (1 - n)) {
-	    Rnm2[0][P+m] += sqrtCnm[n+m][1] * Rnm1[0][P+m-1];
-	  }
-	  Rnm2[0][P+m] *= hsthta; 
-	  if (m > -n) {
-	    Rnm2[0][P+m] += Rnm1[0][P+m] * ctheta * sqrtCnm[n+m][0] * sqrtCnm[n-m][0];
-	  }
-	  Rnm2[0][P+m] /= n;
-	}
-	Rnm2[0][P] = Rnm1[0][P] * ctheta;
-	if (n > 1) {
-	  Rnm2[0][P] += hsthta * sqrtCnm[n][1] * (2 * Rnm1[0][P-1]) / n;
-	}
-	for (int m=1; m<=n; m++) {
-	  Rnm2[0][P+m] = Rnm2[0][P-m];
-	  if (m % 2 == 0) {
-	    Rnm2[m][P] = Rnm2[0][P+m];
-	  } else {
-	    Rnm2[m][P] =-Rnm2[0][P+m];
-	  }
-	}
-	for (int mp=1; mp<=n; mp++) {
-	  real_t scale = 1 / (sqrt(2.0) * sqrtCnm[n+mp][1]);
-	  for (int m=mp; m<=n; m++) {
-	    Rnm2[mp][P+m] = Rnm1[mp-1][P+m-1] * cthtap * sqrtCnm[n+m][1];
-	    Rnm2[mp][P-m] = Rnm1[mp-1][P-m+1] * cthtan * sqrtCnm[n+m][1];
-	    if (m < (n - 1)) {
-	      Rnm2[mp][P+m] -= Rnm1[mp-1][P+m+1] * cthtan * sqrtCnm[n-m][1];
-	      Rnm2[mp][P-m] -= Rnm1[mp-1][P-m-1] * cthtap * sqrtCnm[n-m][1];
-	    }
-	    if (m < n) {
-	      real_t d = stheta * sqrtCnm[n+m][0] * sqrtCnm[n-m][0];
-	      Rnm2[mp][P+m] += Rnm1[mp-1][P+m] * d;
-	      Rnm2[mp][P-m] += Rnm1[mp-1][P-m] * d;
-	    }
-	    Rnm2[mp][P+m] *= scale;
-	    Rnm2[mp][P-m] *= scale;
-	    if (m > mp) {
-	      if ((mp+m) % 2 == 0) {
-		Rnm2[m][P+mp] = Rnm2[mp][P+m];
-		Rnm2[m][P-mp] = Rnm2[mp][P-m];
-	      } else {
-		Rnm2[m][P+mp] =-Rnm2[mp][P+m];
-		Rnm2[m][P-mp] =-Rnm2[mp][P-m];
-	      }
-	    }
-	  }
-	}
-	for (int m=-n; m<=n; m++) {
-	  int nn = n * n + n;
-	  int nm = n * n + n + m;
-	  Mrot[nm] = Mnm[nn] * Rnm2[0][P+m];
-	  for (int mp=1; mp<=n; mp++) {
-	    nm = n * n + n + m;
-	    int npm = n * n + n + mp;
-	    int nmm = n * n + n - mp;
-	    Mrot[nm] += Mnm[npm] * Rnm2[mp][P+m] + Mnm[nmm] * Rnm2[mp][P-m];
-	  }
-	}
-	for (int m=-n; m<=n; m++) {
-	  for (int mp=0; mp<=n; mp++) {
-	    Rnm1[mp][P+m] = Rnm2[mp][P+m];
-	  }
-	}    
+        for (int m=-n; m<0; m++) {
+          Rnm2[0][P+m] = -sqrtCnm[n-m][1] * Rnm1[0][P+m+1];
+          if (m > (1 - n)) {
+            Rnm2[0][P+m] += sqrtCnm[n+m][1] * Rnm1[0][P+m-1];
+          }
+          Rnm2[0][P+m] *= hsthta; 
+          if (m > -n) {
+            Rnm2[0][P+m] += Rnm1[0][P+m] * ctheta * sqrtCnm[n+m][0] * sqrtCnm[n-m][0];
+          }
+          Rnm2[0][P+m] /= n;
+        }
+        Rnm2[0][P] = Rnm1[0][P] * ctheta;
+        if (n > 1) {
+          Rnm2[0][P] += hsthta * sqrtCnm[n][1] * (2 * Rnm1[0][P-1]) / n;
+        }
+        for (int m=1; m<=n; m++) {
+          Rnm2[0][P+m] = Rnm2[0][P-m];
+          if (m % 2 == 0) {
+            Rnm2[m][P] = Rnm2[0][P+m];
+          } else {
+            Rnm2[m][P] =-Rnm2[0][P+m];
+          }
+        }
+        for (int mp=1; mp<=n; mp++) {
+          real_t scale = 1 / (sqrt(2.0) * sqrtCnm[n+mp][1]);
+          for (int m=mp; m<=n; m++) {
+            Rnm2[mp][P+m] = Rnm1[mp-1][P+m-1] * cthtap * sqrtCnm[n+m][1];
+            Rnm2[mp][P-m] = Rnm1[mp-1][P-m+1] * cthtan * sqrtCnm[n+m][1];
+            if (m < (n - 1)) {
+              Rnm2[mp][P+m] -= Rnm1[mp-1][P+m+1] * cthtan * sqrtCnm[n-m][1];
+              Rnm2[mp][P-m] -= Rnm1[mp-1][P-m-1] * cthtap * sqrtCnm[n-m][1];
+            }
+            if (m < n) {
+              real_t d = stheta * sqrtCnm[n+m][0] * sqrtCnm[n-m][0];
+              Rnm2[mp][P+m] += Rnm1[mp-1][P+m] * d;
+              Rnm2[mp][P-m] += Rnm1[mp-1][P-m] * d;
+            }
+            Rnm2[mp][P+m] *= scale;
+            Rnm2[mp][P-m] *= scale;
+            if (m > mp) {
+              if ((mp+m) % 2 == 0) {
+                Rnm2[m][P+mp] = Rnm2[mp][P+m];
+                Rnm2[m][P-mp] = Rnm2[mp][P-m];
+              } else {
+                Rnm2[m][P+mp] =-Rnm2[mp][P+m];
+                Rnm2[m][P-mp] =-Rnm2[mp][P-m];
+              }
+            }
+          }
+        }
+        for (int m=-n; m<=n; m++) {
+          int nn = n * n + n;
+          int nm = n * n + n + m;
+          Mrot[nm] = Mnm[nn] * Rnm2[0][P+m];
+          for (int mp=1; mp<=n; mp++) {
+            nm = n * n + n + m;
+            int npm = n * n + n + mp;
+            int nmm = n * n + n - mp;
+            Mrot[nm] += Mnm[npm] * Rnm2[mp][P+m] + Mnm[nmm] * Rnm2[mp][P-m];
+          }
+        }
+        for (int m=-n; m<=n; m++) {
+          for (int mp=0; mp<=n; mp++) {
+            Rnm1[mp][P+m] = Rnm2[mp][P+m];
+          }
+        }    
       }
     }
 
-    void get_Ynm(int nterms, real_t x, real_t Ynm[P*(P+1)/2]) {
+    static void get_Ynm(int nterms, real_t x, real_t Ynm[P*(P+1)/2]) {
       real_t y = -sqrt((1 - x) * (1 + x));
       Ynm[0] = 1;
       for (int m=0; m<nterms; m++) {
-	int ms = m * (m + 1) / 2 + m;
-	int mms = m * (m - 1) / 2 + m - 1;
-	int mps = (m + 1) * (m + 2) / 2 + m;
-	if (m > 0) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
-	if (m < nterms-1) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
-	for (int n=m+2; n<nterms; n++) {
-	  int nms = n * (n + 1) / 2 + m;
-	  int nm1 = n * (n - 1) / 2 + m;
-	  int nm2 = (n - 1) * (n - 2) / 2 + m;
-	  Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
-	}
+        int ms = m * (m + 1) / 2 + m;
+        int mms = m * (m - 1) / 2 + m - 1;
+        int mps = (m + 1) * (m + 2) / 2 + m;
+        if (m > 0) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
+        if (m < nterms-1) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
+        for (int n=m+2; n<nterms; n++) {
+          int nms = n * (n + 1) / 2 + m;
+          int nm1 = n * (n - 1) / 2 + m;
+          int nm2 = (n - 1) * (n - 2) / 2 + m;
+          Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
+        }
       }
       for (int n=0; n<nterms; n++) {
-	for (int m=0; m<=n; m++) {
-	  int nms = n * (n + 1) / 2 + m;
-	  Ynm[nms] *= sqrt(2 * n + 1.0);
-	}
+        for (int m=0; m<=n; m++) {
+          int nms = n * (n + 1) / 2 + m;
+          Ynm[nms] *= sqrt(2 * n + 1.0);
+        }
       }
     }
 
-    void get_Ynmd(int nterms, real_t x, real_t Ynm[P*(P+1)/2], real_t Ynmd[P*(P+1)/2]) {
+    static void get_Ynmd(int nterms, real_t x, real_t Ynm[P*(P+1)/2], real_t Ynmd[P*(P+1)/2]) {
       real_t y = -sqrt((1 - x) * (1 + x));
       real_t y2 = y * y;
       Ynm[0] = 1;
@@ -206,44 +215,44 @@ namespace exafmm {
       Ynm[1] = x * Ynm[0] * Anm1[1];
       Ynmd[1] = (x * Ynmd[0] + Ynm[0]) * Anm1[1];
       for (int n=2; n<nterms; n++) {
-	int ns = n * (n + 1) / 2;
-	int nm1 = n * (n - 1) / 2;
-	int nm2 = (n - 1) * (n - 2) / 2;
-	Ynm[ns] = Anm1[ns] * x * Ynm[nm1] - Anm2[ns] * Ynm[nm2];
-	Ynmd[ns] = Anm1[ns] * (x * Ynmd[nm1] + Ynm[nm1]) - Anm2[ns] * Ynmd[nm2];
+        int ns = n * (n + 1) / 2;
+        int nm1 = n * (n - 1) / 2;
+        int nm2 = (n - 1) * (n - 2) / 2;
+        Ynm[ns] = Anm1[ns] * x * Ynm[nm1] - Anm2[ns] * Ynm[nm2];
+        Ynmd[ns] = Anm1[ns] * (x * Ynmd[nm1] + Ynm[nm1]) - Anm2[ns] * Ynmd[nm2];
       }
       for (int m=1; m<nterms; m++) {
-	int ms = m * (m + 1) / 2 + m;
-	int mms = m * (m - 1) / 2 + m - 1;
-	int mps = (m + 1) * (m + 2) / 2 + m;
-	if (m == 1) Ynm[ms] = -Ynm[mms] * Anm1[ms];
-	if (m > 1) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
-	if (m > 0) Ynmd[ms] = -Ynm[ms] * m * x;
-	if (m < nterms-1) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
-	if (m < nterms-1) Ynmd[mps] = (x * Ynmd[ms] + y2 * Ynm[ms]) * Anm1[mps];
-	for (int n=m+2; n<nterms; n++) {
-	  int nms = n * (n + 1) / 2 + m;
-	  int nm1 = n * (n - 1) / 2 + m;
-	  int nm2 = (n - 1) * (n - 2) / 2 + m;
-	  Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
-	  Ynmd[nms] = Anm1[nms] * (x * Ynmd[nm1] + y2 * Ynm[nm1]) - Anm2[nms] * Ynmd[nm2];
-	}
+        int ms = m * (m + 1) / 2 + m;
+        int mms = m * (m - 1) / 2 + m - 1;
+        int mps = (m + 1) * (m + 2) / 2 + m;
+        if (m == 1) Ynm[ms] = -Ynm[mms] * Anm1[ms];
+        if (m > 1) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
+        if (m > 0) Ynmd[ms] = -Ynm[ms] * m * x;
+        if (m < nterms-1) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
+        if (m < nterms-1) Ynmd[mps] = (x * Ynmd[ms] + y2 * Ynm[ms]) * Anm1[mps];
+        for (int n=m+2; n<nterms; n++) {
+          int nms = n * (n + 1) / 2 + m;
+          int nm1 = n * (n - 1) / 2 + m;
+          int nm2 = (n - 1) * (n - 2) / 2 + m;
+          Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
+          Ynmd[nms] = Anm1[nms] * (x * Ynmd[nm1] + y2 * Ynm[nm1]) - Anm2[nms] * Ynmd[nm2];
+        }
       }
       for (int n=0; n<nterms; n++) {
-	for (int m=0; m<=n; m++) {
-	  int nms = n * (n + 1) / 2 + m;
-	  Ynm[nms] *= sqrt(2 * n + 1.0);
-	  Ynmd[nms] *= sqrt(2 * n + 1.0);
-	}
+        for (int m=0; m<=n; m++) {
+          int nms = n * (n + 1) / 2 + m;
+          Ynm[nms] *= sqrt(2 * n + 1.0);
+          Ynmd[nms] *= sqrt(2 * n + 1.0);
+        }
       }
     }
 
-    void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
+    static void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
       if (abs(z) < EPS) {
-	for (int i=0; i<nterms; i++) {
-	  hn[i] = 0;
-	}
-	return;
+        for (int i=0; i<nterms; i++) {
+          hn[i] = 0;
+        }
+        return;
       }
       complex_t zi = I * z;
       complex_t zinv = scale / z;
@@ -251,17 +260,17 @@ namespace exafmm {
       hn[1] = hn[0] * (zinv - I * scale);
       real_t scale2 = scale * scale;
       for (int i=2; i<nterms; i++) {
-	hn[i] = zinv * real_t(2 * i - 1.0) * hn[i-1] - scale2 * hn[i-2];
+        hn[i] = zinv * real_t(2 * i - 1.0) * hn[i-1] - scale2 * hn[i-2];
       }
     }
 
-    void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * hnd) {
+    static void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * hnd) {
       if (abs(z) < EPS) {
-	for (int i=0; i<nterms; i++) {
-	  hn[i] = 0;
-	  hnd[i] = 0;
-	}
-	return;
+        for (int i=0; i<nterms; i++) {
+          hn[i] = 0;
+          hnd[i] = 0;
+        }
+        return;
       }
       complex_t zi = I * z;
       complex_t zinv = real_t(1.0) / z;
@@ -270,25 +279,25 @@ namespace exafmm {
       hnd[0] = -hn[1] / scale;
       hnd[1] = -zinv * real_t(2.0) * hn[1] + scale * hn[0];
       for (int i=2; i<nterms; i++) {
-	hn[i] = (zinv * real_t(2 * i - 1.0) * hn[i-1] - scale * hn[i-2]) * scale;
-	hnd[i] = -zinv * real_t(i + 1.0) * hn[i] + scale * hn[i-1];
+        hn[i] = (zinv * real_t(2 * i - 1.0) * hn[i-1] - scale * hn[i-2]) * scale;
+        hnd[i] = -zinv * real_t(i + 1.0) * hn[i] + scale * hn[i-1];
       }
     }
 
-    void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
+    static void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
       int iscale[P+1];
       if (abs(z) < EPS) {
-	jn[0] = 1;
-	for (int i=1; i<nterms; i++) {
-	  jn[i] = 0;
-	}
-	if (ifder) {
-	  for (int i=0; i<nterms; i++) {
-	    jnd[i] = 0;
-	  }
-	  jnd[1] = 1.0 / (3 * scale);
-	}
-	return;
+        jn[0] = 1;
+        for (int i=1; i<nterms; i++) {
+          jn[i] = 0;
+        }
+        if (ifder) {
+          for (int i=0; i<nterms; i++) {
+            jnd[i] = 0;
+          }
+          jnd[1] = 1.0 / (3 * scale);
+        }
+        return;
       }
       complex_t zinv = real_t(1.0) / z;
       jn[nterms-2] = 0;
@@ -298,48 +307,67 @@ namespace exafmm {
       jn[nterms] = ztmp;
       int ntop = nterms;
       for (int i=0; i<ntop; i++) {
-	iscale[i] = 0;
+        iscale[i] = 0;
       }
       jn[ntop] = 0;
       jn[ntop-1] = 1;
       for (int i=ntop-1; i>0; i--) {
-	coef = 2 * i + 1;
-	ztmp = coef * zinv * jn[i] - jn[i+1];
-	jn[i-1] = ztmp;
-	if (abs(ztmp) > 1.0/EPS) {
-	  jn[i] *= EPS;
-	  jn[i-1] *= EPS;
-	  iscale[i] = 1;
-	}
+        coef = 2 * i + 1;
+        ztmp = coef * zinv * jn[i] - jn[i+1];
+        jn[i-1] = ztmp;
+        if (abs(ztmp) > 1.0/EPS) {
+          jn[i] *= EPS;
+          jn[i-1] *= EPS;
+          iscale[i] = 1;
+        }
       }
       real_t scalinv = 1.0 / scale;
       coef = 1;
       for (int i=1; i<ntop; i++) {
-	coef *= scalinv;
-	if(iscale[i-1] == 1) coef *= EPS;
-	jn[i] *= coef;
+        coef *= scalinv;
+        if(iscale[i-1] == 1) coef *= EPS;
+        jn[i] *= coef;
       }
       complex_t fj0 = sin(z) * zinv;
       complex_t fj1 = fj0 * zinv - cos(z) * zinv;
       if (abs(fj1) > abs(fj0)) {
-	ztmp = fj1 / (jn[1] * scale);
+        ztmp = fj1 / (jn[1] * scale);
       } else {
-	ztmp = fj0 / jn[0];
+        ztmp = fj0 / jn[0];
       }
       for (int i=0; i<nterms; i++) {
-	jn[i] *= ztmp;
+        jn[i] *= ztmp;
       }
       if (ifder) {
-	jn[nterms] *= ztmp;
-	jnd[0] = -jn[1] * scale;
-	for (int i=1; i<nterms; i++) {
-	  coef = i / (2 * i + 1.0);
-	  jnd[i] = coef * scalinv * jn[i-1] - (1 - coef) * scale * jn[i+1];
-	}
+        jn[nterms] *= ztmp;
+        jnd[0] = -jn[1] * scale;
+        for (int i=1; i<nterms; i++) {
+          coef = i / (2 * i + 1.0);
+          jnd[i] = coef * scalinv * jn[i-1] - (1 - coef) * scale * jn[i+1];
+        }
       }
     }
 
-    void setup() {
+  public:
+    HelmholtzSphericalCPU() {
+      xquad = new real_t [P];
+      xquad2 = new real_t [2*P];
+      wquad = new real_t [P];
+      wquad2 = new real_t [2*P];
+      Anm1 = new real_t [(P+1)*(P+2)/2];
+      Anm2 = new real_t [(P+1)*(P+2)/2];
+    }
+
+    ~HelmholtzSphericalCPU() {
+      xquad = new real_t [P];
+      xquad2 = new real_t [2*P];
+      wquad = new real_t [P];
+      wquad2 = new real_t [2*P];
+      Anm1 = new real_t [(P+1)*(P+2)/2];
+      Anm2 = new real_t [(P+1)*(P+2)/2];
+    }
+
+    static void setup() {
       nquad = fmax(6, P);
       legendre(nquad, xquad, wquad);
       nquad2 = fmax(6, 2*P);
@@ -347,7 +375,7 @@ namespace exafmm {
       getAnm();
     }
 
-    void P2M(C_iter C) {
+    static void P2M(C_iter C) {
       real_t Ynm[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       vecP Mnm = complex_t(0,0);
@@ -384,7 +412,7 @@ namespace exafmm {
       C->M += Mnm * I * wavek;
     }
 
-    void M2M(C_iter Ci, C_iter C0) {
+    static void M2M(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2];
       complex_t phitemp[2*P], hn[P], ephi[2*P];
       vecP Mnm = complex_t(0,0);
@@ -464,7 +492,7 @@ namespace exafmm {
       }
     }
 
-    void M2L(C_iter Ci, C_iter Cj, bool mutual) {
+    static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
       assert(mutual == false);
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
@@ -588,7 +616,7 @@ namespace exafmm {
       Ci->L += Lnm;
     }
 
-    void L2L(C_iter Ci, C_iter C0) {
+    static void L2L(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t jn[P+1], jnd[P+1], ephi[2*P];
@@ -706,7 +734,7 @@ namespace exafmm {
       Ci->L += Lnm;
     }
 
-    void L2P(C_iter C) {
+    static void L2P(C_iter C) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       real_t kscale = C->SCALE * abs(wavek);
@@ -776,5 +804,7 @@ namespace exafmm {
 	B->TRG += TRG;
       }
     }
-  }
+  };
 }
+
+#endif

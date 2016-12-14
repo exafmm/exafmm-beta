@@ -21,8 +21,9 @@ const int LTERM = (EXAFMM_PP+1)*(EXAFMM_PP+2)*(EXAFMM_PP+3)/6;
 #define EXAFMM_MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 namespace exafmm {
-  class Kernel {
+  class UniformKernel {
   public:
+    static vec3 Xperiodic;                                      //!< Periodic coordinate offset
     int maxLevel;
     int maxGlobLevel;
     int numBodies;
@@ -307,8 +308,8 @@ namespace exafmm {
     }
 
   public:
-    Kernel() : MPISIZE(1), MPIRANK(0) {}
-    ~Kernel() {}
+    UniformKernel() : MPISIZE(1), MPIRANK(0) {}
+    ~UniformKernel() {}
 
     inline int getKey(int *ix, int level, bool levelOffset=true) const {
       int id = 0;

@@ -1,15 +1,21 @@
-#include "kernel.h"
+#ifndef helmholtz_p2p_cpu
+#define helmholtz_p2p_cpu
+#include "types.h"
+#if EXAFMM_USE_SIMD
 #include "simdvec.h"
+#endif
 
 namespace exafmm {
-  namespace kernel {
-    real_t eps2;
-    complex_t wavek;
-    vec3 Xperiodic;
+  template<typename vecP, Basis basis>
+  class HelmholtzP2PCPU : public KernelBase {
+  public:
+    static const Equation equation = Helmholtz;                 //!< Set equation to Helmholtz
+    typedef std::vector<Body<Helmholtz> > Bodies;               //!< Vector of bodies for Helmholtz
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef std::vector<Cell<B_iter,vecP,Helmholtz,basis> > Cells;//!< Vector of cells for Helmholtz
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
 
-    const complex_t I(0.,1.);
-
-    void P2P(C_iter Ci, C_iter Cj, bool mutual) {
+    static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
       B_iter Bi = Ci->BODY;
@@ -32,11 +38,11 @@ namespace exafmm {
 	ksimdvec az_r = zero;
 	ksimdvec az_i = zero;
 
-	simdvec xi = SIMD<simdvec,0,NSIMD>::setBody(Bi,i);
-	simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(Bi,i);
-	simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(Bi,i);
-	simdvec mi_r = SIMD<simdvec,4,NSIMD>::setBody(Bi,i);
-	simdvec mi_i = SIMD<simdvec,5,NSIMD>::setBody(Bi,i);
+	simdvec xi = SIMD<simdvec,B_iter,0,NSIMD>::setBody(Bi,i);
+	simdvec yi = SIMD<simdvec,B_iter,1,NSIMD>::setBody(Bi,i);
+	simdvec zi = SIMD<simdvec,B_iter,2,NSIMD>::setBody(Bi,i);
+	simdvec mi_r = SIMD<simdvec,B_iter,4,NSIMD>::setBody(Bi,i);
+	simdvec mi_i = SIMD<simdvec,B_iter,5,NSIMD>::setBody(Bi,i);
 
 	simdvec dx = Xperiodic[0];
 	xi -= dx;
@@ -151,7 +157,7 @@ namespace exafmm {
       }
     }
 
-    void P2P(C_iter C) {
+    static void P2P(C_iter C) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
       B_iter B = C->BODY;
@@ -172,12 +178,12 @@ namespace exafmm {
 	ksimdvec az_r = zero;
 	ksimdvec az_i = zero;
 
-	simdvec index = SIMD<simdvec,0,NSIMD>::setIndex(i);
-	simdvec xi = SIMD<simdvec,0,NSIMD>::setBody(B,i);
-	simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(B,i);
-	simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(B,i);
-	simdvec mi_r = SIMD<simdvec,4,NSIMD>::setBody(B,i);
-	simdvec mi_i = SIMD<simdvec,5,NSIMD>::setBody(B,i);
+	simdvec index = SIMD<simdvec,B_iter,0,NSIMD>::setIndex(i);
+	simdvec xi = SIMD<simdvec,B_iter,0,NSIMD>::setBody(B,i);
+	simdvec yi = SIMD<simdvec,B_iter,1,NSIMD>::setBody(B,i);
+	simdvec zi = SIMD<simdvec,B_iter,2,NSIMD>::setBody(B,i);
+	simdvec mi_r = SIMD<simdvec,B_iter,4,NSIMD>::setBody(B,i);
+	simdvec mi_i = SIMD<simdvec,B_iter,5,NSIMD>::setBody(B,i);
 	for (int j=i+1; j<n; j++) {
 	  simdvec dx = B[j].X[0];
 	  dx -= xi;
@@ -281,5 +287,12 @@ namespace exafmm {
 	B[i].TRG[3] -= complex_t(az_r, az_i);
       }
     }
-  }
+
+    static void normalize(Bodies & bodies) {
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+	B->TRG /= B->SRC;
+      }
+    }
+  };
 }
+#endif

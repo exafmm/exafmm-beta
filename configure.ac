@@ -1,4 +1,5 @@
-AC_INIT([exaFMM], [1.0.1])
+# https://www.gnu.org/software/autoconf-archive/The-Macros.html#The-Macros
+AC_INIT([exaFMM], [2.0])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_FILES([Makefile examples/Makefile wrappers/Makefile uniform/Makefile hss/Makefile])
 AC_CONFIG_HEADER(config.h)
@@ -7,6 +8,8 @@ AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AM_MAINTAINER_MODE
 AC_LANG([C++])
+${CXXFLAGS=""}
+${FCFLAGS=""}
 AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
 AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran])
 AC_PROG_RANLIB
@@ -16,10 +19,7 @@ AM_PROG_AR
 AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_openmp=$enableval, enable_openmp=no)
 if test "$enable_openmp" = "yes"; then
    AC_DEFINE(EXAFMM_HAVE_OPENMP,1,[Use OpenMP])
-   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
-   AC_LANG_PUSH([Fortran])
-   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
-   AC_LANG_POP([Fortran])
+   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP for C++])])
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_OPENMP, test "$enable_openmp" = "yes")
 
@@ -98,6 +98,18 @@ fi
 AM_CONDITIONAL(EXAFMM_HAVE_AVX, test "$have_avx" = "yes")
 AC_SUBST(AVX_CXXFLAGS)
 
+# AVX2
+AC_ARG_ENABLE(avx2, [AC_HELP_STRING([--enable-avx2],[enable AVX2 optimizations])], have_avx2=$enableval, have_avx2=no)
+if test "$have_avx2" = "yes"; then
+   AC_DEFINE(EXAFMM_HAVE_AVX2,1,[Define to enable AVX2 optimizations.])
+   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+      AC_MSG_ERROR([AVX2 requires single or double precision])
+   fi
+   AVX2_CXXFLAGS=-mavx2
+fi
+AM_CONDITIONAL(EXAFMM_HAVE_AVX2, test "$have_avx2" = "yes")
+AC_SUBST(AVX2_CXXFLAGS)
+
 # MIC
 AC_ARG_ENABLE(mic, [AC_HELP_STRING([--enable-mic],[enable MIC optimizations])], have_mic=$enableval, have_mic=no)
 if test "$have_mic" = "yes"; then
@@ -109,6 +121,19 @@ if test "$have_mic" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_MIC, test "$have_mic" = "yes")
 AC_SUBST(MIC_CXXFLAGS)
+
+# AVX512
+AC_ARG_ENABLE(avx512, [AC_HELP_STRING([--enable-avx512],[enable AVX512 optimizations])], have_avx512=$enableval, have_avx512=no)
+if test "$have_avx512" = "yes"; then
+   AC_DEFINE(EXAFMM_HAVE_AVX512,1,[Define to enable AVX512 optimizations.])
+   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+      AC_MSG_ERROR([AVX512 requires single or double precision])
+   fi
+   AVX512_CXXFLAGS=-xMIC-AVX512
+fi
+AM_CONDITIONAL(EXAFMM_HAVE_AVX512, test "$have_avx512" = "yes")
+AC_SUBST(AVX512_CXXFLAGS)
+
 
 # Neon
 AC_ARG_ENABLE(neon, [AC_HELP_STRING([--enable-neon],[enable ARM NEON optimizations])], have_neon=$enableval, have_n\
@@ -193,12 +218,17 @@ if test "$enable_debug" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 
-AC_LANG_PUSH([C++])
 AX_COMPILER_VENDOR()
-AC_LANG_POP([C++])
-AC_MSG_NOTICE([CXX    : $CXX])
-AC_MSG_NOTICE([FC     : $FC])
-AC_MSG_NOTICE([Vendor : $ax_cv_cxx_compiler_vendor])
+AX_COMPILER_FLAGS()
+AC_LANG_PUSH([Fortran])
+AX_COMPILER_FLAGS()
+AC_LANG_POP([Fortran])
+
+AC_MSG_NOTICE([Vendor   : $ax_cv_cxx_compiler_vendor])
+AC_MSG_NOTICE([CXX      : $CXX])
+AC_MSG_NOTICE([CXXFLAGS : $COMPILER_CXXFLAGS])
+AC_MSG_NOTICE([FC       : $FC])
+AC_MSG_NOTICE([FCFLAGS  : $COMPILER_FCFLAGS])
 
 AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$ax_cv_cxx_compiler_vendor" = "ibm")
 AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$ax_cv_cxx_compiler_vendor" = "fujitsu")

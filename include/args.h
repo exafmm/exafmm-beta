@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <stdint.h>
+#include "types.h"
 #ifndef _SX
 #include <getopt.h>
 #endif
@@ -15,20 +16,23 @@ namespace exafmm {
 #ifndef _SX
   static struct option long_options[] = {
     {"accuracy",     no_argument,       0, 'a'},
+    {"basis",        required_argument, 0, 'b'},
     {"ncrit",        required_argument, 0, 'c'},
     {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
     {"dual",         no_argument,       0, 'D'},
+    {"equation",     required_argument, 0, 'e'},
     {"graft",        no_argument,       0, 'g'},
     {"getMatrix",    no_argument,       0, 'G'},
     {"help",         no_argument,       0, 'h'},
     {"images",       required_argument, 0, 'i'},
     {"IneJ",         no_argument,       0, 'j'},
     {"mutual",       no_argument,       0, 'm'},
+    {"mass",         no_argument,       0, 'M'},
     {"numBodies",    required_argument, 0, 'n'},
     {"useRopt",      no_argument,       0, 'o'},
     {"path",         required_argument, 0, 'p'},
-    {"PP",           required_argument, 0, 'P'},
+    {"P",            required_argument, 0, 'P'},
     {"repeat",       required_argument, 0, 'r'},
     {"nspawn",       required_argument, 0, 's'},
     {"theta",        required_argument, 0, 't'},
@@ -43,19 +47,22 @@ namespace exafmm {
   class Args {
   public:
     int accuracy;
+    const char * basis;
     int ncrit;
     double cutoff;
     const char * distribution;
     int dual;
+    const char * equation;
     int graft;
     int getMatrix;
     int images;
     int IneJ;
     int mutual;
+    int mass;
     int numBodies;
     int useRopt;
     const char * path;
-    int PP;
+    int P;
     int repeat;
     int nspawn;
     double theta;
@@ -68,44 +75,50 @@ namespace exafmm {
     void usage(char * name) {
       fprintf(stderr,
 	      "Usage: %s [options]\n"
-	      "Long option (short option)     : Description (Default value)\n"
-	      " --accuracy (-a)               : Regression for accuracy only (%d)\n"
-	      " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
-	      " --cutoff (-C)                 : Cutoff distance of interaction (%f)\n"
-	      " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
-	      " --dual (-D)                   : Use dual tree traversal (%d)\n"
-	      " --graft (-g)                  : Graft remote trees to global tree (%d)\n"
-	      " --getMatrix (-G)              : Write G matrix to file (%d)\n"
-	      " --help (-h)                   : Show this help document\n"
-	      " --images (-i)                 : Number of periodic image levels (%d)\n"
-	      " --IneJ (-j)                   : Use different sources & targets (%d)\n"
-	      " --mutual (-m)                 : Use mutual interaction (%d)\n"
-	      " --numBodies (-n)              : Number of bodies (%d)\n"
-	      " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
-	      " --path (-p)                   : Path to save files (%s)\n"
-	      " --P (-P) not working          : Order of expansion (%d)\n"
-	      " --repeat (-r)                 : Number of iteration loops (%d)\n"
-	      " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
-	      " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
-	      " --threads (-T)                : Number of threads (%d)\n"
-	      " --verbose (-v)                : Print information to screen (%d)\n"
-	      " --write (-w)                  : Write timings to file (%d)\n"
-	      " --useRmax (-x)                : Use maximum distance for MAC (%d)\n",
+	      "Long option (short option)       : Description (Default value)\n"
+	      " --accuracy (-a)                 : Regression for accuracy only (%d)\n"
+	      " --basis (-b) [c/s]              : Cartesian, Spherical (%s)\n"
+	      " --ncrit (-c)                    : Number of bodies per leaf cell (%d)\n"
+	      " --cutoff (-C)                   : Cutoff distance of interaction (%f)\n"
+	      " --distribution (-d) [c/l/o/p/s] : lattice, cube, sphere, octant, plummer (%s)\n"
+	      " --dual (-D)                     : Use dual tree traversal (%d)\n"
+	      " --equation (-e) [l/h/b]         : Laplace, Helmholtz, BiotSavart (%s)\n"
+	      " --graft (-g)                    : Graft remote trees to global tree (%d)\n"
+	      " --getMatrix (-G)                : Write G matrix to file (%d)\n"
+	      " --help (-h)                     : Show this help document\n"
+	      " --images (-i)                   : Number of periodic image levels (%d)\n"
+	      " --IneJ (-j)                     : Use different sources & targets (%d)\n"
+	      " --mutual (-m)                   : Use mutual interaction (%d)\n"
+	      " --mass (-M)                     : Use mass (all positive charges) (%d)\n"
+	      " --numBodies (-n)                : Number of bodies (%d)\n"
+	      " --useRopt (-o)                  : Use error optimized theta for MAC (%d)\n"
+	      " --path (-p)                     : Path to save files (%s)\n"
+	      " --P (-P) not working            : Order of expansion (%d)\n"
+	      " --repeat (-r)                   : Number of iteration loops (%d)\n"
+	      " --nspawn (-s)                   : Threshold for stopping task creation during recursion (%d)\n"
+	      " --theta (-t)                    : Multipole acceptance criterion (%f)\n"
+	      " --threads (-T)                  : Number of threads (%d)\n"
+	      " --verbose (-v)                  : Print information to screen (%d)\n"
+	      " --write (-w)                    : Write timings to file (%d)\n"
+	      " --useRmax (-x)                  : Use maximum distance for MAC (%d)\n",
 	      name,
               accuracy,
+              basis,
 	      ncrit,
 	      cutoff,
 	      distribution,
 	      dual,
+              equation,
 	      graft,
 	      getMatrix,
 	      images,
 	      IneJ,
 	      mutual,
+	      mass,
 	      numBodies,
 	      useRopt,
               path,
-	      PP,
+	      P,
 	      repeat,
 	      nspawn,
 	      theta,
@@ -115,7 +128,20 @@ namespace exafmm {
 	      useRmax);
     }
 
-    const char * parse(const char * arg) {
+    const char * parseBasis(const char * arg) {
+      switch (arg[0]) {
+      case 'c':
+	return "Cartesian";
+      case 's':
+	return "Spherical";
+      default:
+	fprintf(stderr, "invalid basis %s\n", arg);
+	abort();
+      }
+      return "";
+    }
+
+    const char * parseDistribution(const char * arg) {
       switch (arg[0]) {
       case 'c':
 	return "cube";
@@ -132,6 +158,38 @@ namespace exafmm {
 	abort();
       }
       return "";
+    }
+
+    const char * parseEquation(const char * arg) {
+      switch (arg[0]) {
+      case 'l':
+	return "Laplace";
+      case 'h':
+	return "Helmholtz";
+      case 'b':
+	return "BiotSavart";
+      default:
+	fprintf(stderr, "invalid distribution %s\n", arg);
+	abort();
+      }
+      return "";
+    }
+
+    uint64_t getBasisNum(const char * _basis) {
+      switch (_basis[0]) {
+      case 'C':
+        return 0;
+      case 'S':
+        return 1;
+      case 'P':
+        return 2;
+      case 'E':
+        return 3;
+      default:
+        fprintf(stderr, "invalid basis %s\n", _basis);
+        abort();
+      }
+      return 0;
     }
 
     uint64_t getDistNum(const char * _distribution) {
@@ -155,42 +213,36 @@ namespace exafmm {
       return 0;
     }
 
-    uint64_t getKernelNum() {
-      uint64_t key = 0;
-#if EXAFMM_LAPLACE
-      key |= 0;
-#elif EXAFMM_HELMHOLTZ
-      key |= 1;
-#elif EXAFMM_STOKES
-      key |= 2;
-#elif EXAFMM_BIOTSAVART
-      key |= 3;
-#endif
-#if EXAFMM_CARTESIAN
-      key |= 0 << 3;
-#elif EXAFMM_SPHERICAL
-      key |= 1 << 3;
-#elif EXAFMM_PLANEWAVE
-      key |= 2 << 3;
-#elif EXAFMM_EQUIVALENT
-      key |= 3 << 3;
-#endif
-      return key;
+    uint64_t getEqNum(const char * _equation) {
+      switch (_equation[0]) {
+      case 'L':
+        return 0;
+      case 'H':
+        return 1;
+      case 'S':
+        return 2;
+      case 'B':
+        return 3;
+      default:
+        fprintf(stderr, "invalid equation %s\n", _equation);
+        abort();
+      }
+      return 0;
     }
 
     uint64_t getConfigNum() {
-      uint64_t key = 0;                                         // Accuracy     : Time
+      uint64_t key = 0;
 #if EXAFMM_SINGLE
-      key |= 1;                                                 // dependent    : dependent
+      key |= 1;
 #endif
 #if EXAFMM_USE_SIMD
-      key |= 2;                                                 // dependent    : dependent
+      key |= 2;
 #endif
 #if EXAFMM_USE_KAHAN
-      key |= 4;                                                 // dependent    : dependent
+      key |= 4;
 #endif
 #if EXAFMM_WITH_TBB
-      key |= 0 << 3;                                            // independent  : independent
+      key |= 0 << 3;
 #elif EXAFMM_WITH_MTHREAD
       key |= 1 << 3;
 #elif EXAFMM_WITH_CILK
@@ -204,19 +256,22 @@ namespace exafmm {
   public:
     Args(int argc=0, char ** argv=NULL) :
       accuracy(0),
+      basis("Spherical"),
       ncrit(64),
       cutoff(.0),
       distribution("cube"),
       dual(0),
+      equation("Laplace"),
       graft(0),
       getMatrix(0),
       images(0),
       IneJ(0),
       mutual(0),
+      mass(0),
       numBodies(1000000),
       useRopt(0),
       path("./"),
-      PP(4),
+      P(Pmax),
       repeat(1),
       nspawn(5000),
       theta(.4),
@@ -227,15 +282,18 @@ namespace exafmm {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
-	int c = getopt(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx");
+	int c = getopt(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx");
 #else
 	int option_index;
-	int c = getopt_long(argc, argv, "ac:d:DgGhi:jmn:op:P:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx", long_options, &option_index);
 #endif
 	if (c == -1) break;
 	switch (c) {
 	case 'a':
 	  accuracy = 1;
+	  break;
+	case 'b':
+	  basis = parseBasis(optarg);
 	  break;
 	case 'c':
 	  ncrit = atoi(optarg);
@@ -244,10 +302,13 @@ namespace exafmm {
 	  cutoff = atof(optarg);
 	  break;
 	case 'd':
-	  distribution = parse(optarg);
+	  distribution = parseDistribution(optarg);
 	  break;
 	case 'D':
 	  dual = 1;
+	  break;
+	case 'e':
+	  equation = parseEquation(optarg);
 	  break;
 	case 'g':
 	  graft = 1;
@@ -267,6 +328,9 @@ namespace exafmm {
 	case 'm':
 	  mutual = 1;
 	  break;
+	case 'M':
+	  mass = 1;
+	  break;
 	case 'n':
 	  numBodies = atoi(optarg);
 	  break;
@@ -277,7 +341,7 @@ namespace exafmm {
           path = optarg;
           break;
 	case 'P':
-	  PP = atoi(optarg);
+	  P = atoi(optarg);
 	  break;
 	case 'r':
 	  repeat = atoi(optarg);
@@ -308,32 +372,35 @@ namespace exafmm {
     }
 
     uint64_t getKey(int mpisize=1) {
-      uint64_t key = 0;                                         // Accuracy     : Time
-      key |= uint64_t(round(log(ncrit)/log(2)));                // 64           : independent
-      key |= getDistNum(distribution) << 4;                     // plummer      : independent
-      key |= dual << 7;                                         // independent  : independent
-      key |= graft << 8;                                        // independent  : on
-      key |= images << 9;                                       // independent  : independent
-      key |= IneJ << 11;                                        // independent  : independent
-      key |= mutual << 12;                                      // independent  : on
-      key |= uint64_t(round(log(numBodies)/log(10))) << 13;     // independent  : independent
-      key |= useRopt << 17;                                     // independent  : independent
-      key |= PP << 18;                                          // dependent    : dependent 
-      key |= uint64_t(round(log(nspawn)/log(10))) << 24;        // 5000         : independent
-      key |= uint64_t(theta*14) << 27;                          // lower bound  : upper bound
-      key |= uint64_t(round(log(threads)/log(2))) << 30;        // upper bound  : upper bound
-      key |= uint64_t(useRmax) << 33;                           // independent  : independent
-      key |= getKernelNum() << 34;                              // dependent    : Laplace
-      key |= getConfigNum() << 40;                              // see inside   : see inside
-      key |= uint64_t(round(log(mpisize)/log(2))) << 45;        // upper bound  : upper bound
-      assert( uint64_t(round(log(mpisize)/log(2))) < 18 );      // Check for overflow 
+      uint64_t key = 0;
+      key |= uint64_t(round(log(ncrit)/log(2)));
+      key |= getBasisNum(basis) << 4;
+      key |= getDistNum(distribution) << 7;
+      key |= dual << 10;
+      key |= getEqNum(equation) << 11;
+      key |= graft << 14;
+      key |= images << 15;
+      key |= IneJ << 17;
+      key |= mutual << 18;
+      key |= uint64_t(round(log(numBodies)/log(10))) << 19;
+      key |= useRopt << 23;
+      key |= P << 24;
+      key |= uint64_t(round(log(nspawn)/log(10))) << 30;
+      key |= uint64_t(theta*14) << 33;
+      key |= uint64_t(round(log(threads)/log(2))) << 36;
+      key |= uint64_t(useRmax) << 39;
+      key |= getConfigNum() << 40;
+      key |= uint64_t(round(log(mpisize)/log(2))) << 45;
+      assert( uint64_t(round(log(mpisize)/log(2))) < 18 );
       return key;
     }
 
-    void print(int stringLength, int _PP) {
+    void print(int stringLength) {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
 		  << "accuracy" << " : " << accuracy << std::endl
+		  << std::setw(stringLength)
+		  << "basis" << " : " << basis << std::endl
 		  << std::setw(stringLength)
 		  << "ncrit" << " : " << ncrit << std::endl
 		  << std::setw(stringLength)
@@ -342,6 +409,8 @@ namespace exafmm {
 		  << "distribution" << " : " << distribution << std::endl
 		  << std::setw(stringLength)
 		  << "dual" << " : " << dual << std::endl
+		  << std::setw(stringLength)
+		  << "equation" << " : " << equation << std::endl
 		  << std::setw(stringLength)
 		  << "graft" << " : " << graft << std::endl
 		  << std::setw(stringLength)
@@ -353,13 +422,15 @@ namespace exafmm {
 		  << std::setw(stringLength)
 		  << "mutual" << " : " << mutual << std::endl
 		  << std::setw(stringLength)
+		  << "mass" << " : " << mass << std::endl
+		  << std::setw(stringLength)
 		  << "numBodies" << " : " << numBodies << std::endl
 		  << std::setw(stringLength)
 		  << "useRopt" << " : " << useRopt << std::endl
 		  << std::setw(stringLength)
 		  << "path" << " : " << path << std::endl
 		  << std::setw(stringLength)
-		  << "P" << " : " << _PP << std::endl
+		  << "P" << " : " << P << std::endl
 		  << std::setw(stringLength)
 		  << "repeat" << " : " << repeat << std::endl
 		  << std::setw(stringLength)

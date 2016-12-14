@@ -11,6 +11,9 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
+#include "laplace_cartesian_cpu.h"
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *
@@ -23,33 +26,38 @@ void elements(void *, int *, int *, double *, int *);
 double elemops = 0.0;
 
 int main(int argc, char ** argv) {
-  const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
+  typedef exafmm::LaplaceCartesianCPU<Pmax,0> Kernel; 
+  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
+  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
+  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
+
+  const real_t cycle = 2 * M_PI;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree localTree(args.ncrit, args.nspawn);
-  BuildTree globalTree(1, args.nspawn);
+  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
-  Dataset data;
-  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify;
+  Dataset<Kernel> data;
+  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
+  Traversal<Kernel> traversal(args.nspawn, args.images);
+  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  Verify<Kernel> verify;
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  kernel::eps2 = 0.0;
-  kernel::setup();
+  Kernel::setup();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, P);
+  args.print(logger::stringLength);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   buffer.reserve(bodies.size());
   for (int t=0; t<args.repeat; t++) {
@@ -430,7 +438,7 @@ void elements(void * obj, int *I, int *J, double *B, int *descB) {
       B_iter Bi=bodies->begin()+iii-1;
       B_iter Bj=jbodies->begin()+jjj-1;
       vec3 dX=Bi->X-Bj->X;
-      real_t R2=norm(dX)+kernel::eps2;
+      real_t R2=norm(dX)+Kernel::eps2;
       B[locr*(j-1)+(i-1)]=R2==0?0.0:1.0/sqrt(R2);
     }
   }

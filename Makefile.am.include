@@ -1,12 +1,12 @@
-### Base flags
-AM_CPPFLAGS = -I../include
+# Optimization flags
+AM_CPPFLAGS = -I../include -I../vectorclass -I../kernels
 if EXAFMM_HAVE_BG
 AM_CXXFLAGS = -qarch=qp -qtune=qp -O3 -qhot
 AM_FCFLAGS = -qarch=qp -qtune=qp -O3 -qhot
 else
 if EXAFMM_HAVE_FX
-AM_CXXFLAGS = -Kfast,openmp
-AM_FCFLAGS = -Kfast,openmp -f w
+AM_CXXFLAGS = -Kopenmp
+AM_FCFLAGS = -Kopenmp -f w
 else
 if EXAFMM_HAVE_SX
 AM_CXXFLAGS = -Caopt -Nacct -O nomsg -pi nomsg -pvctl nomsg
@@ -16,24 +16,24 @@ if EXAFMM_HAVE_CRAY
 AM_CXXFLAGS = -dynamic
 AM_FCFLAGS = -dynamic
 if EXAFMM_HAVE_GNU
-AM_CXXFLAGS += -ffast-math -funroll-loops -fabi-version=6
+AM_CXXFLAGS += -ffast-math -funroll-loops -fabi-version=6 -Wfatal-errors
 AM_FCFLAGS += -ffast-math -funroll-loops
 endif
 if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS += -ansi_alias -fabi-version=6
+AM_CXXFLAGS += -ansi_alias -fabi-version=6 -Wfatal-errors
 AM_FCFLAGS += -ansi_alias
 endif
 else
 if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS = -ansi_alias -fabi-version=6
+AM_CXXFLAGS = -ansi_alias -fabi-version=6 -Wfatal-errors
 AM_FCFLAGS = -ansi_alias
 else
 if EXAFMM_HAVE_CLANG
-AM_CXXFLAGS = -ffast-math -funroll-loops
+AM_CXXFLAGS = -ffast-math -funroll-loops -Wfatal-errors
 AM_FCFLAGS = -ffast-math -funroll-loops
 else
 if EXAFMM_HAVE_GNU
-AM_CXXFLAGS = -ffast-math -funroll-loops -fabi-version=6
+AM_CXXFLAGS = -ffast-math -funroll-loops -fabi-version=6 -Wfatal-errors
 AM_FCFLAGS = -ffast-math -funroll-loops
 else
 AM_CXXFLAGS =
@@ -46,11 +46,11 @@ endif
 endif
 endif
 
-### Thread libraries
+# Thread libraries
 if EXAFMM_HAVE_OPENMP
 AM_CPPFLAGS += -DEXAFMM_WITH_OPENMP
 AM_CXXFLAGS += $(OPENMP_CXXFLAGS)
-AM_FCFLAGS += $(OPENMP_FCFLAGS)
+AM_FCFLAGS += $(OPENMP_CXXFLAGS)
 endif
 if EXAFMM_WITH_TBB
 LIBS += -ltbb
@@ -62,25 +62,33 @@ if EXAFMM_WITH_MTHREAD
 LIBS += -lmyth-native
 endif
 
-### Floating point precision
+# Floating point precision
 if EXAFMM_SINGLE
 AM_CPPFLAGS += -DEXAFMM_SINGLE
 endif
 
-### SIMD flags
+# SIMD flags
 if EXAFMM_USE_SIMD
 AM_CPPFLAGS += -DEXAFMM_USE_SIMD
+if EXAFMM_HAVE_AVX512
+AM_CXXFLAGS += $(AVX512_CXXFLAGS) # Use AVX512 intrinsics
+else
 if EXAFMM_HAVE_MIC
 AM_CXXFLAGS += $(MIC_CXXFLAGS) # Use MIC intrinsics
+else
+if EXAFMM_HAVE_AVX2
+AM_CXXFLAGS += $(AVX2_CXXFLAGS) # Use AVX2 intrinsics
 else
 if EXAFMM_HAVE_AVX
 AM_CXXFLAGS += $(AVX_CXXFLAGS) # Use AVX intrinsics
 else
 if EXAFMM_HAVE_SSE3
 AM_CXXFLAGS += $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-else 
+else
 if EXAFMM_HAVE_NEON
 AM_CXXFLAGS += $(NEON_CXXFLAGS) # Use Neon intrinsics
+endif
+endif
 endif
 endif
 endif
@@ -129,22 +137,16 @@ if EXAFMM_COUNT_LIST
 AM_CPPFLAGS += -DEXAFMM_COUNT_LIST
 endif
 
+# Enable assert
 if EXAFMM_ASSERT
 else
 AM_CPPFLAGS += -DNDEBUG
 endif
 
+# Use all possible debugging flags
 if EXAFMM_DEBUG
-#AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
-AM_CXXFLAGS += -O0 -g -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
-AM_FCFLAGS += -O0 -g
-if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS += -traceback -ftrapuv -diag-disable remark
-AM_FCFLAGS += -traceback -ftrapuv -diag-disable remark -check all -debug all
-else
-AM_CXXFLAGS += -Wextra -Winit-self -ftrapv
-AM_FCFLAGS += -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code -ftrapv
-endif
+AM_CXXFLAGS += $(COMPILER_CXXFLAGS) -DEXAFMM_DEBUG
+AM_FCFLAGS += $(COMPILER_FCFLAGS) -DEXAFMM_DEBUG
 endif
 
 AM_MAKEFLAGS = -s

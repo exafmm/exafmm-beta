@@ -1,11 +1,7 @@
 #ifndef kahan_h
 #define kahan_h
 #include <iostream>
-#ifndef __CUDACC__
-#define __host__
-#define __device__
-#define __forceinline__
-#endif
+#include "macros.h"
 
 namespace exafmm {
   //! Operator overloading for Kahan summation

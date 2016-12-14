@@ -10,53 +10,54 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#if EXAFMM_MASS
-#error Turn off MASS for this test
-#endif
-#if EXAFMM_EXPANSION < 10
-#error Use P >=10 for this test
-#endif
+#include "laplace_spherical_cpu.h"
 using namespace exafmm;
+vec3 KernelBase::Xperiodic = 0;
+real_t KernelBase::eps2 = 0.0;
 
-int main(int argc, char ** argv) {
+template<typename Kernel>
+void fmm(Args args) {
+  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
+  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
+  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
+
   const int ksize = 11;
   const vec3 cycle = 2 * M_PI;
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = max(cycle) / 2;
-  Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree localTree(args.ncrit, args.nspawn);
-  BuildTree globalTree(1, args.nspawn);
+  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> globalTree(1, args.nspawn);
   Cells cells, jcells;
-  Dataset data;
-  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images, args.path);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify(args.path);
+  Dataset<Kernel> data;
+  Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
+  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
+  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
-  kernel::eps2 = 0.0;
+  Kernel::setup();
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
   logger::printTitle("Ewald Parameters");
-  args.print(logger::stringLength, P);
+  args.print(logger::stringLength);
   ewald.print(logger::stringLength);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X *= cycle / (2 * M_PI);
   }
   buffer.reserve(bodies.size());
-  //data.writeSources(bodies, baseMPI.mpirank);
   bool pass = true;
   bool isTime = false;
   for (int t=0; t<args.repeat; t++) {
@@ -207,5 +208,10 @@ int main(int argc, char ** argv) {
     }
     abort();
   }
+}
+
+int main(int argc, char ** argv) {
+  Args args(argc, argv);
+  fmm<LaplaceSphericalCPU<10> >(args);
   return 0;
 }

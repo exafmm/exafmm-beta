@@ -14,30 +14,40 @@
 #include "../uniform/parallelfmm.h"
 #endif
 using namespace exafmm;
+#include "laplace_cartesian_cpu.h"
+real_t KernelBase::eps2 = 0.0;
+vec3 KernelBase::Xperiodic = 0.0;
 
 int main(int argc, char ** argv) {
+  Args args(argc, argv);
+  args.ncrit = 32;
+  args.images = 1;
+  typedef LaplaceCartesianCPU<6,0> Kernel;
+  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
+  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
+  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
+  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
+
   const int ksize = 11;
   const vec3 cycle = 20 * M_PI;
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
-
-  Args args(argc, argv);
-  args.ncrit = 32;
-  args.images = 1;
   BaseMPI baseMPI;
-  BoundBox boundBox(args.nspawn);
-  BuildTree buildTree(args.ncrit, args.nspawn);
-  Dataset data;
-  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal traversal(args.nspawn, args.images, args.path);
-  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
+  BoundBox<Kernel> boundBox(args.nspawn);
+  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
+  Dataset<Kernel> data;
+  Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
-  TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
+  TreeMPI<Kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
+  Verify<Kernel> verify(args.path);
+  verify.verbose = args.verbose;
 
   args.numBodies /= FMM.MPISIZE;
   int numBodies = args.numBodies;
@@ -53,7 +63,7 @@ int main(int argc, char ** argv) {
   args.verbose &= FMM.MPIRANK == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, EXAFMM_PP);
+  args.print(logger::stringLength);
 
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
@@ -172,8 +182,6 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Total Direct");
     logger::resetTimer("Total Direct");
 #endif
-    Verify verify(args.path);
-    verify.verbose = args.verbose;
     double potSum = verify.getSumScalar(bodies);
     double potSum2 = verify.getSumScalar(bodies2);
     double accDif = verify.getDifVector(bodies, bodies2);

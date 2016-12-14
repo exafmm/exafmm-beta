@@ -5,9 +5,15 @@
 #include "types.h"
 
 namespace exafmm {
+  template<typename Kernel>
   class BuildTree {
-  private:
+    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
+    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
+    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
+    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
     typedef vec<8,int> ivec8;                                   //!< Vector of 8 integer types
+
+  private:
     //! Binary tree is used for counting number of bodies with a recursive approach
     struct BinaryTreeNode {
       ivec8            NBODY;                                   //!< Number of descendant bodies

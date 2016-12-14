@@ -1,11 +1,18 @@
 #ifndef partition_h
 #define partition_h
+#include <mpi.h>
 #include "logger.h"
 #include "sort.h"
 
 namespace exafmm {
   //! Handles all the partitioning of domains
+  template<typename Kernel>
   class Partition {
+    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
+    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
+    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
+    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
+
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
@@ -24,8 +31,6 @@ namespace exafmm {
     float * globalHist;                                         //!< Global body weight histogram
     Bounds * rankBounds;                                        //!< Bounds of each rank
     Bodies buffer;                                              //!< MPI communication buffer for bodies
-
-  private:
 
   public:
     //! Constructor
@@ -230,7 +235,7 @@ namespace exafmm {
       }                                                         // End loop over bodies
       logger::stopTimer("Partition");                           // Stop timer
       logger::startTimer("Sort");                               // Start timer
-      Sort sort;                                                // Instantiate sort class
+      Sort<Kernel> sort;                                        // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
       return local;
@@ -239,7 +244,7 @@ namespace exafmm {
     //! Send bodies back to where they came from
     void unpartition(Bodies & bodies) {
       logger::startTimer("Sort");                               // Start timer
-      Sort sort;                                                // Instantiate sort class
+      Sort<Kernel> sort;                                        // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
     }
