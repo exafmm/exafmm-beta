@@ -17,7 +17,8 @@ namespace exafmm {
     using typename LaplaceP2PCPU<vecP,Spherical>::C_iter;       //!< Iterator of cell vector
     using LaplaceP2PCPU<vecP,Spherical>::Xperiodic;
 
-    static void setup() {}
+    static void init() {}
+    static void finalize() {}
 
     static void P2M(C_iter C) {
       complex_t Ynm[P*P], YnmTheta[P*P];
@@ -97,7 +98,7 @@ namespace exafmm {
         }
       }
     }
-      
+
     static void L2L(C_iter Ci, C_iter C0) {
       complex_t Ynm[P*P], YnmTheta[P*P];
       C_iter Cj = C0 + Ci->IPARENT;

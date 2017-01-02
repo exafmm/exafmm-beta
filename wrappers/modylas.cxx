@@ -44,7 +44,7 @@ namespace exafmm {
     const int nspawn = 1000;
     const bool useRmax = true;
     const bool useRopt = false;
-    Kernel::setup();
+    Kernel::init();
 
     args = new Args;
     baseMPI = new BaseMPI;
@@ -82,6 +82,7 @@ namespace exafmm {
   }
 
   extern "C" void fmm_finalize_() {
+    Kernel::finalize();
     delete args;
     delete baseMPI;
     delete boundBox;
@@ -242,7 +243,7 @@ namespace exafmm {
         nlocal++;
       } else {
         icpumap[i] = 0;
-      } 
+      }
     }
     args->numBodies = nlocal;
     logger::printTitle("Ewald Parameters");
@@ -388,7 +389,7 @@ namespace exafmm {
           fz += dX[2] * invR3;
         }
         p[i] -= pp * q[i] * Celec;
-        f[3*i+0] += fx * q[i] * Celec; 
+        f[3*i+0] += fx * q[i] * Celec;
         f[3*i+1] += fy * q[i] * Celec;
         f[3*i+2] += fz * q[i] * Celec;
       } else {
@@ -573,7 +574,7 @@ namespace exafmm {
     }
     MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
     if (pass) {
-      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t-1 << std::endl; 
+      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t-1 << std::endl;
       t = -1;
     }
   }

@@ -43,7 +43,7 @@ namespace exafmm {
     const int nspawn = 1000;
     const bool useRmax = false;
     const bool useRopt = false;
-    Kernel::setup();
+    Kernel::init();
 
     args = new Args;
     baseMPI = new BaseMPI;
@@ -84,6 +84,7 @@ namespace exafmm {
   }
 
   extern "C" void FMM_Finalize() {
+    Kernel::finalize();
     delete args;
     delete baseMPI;
     delete boundBox;
@@ -479,7 +480,7 @@ namespace exafmm {
     }
     MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
     if (pass) {
-      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl;
       t = -1;
     }
   }

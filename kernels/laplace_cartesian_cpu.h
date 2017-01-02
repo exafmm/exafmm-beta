@@ -680,7 +680,8 @@ namespace exafmm {
     using typename LaplaceP2PCPU<vecP,Cartesian>::C_iter;       //!< Iterator of cell vector
     using LaplaceP2PCPU<vecP,Cartesian>::Xperiodic;
 
-    static void setup() {}
+    static void init() {}
+    static void finalize() {}
 
     static void P2M(C_iter C) {
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {

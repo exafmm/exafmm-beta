@@ -17,7 +17,8 @@ namespace exafmm {
     using typename BiotSavartP2PCPU<vecP,Spherical>::C_iter;    //!< Iterator of cell vector
     using BiotSavartP2PCPU<vecP,Spherical>::Xperiodic;
 
-    static void setup() {}
+    static void init() {}
+    static void finalize() {}
 
     static void P2M(C_iter C) {
       complex_t Ynm[P*P], YnmTheta[P*P];
@@ -59,7 +60,7 @@ namespace exafmm {
 	      }
 	      for (int m=k; m<=std::min(n,j+k-n); m++) {
 		int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-		int nm    = n * n + n - m;	
+		int nm    = n * n + n - m;
 		for (int d=0; d<3; d++) {
 		  M[d] += std::conj(Cj->M[3*jnkms+d]) * Ynm[nm] * real_t(oddOrEven(k+n+m));
 		}

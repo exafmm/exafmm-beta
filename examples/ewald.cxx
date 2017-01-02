@@ -45,7 +45,7 @@ void fmm(Args args) {
   Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
-  Kernel::setup();
+  Kernel::init();
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
@@ -181,10 +181,10 @@ void fmm(Args args) {
       }
       MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
       if (pass) {
-        if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+        if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl;
         if (args.accuracy) break;
         t = -1;
-        isTime = true;        
+        isTime = true;
       }
     } else {
       double totalFMMGlob;
@@ -208,6 +208,7 @@ void fmm(Args args) {
     }
     abort();
   }
+  Kernel::finalize();
 }
 
 int main(int argc, char ** argv) {

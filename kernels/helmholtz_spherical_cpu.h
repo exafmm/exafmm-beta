@@ -119,7 +119,7 @@ namespace exafmm {
           if (m > (1 - n)) {
             Rnm2[0][P+m] += sqrtCnm[n+m][1] * Rnm1[0][P+m-1];
           }
-          Rnm2[0][P+m] *= hsthta; 
+          Rnm2[0][P+m] *= hsthta;
           if (m > -n) {
             Rnm2[0][P+m] += Rnm1[0][P+m] * ctheta * sqrtCnm[n+m][0] * sqrtCnm[n-m][0];
           }
@@ -179,7 +179,7 @@ namespace exafmm {
           for (int mp=0; mp<=n; mp++) {
             Rnm1[mp][P+m] = Rnm2[mp][P+m];
           }
-        }    
+        }
       }
     }
 
@@ -349,30 +349,27 @@ namespace exafmm {
     }
 
   public:
-    HelmholtzSphericalCPU() {
+    static void init() {
       xquad = new real_t [P];
       xquad2 = new real_t [2*P];
       wquad = new real_t [P];
       wquad2 = new real_t [2*P];
       Anm1 = new real_t [(P+1)*(P+2)/2];
       Anm2 = new real_t [(P+1)*(P+2)/2];
-    }
-
-    ~HelmholtzSphericalCPU() {
-      xquad = new real_t [P];
-      xquad2 = new real_t [2*P];
-      wquad = new real_t [P];
-      wquad2 = new real_t [2*P];
-      Anm1 = new real_t [(P+1)*(P+2)/2];
-      Anm2 = new real_t [(P+1)*(P+2)/2];
-    }
-
-    static void setup() {
       nquad = fmax(6, P);
       legendre(nquad, xquad, wquad);
       nquad2 = fmax(6, 2*P);
       legendre(nquad2, xquad2, wquad2);
       getAnm();
+    }
+
+    static void finalize() {
+      delete[] xquad;
+      delete[] xquad2;
+      delete[] wquad;
+      delete[] wquad2;
+      delete[] Anm1;
+      delete[] Anm2;
     }
 
     static void P2M(C_iter C) {

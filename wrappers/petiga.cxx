@@ -28,7 +28,7 @@ namespace exafmm {
 
   vec3 KernelBase::Xperiodic = 0;
   real_t KernelBase::eps2 = 0.0;
-  complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  complex_t KernelBase::wavek = complex_t(0.,0.);
 
   vec3 cycles;
   Bodies buffer;
@@ -79,7 +79,8 @@ namespace exafmm {
     const bool useRopt = false;
     const bool verbose = false;
     KernelBase::eps2 = eps2;
-    Kernel::setup();
+    KernelBase::wavek = complex_t(kreal, kimag);
+    Kernel::init();
 
     args = new Args;
     baseMPI = new BaseMPI;
@@ -136,6 +137,7 @@ namespace exafmm {
   }
 
   extern "C" void FMM_Finalize() {
+    Kernel::finalize();
     delete args;
     delete baseMPI;
     delete boundBox;
@@ -387,7 +389,7 @@ namespace exafmm {
       B->X[1] = yj[i];
       B->X[2] = zj[i];
       B->SRC  = vj[i];
-    }  
+    }
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       if (args->verbose) std::cout << "Direct loop          : " << irank+1 << "/" << baseMPI->mpisize << std::endl;
       treeMPI->shiftBodies(jbodies);
@@ -411,7 +413,7 @@ namespace exafmm {
     }
     MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
     if (pass) {
-      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+      if (verify->verbose) std::cout << "passed accuracy regression at t: " << t << std::endl;
       t = -1;
     }
   }
