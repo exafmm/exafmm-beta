@@ -73,17 +73,12 @@ if test "$enable_mpi" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_MPI, test "$enable_mpi" = "yes")
 
-# SSE3
-AC_ARG_ENABLE(sse3, [AC_HELP_STRING([--enable-sse3],[enable SSE/SSE3 optimizations])], have_sse3=$enableval, have_s\
-se3=no)
-if test "$have_sse3" = "yes"; then
-   AC_DEFINE(EXAFMM_HAVE_SSE3,1,[Define to enable SSE/SSE3 optimizations.])
-   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-      AC_MSG_ERROR([SSE3 requires single or double precision])
-   fi
-   SSE3_CXXFLAGS=-msse3
+# SSE3 (always defined)
+AC_DEFINE(EXAFMM_HAVE_SSE3,1,[Define to enable SSE/SSE3 optimizations.])
+if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+   AC_MSG_ERROR([SSE3 requires single or double precision])
 fi
-AM_CONDITIONAL(EXAFMM_HAVE_SSE3, test "$have_sse3" = "yes")
+SSE3_CXXFLAGS=-msse3
 AC_SUBST(SSE3_CXXFLAGS)
 
 # AVX

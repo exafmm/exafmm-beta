@@ -642,8 +642,6 @@ AVX_CXXFLAGS
 EXAFMM_HAVE_AVX_FALSE
 EXAFMM_HAVE_AVX_TRUE
 SSE3_CXXFLAGS
-EXAFMM_HAVE_SSE3_FALSE
-EXAFMM_HAVE_SSE3_TRUE
 EXAFMM_HAVE_MPI_FALSE
 EXAFMM_HAVE_MPI_TRUE
 MPIRUN
@@ -776,7 +774,6 @@ with_strumpack
 enable_single
 enable_float
 enable_mpi
-enable_sse3
 enable_avx
 enable_avx2
 enable_mic
@@ -1435,7 +1432,6 @@ Optional Features:
   --enable-single         compile exaFMM in single precision
   --enable-float          synonym for --enable-single
   --enable-mpi            compile exaFMM MPI library
-  --enable-sse3           enable SSE/SSE3 optimizations
   --enable-avx            enable AVX optimizations
   --enable-avx2           enable AVX2 optimizations
   --enable-mic            enable MIC optimizations
@@ -5310,32 +5306,14 @@ else
 fi
 
 
-# SSE3
-# Check whether --enable-sse3 was given.
-if test "${enable_sse3+set}" = set; then :
-  enableval=$enable_sse3; have_sse3=$enableval
-else
-  have_s\
-se3=no
-fi
-
-if test "$have_sse3" = "yes"; then
+# SSE3 (always defined)
 
 $as_echo "#define EXAFMM_HAVE_SSE3 1" >>confdefs.h
 
-   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-      as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
-   fi
-   SSE3_CXXFLAGS=-msse3
+if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+   as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
 fi
- if test "$have_sse3" = "yes"; then
-  EXAFMM_HAVE_SSE3_TRUE=
-  EXAFMM_HAVE_SSE3_FALSE='#'
-else
-  EXAFMM_HAVE_SSE3_TRUE='#'
-  EXAFMM_HAVE_SSE3_FALSE=
-fi
-
+SSE3_CXXFLAGS=-msse3
 
 
 # AVX
@@ -6663,10 +6641,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_MPI_TRUE}" && test -z "${EXAFMM_HAVE_MPI_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_HAVE_MPI\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_SSE3_TRUE}" && test -z "${EXAFMM_HAVE_SSE3_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_SSE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_AVX_TRUE}" && test -z "${EXAFMM_HAVE_AVX_FALSE}"; then

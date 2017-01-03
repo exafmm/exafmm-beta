@@ -70,6 +70,9 @@ endif
 # SIMD flags
 if EXAFMM_USE_SIMD
 AM_CPPFLAGS += -DEXAFMM_USE_SIMD
+if EXAFMM_HAVE_NEON
+AM_CXXFLAGS += $(NEON_CXXFLAGS) # Use Neon intrinsics
+else
 if EXAFMM_HAVE_AVX512
 AM_CXXFLAGS += $(AVX512_CXXFLAGS) # Use AVX512 intrinsics
 else
@@ -82,12 +85,7 @@ else
 if EXAFMM_HAVE_AVX
 AM_CXXFLAGS += $(AVX_CXXFLAGS) # Use AVX intrinsics
 else
-if EXAFMM_HAVE_SSE3
 AM_CXXFLAGS += $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-else
-if EXAFMM_HAVE_NEON
-AM_CXXFLAGS += $(NEON_CXXFLAGS) # Use Neon intrinsics
-endif
 endif
 endif
 endif
