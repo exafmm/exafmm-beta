@@ -177,7 +177,7 @@ int main(int argc, char ** argv) {
   if (!FMM_Only_Accuracy()) {
     for (int t=0; t<10; t++) {
       double tic = get_time();
-      for (int it=0; it<nit; it++) {    
+      for (int it=0; it<nit; it++) {
         for (int i=0; i<nb; i++) {
           vb[i] = 1.0 / nb;
         }
@@ -210,7 +210,7 @@ int main(int argc, char ** argv) {
   if (!FMM_Only_Accuracy()) {
     for (int t=0; t<10; t++) {
       double tic = get_time();
-      for (int it=0; it<nit; it++) {    
+      for (int it=0; it<nit; it++) {
         for (int i=0; i<nv; i++) {
           vv[i] = 1.0 / nv;
           vi[i] = 0;

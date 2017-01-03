@@ -28,7 +28,7 @@ void fmm(Args args) {
   typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
 
   Bodies bodies(1), bodies2(1), jbodies(1);
-  Kernel::setup();
+  Kernel::init();
   logger::verbose = true;
 
   const int NTERM = Kernel::NTERM;
@@ -115,6 +115,7 @@ void fmm(Args args) {
   verify.print("Rel. L2 Error (acc)",accRel);
   file << args.P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
+  Kernel::finalize();
 }
 
 template<int P>

@@ -32,7 +32,7 @@ void fmm(Args args) {
   Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
-  Kernel::setup();
+  Kernel::init();
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
@@ -148,6 +148,7 @@ void fmm(Args args) {
     traversal.writeMatrix(bodies, jbodies);
   }
   logger::writeDAG();
+  Kernel::finalize();
 }
 
 

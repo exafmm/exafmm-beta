@@ -1,7 +1,11 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-- Modylas wrapper
+- Modylas
+ - Full P loop in M2L
+ - Runtime P in wrapper
+ - Ewald for periodic
+
 - PetIGA no macro
 - Helmholtz breaks for very low P
 - Helmholtz breaks for -D

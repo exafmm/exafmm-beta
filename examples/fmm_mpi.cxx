@@ -33,12 +33,12 @@ void fmm(Args args) {
   Dataset<Kernel> data;
   Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
   TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);  
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
   UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
-  Kernel::setup();
+  Kernel::init();
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
@@ -202,10 +202,10 @@ void fmm(Args args) {
       }
       MPI_Bcast(&pass, 1, MPI_BYTE, 0, MPI_COMM_WORLD);
       if (pass) {
-        if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl; 
+        if (verify.verbose) std::cout << "passed accuracy regression at t: " << t << std::endl;
         if (args.accuracy) break;
         t = -1;
-        isTime = true;        
+        isTime = true;
       }
     } else {
       double totalFMMGlob;
@@ -229,6 +229,7 @@ void fmm(Args args) {
     }
     abort();
   }
+  Kernel::finalize();
 }
 
 template<int P>
