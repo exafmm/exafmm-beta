@@ -2,14 +2,13 @@
 * Rank items in this list according to importance
 
 -- Remove --
-Cartesian - remove _spherical_ from filenames
+Spherical, spherical, _spherical
 Mass
 Ropt, Rmax
 TBB
 FX10, SX
 
 -- Check later --
-Search for traces of Spherical, spherical
 Time regression
 Fix BiotSavart kernel
 

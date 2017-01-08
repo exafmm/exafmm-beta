@@ -12,9 +12,9 @@
 
 namespace exafmm {
 #if EXAFMM_LAPLACE
-  typedef LaplaceSphericalCPU<Pmax> Kernel;
+  typedef LaplaceKernel<Pmax> Kernel;
 #elif EXAFMM_HELMHOLTZ
-  typedef HelmholtzSphericalCPU<2*Pmax> Kernel;
+  typedef HelmholtzKernel<2*Pmax> Kernel;
 #endif
 
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies

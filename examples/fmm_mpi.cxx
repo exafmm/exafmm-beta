@@ -236,13 +236,13 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);                                        // Argument parser class
   switch (args.equation[0]) {                                   // Case switch for equation
   case 'L':                                                     // Laplace equation
-    fmm<LaplaceSphericalCPU<Pmax> >(args);                      //  Call Laplace kernel
+    fmm<LaplaceKernel<Pmax> >(args);                            //  Call Laplace kernel
     break;                                                      // Break Laplace equation
   case 'H':                                                     // Helmholtz equation
-    fmm<HelmholtzSphericalCPU<2*Pmax> >(args);                  //  Call Helmholtz kernel
+    fmm<HelmholtzKernel<2*Pmax> >(args);                        //  Call Helmholtz kernel
     break;                                                      // Break Helmholtz equation
   case 'B':                                                     // Biot-Savart equation
-    fmm<BiotSavartSphericalCPU<Pmax> >(args);                   //  Call Biot-Savart kernel
+    fmm<BiotSavartKernel<Pmax> >(args);                         //  Call Biot-Savart kernel
     break;                                                      // Break Biot-Savart equation
   default:                                                      // No matching case
     fprintf(stderr,"No matching equation\n");                   //  Print error message

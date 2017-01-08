@@ -10,13 +10,14 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#include "laplace_spherical_cpu.h"
+#include "laplace.h"
 using namespace exafmm;
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 
-template<typename Kernel>
-void fmm(Args args) {
+int main(int argc, char ** argv) {
+  Args args(argc, argv);
+  typedef LaplaceKernel<10> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
@@ -209,10 +210,5 @@ void fmm(Args args) {
     abort();
   }
   Kernel::finalize();
-}
-
-int main(int argc, char ** argv) {
-  Args args(argc, argv);
-  fmm<LaplaceSphericalCPU<10> >(args);
   return 0;
 }

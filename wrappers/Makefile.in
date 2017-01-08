@@ -589,9 +589,9 @@ AM_CPPFLAGS = -I../include -I../vectorclass -I../kernels \
 AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_exafmm_laplace.a libpetiga_exafmm_helmholtz.a libgromacs_exafmm.a libcharmm_exafmm.a libmd_distributed.a
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_SOURCES = petiga.cxx
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_PMAX=7
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx
-@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL
+@EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ
 @EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_SOURCES = gromacs.cxx
 @EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_SOURCES = charmm.cxx

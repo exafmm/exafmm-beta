@@ -12,10 +12,10 @@
 #if EXAFMM_NO_P2P
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
-#include "laplace_spherical_cpu.h"
+#include "laplace.h"
 
 namespace exafmm {
-  typedef LaplaceSphericalCPU<Pmax> Kernel;
+  typedef LaplaceKernel<Pmax> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector

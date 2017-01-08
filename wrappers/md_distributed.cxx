@@ -9,10 +9,10 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#include "laplace_spherical_cpu.h"
+#include "laplace.h"
 
 namespace exafmm {
-  typedef LaplaceSphericalCPU<Pmax> Kernel;
+  typedef LaplaceKernel<Pmax> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector

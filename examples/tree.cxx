@@ -4,11 +4,11 @@
 #include "dataset.h"
 #include "logger.h"
 using namespace exafmm;
-#include "laplace_spherical_cpu.h"
+#include "laplace.h"
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef LaplaceSphericalCPU<10> Kernel;
+  typedef LaplaceKernel<10> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector

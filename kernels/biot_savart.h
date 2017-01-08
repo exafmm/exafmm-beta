@@ -1,24 +1,91 @@
-#ifndef biot_savart_spherical_cpu_h
-#define biot_savart_spherical_cpu_h
-#include "biot_savart_p2p_cpu.h"
+#ifndef biot_savart_h
+#define biot_savart_h
 #include "spherical.h"
+#if EXAFMM_USE_SIMD
+#include "simdvec.h"
+#endif
 
 namespace exafmm {
   template<int _P>
-  class BiotSavartSphericalCPU : public BiotSavartP2PCPU<vec<3*_P*(_P+1)/2,complex_t>,Spherical> {
+  class BiotSavartKernel : public KernelBase {
   public:
+    static const Equation equation = BiotSavart;                //!< Set equation to Biot-Savart
     static const Basis basis = Spherical;                       //!< Set basis to Spherical
     static const int P = _P;                                    //!< Set order of expansion
     static const int NTERM = 3*P*(P+1)/2;                       //!< # of terms in Biot-Savart Spherical expansion
     typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
-    using typename BiotSavartP2PCPU<vecP,Spherical>::Bodies;    //!< Vector of bodies for Biot-Savart
-    using typename BiotSavartP2PCPU<vecP,Spherical>::B_iter;    //!< Iterator of body vector
-    using typename BiotSavartP2PCPU<vecP,Spherical>::Cells;     //!< Vector of cells for Biot-Savart
-    using typename BiotSavartP2PCPU<vecP,Spherical>::C_iter;    //!< Iterator of cell vector
-    using BiotSavartP2PCPU<vecP,Spherical>::Xperiodic;
+    typedef std::vector<Body<equation> > Bodies;                //!< Vector of bodies for Biot-Savart
+    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
+    typedef std::vector<Cell<B_iter,vecP,equation,basis> > Cells;//!< Vector of cells for Biot-Savart
+    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
+    using KernelBase::Xperiodic;
 
     static void init() {}
     static void finalize() {}
+
+    static void normalize(Bodies & bodies) {
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+        B->TRG /= B->SRC;
+      }
+    }
+
+    static void P2P(C_iter Ci, C_iter Cj, bool ) {
+      B_iter Bi = Ci->BODY;
+      B_iter Bj = Cj->BODY;
+      int ni = Ci->NBODY;
+      int nj = Cj->NBODY;
+      int i = 0;
+      for ( ; i<ni; i++) {
+        kreal_t ax = 0;
+        kreal_t ay = 0;
+        kreal_t az = 0;
+        for (int j=0; j<nj; j++) {
+          vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
+          real_t R2 = norm(dX) + eps2;
+          if (R2 != 0) {
+            real_t invR2 = 1.0 / R2;
+            real_t S2 = 2 * Bj[j].SRC[3] * Bj[j].SRC[3];
+            real_t RS = R2 / S2;
+            real_t cutoff = invR2 * std::sqrt(invR2) * (erf( std::sqrt(RS) ) - std::sqrt(4 / M_PI * RS) * std::exp(-RS));
+            ax += (dX[1] * Bj[j].SRC[2] - dX[2] * Bj[j].SRC[1]) * cutoff;
+            ay += (dX[2] * Bj[j].SRC[0] - dX[0] * Bj[j].SRC[2]) * cutoff;
+            az += (dX[0] * Bj[j].SRC[1] - dX[1] * Bj[j].SRC[0]) * cutoff;
+          }
+        }
+        Bi[i].TRG[0] = 1;
+        Bi[i].TRG[1] += ax;
+        Bi[i].TRG[2] += ay;
+        Bi[i].TRG[3] += az;
+      }
+    }
+
+    static void P2P(C_iter C) {
+      B_iter B = C->BODY;
+      int n = C->NBODY;
+      int i = 0;
+      for ( ; i<n; i++) {
+        kreal_t ax = 0;
+        kreal_t ay = 0;
+        kreal_t az = 0;
+        for (int j=i+1; j<n; j++) {
+          vec3 dX = B[j].X - B[i].X;
+          real_t R2 = norm(dX) + eps2;
+          if (R2 != 0) {
+            real_t invR2 = 1.0 / R2;
+            real_t S2 = 2 * B[j].SRC[3] * B[j].SRC[3];
+            real_t RS = R2 / S2;
+            real_t cutoff = invR2 * std::sqrt(invR2) * (erf( std::sqrt(RS) ) - std::sqrt(4 / M_PI * RS) * std::exp(-RS));
+            ax += (dX[1] * B[j].SRC[2] - dX[2] * B[j].SRC[1]) * cutoff;
+            ay += (dX[2] * B[j].SRC[0] - dX[0] * B[j].SRC[2]) * cutoff;
+            az += (dX[0] * B[j].SRC[1] - dX[1] * B[j].SRC[0]) * cutoff;
+          }
+        }
+        B[i].TRG[0] = 1;
+        B[i].TRG[1] += ax;
+        B[i].TRG[2] += ay;
+        B[i].TRG[3] += az;
+      }
+    }
 
     static void P2M(C_iter C) {
       complex_t Ynm[P*P], YnmTheta[P*P];
