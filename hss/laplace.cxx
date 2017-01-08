@@ -11,7 +11,7 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
-#include "laplace_cartesian_cpu.h"
+#include "laplace.h"
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 
@@ -27,7 +27,7 @@ double elemops = 0.0;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef exafmm::LaplaceCartesianCPU<Pmax,0> Kernel; 
+  typedef exafmm::LaplaceKernel<Pmax> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
@@ -43,16 +43,16 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset<Kernel> data;
   Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal<Kernel> traversal(args.nspawn, args.images);
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
   TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<Kernel> verify;
+  Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  Kernel::setup();
+  Kernel::init();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
@@ -272,7 +272,7 @@ int main(int argc, char ** argv) {
     double sumops;
     MPI_Allreduce((void*)&elemops,(void*)&sumops,IONE,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
     sumops/=1e9;
-  
+
     if(!myid)
       std::cout << "Flops in kernel evaluation (x1e9): min=" << minops << "; max=" << maxops << "; total=" << sumops << std::endl << std::endl;
 
@@ -403,10 +403,14 @@ int main(int argc, char ** argv) {
     delete[] B;
     delete[] Btrue;
   }
+  Kernel::finalize();
   return 0;
 }
 
 void elements(void * obj, int *I, int *J, double *B, int *descB) {
+  typedef exafmm::LaplaceKernel<Pmax> Kernel;
+  typedef typename Kernel::Bodies Bodies;
+  typedef typename Kernel::B_iter B_iter;
   if(B==NULL)
     return;
 
@@ -442,7 +446,5 @@ void elements(void * obj, int *I, int *J, double *B, int *descB) {
       B[locr*(j-1)+(i-1)]=R2==0?0.0:1.0/sqrt(R2);
     }
   }
-
   elemops+=10*locr*locc;
 }
-

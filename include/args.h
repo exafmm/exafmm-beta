@@ -16,7 +16,6 @@ namespace exafmm {
 #ifndef _SX
   static struct option long_options[] = {
     {"accuracy",     no_argument,       0, 'a'},
-    {"basis",        required_argument, 0, 'b'},
     {"ncrit",        required_argument, 0, 'c'},
     {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
@@ -47,7 +46,6 @@ namespace exafmm {
   class Args {
   public:
     int accuracy;
-    const char * basis;
     int ncrit;
     double cutoff;
     const char * distribution;
@@ -77,7 +75,6 @@ namespace exafmm {
 	      "Usage: %s [options]\n"
 	      "Long option (short option)       : Description (Default value)\n"
 	      " --accuracy (-a)                 : Regression for accuracy only (%d)\n"
-	      " --basis (-b) [c/s]              : Cartesian, Spherical (%s)\n"
 	      " --ncrit (-c)                    : Number of bodies per leaf cell (%d)\n"
 	      " --cutoff (-C)                   : Cutoff distance of interaction (%f)\n"
 	      " --distribution (-d) [c/l/o/p/s] : lattice, cube, sphere, octant, plummer (%s)\n"
@@ -103,7 +100,6 @@ namespace exafmm {
 	      " --useRmax (-x)                  : Use maximum distance for MAC (%d)\n",
 	      name,
               accuracy,
-              basis,
 	      ncrit,
 	      cutoff,
 	      distribution,
@@ -126,19 +122,6 @@ namespace exafmm {
 	      verbose,
 	      write,
 	      useRmax);
-    }
-
-    const char * parseBasis(const char * arg) {
-      switch (arg[0]) {
-      case 'c':
-	return "Cartesian";
-      case 's':
-	return "Spherical";
-      default:
-	fprintf(stderr, "invalid basis %s\n", arg);
-	abort();
-      }
-      return "";
     }
 
     const char * parseDistribution(const char * arg) {
@@ -256,7 +239,6 @@ namespace exafmm {
   public:
     Args(int argc=0, char ** argv=NULL) :
       accuracy(0),
-      basis("Spherical"),
       ncrit(64),
       cutoff(.0),
       distribution("cube"),
@@ -291,9 +273,6 @@ namespace exafmm {
 	switch (c) {
 	case 'a':
 	  accuracy = 1;
-	  break;
-	case 'b':
-	  basis = parseBasis(optarg);
 	  break;
 	case 'c':
 	  ncrit = atoi(optarg);
@@ -374,24 +353,23 @@ namespace exafmm {
     uint64_t getKey(int mpisize=1) {
       uint64_t key = 0;
       key |= uint64_t(round(log(ncrit)/log(2)));
-      key |= getBasisNum(basis) << 4;
-      key |= getDistNum(distribution) << 7;
-      key |= dual << 10;
-      key |= getEqNum(equation) << 11;
-      key |= graft << 14;
-      key |= images << 15;
-      key |= IneJ << 17;
-      key |= mutual << 18;
-      key |= uint64_t(round(log(numBodies)/log(10))) << 19;
-      key |= useRopt << 23;
-      key |= P << 24;
-      key |= uint64_t(round(log(nspawn)/log(10))) << 30;
-      key |= uint64_t(theta*14) << 33;
-      key |= uint64_t(round(log(threads)/log(2))) << 36;
-      key |= uint64_t(useRmax) << 39;
-      key |= getConfigNum() << 40;
-      key |= uint64_t(round(log(mpisize)/log(2))) << 45;
-      assert( uint64_t(round(log(mpisize)/log(2))) < 18 );
+      key |= getDistNum(distribution) << 4;
+      key |= dual << 7;
+      key |= getEqNum(equation) << 8;
+      key |= graft << 11;
+      key |= images << 12;
+      key |= IneJ << 14;
+      key |= mutual << 15;
+      key |= uint64_t(round(log(numBodies)/log(10))) << 16;
+      key |= useRopt << 20;
+      key |= P << 21;
+      key |= uint64_t(round(log(nspawn)/log(10))) << 27;
+      key |= uint64_t(theta*14) << 30;
+      key |= uint64_t(round(log(threads)/log(2))) << 33;
+      key |= uint64_t(useRmax) << 36;
+      key |= getConfigNum() << 37;
+      key |= uint64_t(round(log(mpisize)/log(2))) << 42;
+      assert( uint64_t(round(log(mpisize)/log(2))) < 21 );
       return key;
     }
 
@@ -399,8 +377,6 @@ namespace exafmm {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
 		  << "accuracy" << " : " << accuracy << std::endl
-		  << std::setw(stringLength)
-		  << "basis" << " : " << basis << std::endl
 		  << std::setw(stringLength)
 		  << "ncrit" << " : " << ncrit << std::endl
 		  << std::setw(stringLength)

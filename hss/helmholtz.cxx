@@ -11,7 +11,7 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
-#include "helmholtz_spherical_cpu.h"
+#include "helmholtz.h"
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
@@ -30,7 +30,7 @@ const complex_t I1(0.0,1.0);
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef exafmm::HelmholtzSphericalCPU<2*Pmax> Kernel;
+  typedef exafmm::HelmholtzKernel<2*Pmax> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
@@ -46,16 +46,16 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset<Kernel> data;
   Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal<Kernel> traversal(args.nspawn, args.images);
+  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
   TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<Kernel> verify;
+  Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  Kernel::setup();
+  Kernel::init();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
@@ -415,7 +415,7 @@ int main(int argc, char ** argv) {
     double sumops;
     MPI_Allreduce((void*)&elemops,(void*)&sumops,IONE,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
     sumops/=1e9;
-  
+
     if(!myid)
       std::cout << "Flops in kernel evaluation (x1e9): min=" << minops << "; max=" << maxops << "; total=" << sumops << std::endl << std::endl;
 
@@ -457,7 +457,7 @@ int main(int argc, char ** argv) {
      * compute Btrue([nbA rows],:)=B*Xglob.
      *
      * Construction of Xglob: first X is gathered onto
-     * id 0, then it is broadcasted to all the processes. 
+     * id 0, then it is broadcasted to all the processes.
      */
     dcomplex *Xglob=new dcomplex[n*nrhs];
 
@@ -578,10 +578,14 @@ int main(int argc, char ** argv) {
     delete[] Btrue;
 
   }
+  Kernel::finalize();
   return 0;
 }
 
 void elements(void * obj, int *I, int *J, dcomplex *B, int *descB) {
+  typedef exafmm::HelmholtzKernel<2*Pmax> Kernel;
+  typedef typename Kernel::Bodies Bodies;
+  typedef typename Kernel::B_iter B_iter;
   if(B==NULL)
     return;
 
@@ -621,4 +625,3 @@ void elements(void * obj, int *I, int *J, dcomplex *B, int *descB) {
 
   elemops+=16*locr*locc;
 }
-
