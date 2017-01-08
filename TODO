@@ -1,6 +1,18 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+-- Remove --
+Cartesian - remove _spherical_ from filenames
+Mass
+Ropt, Rmax
+TBB
+FX10, SX
+
+-- Check later --
+Search for traces of Spherical, spherical
+Time regression
+Fix BiotSavart kernel
+
 - Modylas
  - Full P loop in M2L
  - Runtime P in wrapper

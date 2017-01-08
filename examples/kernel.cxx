@@ -118,88 +118,17 @@ void fmm(Args args) {
   Kernel::finalize();
 }
 
-template<int P>
-struct CallFMM {
-  static inline void LaplaceCartesianCPU_P1(Args args) {
-    if(args.P == P) fmm<LaplaceCartesianCPU<P,1> >(args);
-    CallFMM<P-1>::LaplaceCartesianCPU_P1(args);
-  }
-  static inline void LaplaceCartesianCPU_P0(Args args) {
-    if(args.P == P) fmm<LaplaceCartesianCPU<P,0> >(args);
-    CallFMM<P-1>::LaplaceCartesianCPU_P0(args);
-  }
-  static inline void LaplaceSphericalCPU_P(Args args) {
-    if(args.P == P) fmm<LaplaceSphericalCPU<P> >(args);
-    CallFMM<P-1>::LaplaceSphericalCPU_P(args);
-  }
-  static inline void HelmholtzSphericalCPU_P(Args args) {
-    if(args.P == P) fmm<HelmholtzSphericalCPU<P> >(args);
-    CallFMM<P-1>::HelmholtzSphericalCPU_P(args);
-  }
-  static inline void BiotSavartSphericalCPU_P(Args args) {
-    if(args.P == P) fmm<BiotSavartSphericalCPU<P> >(args);
-    CallFMM<P-1>::BiotSavartSphericalCPU_P(args);
-  }
-};
-
-template<>
-struct CallFMM<Pmin-1> {
-  static inline void LaplaceCartesianCPU_P1(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-  static inline void LaplaceCartesianCPU_P0(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-  static inline void LaplaceSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-  static inline void HelmholtzSphericalCPU_P(Args args) {
-    if(args.P < Pmin || 2*Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= 2*Pmax\n");
-      abort();
-    }
-  }
-  static inline void BiotSavartSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-};
-
 int main(int argc, char ** argv) {
   Args args(argc, argv);                                        // Argument parser class
   switch (args.equation[0]) {                                   // Case switch for equation
   case 'L':                                                     // Laplace equation
-    switch (args.basis[0]) {                                    //  Case switch for basis
-    case 'C':                                                   //  Cartesian basis
-      if (args.mass)                                            //   If all charges are positive
-        CallFMM<Pmax>::LaplaceCartesianCPU_P1(args);            //    Call Laplace Cartesian kernel for mass
-      else                                                      //   Elseif charges are both positive and negative
-        CallFMM<Pmax>::LaplaceCartesianCPU_P0(args);            //    Call Laplace Cartesian kernel for charge
-      break;                                                    //  Break Cartesian basis
-    case 'S':                                                   //  Spherical basis
-      CallFMM<Pmax>::LaplaceSphericalCPU_P(args);               //   Call Laplace Spherical kernel
-      break;                                                    //  Break Spherical basis
-    default:                                                    //  No matching case
-      fprintf(stderr,"No matching basis\n");                    //   Print error message
-      abort();                                                  //   Abort execution
-    }                                                           //  End case switch for basis
+    fmm<LaplaceSphericalCPU<Pmax> >(args);                      //  Call Laplace kernel
     break;                                                      // Break Laplace equation
   case 'H':                                                     // Helmholtz equation
-    CallFMM<2*Pmax>::HelmholtzSphericalCPU_P(args);             //  Call Helmholtz Spherical kernel
+    fmm<HelmholtzSphericalCPU<2*Pmax> >(args);                  //  Call Helmholtz kernel
     break;                                                      // Break Helmholtz equation
   case 'B':                                                     // Biot-Savart equation
-    CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);              //  Call Biot-Savart Spherical kernel
+    fmm<BiotSavartSphericalCPU<Pmax> >(args);                   //  Call Biot-Savart kernel
     break;                                                      // Break Biot-Savart equation
   default:                                                      // No matching case
     fprintf(stderr,"No matching equation\n");                   //  Print error message

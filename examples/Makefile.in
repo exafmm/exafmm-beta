@@ -135,10 +135,9 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 # Use all possible debugging flags
 @EXAFMM_DEBUG_TRUE@am__append_30 = $(COMPILER_CXXFLAGS) -DEXAFMM_DEBUG
 @EXAFMM_DEBUG_TRUE@am__append_31 = $(COMPILER_FCFLAGS) -DEXAFMM_DEBUG
-bin_PROGRAMS = fmm$(EXEEXT) tree$(EXEEXT) $(am__EXEEXT_1) \
-	kernel$(EXEEXT) $(am__EXEEXT_2)
-@EXAFMM_HAVE_FX_FALSE@am__append_32 = vec
-@EXAFMM_HAVE_MPI_TRUE@am__append_33 = fmm_mpi ewald_mpi
+bin_PROGRAMS = fmm$(EXEEXT) tree$(EXEEXT) vec$(EXEEXT) kernel$(EXEEXT) \
+	$(am__EXEEXT_1)
+@EXAFMM_HAVE_MPI_TRUE@am__append_32 = fmm_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_flags.m4 \
@@ -151,8 +150,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@EXAFMM_HAVE_FX_FALSE@am__EXEEXT_1 = vec$(EXEEXT)
-@EXAFMM_HAVE_MPI_TRUE@am__EXEEXT_2 = fmm_mpi$(EXEEXT) \
+@EXAFMM_HAVE_MPI_TRUE@am__EXEEXT_1 = fmm_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	ewald_mpi$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -487,8 +485,7 @@ AM_CPPFLAGS = -I../include -I../vectorclass -I../kernels \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_7) $(am__append_31)
 AM_MAKEFLAGS = -s
 fmm_SOURCES = fmm.cxx
-@EXAFMM_HAVE_FX_FALSE@fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=10
-@EXAFMM_HAVE_FX_TRUE@fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=7
+fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=10
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(fmm_CPPFLAGS)
 vec_SOURCES = vec.cxx
@@ -938,38 +935,32 @@ revert:
 save:
 	@make -C .. save
 
-run_laplace_cartesian: fmm
-	./$< -DgmMovx -r 10 -e laplace -b cartesian -P 10
-run_laplace_spherical: fmm
-	./$< -Dgmovx -r 10 -e laplace -P 10
-run_helmholtz_spherical: fmm
-	./$< -Dgv -n 40000 -r 10 -e helmholtz -P 14
-run_biotsavart_spherical: fmm
-	./$< -Dgv -n 40000 -r 10 -e biotsavart -P 10
+run_laplace: fmm
+	./$< -aDgmovx -n 100000 -r 10 -e laplace -P 10
+run_helmholtz: fmm
+	./$< -aDgv -n 40000 -r 10 -e helmholtz -P 14
+run_biotsavart: fmm
+	./$< -aDgv -n 40000 -r 10 -e biotsavart -P 10
 run_tree: tree
 	./$< -v -n 10000000 -r 10
 run_vec: vec
 	./$<
 
-run_laplace_cartesian_kernel: kernel
-	./$< -v -e laplace -b cartesian -P 10
-run_laplace_spherical_kernel: kernel
+run_laplace_kernel: kernel
 	./$< -v -e laplace -P 10
-run_helmholtz_spherical_kernel: kernel
+run_helmholtz_kernel: kernel
 	./$< -v -e helmholtz -P 14
-run_biotsavart_spherical_kernel: kernel
+run_biotsavart_kernel: kernel
 	./$< -v -e biotsavart -P 10
 
-@EXAFMM_HAVE_MPI_TRUE@run_laplace_cartesian_mpi: fmm_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -DgmMovx -r 10 -e laplace -b cartesian -P 10
-@EXAFMM_HAVE_MPI_TRUE@run_laplace_spherical_mpi: fmm_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx -r 10 -e laplace -P 10
-@EXAFMM_HAVE_MPI_TRUE@run_helmholtz_spherical_mpi: fmm_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgv -n 100000 -r 10 -e helmholtz -P 14
-@EXAFMM_HAVE_MPI_TRUE@run_biotsavart_spherical_mpi: fmm_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgv -n 100000 -r 10 -e biotsavart -P 10
+@EXAFMM_HAVE_MPI_TRUE@run_laplace_mpi: fmm_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgmovx -n 100000 -r 10 -e laplace -P 10
+@EXAFMM_HAVE_MPI_TRUE@run_helmholtz_mpi: fmm_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -n 40000 -r 10 -e helmholtz -P 14
+@EXAFMM_HAVE_MPI_TRUE@run_biotsavart_mpi: fmm_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -n 40000 -r 10 -e biotsavart -P 10
 @EXAFMM_HAVE_MPI_TRUE@run_ewald_mpi: ewald_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx -r 10 -P 10
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgmovx -r 10 -P 10
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

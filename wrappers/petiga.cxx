@@ -12,11 +12,7 @@
 
 namespace exafmm {
 #if EXAFMM_LAPLACE
-#if EXAFMM_CARTESIAN
-  typedef LaplaceCartesianCPU<Pmax,0> Kernel;
-#elif EXAFMM_SPHERICAL
   typedef LaplaceSphericalCPU<Pmax> Kernel;
-#endif
 #elif EXAFMM_HELMHOLTZ
   typedef HelmholtzSphericalCPU<2*Pmax> Kernel;
 #endif

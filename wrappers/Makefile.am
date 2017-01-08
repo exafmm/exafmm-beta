@@ -3,9 +3,9 @@ include ../Makefile.am.include
 if EXAFMM_HAVE_MPI
 lib_LIBRARIES = libpetiga_exafmm_laplace.a libpetiga_exafmm_helmholtz.a libgromacs_exafmm.a libcharmm_exafmm.a libmd_distributed.a
 libpetiga_exafmm_laplace_a_SOURCES = petiga.cxx
-libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_PMAX=7
+libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE
 libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx
-libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL
+libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ
 libgromacs_exafmm_a_SOURCES = gromacs.cxx
 libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS)
 libcharmm_exafmm_a_SOURCES = charmm.cxx
