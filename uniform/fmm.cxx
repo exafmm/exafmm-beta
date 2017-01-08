@@ -14,7 +14,7 @@
 #include "../uniform/parallelfmm.h"
 #endif
 using namespace exafmm;
-#include "laplace_cartesian_cpu.h"
+#include "laplace.h"
 real_t KernelBase::eps2 = 0.0;
 vec3 KernelBase::Xperiodic = 0.0;
 
@@ -22,7 +22,7 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   args.ncrit = 32;
   args.images = 1;
-  typedef LaplaceCartesianCPU<6,0> Kernel;
+  typedef LaplaceKernel<6> Kernel;
   typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
   typedef typename Kernel::Cells Cells;                         //!< Vector of cells
   typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
     for( int i=0; i<FMM.numBodies; i++ ) {
       FMM.Jbodies[i][3] -= average;
     }
-  
+
     logger::startTimer("Grow tree");
     FMM.sortBodies();
     FMM.buildTree();
@@ -103,11 +103,11 @@ int main(int argc, char ** argv) {
     FMM.P2PRecv();
     logger::stopTimer("Comm LET bodies");
 #endif
-  
+
     logger::startTimer("Upward pass");
     FMM.upwardPass();
     logger::stopTimer("Upward pass");
-  
+
 #if EXAFMM_SERIAL
 #else
     logger::startTimer("Comm LET cells");
@@ -121,7 +121,7 @@ int main(int argc, char ** argv) {
     FMM.globM2M();
     FMM.globM2L();
 #endif
-  
+
     FMM.periodicM2L();
 
 #if EXAFMM_SERIAL
@@ -130,7 +130,7 @@ int main(int argc, char ** argv) {
     FMM.globL2L();
     logger::stopTimer("Downward pass", 0);
 #endif
-  
+
     FMM.downwardPass();
     logger::stopTimer("Total FMM", 0);
 
@@ -201,7 +201,7 @@ int main(int argc, char ** argv) {
     double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
     double potNrmGlob = potSumGlob * potSumGlob;
     double potRel = std::sqrt(potDifGlob/potNrmGlob);
-    double accRel = std::sqrt(accDifGlob/accNrmGlob); 
+    double accRel = std::sqrt(accDifGlob/accNrmGlob);
     verify.print("Rel. L2 Error (pot)",potRel);
     verify.print("Rel. L2 Error (acc)",accRel);
 #endif
