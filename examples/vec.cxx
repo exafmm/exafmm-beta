@@ -91,10 +91,8 @@ struct SIMD<2,double> {
 
 template<int S, typename T>
 void test() {
-  T EPS;
+  T EPS = 1e-13;
   if (sizeof(T) == 4) EPS = 1e-5;
-  else if (sizeof(T) == 8) EPS = 1e-13;
-  else printf("error\n");
   vec<S,T> a(1);
   vec<S,T> b(a+1);
   vec<S,T> c = SIMD<S,T>::sequence();
