@@ -13,7 +13,7 @@ run_laplace: fmm
 run_helmholtz: fmm
 	./$< -aDgv -n 10000 -r 10 -e helmholtz -P 14
 run_biotsavart: fmm
-	./$< -aDgv -n 10000 -r 10 -e biotsavart -P 10
+	./$< -agv -n 100000 -r 10 -e biotsavart -P 10
 run_tree: tree
 	./$< -v -n 10000000 -r 10
 run_vec: vec
@@ -42,7 +42,7 @@ run_laplace_mpi: fmm_mpi
 run_helmholtz_mpi: fmm_mpi
 	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 10 -e helmholtz -P 14
 run_biotsavart_mpi: fmm_mpi
-	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 10 -e biotsavart -P 10
+	$(MPIRUN) -n 2 ./$< -agv -n 100000 -r 10 -e biotsavart -P 10
 run_ewald_mpi: ewald_mpi
 	$(MPIRUN) -n 2 ./$< -aDgmovx -r 10 -P 10
 endif

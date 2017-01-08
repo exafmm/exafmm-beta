@@ -10,24 +10,19 @@ namespace exafmm {
   class BiotSavartKernel : public KernelBase {
   public:
     static const Equation equation = BiotSavart;                //!< Set equation to Biot-Savart
-    static const Basis basis = Spherical;                       //!< Set basis to Spherical
     static const int P = _P;                                    //!< Set order of expansion
-    static const int NTERM = 3*P*(P+1)/2;                       //!< # of terms in Biot-Savart Spherical expansion
+    static const int NTERM = 3*P*(P+1)/2;                       //!< # of terms in Biot-Savart expansion
     typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
     typedef std::vector<Body<equation> > Bodies;                //!< Vector of bodies for Biot-Savart
     typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-    typedef std::vector<Cell<B_iter,vecP,equation,basis> > Cells;//!< Vector of cells for Biot-Savart
+    typedef std::vector<Cell<B_iter,vecP> > Cells;              //!< Vector of cells for Biot-Savart
     typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
     using KernelBase::Xperiodic;
 
     static void init() {}
     static void finalize() {}
 
-    static void normalize(Bodies & bodies) {
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-        B->TRG /= B->SRC;
-      }
-    }
+    static void normalize(Bodies) {}
 
     static void P2P(C_iter Ci, C_iter Cj, bool ) {
       B_iter Bi = Ci->BODY;

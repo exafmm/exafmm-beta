@@ -62,12 +62,6 @@ namespace exafmm {
     BiotSavart                                                  //!< Biot-Savart kernel
   };
 
-  //! Basis of expansion supported
-  enum Basis {
-    Cartesian,                                                  //! Cartesian Taylor expansion
-    Spherical                                                   //! Spherical Harmonics expansion
-  };
-
   //! Structure of aligned source for SIMD
   template<Equation equation=Empty>
   struct Source {                                               //!< Base components of source structure
@@ -91,7 +85,7 @@ namespace exafmm {
   struct Body {                                                 //!< Base components of body structure
     int     IBODY;                                              //!< Initial body numbering for sorting back
     int     IRANK;                                              //!< Initial rank numbering for partitioning back
-    int64_t ICELL;                                              //!< Cell index   
+    int64_t ICELL;                                              //!< Cell index
     real_t  WEIGHT;                                             //!< Weight for partitioning
   };
   template<>
@@ -108,7 +102,7 @@ namespace exafmm {
   };
 
   //! Structure of cells
-  template<typename B_iter, typename vecP, Equation equation=Empty, Basis basis=Spherical>
+  template<typename B_iter, typename vecP>
   struct Cell {                                                 //!< Base components of cell structure
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
@@ -124,24 +118,6 @@ namespace exafmm {
     real_t   SCALE;                                             //!< Scale for Helmholtz kernel
     vec3     X;                                                 //!< Cell center
     real_t   R;                                                 //!< Cell radius
-  };
-  template<typename B_iter, typename vecP>
-  struct Cell<B_iter,vecP,Laplace,Cartesian> : public Cell<B_iter,vecP> { //!< Specialization for Laplace Spherical
-    B_iter BODY;                                                //!< Iterator of first body
-    vecP   M, L;                                                //!< Multipole/local coefficients
-  };
-  template<typename B_iter, typename vecP>
-  struct Cell<B_iter,vecP,Laplace,Spherical> : public Cell<B_iter,vecP> { //!< Specialization for Laplace Spherical
-    B_iter BODY;                                                //!< Iterator of first body
-    vecP   M, L;                                                //!< Multipole/local coefficients
-  };
-  template<typename B_iter, typename vecP>
-  struct Cell<B_iter,vecP,Helmholtz,Spherical> : public Cell<B_iter,vecP> { //!< Specialization for Helmholtz Spherical
-    B_iter BODY;                                                //!< Iterator of first body
-    vecP   M, L;                                                //!< Multipole/local coefficients
-  };
-  template<typename B_iter, typename vecP>
-  struct Cell<B_iter,vecP,BiotSavart,Spherical> : public Cell<B_iter,vecP> { //!< Specialization for Biot-Savart Spherical
     B_iter BODY;                                                //!< Iterator of first body
     vecP   M, L;                                                //!< Multipole/local coefficients
   };
