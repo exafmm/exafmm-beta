@@ -1,6 +1,7 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+Remove binray tree from build_tree
 TBB
 TBB traversal
 nspawn
@@ -14,6 +15,7 @@ Fix CBRC buildbot
 Fix parallel Biot-Savart
 Fix nightly
 Test debug option
+Remove 1e-5 from bound_box
 
 - Modylas
  - Full P loop in M2L
