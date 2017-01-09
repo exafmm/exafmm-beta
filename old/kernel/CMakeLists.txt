@@ -1,6 +1,0 @@
-IF(USE_GPU)
-  CUDA_ADD_LIBRARY(Kernels ${DEVICE}${EXPAND}Laplace.cu ${DEVICE}VanDerWaals.cu CPUP2P.cxx)
-  TARGET_LINK_LIBRARIES(Kernels ${CUDA_LIBRARIES})
-ELSE()
-  ADD_LIBRARY(Kernels ${DEVICE}${EXPAND}Laplace.cxx ${DEVICE}VanDerWaals.cxx CPUP2P.cxx)
-ENDIF()
