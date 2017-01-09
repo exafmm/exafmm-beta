@@ -31,11 +31,7 @@ charmm_mpi_LINK = $(CXXLINK) --linkfortran
 charmm_mpi_LDADD = libcharmm_exafmm.a
 else
 charmm_mpi_LINK = $(FCLINK) $(AM_FCFLAGS)
-if EXAFMM_HAVE_SX
-charmm_mpi_LDADD = libcharmm_exafmm.a -lC++
-else
 charmm_mpi_LDADD = libcharmm_exafmm.a -lstdc++ -lgomp
-endif
 endif
 md_distributed_mpi_SOURCES = test_md_distributed.cxx
 md_distributed_mpi_CPPFLAGS = $(AM_CPPFLAGS)

@@ -3,7 +3,7 @@
 
 -- Remove --
 mutual
-SX
+__sparc_v9__ > __FUJITSU
 CILK, build_tree_cilk
 TBB, nspawn, serialize build_tree_tbb
 
@@ -12,6 +12,7 @@ Add back time regression
 Fix CBRC buildbot
 Fix parallel Biot-Savart
 Fix nightly
+Test debug option
 
 - Modylas
  - Full P loop in M2L

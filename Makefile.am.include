@@ -8,10 +8,6 @@ if EXAFMM_HAVE_FX
 AM_CXXFLAGS = -Kopenmp
 AM_FCFLAGS = -Kopenmp -f w
 else
-if EXAFMM_HAVE_SX
-AM_CXXFLAGS = -Caopt -Nacct -O nomsg -pi nomsg -pvctl nomsg
-AM_FCFLAGS = -Caopt -Nacct -O nomsg -pvctl nomsg
-else
 if EXAFMM_HAVE_CRAY
 AM_CXXFLAGS = -dynamic
 AM_FCFLAGS = -dynamic
@@ -38,7 +34,6 @@ AM_FCFLAGS = -ffast-math -funroll-loops
 else
 AM_CXXFLAGS =
 AM_FCFLAGS =
-endif
 endif
 endif
 endif

@@ -595,8 +595,6 @@ EXAFMM_HAVE_INTEL_FALSE
 EXAFMM_HAVE_INTEL_TRUE
 EXAFMM_HAVE_CRAY_FALSE
 EXAFMM_HAVE_CRAY_TRUE
-EXAFMM_HAVE_SX_FALSE
-EXAFMM_HAVE_SX_TRUE
 EXAFMM_HAVE_FX_FALSE
 EXAFMM_HAVE_FX_TRUE
 EXAFMM_HAVE_BG_FALSE
@@ -6433,14 +6431,6 @@ else
   EXAFMM_HAVE_FX_FALSE=
 fi
 
- if test "$ax_cv_cxx_compiler_vendor" = "nec"; then
-  EXAFMM_HAVE_SX_TRUE=
-  EXAFMM_HAVE_SX_FALSE='#'
-else
-  EXAFMM_HAVE_SX_TRUE='#'
-  EXAFMM_HAVE_SX_FALSE=
-fi
-
  if test "$CXX" = "CC"; then
   EXAFMM_HAVE_CRAY_TRUE=
   EXAFMM_HAVE_CRAY_FALSE='#'
@@ -6709,10 +6699,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_FX_TRUE}" && test -z "${EXAFMM_HAVE_FX_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_HAVE_FX\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_SX_TRUE}" && test -z "${EXAFMM_HAVE_SX_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_SX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_CRAY_TRUE}" && test -z "${EXAFMM_HAVE_CRAY_FALSE}"; then

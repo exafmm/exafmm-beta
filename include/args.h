@@ -4,16 +4,13 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <getopt.h>
 #include <iostream>
 #include <iomanip>
 #include <stdint.h>
 #include "types.h"
-#ifndef _SX
-#include <getopt.h>
-#endif
 
 namespace exafmm {
-#ifndef _SX
   static struct option long_options[] = {
     {"accuracy",     no_argument,       0, 'a'},
     {"ncrit",        required_argument, 0, 'c'},
@@ -38,7 +35,6 @@ namespace exafmm {
     {"write",        no_argument,       0, 'w'},
     {0, 0, 0, 0}
   };
-#endif
 
   class Args {
   public:
@@ -247,13 +243,8 @@ namespace exafmm {
       verbose(0),
       write(0) {
       while (1) {
-#if _SX
-#warning SX does not have getopt_long
-	int c = getopt(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx");
-#else
 	int option_index;
 	int c = getopt_long(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx", long_options, &option_index);
-#endif
 	if (c == -1) break;
 	switch (c) {
 	case 'a':
