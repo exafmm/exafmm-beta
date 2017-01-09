@@ -1,12 +1,14 @@
 -- Immediate --
 * Rank items in this list according to importance
 
--- Remove --
 TBB
 TBB traversal
 nspawn
+Search source files for unnecessary functions
+Search TODO list and extract priority tasks
 
 -- Check later --
+Do we need C->SCALE? Why not use 2 * C->R?
 Add back time regression
 Fix CBRC buildbot
 Fix parallel Biot-Savart
