@@ -11,8 +11,8 @@ helmholtz_CPPFLAGS = $(AM_CPPFLAGS) -I ~/strumpack/src
 helmholtz_LDADD = -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 run_laplace: laplace
-	$(MPIRUN) -n 4 ./$< -DgGmox -n 4096 -P 4
+	$(MPIRUN) -n 4 ./$< -DgGmox -n 1024 -P 4
 run_helmholtz: helmholtz
-	$(MPIRUN) -n 4 ./$< -DgG -n 4096 -P 10
+	$(MPIRUN) -n 4 ./$< -DgG -n 256 -P 10
 endif
 endif

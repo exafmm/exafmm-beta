@@ -836,9 +836,9 @@ save:
 	@make -C .. save
 
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@run_laplace: laplace
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@	$(MPIRUN) -n 4 ./$< -DgGmox -n 4096 -P 4
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@	$(MPIRUN) -n 4 ./$< -DgGmox -n 1024 -P 4
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@run_helmholtz: helmholtz
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@	$(MPIRUN) -n 4 ./$< -DgG -n 4096 -P 10
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_WITH_STRUMPACK_TRUE@	$(MPIRUN) -n 4 ./$< -DgG -n 256 -P 10
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

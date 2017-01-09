@@ -2,15 +2,15 @@
 * Rank items in this list according to importance
 
 -- Remove --
-Spherical, spherical, _spherical
 Mass
 Ropt, Rmax
 TBB
 FX10, SX
 
 -- Check later --
-Time regression
-Fix BiotSavart kernel
+Add back time regression
+Fix parallel Biot-Savart
+Fix nightly
 
 - Modylas
  - Full P loop in M2L
@@ -66,6 +66,7 @@ Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
 FX10 sin, cos, exp intrinsic
+Use kvec3 in Biot-Savart
 
 -- driver --
 - System benchmarking, HPCC, SPEC, for CPU, GPU, MPI performance

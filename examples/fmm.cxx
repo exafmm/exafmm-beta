@@ -51,11 +51,6 @@ void fmm(Args args) {
       B->X[0] *= 0.5;
     }
   }
-  if (args.mass) {
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      B->SRC = 1. / bodies.size();
-    }
-  }
   bool pass = true;
   bool isTime = false;
   for (int t=0; t<args.repeat; t++) {
@@ -85,7 +80,7 @@ void fmm(Args args) {
         traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
         jbodies = bodies;
       }
-      upDownPass.downwardPass(cells, args.mass);
+      upDownPass.downwardPass(cells);
     }
     logger::printTitle("Total runtime");
     logger::stopDAG();

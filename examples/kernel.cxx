@@ -39,6 +39,7 @@ void fmm(Args args) {
   C_iter Cj = cells.begin();
   Cj->X = 1;
   Cj->X[0] = 3;
+  Cj->SCALE = 2;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M = 0;
@@ -50,22 +51,22 @@ void fmm(Args args) {
   CJ->NCHILD = 1;
   CJ->X = 0;
   CJ->X[0] = 4;
+  CJ->SCALE = 4;
   CJ->M = 0;
   Kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;
   CI->X[0] = -4;
+  CI->SCALE = 4;
   CI->M = 1;
   CI->L = 0;
-  if (args.mass) {
-    for (int i=1; i<NTERM; i++) CJ->M[i] /= CJ->M[0];
-  }
   Kernel::M2L(CI, CJ, false);
 
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
+  Ci->SCALE = 2;
   Ci->IPARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
@@ -74,11 +75,9 @@ void fmm(Args args) {
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
+  Ci->SCALE = 2;
   Ci->M = 1;
   Ci->L = 0;
-  if (args.mass) {
-    for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
-  }
   Kernel::M2L(Ci, Cj, false);
 #endif
 

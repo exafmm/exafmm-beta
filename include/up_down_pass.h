@@ -161,12 +161,11 @@ namespace exafmm {
     }
 
     //! Downward pass (L2L, L2P)
-    void downwardPass(Cells & cells, int mass=0) {
+    void downwardPass(Cells & cells) {
       logger::startTimer("Downward pass");                      // Start timer
       if (!cells.empty()) {                                     // If cell vector is not empty
 	C_iter C0 = cells.begin();                              //  Root cell
 	if (C0->NCHILD == 0 ) {                                 //  If root is the only cell
-          if (mass) C0->L /= C0->M[0];                          //   Denormalize local expansions
           Kernel::L2P(C0);                                      //   L2P kernel
         }                                                       //  End if root is the only cell
 	mk_task_group;                                          //  Initialize tasks

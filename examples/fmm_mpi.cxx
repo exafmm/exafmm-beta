@@ -59,11 +59,6 @@ void fmm(Args args) {
       B->X[0] *= 0.5;
     }
   }
-  if (args.mass) {
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      B->SRC = 1. / bodies.size();
-    }
-  }
   bool pass = true;
   bool isTime = false;
   for (int t=0; t<args.repeat; t++) {
@@ -99,7 +94,7 @@ void fmm(Args args) {
         upDownPass.upwardPass(jcells);
       }
 
-#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
+#if 0 // Set to 0 for debugging by shifting bodies and reconstructing tree
       treeMPI.allgatherBounds(localBounds);
       if (args.IneJ) {
         treeMPI.setLET(jcells, cycle);
