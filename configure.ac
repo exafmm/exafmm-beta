@@ -30,13 +30,6 @@ if test "$with_tbb" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_WITH_TBB, test "$with_tbb" = "yes")
 
-# Intel Cilk
-AC_ARG_WITH(cilk, [AC_HELP_STRING([--with-cilk],[use Intel Cilk])], with_cilk=$withval, with_cilk=no)
-if test "$with_cilk" = "yes"; then
-   AC_DEFINE(EXAFMM_WITH_CILK,1,[Use Intel Cilk])
-fi
-AM_CONDITIONAL(EXAFMM_WITH_CILK, test "$with_cilk" = "yes")
-
 # MassiveThreads
 AC_ARG_WITH(mthread, [AC_HELP_STRING([--with-mthread],[use MassiveThreads])], with_mthread=$withval, with_mthread=no)
 if test "$with_mthread" = "yes"; then

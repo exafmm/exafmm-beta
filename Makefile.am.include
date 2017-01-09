@@ -50,9 +50,6 @@ endif
 if EXAFMM_WITH_TBB
 LIBS += -ltbb
 endif
-if EXAFMM_WITH_CILK
-LIBS += -lcilkrts
-endif
 if EXAFMM_WITH_MTHREAD
 LIBS += -lmyth-native
 endif

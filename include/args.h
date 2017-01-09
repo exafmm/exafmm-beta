@@ -204,15 +204,6 @@ namespace exafmm {
 #if EXAFMM_USE_KAHAN
       key |= 4;
 #endif
-#if EXAFMM_WITH_TBB
-      key |= 0 << 3;
-#elif EXAFMM_WITH_MTHREAD
-      key |= 1 << 3;
-#elif EXAFMM_WITH_CILK
-      key |= 2 << 3;
-#else
-      key |= 3 << 3;
-#endif
       return key;
     }
 
@@ -324,8 +315,8 @@ namespace exafmm {
       key |= uint64_t(theta*14) << 28;
       key |= uint64_t(round(log(threads)/log(2))) << 31;
       key |= getConfigNum() << 34;
-      key |= uint64_t(round(log(mpisize)/log(2))) << 39;
-      assert( uint64_t(round(log(mpisize)/log(2))) < 24 );
+      key |= uint64_t(round(log(mpisize)/log(2))) << 37;
+      assert( uint64_t(round(log(mpisize)/log(2))) < 26 );
       return key;
     }
 
