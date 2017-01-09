@@ -3,7 +3,6 @@
 
 -- Remove --
 mutual
-__sparc_v9__ > __FUJITSU
 CILK, build_tree_cilk
 TBB, nspawn, serialize build_tree_tbb
 
