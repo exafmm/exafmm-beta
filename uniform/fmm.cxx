@@ -39,7 +39,7 @@ int main(int argc, char ** argv) {
   Dataset<Kernel> data;
   Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
   Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax);
+  UpDownPass<Kernel> upDownPass(args.theta);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
 #else

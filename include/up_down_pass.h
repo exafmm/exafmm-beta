@@ -15,7 +15,6 @@ namespace exafmm {
 
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria
-    const bool useRmax;                                         //!< Use maximum distance for MAC
 
   private:
     //! Recursive functor for setting cell scale
@@ -40,31 +39,12 @@ namespace exafmm {
       C_iter C;                                                 //!< Iterator of current cell
       C_iter C0;                                                //!< Iterator of first cell
       real_t theta;                                             //!< Multipole acceptance criteria
-      bool useRmax;                                             //!< Use maximum distance for MAC
-      //! Redefine cell radius R based on maximum distance
-      void setRmax() const {
-	real_t Rmax = 0;                                        // Initialize Rmax
-	if (C->NCHILD == 0) {                                   // If leaf cell
-	  for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {    //  Loop over bodies in cell
-	    vec3 dX = C->X - B->X;                              //   Distance vector from particles to center of expansion
-	    real_t R = std::sqrt(norm(dX));                     //   Scalar distance
-	    if (R > Rmax) Rmax = R;                             //   Maximum distance
-	  }                                                     //  End loop over bodies in cell
-	} else {                                                // If not leaf cell
-	  for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	    vec3 dX = C->X - CC->X;                             //   Distance vector from particles to center of expansion
-	    real_t R = std::sqrt(norm(dX)) + CC->R;             //   Scalar distance
-	    if (R > Rmax) Rmax = R;                             //   Maximum distance
-	  }                                                     //  End loop over child cells
-	}                                                       // End if for leaf cell
-	C->R = std::min(C->R,Rmax);                             // Redefine R based on maximum distance
-      }
-      PostOrderTraversal(C_iter _C, C_iter _C0, real_t _theta, bool _useRmax) : // Constructor
-	C(_C), C0(_C0), theta(_theta), useRmax(_useRmax) {}     // Initialize variables
+      PostOrderTraversal(C_iter _C, C_iter _C0, real_t _theta) : // Constructor
+	C(_C), C0(_C0), theta(_theta) {}     // Initialize variables
       void operator() () const {                                // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
         for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
-	  PostOrderTraversal postOrderTraversal(CC, C0, theta, useRmax); // Instantiate recursive functor
+	  PostOrderTraversal postOrderTraversal(CC, C0, theta); // Instantiate recursive functor
 	  create_taskc(postOrderTraversal);                     //    Create new task for recursive call
 	}                                                       //   End loop over child cells
 	wait_tasks;                                             //   Synchronize tasks
@@ -74,7 +54,6 @@ namespace exafmm {
 	else {                                                  //  If not leaf cell
           Kernel::M2M(C, C0);                                   //   M2M kernel
         }                                                       //  End if for non leaf cell
-	if (useRmax) setRmax();                                 //  Redefine cell radius R based on maximum distance
 	C->R /= theta;                                          //  Divide R by theta
       }                                                         // End overload operator()
     };
@@ -110,8 +89,8 @@ namespace exafmm {
 
   public:
     //! Constructor
-    UpDownPass(real_t _theta, bool _useRmax) :
-      theta(_theta), useRmax(_useRmax) {     // Initialize variables
+    UpDownPass(real_t _theta) :
+      theta(_theta) {     // Initialize variables
     }
 
     //! Upward pass (P2M, M2M)
@@ -121,7 +100,7 @@ namespace exafmm {
 	C_iter C0 = cells.begin();                              //  Set iterator of target root cell
 	SetScaleFromRadius setScaleFromRadius(C0, C0);          //  Instantiate recursive functor
 	setScaleFromRadius();                                   //  Recursive call for setting cell scale
-	PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
+	PostOrderTraversal postOrderTraversal(C0, C0, theta);   // Instantiate recursive functor
 	postOrderTraversal();                                   //  Recursive call for upward pass
 	real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
       }                                                         // End if for empty cell vector

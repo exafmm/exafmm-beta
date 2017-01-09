@@ -41,7 +41,6 @@ namespace exafmm {
   extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, bool verbose, const char * path) {
     const int ncrit = 32;
     const int nspawn = 1000;
-    const bool useRmax = false;
     Kernel::init();
 
     args = new Args;
@@ -53,7 +52,7 @@ namespace exafmm {
     partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
     traversal = new Traversal<Kernel>(nspawn, images, path);
     treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<Kernel>(theta, useRmax);
+    upDownPass = new UpDownPass<Kernel>(theta);
     verify = new Verify<Kernel>(path);
 
     args->accuracy = 1;
@@ -70,7 +69,6 @@ namespace exafmm {
     args->theta = theta;
     args->threads = threads;
     args->verbose = verbose & (baseMPI->mpirank == 0);
-    args->useRmax = useRmax;
     verify->verbose = args->verbose;
     logger::verbose = args->verbose;
     logger::path = args->path;

@@ -71,7 +71,6 @@ namespace exafmm {
     const int nspawn = 1000;
     const int images = 0;
     const real_t theta = 0.4;
-    const bool useRmax = false;
     const bool verbose = false;
     KernelBase::eps2 = eps2;
     KernelBase::wavek = complex_t(kreal, kimag);
@@ -85,7 +84,7 @@ namespace exafmm {
     partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
     traversal = new Traversal<Kernel>(nspawn, images, path);
     treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<Kernel>(theta, useRmax);
+    upDownPass = new UpDownPass<Kernel>(theta);
     verify = new Verify<Kernel>(path);
     num_threads(threads);
 
@@ -106,7 +105,6 @@ namespace exafmm {
     args->path = path;
     args->theta = theta;
     args->verbose = verbose & (baseMPI->mpirank == 0);
-    args->useRmax = useRmax;
     logger::verbose = args->verbose;
     bbodies.resize(nb);
     for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {

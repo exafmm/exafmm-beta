@@ -36,7 +36,6 @@ namespace exafmm {
     {"threads",      required_argument, 0, 'T'},
     {"verbose",      no_argument,       0, 'v'},
     {"write",        no_argument,       0, 'w'},
-    {"useRmax",      no_argument,       0, 'x'},
     {0, 0, 0, 0}
   };
 #endif
@@ -63,7 +62,6 @@ namespace exafmm {
     int threads;
     int verbose;
     int write;
-    int useRmax;
 
   private:
     void usage(char * name) {
@@ -90,8 +88,7 @@ namespace exafmm {
 	      " --theta (-t)                    : Multipole acceptance criterion (%f)\n"
 	      " --threads (-T)                  : Number of threads (%d)\n"
 	      " --verbose (-v)                  : Print information to screen (%d)\n"
-	      " --write (-w)                    : Write timings to file (%d)\n"
-	      " --useRmax (-x)                  : Use maximum distance for MAC (%d)\n",
+	      " --write (-w)                    : Write timings to file (%d)\n",
 	      name,
               accuracy,
 	      ncrit,
@@ -112,8 +109,7 @@ namespace exafmm {
 	      theta,
 	      threads,
 	      verbose,
-	      write,
-	      useRmax);
+	      write);
     }
 
     const char * parseDistribution(const char * arg) {
@@ -249,8 +245,7 @@ namespace exafmm {
       theta(.4),
       threads(16),
       verbose(0),
-      write(0),
-      useRmax(0) {
+      write(0) {
       while (1) {
 #if _SX
 #warning SX does not have getopt_long
@@ -324,9 +319,6 @@ namespace exafmm {
 	case 'w':
 	  write = 1;
 	  break;
-	case 'x':
-	  useRmax = 1;
-	  break;
 	default:
 	  usage(argv[0]);
 	  abort();
@@ -349,10 +341,9 @@ namespace exafmm {
       key |= uint64_t(round(log(nspawn)/log(10))) << 26;
       key |= uint64_t(theta*14) << 29;
       key |= uint64_t(round(log(threads)/log(2))) << 32;
-      key |= uint64_t(useRmax) << 35;
-      key |= getConfigNum() << 36;
-      key |= uint64_t(round(log(mpisize)/log(2))) << 41;
-      assert( uint64_t(round(log(mpisize)/log(2))) < 22 );
+      key |= getConfigNum() << 35;
+      key |= uint64_t(round(log(mpisize)/log(2))) << 40;
+      assert( uint64_t(round(log(mpisize)/log(2))) < 23 );
       return key;
     }
 
@@ -397,9 +388,7 @@ namespace exafmm {
 		  << std::setw(stringLength)
 		  << "verbose" << " : " << verbose << std::endl
 		  << std::setw(stringLength)
-		  << "write" << " : " << write << std::endl
-		  << std::setw(stringLength)
-		  << "useRmax" << " : " << useRmax << std::endl;
+		  << "write" << " : " << write << std::endl;
       }
     }
   };

@@ -2,7 +2,6 @@
 * Rank items in this list according to importance
 
 -- Remove --
-Rmax
 mutual
 SX
 CILK, build_tree_cilk

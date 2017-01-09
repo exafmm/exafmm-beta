@@ -34,7 +34,7 @@ void fmm(Args args) {
   Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
   TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax);
+  UpDownPass<Kernel> upDownPass(args.theta);
   Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
