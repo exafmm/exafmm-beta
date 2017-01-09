@@ -49,8 +49,8 @@ namespace exafmm {
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<Kernel>(nspawn);
-    clusterTree = new BuildTreeFromCluster<Kernel>();
+    boundBox = new BoundBox<Kernel>;
+    clusterTree = new BuildTreeFromCluster<Kernel>;
     localTree = new BuildTree<Kernel>(ncrit, nspawn);
     globalTree = new BuildTree<Kernel>(1, nspawn);
     partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);

@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
   args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<Kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox;
   Bounds localBounds, globalBounds;
   BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
   BuildTree<Kernel> globalTree(1, args.nspawn);

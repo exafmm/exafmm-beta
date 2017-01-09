@@ -21,7 +21,7 @@ void fmm(Args args) {
 
   const vec3 cycle = 2 * M_PI;
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<Kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox;
   Bounds bounds;
   BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;

@@ -2,7 +2,9 @@
 * Rank items in this list according to importance
 
 -- Remove --
-TBB, nspawn, serialize build_tree_tbb
+TBB
+TBB traversal
+nspawn
 
 -- Check later --
 Add back time regression

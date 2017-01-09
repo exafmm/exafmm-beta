@@ -15,7 +15,7 @@ int main(int argc, char ** argv) {
   typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
 
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<Kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox;
   Bounds bounds;
   BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;

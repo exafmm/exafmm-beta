@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
   BaseMPI baseMPI;
-  BoundBox<Kernel> boundBox(args.nspawn);
+  BoundBox<Kernel> boundBox;
   BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
   Dataset<Kernel> data;
   Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
