@@ -40,7 +40,8 @@ private:
     real_t const& _max = max(bounds.Xmax);                    // get max of all dimensions
     uint64_t min_h = 0xFFFFFFFFFFFFFFFF;                      // initialize min Hilbert order
     uint64_t max_h = 0ull;                                    // initialize max Hilbert order
-    order = cast_coord(ceil(log(mpisize) / log(8))) + 1;      // get needed bits to represent Hilbert order in each dimension   
+    //order = cast_coord(ceil(log(mpisize) / log(8))) + 1;      // get needed bits to represent Hilbert order in each dimension   
+    order = 21;
     uint32_t nbins = 1 << order;
     real_t diameter = _max - _min;                            // set domain's diameter
     assert(order <= 21);                                      // maximum key is 63 bits
@@ -58,7 +59,7 @@ private:
 #else
       B->ICELL = getHilbert(position, order);
 #endif
-      if (B->ICELL > max_h)                                 // update min/max hilbert orders
+      if (B->ICELL > max_h)                                   // update min/max hilbert orders
         max_h = B->ICELL;
       else if (B->ICELL < min_h)
         min_h = B->ICELL;
@@ -306,132 +307,6 @@ public:
     return rankBounds[mpirank];                               // Return local bounds
   }
 
-#if EXAFMM_COUNT_LIST
-  template <typename T>
-  void rebalance(Cells const& cells, Bodies& bodies, real_t const& numP2P, T const& remoteInteractionList) {    
-    logger::startTimer("Partition");                           // Start timer
-    for (int i = 0; i < bodies.size(); ++i) {
-      bodies[i].IRANK = mpirank;
-    }
-    std::vector<double> remoteLoad(mpisize);
-    const double imbalanceRate = 0.005;
-    double sumWork = static_cast<double>(numP2P);
-    MPI_Allgather(&sumWork, 1, MPI_DOUBLE, (double*)&remoteLoad[0], 1, MPI_DOUBLE, MPI_COMM_WORLD);// Gather all domain bounds
-    double avgLoad = std::accumulate(remoteLoad.begin(), remoteLoad.end(), 0.0) / mpisize;
-    double upperImbBound = avgLoad + avgLoad * imbalanceRate;
-    double lowerImbBound = avgLoad - avgLoad * imbalanceRate;
-    MPI_Comm balance_comm;
-    int balance_rank, balance_size;
-    if (remoteLoad[mpirank] > lowerImbBound)  {
-      MPI_Comm_split(MPI_COMM_WORLD, 0, mpirank, &balance_comm);
-      MPI_Comm_free(&balance_comm);
-      logger::stopTimer("Partition");                           // Stop timer
-      logger::startTimer("Sort");                               // Start timer
-      logger::stopTimer("Sort");                                // Stop timer
-      return;
-    } else {
-      MPI_Comm_split(MPI_COMM_WORLD, 1, mpirank, &balance_comm);
-      MPI_Comm_rank(balance_comm, &balance_rank);
-      MPI_Comm_size(balance_comm, &balance_size);
-    }
-    std::vector<bool> overloadedRanks(mpisize, false);
-    int overloadedCount = 0;
-    for (int irank = 1; irank < mpisize; ++irank) {
-      if (remoteLoad[irank] > upperImbBound) {
-        overloadedRanks[irank] = true;
-        overloadedCount++;
-      }
-    }
-    std::vector<bool> underloadedRanks(mpisize, false);
-    for (int irank = 1; irank < mpisize; ++irank) {
-      if (remoteLoad[irank] < lowerImbBound)
-        underloadedRanks[irank] = true;
-    }
-    // the overloaded should send the underloaded ranks
-    double loadDificit = remoteLoad[mpirank] - avgLoad;
-    int diff = mpisize - mpirank;
-    float** globalInteractionList = new float*[balance_size];
-    float* pool = new float[balance_size * mpisize]; // allocate pool
-    for (int irank = 0; irank < balance_size; ++irank, pool += mpisize) {
-      globalInteractionList[irank] = pool;
-    }
-    float* interactionList = new float[mpisize];
-    for (int i = 0; i < mpisize; ++i) interactionList[i] = 0;
-    int cellCount = remoteInteractionList.size();
-    for (int cc = 0; cc < cellCount; ++cc) {
-      for (int irank = 0; irank < mpisize; ++irank) {
-        if (overloadedRanks[irank]) {
-          real_t localinteraction = remoteInteractionList[cc][mpirank];
-          real_t remoteinteraction = remoteInteractionList[cc][irank];
-          if (remoteinteraction > localinteraction)
-            interactionList[irank] += remoteinteraction;
-        }
-
-      }
-    }
-    std::vector<int> ranksToBalance;
-    MPI_Allgather(interactionList, mpisize, MPI_FLOAT, globalInteractionList[0], mpisize, MPI_FLOAT, balance_comm);// Gather interactions from balance communicators
-    for (int irank = 0; irank < mpisize; ++irank) {
-      if (overloadedRanks[irank]) {
-        float max = 0;
-        int maxRank = -1;
-        for (int jrank = 0; jrank < balance_size; ++jrank) {
-          if (globalInteractionList[jrank][irank] > max) {
-            max = globalInteractionList[jrank][irank];
-            maxRank = jrank;
-          }
-        }
-        if (maxRank == balance_rank && maxRank >= 0)
-          ranksToBalance.push_back(irank);
-      }
-    }
-    B_iter B0 = bodies.begin();
-    //std::cout<<"avgLoad: " << avgLoad << std::endl;
-    int rebalanceSize = ranksToBalance.size();
-    bool repartition = (rebalanceSize > 0);
-    std::vector<uint16_t> allocatedCells(cells.size(),0);
-    for (int i = 0; i < ranksToBalance.size(); ++i) {
-      repartition = true;
-      int irecv = ranksToBalance[i];
-      int interactionCount = remoteInteractionList.size();
-      double rightLoad = remoteLoad[irecv];
-      std::cout<<" rank " << mpirank << " is balancing " << irecv <<" with load " << rightLoad << std::endl;
-      for (int cc = 0; cc < interactionCount; ++cc) {        
-        if(allocatedCells[cc]) continue;
-        std::vector<int> const& cellInteraction = remoteInteractionList[cc];
-        int maxDiff = 0;
-        int index = 0;
-        if (cellInteraction[irecv]*10 > cellInteraction[mpirank]) {
-          double cellLoad = std::accumulate(cellInteraction.begin(), cellInteraction.end(), 0.0);
-          loadDificit += (cellLoad - cellInteraction[irecv])/avgLoad;
-          rightLoad -= (cellLoad - cellInteraction[mpirank])/avgLoad;
-          if (/*loadDificit > 0 ||*/rightLoad <= avgLoad)
-            break;
-          allocatedCells[cc] = 1;
-          int ibody = cells[cc].IBODY;
-          int nbody = cells[cc].NBODY;
-          for (int ii = ibody; ii < nbody; ++ii) {
-            (B0 + ii)->IRANK = irecv;
-          }
-          //remoteInteractionList.erase(remoteInteractionList.begin() + cc);
-          //interactionCount--;
-        }
-      }
-      std::cout<<" rank " << mpirank << " reduced load of " << irecv <<" to  " << rightLoad << std::endl;
-    }
-    logger::stopTimer("Partition");                           // Start timer
-    logger::startTimer("Sort");                               // Start timer
-    if (repartition) {
-      Sort sort;                                              // Instantiate sort class
-      bodies = sort.irank(bodies);                            // Sort bodies according to IRANK
-    }
-    logger::stopTimer("Sort");                                // Stop timer
-    MPI_Comm_free(&balance_comm);
-    delete[] globalInteractionList[0];
-    delete[] globalInteractionList;
-    delete[] interactionList;
-  }
-#endif
   //! Partition bodies with geometric octsection
   Bounds octsection(Bodies & bodies, Bounds global) {
     logger::startTimer("Partition");                          // Start timer

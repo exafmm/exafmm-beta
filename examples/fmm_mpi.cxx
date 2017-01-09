@@ -25,7 +25,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI* treeMPI = new TreeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity);
+  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images, args.granularity);
   Traversal traversal(args.nspawn, args.images,baseMPI.mpirank, baseMPI.mpisize);  
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
@@ -63,34 +63,12 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies, localBounds);
     }
     globalBounds = baseMPI.allreduceBounds(localBounds);
-#if EXAFMM_COUNT_LIST 
-    if(t > 0) {
-      partition.rebalance(cells,bodies, traversal.getRemoteP2PCount(), traversal.getRemoteInteractionList());
-      bodies = treeMPI->commBodies(bodies);
-    } else {
-      partition.partition(bodies, globalBounds, args.partitioning);      
-      bodies = treeMPI->commBodies(bodies);
-      if (args.IneJ) {        
-        partition.partition(jbodies, globalBounds, args.partitioning);      
-        jbodies = treeMPI->commBodies(jbodies);
-      }
-    }
-#else    
     partition.partition(bodies, globalBounds, args.partitioning);    
-    // if(baseMPI.mpirank == 0) {
-    // std::ofstream pfile("particles.txt");
-    // for (int i = 0; i < args.numBodies; ++i) 
-    //   pfile<<bodies[i].X[0] <<","<<bodies[i].X[1] <<","<<bodies[i].X[2] <<","<< bodies[i].ICELL<<","<<bodies[i].IRANK<< std::endl;
-    //   //pfile<< bodies[i].X << ","<<bodies[i].IRANK<< std::endl;      
-    //   pfile.close();      
-    // }  
-    // return 0;
-    bodies = treeMPI->commBodies(bodies);
+    bodies = treeMPI.commBodies(bodies);
     if (args.IneJ) {
       partition.partition(jbodies, globalBounds, args.partitioning);      
-      jbodies = treeMPI->commBodies(jbodies);
+      jbodies = treeMPI.commBodies(jbodies);
     }
-#endif
     localBounds = boundBox.getBounds(bodies);
     cells = localTree.buildTree(bodies, buffer, localBounds);
     localBounds = boundBox.getBounds(cells, localBounds);
@@ -108,18 +86,18 @@ int main(int argc, char ** argv) {
       } else {
         letCells = cells;
       }
-      treeMPI->allgatherBounds(localBounds);        
+      treeMPI.allgatherBounds(localBounds);        
 #pragma omp parallel sections
         {
 #pragma omp section
           {              
-      treeMPI->setLET(letCells, cycle);
+      treeMPI.setLET(letCells, cycle);
 #if EXAFMM_USE_DISTGRAPH 
-      treeMPI->initDistGraph(globalBounds);       
-      treeMPI->commDistGraph(cycle);   
+      treeMPI.initDistGraph(globalBounds);       
+      treeMPI.commDistGraph(cycle);   
 #else
-      treeMPI->commBodies();
-      treeMPI->commCells();
+      treeMPI.commBodies();
+      treeMPI.commCells();
 #endif          
 	        }
 #pragma omp section
@@ -137,14 +115,14 @@ int main(int argc, char ** argv) {
         }    
         if (baseMPI.mpisize > 1) {
           if (args.graft) {
-    	treeMPI->linkLET();
-    	gbodies = treeMPI->root2body();
+    	treeMPI.linkLET();
+    	gbodies = treeMPI.root2body();
     	jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
-    	treeMPI->attachRoot(jcells);
+    	treeMPI.attachRoot(jcells);
     	traversal.traverse(cells, jcells, cycle, args.dual, false);
           } else {
     	for (int irank=0; irank<baseMPI.mpisize; irank++) {
-    	  treeMPI->getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
+    	  treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
     	  traversal.traverse(cells, jcells, cycle, args.dual, false);
     	}
           }
@@ -152,7 +130,7 @@ int main(int argc, char ** argv) {
 #else
         jbodies = bodies;
         for (int irank=0; irank<baseMPI.mpisize; irank++) {
-          treeMPI->shiftBodies(jbodies);
+          treeMPI.shiftBodies(jbodies);
           jcells.clear();
           localBounds = boundBox.getBounds(jbodies);
           jcells = localTree.buildTree(jbodies, buffer, localBounds);
@@ -163,7 +141,7 @@ int main(int argc, char ** argv) {
         upDownPass.downwardPass(cells);
         logger::stopPAPI();
         logger::stopTimer("Total FMM", 0);
-#if 0 
+#if 1 
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
@@ -173,7 +151,7 @@ int main(int argc, char ** argv) {
     logger::startTimer("Total Direct");
     for (int i=0; i<baseMPI.mpisize; i++) {
       if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
-      treeMPI->shiftBodies(jbodies);
+      treeMPI.shiftBodies(jbodies);
       traversal.direct(bodies, jbodies, cycle);
     }
     traversal.normalize(bodies);
@@ -208,6 +186,5 @@ int main(int argc, char ** argv) {
       traversal.writeTraversalData(baseMPI.mpirank, bodies.size(), t);
     }
   }
-  delete treeMPI;
   return 0;
 }

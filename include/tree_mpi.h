@@ -30,6 +30,7 @@ protected:
   int * recvCellDispl;                                        //!< Receive displacement  
   C_iter Ci0;                                                 //!< Iterator of first target cell
   C_iter Cj0;                                                 //!< Iterator of first source cell  
+#if EXAFMM_USE_DISTGRAPH
   bool distGraphInitialized;                                  //!< Is distributed graph initialized     
   struct DistGraphInfo {
   public:
@@ -37,14 +38,12 @@ protected:
     int * destinations;                                       //!< Array of destinations in a distributed graph node
     int indegree;                                             //!< Number of incoming edges 
     int outdegree;                                            //!< Number of outgoing edges     
-    MPI_Comm graphComm;                                       //!< The distributed graph communicator
-#if EXAFMM_USE_DISTGRAPH     
+    MPI_Comm graphComm;                                       //!< The distributed graph communicator  
     ~DistGraphInfo() {
       delete[] sources;
       delete[] destinations;                  
       MPI_Comm_free(&graphComm);
     }
-#endif    
   };  
   struct GraphNode {
   public:
@@ -60,7 +59,8 @@ protected:
   typedef std::vector<CommTree> CommGraph;                    //! The Hierarchical communication tree  
   DistGraphInfo distGraphInfo;                                //!< The distributed graph info 
   CommGraph commGraph;                                        //!< The FMM communication graph  
-  
+#endif
+
 private:
   //! Exchange send count for bodies
   void alltoall(Bodies & bodies) {
@@ -80,7 +80,7 @@ private:
       recvBodyDispl[irank + 1] = recvBodyDispl[irank] + recvBodyCount[irank]; //  Set receive displacement
     }                                                         // End loop over ranks
   }
-
+  
   //! Exchange bodies
   void alltoallv(Bodies & bodies) {
     assert( (sizeof(bodies[0]) & 3) == 0 );                   // Body structure must be 4 Byte aligned
@@ -101,7 +101,8 @@ private:
       recvBodyDispl[irank] /= word;                           //  Divide receive displacement by word size of data
     }                                                         // End loop over ranks
   }
-  
+
+#if EXAFMM_USE_P2P  
   //! Exchange bodies/cells in a point-to-point manner
   template<typename T>
   void alltoallv_p2p(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) {        
@@ -166,7 +167,9 @@ private:
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);   
   }
+#endif
 
+#if EXAFMM_USE_NBX  
     //! Exchange bodies in a point-to-point manner using Non-blocking Consensus (NBX) from Torston Hoefler paper  
   template<typename T> 
   void alltoallv_p2p_nbx(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount, bool updateSendCounts, int tag) {        
@@ -243,7 +246,9 @@ private:
     }
     delete[] req;
   } 
+#endif  
 
+#if EXAFMM_USE_ONESIDED
   //! Exchange bodies/cells in a point-to-point manner
   template<typename T>
   void alltoallv_p2p_onesided(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) { 
@@ -273,7 +278,9 @@ private:
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);       
   }
+#endif
 
+#if EXAFMM_USE_BUTTERFLY
   template<typename PathT, typename Msg>
   void getMessageInfo(PathT const& path, Msg& content, int rank , int stage, int const& logP) {
     if(stage < logP) {
@@ -308,6 +315,38 @@ private:
     return path;
   }
 
+  template<typename MPI_T, typename BUFF_T>
+  void deallocateCompletedRequests(MPI_T& requests, BUFF_T& data, bool eraseRequests=true, bool finalize = false) {
+    int count = requests.size();
+    for (int i = 0; i < count; ++i) {
+      if (*(requests[i]) != MPI_REQUEST_NULL) {
+        int flag = 0;
+        if(!finalize) {          
+          MPI_Test(requests[i], &flag, MPI_STATUS_IGNORE);          
+        } else {
+          MPI_Wait(requests[i], MPI_STATUS_IGNORE);
+          flag = 1;          
+        }
+        if(flag) {          
+          delete data[i];
+          if(eraseRequests) {
+            requests.erase(requests.begin() + i);
+            data.erase(data.begin() + i);
+            count--;
+            i--;
+          }
+        }
+      } else {
+        delete data[i];
+        if(eraseRequests) {
+          requests.erase(requests.begin() + i);
+          data.erase(data.begin() + i);
+          count--;
+          i--;
+        } 
+      }
+    }
+  }
 
   //! Exchange bodies in a point-to-point manner following hypercube pattern    
   template<typename T>  
@@ -352,8 +391,7 @@ private:
     MPI_Request* rreq = new MPI_Request[logPReceiveSize];            
     T** irecvBuff = new T*[logPReceiveSize];    
     for (int i = 0; i < logPReceiveSize; ++i) 
-      irecvBuff[i] = new T(maxSize);    
-    logger::startTimer("Comm LET");
+      irecvBuff[i] = new T(maxSize);        
     for (int i = 0; i < logP; ++i) {
       int sendRecvSize = mpisize>>(i+1);      
       int sendRecvRank = path[mpirank][i];
@@ -437,7 +475,6 @@ private:
       previousSendBufferSize = sendRecvBuffer.size();    
       deallocateCompletedRequests(pendingRequests, pendingBuffers);
     }
-    logger::stopTimer("Comm LET");
     deallocateCompletedRequests(pendingRequests, pendingBuffers, true,true);
     assert(ownDataIndex == mpisize - 1);
     assert(pendingBuffers.size() == 0);
@@ -452,7 +489,9 @@ private:
     }
     delete[] irecvBuff;    
   }
+#endif
 
+#if EXAFMM_USE_H_ALLTOALL
   template<typename T>
   void alltoallv_heirarchical(T& sendB, T& recvB, int* recvDispl, int* recvCount, int* sendDispl, int* sendCount) { 
     int logP = log2(mpisize);
@@ -513,7 +552,7 @@ private:
     typename T::iterator localBuffer = sendB.begin() + sendDispl[mpirank];
     std::copy(localBuffer, localBuffer + sendCount[mpirank], recvB.begin() + recvDispl[mpirank]);  
   }       
-  
+#endif
 
   //! Exchange send count for cells
   void alltoall(Cells& cells) {
@@ -548,39 +587,6 @@ private:
       recvCellCount[irank] /= word;                           //  Divide receive count by word size of data
       recvCellDispl[irank] /= word;                           //  Divide receive displacement by word size of data
     }                                                         // End loop over ranks
-  }
-
-  template<typename MPI_T, typename BUFF_T>
-  void deallocateCompletedRequests(MPI_T& requests, BUFF_T& data, bool eraseRequests=true, bool finalize = false) {
-    int count = requests.size();
-    for (int i = 0; i < count; ++i) {
-      if (*(requests[i]) != MPI_REQUEST_NULL) {
-        int flag = 0;
-        if(!finalize) {          
-          MPI_Test(requests[i], &flag, MPI_STATUS_IGNORE);          
-        } else {
-          MPI_Wait(requests[i], MPI_STATUS_IGNORE);
-          flag = 1;          
-        }
-        if(flag) {          
-          delete data[i];
-          if(eraseRequests) {
-            requests.erase(requests.begin() + i);
-            data.erase(data.begin() + i);
-            count--;
-            i--;
-          }
-        }
-      } else {
-        delete data[i];
-        if(eraseRequests) {
-          requests.erase(requests.begin() + i);
-          data.erase(data.begin() + i);
-          count--;
-          i--;
-        } 
-      }
-    }
   }
 
 protected:
@@ -668,6 +674,7 @@ protected:
     }                                                         // End loop over child cells
   }
 
+#if EXAFMM_USE_DISTGRAPH
   template<typename BoundsArr>
   NeighborList setNeighbors(BoundsArr minBounds, BoundsArr maxBounds, Bounds globalBounds) {
     NeighborList neighbors(mpisize);
@@ -785,12 +792,17 @@ protected:
       destinations[i] = outwardNeighbors[i];
     }
   }
-  
+#endif
+
 public:
   //! Constructor
   TreeMPI(int _mpirank, int _mpisize, int _images) :
     mpirank(_mpirank), mpisize(_mpisize), images(_images),
-    granularity(1),distGraphInitialized(false)   
+    granularity(1)
+#if EXAFMM_USE_DISTGRAPH
+    ,distGraphInitialized(false)   
+#endif
+
     {                            // Initialize variables
     allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
     allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
@@ -807,7 +819,10 @@ public:
   //! Temporary constructor added to prevent breaking compatibility with other kernels using this class
   TreeMPI(int _mpirank, int _mpisize, int _images, int _grainSize) :
     mpirank(_mpirank), mpisize(_mpisize), images(_images),
-    granularity(_grainSize),distGraphInitialized(false)
+    granularity(_grainSize)
+#if EXAFMM_USE_DISTGRAPH
+    ,distGraphInitialized(false)
+#endif    
   {                                                           // Initialize variables
     allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
     allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
@@ -845,7 +860,7 @@ public:
     MPI_Allgather(Xmax, 3, MPI_FLOAT, allBoundsXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
   }
 
-
+#if EXAFMM_USE_DISTGRAPH
   void initDistGraph(Bounds globalBounds) {
     logger::startTimer("Init Dist Graph");
     if(!distGraphInitialized) {
@@ -1099,7 +1114,7 @@ public:
     logger::stopTimer("Comm LET");
     logger::printTime("Link LET");                           
   }
-
+#endif
   //! Set local essential tree to send to each process
   void setLET(Cells & cells, vec3 cycle) {
     logger::startTimer("Set LET size");                       // Start timer
@@ -1379,7 +1394,7 @@ public:
     return recvBodies;                                        // Return received bodies
   }
 
-  //! Send bodies
+  //! Send LET bodies
   Bodies commBodies() {
     logger::startTimer("Comm LET bodies");                    // Start timer
 #if EXAFMM_USE_H_ALLTOALL 
@@ -1403,7 +1418,7 @@ public:
     return recvBodies;                                        // Return received bodies
   }
 
-  //! Send cells
+  //! Send LET cells
   void commCells() {
     logger::startTimer("Comm LET cells");                     // Start timer
 #if EXAFMM_USE_H_ALLTOALL

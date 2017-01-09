@@ -79,7 +79,7 @@ private:
             " --numBodies (-n)              : Number of bodies (%d)\n"
             " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
             " --P (-P) not working          : Order of expansion (%d)\n"
-            " --partitioning(-p) [b/h/o]    : Partitioning method (Bisection, Hilbert or Octsection) (%d)\n"
+            " --partitioning(-p) [b/h/o]    : Partitioning method (Bisection, Hilbert or Octsection) (%s)\n"
             " --repeat (-r)                 : Number of iteration loops (%d)\n"
             " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
             " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
@@ -245,7 +245,7 @@ public:
         useRmax = 1;
         break;
       default:
-        usage(argv[0]);
+        usage(argv[0]);        
         exit(0);
       }
     }
