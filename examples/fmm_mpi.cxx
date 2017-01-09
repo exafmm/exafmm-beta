@@ -113,9 +113,9 @@ void fmm(Args args) {
           traversal.initListCount(cells);
           traversal.initWeight(cells);
           if (args.IneJ) {
-            traversal.traverse(cells, jcells, cycle, args.dual, false);
+            traversal.traverse(cells, jcells, cycle, args.dual);
           } else {
-            traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+            traversal.traverse(cells, cells, cycle, args.dual);
             jbodies = bodies;
           }
         }
@@ -126,11 +126,11 @@ void fmm(Args args) {
           gbodies = treeMPI.root2body();
           jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
           treeMPI.attachRoot(jcells);
-          traversal.traverse(cells, jcells, cycle, args.dual, false);
+          traversal.traverse(cells, jcells, cycle, args.dual);
         } else {
           for (int irank=0; irank<baseMPI.mpisize; irank++) {
             treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
-            traversal.traverse(cells, jcells, cycle, args.dual, false);
+            traversal.traverse(cells, jcells, cycle, args.dual);
           }
         }
       }
@@ -142,7 +142,7 @@ void fmm(Args args) {
         localBounds = boundBox.getBounds(jbodies);
         jcells = localTree.buildTree(jbodies, buffer, localBounds);
         upDownPass.upwardPass(jcells);
-        traversal.traverse(cells, jcells, cycle, args.dual, false);
+        traversal.traverse(cells, jcells, cycle, args.dual);
       }
 #endif
       upDownPass.downwardPass(cells);

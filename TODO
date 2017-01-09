@@ -3,6 +3,7 @@
 
 -- Remove --
 mutual
+remote
 CILK, build_tree_cilk
 TBB, nspawn, serialize build_tree_tbb
 

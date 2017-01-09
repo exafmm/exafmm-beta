@@ -23,7 +23,6 @@ namespace exafmm {
     {"help",         no_argument,       0, 'h'},
     {"images",       required_argument, 0, 'i'},
     {"IneJ",         no_argument,       0, 'j'},
-    {"mutual",       no_argument,       0, 'm'},
     {"numBodies",    required_argument, 0, 'n'},
     {"path",         required_argument, 0, 'p'},
     {"P",            required_argument, 0, 'P'},
@@ -48,7 +47,6 @@ namespace exafmm {
     int getMatrix;
     int images;
     int IneJ;
-    int mutual;
     int numBodies;
     const char * path;
     int P;
@@ -75,7 +73,6 @@ namespace exafmm {
 	      " --help (-h)                     : Show this help document\n"
 	      " --images (-i)                   : Number of periodic image levels (%d)\n"
 	      " --IneJ (-j)                     : Use different sources & targets (%d)\n"
-	      " --mutual (-m)                   : Use mutual interaction (%d)\n"
 	      " --numBodies (-n)                : Number of bodies (%d)\n"
 	      " --path (-p)                     : Path to save files (%s)\n"
 	      " --P (-P) not working            : Order of expansion (%d)\n"
@@ -96,7 +93,6 @@ namespace exafmm {
 	      getMatrix,
 	      images,
 	      IneJ,
-	      mutual,
 	      numBodies,
               path,
 	      P,
@@ -232,7 +228,6 @@ namespace exafmm {
       getMatrix(0),
       images(0),
       IneJ(0),
-      mutual(0),
       numBodies(1000000),
       path("./"),
       P(Pmax),
@@ -280,9 +275,6 @@ namespace exafmm {
 	case 'j':
 	  IneJ = 1;
 	  break;
-	case 'm':
-	  mutual = 1;
-	  break;
 	case 'n':
 	  numBodies = atoi(optarg);
 	  break;
@@ -326,15 +318,14 @@ namespace exafmm {
       key |= graft << 11;
       key |= images << 12;
       key |= IneJ << 14;
-      key |= mutual << 15;
-      key |= uint64_t(round(log(numBodies)/log(10))) << 16;
-      key |= P << 20;
-      key |= uint64_t(round(log(nspawn)/log(10))) << 26;
-      key |= uint64_t(theta*14) << 29;
-      key |= uint64_t(round(log(threads)/log(2))) << 32;
-      key |= getConfigNum() << 35;
-      key |= uint64_t(round(log(mpisize)/log(2))) << 40;
-      assert( uint64_t(round(log(mpisize)/log(2))) < 23 );
+      key |= uint64_t(round(log(numBodies)/log(10))) << 15;
+      key |= P << 19;
+      key |= uint64_t(round(log(nspawn)/log(10))) << 25;
+      key |= uint64_t(theta*14) << 28;
+      key |= uint64_t(round(log(threads)/log(2))) << 31;
+      key |= getConfigNum() << 34;
+      key |= uint64_t(round(log(mpisize)/log(2))) << 39;
+      assert( uint64_t(round(log(mpisize)/log(2))) < 24 );
       return key;
     }
 
@@ -360,8 +351,6 @@ namespace exafmm {
 		  << "images" << " : " << images << std::endl
 		  << std::setw(stringLength)
 		  << "IneJ" << " : " << IneJ << std::endl
-		  << std::setw(stringLength)
-		  << "mutual" << " : " << mutual << std::endl
 		  << std::setw(stringLength)
 		  << "numBodies" << " : " << numBodies << std::endl
 		  << std::setw(stringLength)

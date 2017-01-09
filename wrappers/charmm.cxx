@@ -61,7 +61,6 @@ namespace exafmm {
     args->dual = 1;
     args->graft = 0;
     args->images = images;
-    args->mutual = 0;
     args->numBodies = 0;
     args->path = path;
     args->nspawn = nspawn;
@@ -180,7 +179,7 @@ namespace exafmm {
     treeMPI->commCells();
     traversal->initListCount(cells);
     traversal->initWeight(cells);
-    traversal->traverse(cells, cells, cycles, args->dual, args->mutual);
+    traversal->traverse(cells, cells, cycles, args->dual);
     Cells jcells;
     if (baseMPI->mpisize > 1) {
       if (args->graft) {
@@ -188,11 +187,11 @@ namespace exafmm {
         Bodies gbodies = treeMPI->root2body();
         jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
         treeMPI->attachRoot(jcells);
-        traversal->traverse(cells, jcells, cycles, args->dual, false);
+        traversal->traverse(cells, jcells, cycles, args->dual);
       } else {
         for (int irank=0; irank<baseMPI->mpisize; irank++) {
           treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-          traversal->traverse(cells, jcells, cycles, args->dual, false);
+          traversal->traverse(cells, jcells, cycles, args->dual);
         }
       }
     }

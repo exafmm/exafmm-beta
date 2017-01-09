@@ -75,9 +75,9 @@ void fmm(Args args) {
       if (args.IneJ) {
         jcells = buildTree.buildTree(jbodies, buffer, bounds);
         upDownPass.upwardPass(jcells);
-        traversal.traverse(cells, jcells, cycle, args.dual, false);
+        traversal.traverse(cells, jcells, cycle, args.dual);
       } else {
-        traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+        traversal.traverse(cells, cells, cycle, args.dual);
         jbodies = bodies;
       }
       upDownPass.downwardPass(cells);

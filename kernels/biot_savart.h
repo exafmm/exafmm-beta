@@ -24,7 +24,7 @@ namespace exafmm {
 
     static void normalize(Bodies) {}
 
-    static void P2P(C_iter Ci, C_iter Cj, bool ) {
+    static void P2P(C_iter Ci, C_iter Cj) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
       int ni = Ci->NBODY;
@@ -51,34 +51,6 @@ namespace exafmm {
         Bi[i].TRG[1] += ax;
         Bi[i].TRG[2] += ay;
         Bi[i].TRG[3] += az;
-      }
-    }
-
-    static void P2P(C_iter C) {
-      B_iter B = C->BODY;
-      int n = C->NBODY;
-      int i = 0;
-      for ( ; i<n; i++) {
-        kreal_t ax = 0;
-        kreal_t ay = 0;
-        kreal_t az = 0;
-        for (int j=i+1; j<n; j++) {
-          vec3 dX = B[j].X - B[i].X;
-          real_t R2 = norm(dX) + eps2;
-          if (R2 != 0) {
-            real_t invR2 = 1.0 / R2;
-            real_t S2 = 2 * B[j].SRC[3] * B[j].SRC[3];
-            real_t RS = R2 / S2;
-            real_t cutoff = invR2 * std::sqrt(invR2) * (erf( std::sqrt(RS) ) - std::sqrt(4 / M_PI * RS) * std::exp(-RS));
-            ax += (dX[1] * B[j].SRC[2] - dX[2] * B[j].SRC[1]) * cutoff;
-            ay += (dX[2] * B[j].SRC[0] - dX[0] * B[j].SRC[2]) * cutoff;
-            az += (dX[0] * B[j].SRC[1] - dX[1] * B[j].SRC[0]) * cutoff;
-          }
-        }
-        B[i].TRG[0] = 1;
-        B[i].TRG[1] += ax;
-        B[i].TRG[2] += ay;
-        B[i].TRG[3] += az;
       }
     }
 
@@ -136,14 +108,12 @@ namespace exafmm {
       }
     }
 
-    static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
-      assert(mutual == false);
+    static void M2L(C_iter Ci, C_iter Cj) {
       complex_t Ynmi[P*P], Ynmj[P*P];
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
       evalLocal(P, rho, alpha, beta, Ynmi);
-      if (mutual) evalLocal(P, rho, alpha+M_PI, beta, Ynmj);
       for (int j=0; j<P; j++) {
 	real_t Cnm = oddOrEven(j);
 	for (int k=0; k<=j; k++) {
@@ -155,7 +125,6 @@ namespace exafmm {
 	      int jnkm = (j + n) * (j + n) + j + n + m - k;
 	      for (int d=0; d<3; d++) {
 		Li[d] += std::conj(Cj->M[3*nms+d]) * Cnm * Ynmi[jnkm];
-		if (mutual) Lj[d] += std::conj(Ci->M[3*nms+d]) * Cnm * Ynmj[jnkm];
 	      }
 	    }
 	    for (int m=0; m<=n; m++) {
@@ -164,13 +133,11 @@ namespace exafmm {
 	      real_t Cnm2 = Cnm * oddOrEven((k-m)*(k<m)+m);
 	      for (int d=0; d<3; d++) {
 		Li[d] += Cj->M[3*nms+d] * Cnm2 * Ynmi[jnkm];
-		if (mutual) Lj[d] += Ci->M[3*nms+d] * Cnm2 * Ynmj[jnkm];
 	      }
 	    }
 	  }
 	  for (int d=0; d<3; d++) {
 	    Ci->L[3*jks+d] += Li[d];
-	    if (mutual) Cj->L[3*jks+d] += Lj[d];
 	  }
 	}
       }

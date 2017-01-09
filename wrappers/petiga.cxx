@@ -99,7 +99,6 @@ namespace exafmm {
 #endif
     args->graft = 1;
     args->images = images;
-    args->mutual = 0;
     args->numBodies = 0;
     args->nspawn = nspawn;
     args->path = path;
@@ -204,18 +203,18 @@ namespace exafmm {
     treeMPI->commCells();
     traversal->initListCount(bcells);
     traversal->initWeight(bcells);
-    traversal->traverse(bcells, jcells, cycles, args->dual, args->mutual);
+    traversal->traverse(bcells, jcells, cycles, args->dual);
     if (baseMPI->mpisize > 1) {
       if (args->graft) {
         treeMPI->linkLET();
         Bodies gbodies = treeMPI->root2body();
         jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
         treeMPI->attachRoot(jcells);
-        traversal->traverse(bcells, jcells, cycles, args->dual, false);
+        traversal->traverse(bcells, jcells, cycles, args->dual);
       } else {
         for (int irank=0; irank<baseMPI->mpisize; irank++) {
           treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-          traversal->traverse(bcells, jcells, cycles, args->dual, false);
+          traversal->traverse(bcells, jcells, cycles, args->dual);
         }
       }
     }
@@ -249,19 +248,19 @@ namespace exafmm {
     treeMPI->commCells();
     traversal->initListCount(bcells);
     traversal->initWeight(bcells);
-    traversal->traverse(bcells, vcells, cycles, args->dual, args->mutual);
+    traversal->traverse(bcells, vcells, cycles, args->dual);
     if (baseMPI->mpisize > 1) {
       if (args->graft) {
         treeMPI->linkLET();
         Bodies gbodies = treeMPI->root2body();
         Cells jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
         treeMPI->attachRoot(jcells);
-        traversal->traverse(bcells, jcells, cycles, args->dual, false);
+        traversal->traverse(bcells, jcells, cycles, args->dual);
       } else {
         for (int irank=0; irank<baseMPI->mpisize; irank++) {
           Cells jcells;
           treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-          traversal->traverse(bcells, jcells, cycles, args->dual, false);
+          traversal->traverse(bcells, jcells, cycles, args->dual);
         }
       }
     }
@@ -295,19 +294,19 @@ namespace exafmm {
     treeMPI->commCells();
     traversal->initListCount(vcells);
     traversal->initWeight(vcells);
-    traversal->traverse(vcells, bcells, cycles, args->dual, args->mutual);
+    traversal->traverse(vcells, bcells, cycles, args->dual);
     if (baseMPI->mpisize > 1) {
       if (args->graft) {
         treeMPI->linkLET();
         Bodies gbodies = treeMPI->root2body();
         Cells jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
         treeMPI->attachRoot(jcells);
-        traversal->traverse(vcells, jcells, cycles, args->dual, false);
+        traversal->traverse(vcells, jcells, cycles, args->dual);
       } else {
         for (int irank=0; irank<baseMPI->mpisize; irank++) {
           Cells jcells;
           treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-          traversal->traverse(vcells, jcells, cycles, args->dual, false);
+          traversal->traverse(vcells, jcells, cycles, args->dual);
         }
       }
     }
@@ -337,18 +336,18 @@ namespace exafmm {
     treeMPI->commCells();
     traversal->initListCount(vcells);
     traversal->initWeight(vcells);
-    traversal->traverse(vcells, jcells, cycles, args->dual, args->mutual);
+    traversal->traverse(vcells, jcells, cycles, args->dual);
     if (baseMPI->mpisize > 1) {
       if (args->graft) {
         treeMPI->linkLET();
         Bodies gbodies = treeMPI->root2body();
         jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
         treeMPI->attachRoot(jcells);
-        traversal->traverse(vcells, jcells, cycles, args->dual, false);
+        traversal->traverse(vcells, jcells, cycles, args->dual);
       } else {
         for (int irank=0; irank<baseMPI->mpisize; irank++) {
           treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-          traversal->traverse(vcells, jcells, cycles, args->dual, false);
+          traversal->traverse(vcells, jcells, cycles, args->dual);
         }
       }
     }

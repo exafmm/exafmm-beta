@@ -28,7 +28,7 @@ namespace exafmm {
       }
     }
 
-    static void P2P(C_iter Ci, C_iter Cj, bool mutual) {
+    static void P2P(C_iter Ci, C_iter Cj) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
       int ni = Ci->NBODY;
@@ -75,20 +75,16 @@ namespace exafmm {
 
           mj *= invR * mi;
           pot += mj;
-          if (mutual) Bj[j].TRG[0] += sum(mj);
           invR = invR * invR * mj;
 
           xj *= invR;
           ax += xj;
-          if (mutual) Bj[j].TRG[1] -= sum(xj);
 
           yj *= invR;
           ay += yj;
-          if (mutual) Bj[j].TRG[2] -= sum(yj);
 
           zj *= invR;
           az += zj;
-          if (mutual) Bj[j].TRG[3] -= sum(zj);
         }
         for (int k=0; k<NSIMD; k++) {
           Bi[i+k].TRG[0] += transpose(pot, k);
@@ -114,113 +110,12 @@ namespace exafmm {
             ax += dX[0];
             ay += dX[1];
             az += dX[2];
-            if (mutual) {
-              Bj[j].TRG[0] += invR;
-              Bj[j].TRG[1] += dX[0];
-              Bj[j].TRG[2] += dX[1];
-              Bj[j].TRG[3] += dX[2];
-            }
           }
         }
         Bi[i].TRG[0] += pot;
         Bi[i].TRG[1] -= ax;
         Bi[i].TRG[2] -= ay;
         Bi[i].TRG[3] -= az;
-      }
-    }
-
-    static void P2P(C_iter C) {
-      B_iter B = C->BODY;
-      int n = C->NBODY;
-      int i = 0;
-#if EXAFMM_USE_SIMD
-      for ( ; i<=n-NSIMD; i+=NSIMD) {
-        simdvec zero = 0;
-        simdvec one = 1;
-        ksimdvec pot = zero;
-        ksimdvec ax = zero;
-        ksimdvec ay = zero;
-        ksimdvec az = zero;
-
-        simdvec index = SIMD<simdvec,B_iter,0,NSIMD>::setIndex(i);
-        simdvec xi = SIMD<simdvec,B_iter,0,NSIMD>::setBody(B,i);
-        simdvec yi = SIMD<simdvec,B_iter,1,NSIMD>::setBody(B,i);
-        simdvec zi = SIMD<simdvec,B_iter,2,NSIMD>::setBody(B,i);
-        simdvec mi = SIMD<simdvec,B_iter,3,NSIMD>::setBody(B,i);
-        for (int j=i+1; j<n; j++) {
-          simdvec dx = B[j].X[0];
-          dx -= xi;
-          simdvec dy = B[j].X[1];
-          dy -= yi;
-          simdvec dz = B[j].X[2];
-          dz -= zi;
-          simdvec mj = B[j].SRC;
-
-          simdvec R2 = eps2;
-          simdvec xj = dx;
-          R2 += dx * dx;
-          simdvec yj = dy;
-          R2 += dy * dy;
-          simdvec zj = dz;
-          R2 += dz * dz;
-          simdvec invR = one;
-          invR &= R2 > zero;
-          R2 += one - invR;
-          invR = rsqrt(R2);
-          invR &= index < j;
-          invR &= R2 > zero;
-
-          mj *= invR * mi;
-          pot += mj;
-          B[j].TRG[0] += sum(mj);
-          invR = invR * invR * mj;
-
-          xj *= invR;
-          ax += xj;
-          B[j].TRG[1] -= sum(xj);
-
-          yj *= invR;
-          ay += yj;
-          B[j].TRG[2] -= sum(yj);
-
-          zj *= invR;
-          az += zj;
-          B[j].TRG[3] -= sum(zj);
-        }
-        for (int k=0; k<NSIMD; k++) {
-          B[i+k].TRG[0] += transpose(pot, k);
-          B[i+k].TRG[1] += transpose(ax, k);
-          B[i+k].TRG[2] += transpose(ay, k);
-          B[i+k].TRG[3] += transpose(az, k);
-        }
-      }
-#endif
-      for ( ; i<n; i++) {
-        kreal_t pot = 0;
-        kreal_t ax = 0;
-        kreal_t ay = 0;
-        kreal_t az = 0;
-        for (int j=i+1; j<n; j++) {
-          vec3 dX = B[j].X - B[i].X;
-          real_t R2 = norm(dX) + eps2;
-          if (R2 != 0) {
-            real_t invR2 = 1.0 / R2;
-            real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
-            dX *= invR2 * invR;
-            pot += invR;
-            ax += dX[0];
-            ay += dX[1];
-            az += dX[2];
-            B[j].TRG[0] += invR;
-            B[j].TRG[1] -= dX[0];
-            B[j].TRG[2] -= dX[1];
-            B[j].TRG[3] -= dX[2];
-          }
-        }
-        B[i].TRG[0] += pot;
-        B[i].TRG[1] += ax;
-        B[i].TRG[2] += ay;
-        B[i].TRG[3] += az;
       }
     }
 
@@ -270,13 +165,12 @@ namespace exafmm {
       }
     }
 
-    static void M2L(C_iter Ci, C_iter Cj, bool mutual) {
+    static void M2L(C_iter Ci, C_iter Cj) {
       complex_t Ynmi[P*P], Ynmj[P*P];
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
       evalLocal(P, rho, alpha, beta, Ynmi);
-      if (mutual) evalLocal(P, rho, alpha+M_PI, beta, Ynmj);
       for (int j=0; j<P; j++) {
         real_t Cnm = oddOrEven(j);
         for (int k=0; k<=j; k++) {
@@ -287,18 +181,15 @@ namespace exafmm {
               int nms  = n * (n + 1) / 2 - m;
               int jnkm = (j + n) * (j + n) + j + n + m - k;
               Li += std::conj(Cj->M[nms]) * Cnm * Ynmi[jnkm];
-              if (mutual) Lj += std::conj(Ci->M[nms]) * Cnm * Ynmj[jnkm];
             }
             for (int m=0; m<=n; m++) {
               int nms  = n * (n + 1) / 2 + m;
               int jnkm = (j + n) * (j + n) + j + n + m - k;
               real_t Cnm2 = Cnm * oddOrEven((k-m)*(k<m)+m);
               Li += Cj->M[nms] * Cnm2 * Ynmi[jnkm];
-              if (mutual) Lj += Ci->M[nms] * Cnm2 * Ynmj[jnkm];
             }
           }
           Ci->L[jks] += Li;
-          if (mutual) Cj->L[jks] += Lj;
         }
       }
     }

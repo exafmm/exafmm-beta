@@ -79,7 +79,7 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies);
       jcells = localTree.buildTree(jbodies, buffer, localBounds);
       upDownPass.upwardPass(jcells);
-      traversal.traverse(cells, jcells, cycle, args.dual, args.mutual);
+      traversal.traverse(cells, jcells, cycle, args.dual);
     }
     upDownPass.downwardPass(cells);
 
@@ -371,7 +371,7 @@ int main(int argc, char ** argv) {
           }
           upDownPass.upwardPass(cells);
           upDownPass.upwardPass(jcells);
-          traversal.traverse(cells, jcells, cycle, args.dual, false);
+          traversal.traverse(cells, jcells, cycle, args.dual);
           upDownPass.downwardPass(cells);
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
             int i = Bi->IBODY;

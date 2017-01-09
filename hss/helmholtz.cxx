@@ -82,7 +82,7 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies);
       jcells = localTree.buildTree(jbodies, buffer, localBounds);
       upDownPass.upwardPass(jcells);
-      traversal.traverse(cells, jcells, cycle, args.dual, args.mutual);
+      traversal.traverse(cells, jcells, cycle, args.dual);
     }
     upDownPass.downwardPass(cells);
 
@@ -265,7 +265,7 @@ int main(int argc, char ** argv) {
 	  jcells = localTree.buildTree(jbodies, buffer, localBounds);
           upDownPass.upwardPass(cells);
           upDownPass.upwardPass(jcells);
-          traversal.traverse(cells, jcells, cycle, args.dual, false);
+          traversal.traverse(cells, jcells, cycle, args.dual);
           upDownPass.downwardPass(cells);
 #endif
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
@@ -363,7 +363,7 @@ int main(int argc, char ** argv) {
           jcells = localTree.buildTree(jbodies, buffer, localBounds);
           upDownPass.upwardPass(cells);
           upDownPass.upwardPass(jcells);
-          traversal.traverse(cells, jcells, cycle, args.dual, false);
+          traversal.traverse(cells, jcells, cycle, args.dual);
           upDownPass.downwardPass(cells);
 #endif
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
@@ -541,7 +541,7 @@ int main(int argc, char ** argv) {
           jcells = localTree.buildTree(jbodies, buffer, localBounds);
           upDownPass.upwardPass(cells);
           upDownPass.upwardPass(jcells);
-          traversal.traverse(cells, jcells, cycle, args.dual, false);
+          traversal.traverse(cells, jcells, cycle, args.dual);
           upDownPass.downwardPass(cells);
 #endif
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {

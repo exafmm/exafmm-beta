@@ -61,7 +61,7 @@ void fmm(Args args) {
   CI->SCALE = 4;
   CI->M = 1;
   CI->L = 0;
-  Kernel::M2L(CI, CJ, false);
+  Kernel::M2L(CI, CJ);
 
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
@@ -78,7 +78,7 @@ void fmm(Args args) {
   Ci->SCALE = 2;
   Ci->M = 1;
   Ci->L = 0;
-  Kernel::M2L(Ci, Cj, false);
+  Kernel::M2L(Ci, Cj);
 #endif
 
   bodies[0].X = 2;
@@ -96,7 +96,7 @@ void fmm(Args args) {
   Cj->NBODY = jbodies.size();
   Ci->NBODY = bodies2.size();
   Ci->BODY = bodies2.begin();
-  Kernel::P2P(Ci, Cj, false);
+  Kernel::P2P(Ci, Cj);
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }

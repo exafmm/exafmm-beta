@@ -34,26 +34,21 @@ namespace exafmm {
   private:
 #if EXAFMM_COUNT_LIST
     //! Accumulate interaction list size of cells
-    void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P) {
+    void countList(C_iter Ci, C_iter Cj, bool isP2P) {
       if (isP2P) Ci->numP2P++;                                  // If P2P, increment P2P counter of target cell
       else Ci->numM2L++;                                        // Else, increment M2L counter of target cell
-      if (mutual) {                                             // If mutual interaction in on
-	if (isP2P) Cj->numP2P++;                                //  If P2P, increment P2P counter of source cell
-	else Cj->numM2L++;                                      //  Else, increment M2L counter of source cell
-      }                                                         // End if for mutual interaction
     }
 #else
-    void countList(C_iter, C_iter, bool, bool) {}
+    void countList(C_iter, C_iter, bool) {}
 #endif
 
 #if EXAFMM_USE_WEIGHT
     //! Accumulate interaction weights of cells
-    void countWeight(C_iter Ci, C_iter Cj, bool mutual, real_t weight) {
+    void countWeight(C_iter Ci, C_iter Cj, real_t weight) {
       Ci->WEIGHT += weight;                                     // Increment weight of target cell
-      if (mutual) Cj->WEIGHT += weight;                         // Increment weight of source cell
     }
 #else
-    void countWeight(C_iter, C_iter, bool, real_t) {}
+    void countWeight(C_iter, C_iter, real_t) {}
 #endif
 
     //! Get level from key
@@ -190,41 +185,41 @@ namespace exafmm {
     }
 
     //! Split cell and call traverse() recursively for child
-    void splitCell(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
+    void splitCell(C_iter Ci, C_iter Cj, real_t remote) {
       if (Cj->NCHILD == 0) {                                    // If Cj is leaf
 	assert(Ci->NCHILD > 0);                                 //  Make sure Ci is not leaf
 	for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
-	  dualTreeTraversal(ci, Cj, mutual, remote);            //   Traverse a single pair of cells
+	  dualTreeTraversal(ci, Cj, remote);                    //   Traverse a single pair of cells
 	}                                                       //  End loop over Ci's children
       } else if (Ci->NCHILD == 0) {                             // Else if Ci is leaf
 	assert(Cj->NCHILD > 0);                                 //  Make sure Cj is not leaf
 	for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
-	  dualTreeTraversal(Ci, cj, mutual, remote);            //   Traverse a single pair of cells
+	  dualTreeTraversal(Ci, cj, remote);                    //   Traverse a single pair of cells
 	}                                                       //  End loop over Cj's children
-      } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
+      } else if (Ci->NBODY + Cj->NBODY >= nspawn || (Ci == Cj)) {// Else if cells are still large
 	TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Instantiate recursive functor
-				    Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual, remote);
+				    Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, remote);
 	traverseRange();                                        //  Traverse for range of cell pairs
       } else if (Ci->R >= Cj->R) {                              // Else if Ci is larger than Cj
 	for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
-	  dualTreeTraversal(ci, Cj, mutual, remote);            //   Traverse a single pair of cells
+	  dualTreeTraversal(ci, Cj, remote);                    //   Traverse a single pair of cells
 	}                                                       //  End loop over Ci's children
       } else {                                                  // Else if Cj is larger than Ci
 	for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
-	  dualTreeTraversal(Ci, cj, mutual, remote);            //   Traverse a single pair of cells
+	  dualTreeTraversal(Ci, cj, remote);                    //   Traverse a single pair of cells
 	}                                                       //  End loop over Cj's children
       }                                                         // End if for leafs and Ci Cj size
     }
 
     //! Dual tree traversal for a single pair of cells
-    void dualTreeTraversal(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
+    void dualTreeTraversal(C_iter Ci, C_iter Cj, real_t remote) {
       vec3 dX = Ci->X - Cj->X - Kernel::Xperiodic;              // Distance vector from source to target
       real_t R2 = norm(dX);                                     // Scalar distance squared
       if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R) * (1 - 1e-3)) {    // If distance is far enough
-	Kernel::M2L(Ci, Cj, mutual);                            //  M2L kernel
+	Kernel::M2L(Ci, Cj);                                    //  M2L kernel
 	countKernel(numM2L);                                    //  Increment M2L counter
-	countList(Ci, Cj, mutual, false);                       //  Increment M2L list
-	countWeight(Ci, Cj, mutual, remote);                    //  Increment M2L weight
+	countList(Ci, Cj, false);                               //  Increment M2L list
+	countWeight(Ci, Cj, remote);                            //  Increment M2L weight
       } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          // Else if both cells are bodies
 #if EXAFMM_NO_P2P
 	int index = Ci->ICELL;
@@ -254,32 +249,28 @@ namespace exafmm {
 #endif
 	if (Cj->NBODY == 0) {                                   //  If the bodies weren't sent from remote node
 	  //std::cout << "Warning: icell " << Ci->ICELL << " needs bodies from jcell" << Cj->ICELL << std::endl;
-	  Kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
+	  Kernel::M2L(Ci, Cj);                                  //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
-	  countList(Ci, Cj, mutual, false);                     //   Increment M2L list
-	  countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
+	  countList(Ci, Cj, false);                             //   Increment M2L list
+	  countWeight(Ci, Cj, remote);                          //   Increment M2L weight
 #if EXAFMM_NO_P2P
 	} else if (!isNeighbor) {                               //  If GROAMCS handles neighbors
-	  Kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
+	  Kernel::M2L(Ci, Cj);                                  //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
-	  countList(Ci, Cj, mutual, false);                     //   Increment M2L list
-	  countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
+	  countList(Ci, Cj, false);                             //   Increment M2L list
+	  countWeight(Ci, Cj, remote);                          //   Increment M2L weight
 	} else {
-	  countList(Ci, Cj, mutual, true);                      //   Increment P2P list
+	  countList(Ci, Cj, true);                              //   Increment P2P list
 #else
 	} else {
-	  if (R2 == 0 && Ci == Cj) {                            //   If source and target are same
-	    Kernel::P2P(Ci);                                    //    P2P kernel for single cell
-	  } else {                                              //   Else if source and target are different
-	    Kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel for pair of cells
-	  }                                                     //   End if for same source and target
+          Kernel::P2P(Ci, Cj);                                  //   P2P kernel for pair of cells
 	  countKernel(numP2P);                                  //   Increment P2P counter
-	  countList(Ci, Cj, mutual, true);                      //   Increment P2P list
-	  countWeight(Ci, Cj, mutual, remote);                  //   Increment P2P weight
+	  countList(Ci, Cj, true);                              //   Increment P2P list
+	  countWeight(Ci, Cj, remote);                          //   Increment P2P weight
 #endif
 	}                                                       //  End if for bodies
       } else {                                                  // Else if cells are close but not bodies
-	splitCell(Ci, Cj, mutual, remote);                      //  Split cell and call function recursively for child
+	splitCell(Ci, Cj, remote);                              //  Split cell and call function recursively for child
       }                                                         // End if for multipole acceptance
     }
 
@@ -290,24 +281,22 @@ namespace exafmm {
       C_iter CiEnd;                                             //!< End iterator of target cells
       C_iter CjBegin;                                           //!< Begin Iterator of source cells
       C_iter CjEnd;                                             //!< End iterator of source cells
-      bool mutual;                                              //!< Flag for mutual interaction
       real_t remote;                                            //!< Weight for remote work load
       TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
-		    C_iter _CjBegin, C_iter _CjEnd,
-		    bool _mutual, real_t _remote) :
+		    C_iter _CjBegin, C_iter _CjEnd, real_t _remote) :
 	traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),// Initialize variables
-	CjBegin(_CjBegin), CjEnd(_CjEnd), mutual(_mutual), remote(_remote) {}
+	CjBegin(_CjBegin), CjEnd(_CjEnd), remote(_remote) {}
       void operator() () const {                                // Overload operator()
 	Tracer tracer;                                          //  Instantiate tracer
 	logger::startTracer(tracer);                            //  Start tracer
 	if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {     //  If only one cell in range
 	  if (CiBegin == CjBegin) {                             //   If Ci == Cj
-	    assert(CiEnd == CjEnd);                             //    Check if mutual & self interaction
-	    traversal->dualTreeTraversal(CiBegin, CjBegin, mutual, remote);//   Call traverse for single pair
+	    assert(CiEnd == CjEnd);                             //    Check if self interaction
+	    traversal->dualTreeTraversal(CiBegin, CjBegin, remote);//   Call traverse for single pair
 	  } else {                                              //   If Ci != Cj
 	    for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {          //    Loop over all Ci cells
 	      for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {        //     Loop over all Cj cells
-		traversal->dualTreeTraversal(Ci, Cj, mutual, remote);//   Call traverse for single pair
+		traversal->dualTreeTraversal(Ci, Cj, remote);//   Call traverse for single pair
 	      }                                                 //     End loop over all Cj cells
 	    }                                                   //    End loop over all Ci cells
 	  }                                                     //   End if for Ci == Cj
@@ -317,24 +306,20 @@ namespace exafmm {
 	  mk_task_group;                                        //   Initialize task group
 	  {
 	    TraverseRange leftBranch(traversal, CiBegin, CiMid, //    Instantiate recursive functor
-				     CjBegin, CjMid, mutual, remote);
+				     CjBegin, CjMid, remote);
 	    create_taskc(leftBranch);                           //    Ci:former Cj:former
 	    TraverseRange rightBranch(traversal, CiMid, CiEnd,  //    Instantiate recursive functor
-				      CjMid, CjEnd, mutual, remote);
+				      CjMid, CjEnd, remote);
 	    rightBranch();                                      //    Ci:latter Cj:latter
 	    wait_tasks;                                         //    Synchronize task group
 	  }
 	  {
 	    TraverseRange leftBranch(traversal, CiBegin, CiMid, //    Instantiate recursive functor
-				     CjMid, CjEnd, mutual, remote);
+				     CjMid, CjEnd, remote);
 	    create_taskc(leftBranch);                           //    Ci:former Cj:latter
-	    if (!mutual || CiBegin != CjBegin) {                //    Exclude mutual & self interaction
-	      TraverseRange rightBranch(traversal, CiMid, CiEnd,//    Instantiate recursive functor
-					CjBegin, CjMid, mutual, remote);
-	      rightBranch();                                    //    Ci:latter Cj:former
-	    } else {                                            //    If mutual or self interaction
-	      assert(CiEnd == CjEnd);                           //     Check if mutual & self interaction
-	    }                                                   //    End if for mutual & self interaction
+            TraverseRange rightBranch(traversal, CiMid, CiEnd,  //    Instantiate recursive functor
+                                      CjBegin, CjMid, remote);
+            rightBranch();                                      //    Ci:latter Cj:former
 	    wait_tasks;                                         //    Synchronize task group
 	  }
 	}                                                       //  End if for many cells in range
@@ -343,7 +328,7 @@ namespace exafmm {
     };
 
     //! List based traversal
-    void listBasedTraversal(int numCells, vec3 cycle, bool mutual, real_t remote) {
+    void listBasedTraversal(int numCells, vec3 cycle, real_t remote) {
       int list[189], periodicKeys[189];                         // Current interaction list
 #ifdef _OPENMP
 #pragma omp parallel for private(list, periodicKeys) schedule(dynamic)
@@ -360,10 +345,10 @@ namespace exafmm {
 	  for (int d=0; d<3; d++) {                             //   Loop over dimensions
 	    Kernel::Xperiodic[d] = pX[d] * cycle[d];            //    Periodic coordinate offset
 	  }                                                     //   End loop over dimensions
-	  Kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
+	  Kernel::M2L(Ci, Cj);                                  //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
-	  countList(Ci, Cj, mutual, false);                     //   Increment M2L list
-	  countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
+	  countList(Ci, Cj, false);                             //   Increment M2L list
+	  countWeight(Ci, Cj, remote);                          //   Increment M2L weight
 	}                                                       //  End loop over M2L interaction list
       }                                                         // End loop over target cells
 
@@ -384,10 +369,10 @@ namespace exafmm {
 	    for (int d=0; d<3; d++) {                           //    Loop over dimensions
 	      Kernel::Xperiodic[d] = pX[d] * cycle[d];          //     Periodic coordinate offset
 	    }                                                   //    End loop over dimensions
-	    Kernel::P2P(Ci, Cj, mutual);                        //    P2P kernel
+	    Kernel::P2P(Ci, Cj);                                //    P2P kernel
 	    countKernel(numP2P);                                //    Increment P2P counter
-	    countList(Ci, Cj, mutual, true);                    //    Increment P2P list
-	    countWeight(Ci, Cj, mutual, remote);                //    Increment P2P weight
+	    countList(Ci, Cj, true);                            //    Increment P2P list
+	    countWeight(Ci, Cj, remote);                        //    Increment P2P weight
 	  }                                                     //   End loop over P2P interaction list
 	}                                                       //  End if for target cell leaf
       }                                                         // End loop over target cells
@@ -414,7 +399,7 @@ namespace exafmm {
 		      Kernel::Xperiodic[0] = (ix * 3 + cx) * cycle[0];//   Coordinate offset for x periodic direction
 		      Kernel::Xperiodic[1] = (iy * 3 + cy) * cycle[1];//   Coordinate offset for y periodic direction
 		      Kernel::Xperiodic[2] = (iz * 3 + cz) * cycle[2];//   Coordinate offset for z periodic direction
-		      Kernel::M2L(Ci0, Ci, false);              //         M2L kernel
+		      Kernel::M2L(Ci0, Ci);                     //         M2L kernel
 		    }                                           //        End loop over z periodic direction (child)
 		  }                                             //       End loop over y periodic direction (child)
 		}                                               //      End loop over x periodic direction (child)
@@ -482,7 +467,7 @@ namespace exafmm {
 #endif
 
     //! Evaluate P2P and M2L using list based traversal
-    void traverse(Cells & icells, Cells & jcells, vec3 cycle, bool dual, bool mutual, real_t remote=1) {
+    void traverse(Cells & icells, Cells & jcells, vec3 cycle, bool dual, real_t remote=1) {
       if (icells.empty() || jcells.empty()) return;             // Quit if either of the cell vectors are empty
       logger::startTimer("Traverse");                           // Start timer
       logger::initTracer();                                     // Initialize tracer
@@ -491,7 +476,7 @@ namespace exafmm {
       Kernel::Xperiodic = 0;                                    // Set periodic coordinate offset to 0
       if (dual) {                                               // If dual tree traversal
 	if (images == 0) {                                      //  If non-periodic boundary condition
-	  dualTreeTraversal(Ci0, Cj0, mutual, remote);          //   Traverse the tree
+	  dualTreeTraversal(Ci0, Cj0, remote);                  //   Traverse the tree
 	} else {                                                //  If periodic boundary condition
 	  for (int ix=-1; ix<=1; ix++) {                        //   Loop over x periodic direction
 	    for (int iy=-1; iy<=1; iy++) {                      //    Loop over y periodic direction
@@ -499,7 +484,7 @@ namespace exafmm {
 		Kernel::Xperiodic[0] = ix * cycle[0];           //      Coordinate shift for x periodic direction
 		Kernel::Xperiodic[1] = iy * cycle[1];           //      Coordinate shift for y periodic direction
 		Kernel::Xperiodic[2] = iz * cycle[2];           //      Coordinate shift for z periodic direction
-		dualTreeTraversal(Ci0, Cj0, false, remote);     //      Traverse the tree for this periodic image
+		dualTreeTraversal(Ci0, Cj0, remote);            //      Traverse the tree for this periodic image
 	      }                                                 //     End loop over z periodic direction
 	    }                                                   //    End loop over y periodic direction
 	  }                                                     //   End loop over x periodic direction
@@ -507,11 +492,10 @@ namespace exafmm {
 	}                                                       //  End if for periodic boundary condition
       } else {                                                  // If list based traversal
 	int numCells = icells.size();                           //  Number of cells
-	mutual = false;                                         //  Set mutual interaction flag to false
 	listOffset = new int [numCells][3]();                   //  Offset of interaction lists
 	lists = new int [(216+27)*numCells][3]();               //  All interaction lists
 	setLists(icells);                                       //  Set P2P and M2L interaction lists
-	listBasedTraversal(numCells, cycle, mutual, remote);    //  Traverse the tree
+	listBasedTraversal(numCells, cycle, remote);            //  Traverse the tree
 	if (images != 0) {                                      //  If periodic boundary condition
 	  traversePeriodic(cycle);                              //   Traverse tree for periodic images
 	}                                                       //  End if for periodic boundary condition
@@ -529,7 +513,7 @@ namespace exafmm {
 	Ci(_Ci), Cj(_Cj) {}                                     // Initialize variables
       void operator() () const {                                // Overload operator
 	if (Ci->NBODY < 25) {                                   // If number of target bodies is less than threshold
-	  Kernel::P2P(Ci, Cj, false);                           //  Evaluate P2P kernel
+	  Kernel::P2P(Ci, Cj);                                  //  Evaluate P2P kernel
 	} else {                                                // If number of target bodies is more than threshold
 	  Cells cells; cells.resize(1);                         //  Initialize new cell vector
 	  C_iter Ci2 = cells.begin();                           //  New cell iterator for right branch
@@ -591,7 +575,7 @@ namespace exafmm {
 	matrixFile << std::endl;                                //  Line break
       }                                                         // End loop over target bodies
     }
-  
+
     //! Print traversal statistics
     void printTraversalData() {
 #if EXAFMM_COUNT_KERNEL
