@@ -34,7 +34,7 @@ void fmm(Args args) {
   Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
   TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax);
   Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 
@@ -94,7 +94,7 @@ void fmm(Args args) {
         upDownPass.upwardPass(jcells);
       }
 
-#if 0 // Set to 0 for debugging by shifting bodies and reconstructing tree
+#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
       treeMPI.allgatherBounds(localBounds);
       if (args.IneJ) {
         treeMPI.setLET(jcells, cycle);

@@ -2,13 +2,15 @@
 * Rank items in this list according to importance
 
 -- Remove --
-Mass
-Ropt, Rmax
-TBB
-FX10, SX
+Rmax
+mutual
+SX
+CILK, build_tree_cilk
+TBB, nspawn, serialize build_tree_tbb
 
 -- Check later --
 Add back time regression
+Fix CBRC buildbot
 Fix parallel Biot-Savart
 Fix nightly
 

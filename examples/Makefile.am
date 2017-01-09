@@ -9,7 +9,7 @@ vec_SOURCES = vec.cxx
 vec_CPPFLAGS = $(fmm_CPPFLAGS)
 
 run_laplace: fmm
-	./$< -aDgmovx -n 100000 -r 1 -e laplace -P 10
+	./$< -aDgv -n 100000 -r 1 -e laplace -P 10
 run_helmholtz: fmm
 	./$< -aDgv -n 10000 -r 1 -e helmholtz -P 14
 run_biotsavart: fmm
@@ -38,11 +38,11 @@ ewald_mpi_SOURCES = ewald.cxx
 ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=10
 
 run_laplace_mpi: fmm_mpi
-	$(MPIRUN) -n 2 ./$< -aDgmovx -n 100000 -r 1 -e laplace -P 10
+	$(MPIRUN) -n 2 ./$< -aDgv -n 100000 -r 1 -e laplace -P 10
 run_helmholtz_mpi: fmm_mpi
 	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1 -e helmholtz -P 14
 run_biotsavart_mpi: fmm_mpi
 	$(MPIRUN) -n 2 ./$< -agv -n 10000 -r 1 -e biotsavart -P 10
 run_ewald_mpi: ewald_mpi
-	$(MPIRUN) -n 2 ./$< -aDgmovx -r 1 -P 10
+	$(MPIRUN) -n 2 ./$< -aDgv -r 1 -P 10
 endif

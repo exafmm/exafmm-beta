@@ -46,7 +46,6 @@ namespace exafmm {
     const int nspawn = 1000;
     const real_t theta = 0.5;
     const bool useRmax = false;
-    const bool useRopt = false;
     Kernel::init();
 
     args = new Args;
@@ -58,7 +57,7 @@ namespace exafmm {
     partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
     traversal = new Traversal<Kernel>(nspawn, images, path);
     treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<Kernel>(theta, useRmax, useRopt);
+    upDownPass = new UpDownPass<Kernel>(theta, useRmax);
     verify = new Verify<Kernel>(path);
 
     args->accuracy = 1;
@@ -69,7 +68,6 @@ namespace exafmm {
     args->images = images;
     args->mutual = 0;
     args->numBodies = 0;
-    args->useRopt = useRopt;
     args->nspawn = nspawn;
     args->theta = theta;
     args->threads = threads;

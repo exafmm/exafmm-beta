@@ -28,7 +28,6 @@ namespace exafmm {
     {"IneJ",         no_argument,       0, 'j'},
     {"mutual",       no_argument,       0, 'm'},
     {"numBodies",    required_argument, 0, 'n'},
-    {"useRopt",      no_argument,       0, 'o'},
     {"path",         required_argument, 0, 'p'},
     {"P",            required_argument, 0, 'P'},
     {"repeat",       required_argument, 0, 'r'},
@@ -56,7 +55,6 @@ namespace exafmm {
     int IneJ;
     int mutual;
     int numBodies;
-    int useRopt;
     const char * path;
     int P;
     int repeat;
@@ -85,7 +83,6 @@ namespace exafmm {
 	      " --IneJ (-j)                     : Use different sources & targets (%d)\n"
 	      " --mutual (-m)                   : Use mutual interaction (%d)\n"
 	      " --numBodies (-n)                : Number of bodies (%d)\n"
-	      " --useRopt (-o)                  : Use error optimized theta for MAC (%d)\n"
 	      " --path (-p)                     : Path to save files (%s)\n"
 	      " --P (-P) not working            : Order of expansion (%d)\n"
 	      " --repeat (-r)                   : Number of iteration loops (%d)\n"
@@ -108,7 +105,6 @@ namespace exafmm {
 	      IneJ,
 	      mutual,
 	      numBodies,
-	      useRopt,
               path,
 	      P,
 	      repeat,
@@ -246,7 +242,6 @@ namespace exafmm {
       IneJ(0),
       mutual(0),
       numBodies(1000000),
-      useRopt(0),
       path("./"),
       P(Pmax),
       repeat(1),
@@ -305,9 +300,6 @@ namespace exafmm {
 	case 'n':
 	  numBodies = atoi(optarg);
 	  break;
-	case 'o':
-	  useRopt = 1;
-	  break;
         case 'p':
           path = optarg;
           break;
@@ -353,15 +345,14 @@ namespace exafmm {
       key |= IneJ << 14;
       key |= mutual << 15;
       key |= uint64_t(round(log(numBodies)/log(10))) << 16;
-      key |= useRopt << 20;
-      key |= P << 21;
-      key |= uint64_t(round(log(nspawn)/log(10))) << 27;
-      key |= uint64_t(theta*14) << 30;
-      key |= uint64_t(round(log(threads)/log(2))) << 33;
-      key |= uint64_t(useRmax) << 36;
-      key |= getConfigNum() << 37;
-      key |= uint64_t(round(log(mpisize)/log(2))) << 42;
-      assert( uint64_t(round(log(mpisize)/log(2))) < 21 );
+      key |= P << 20;
+      key |= uint64_t(round(log(nspawn)/log(10))) << 26;
+      key |= uint64_t(theta*14) << 29;
+      key |= uint64_t(round(log(threads)/log(2))) << 32;
+      key |= uint64_t(useRmax) << 35;
+      key |= getConfigNum() << 36;
+      key |= uint64_t(round(log(mpisize)/log(2))) << 41;
+      assert( uint64_t(round(log(mpisize)/log(2))) < 22 );
       return key;
     }
 
@@ -391,8 +382,6 @@ namespace exafmm {
 		  << "mutual" << " : " << mutual << std::endl
 		  << std::setw(stringLength)
 		  << "numBodies" << " : " << numBodies << std::endl
-		  << std::setw(stringLength)
-		  << "useRopt" << " : " << useRopt << std::endl
 		  << std::setw(stringLength)
 		  << "path" << " : " << path << std::endl
 		  << std::setw(stringLength)

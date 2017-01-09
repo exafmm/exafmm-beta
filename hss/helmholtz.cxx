@@ -48,7 +48,7 @@ int main(int argc, char ** argv) {
   Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
   TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax);
   Verify<Kernel> verify(args.path);
   num_threads(args.threads);
 

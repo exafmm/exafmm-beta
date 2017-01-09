@@ -936,7 +936,7 @@ save:
 	@make -C .. save
 
 run_laplace: fmm
-	./$< -aDgmovx -n 100000 -r 1 -e laplace -P 10
+	./$< -aDgv -n 100000 -r 1 -e laplace -P 10
 run_helmholtz: fmm
 	./$< -aDgv -n 10000 -r 1 -e helmholtz -P 14
 run_biotsavart: fmm
@@ -954,13 +954,13 @@ run_biotsavart_kernel: kernel
 	./$< -v -e biotsavart -P 10
 
 @EXAFMM_HAVE_MPI_TRUE@run_laplace_mpi: fmm_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgmovx -n 100000 -r 1 -e laplace -P 10
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -n 100000 -r 1 -e laplace -P 10
 @EXAFMM_HAVE_MPI_TRUE@run_helmholtz_mpi: fmm_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1 -e helmholtz -P 14
 @EXAFMM_HAVE_MPI_TRUE@run_biotsavart_mpi: fmm_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -agv -n 10000 -r 1 -e biotsavart -P 10
 @EXAFMM_HAVE_MPI_TRUE@run_ewald_mpi: ewald_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgmovx -r 1 -P 10
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -r 1 -P 10
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

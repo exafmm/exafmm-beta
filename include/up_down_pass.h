@@ -16,36 +16,8 @@ namespace exafmm {
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria
     const bool useRmax;                                         //!< Use maximum distance for MAC
-    const bool useRopt;                                         //!< Use error optimized theta for MAC
 
   private:
-    //! Recursive functor for error optimization of R
-    struct SetRopt {
-      C_iter C;                                                 //!< Iterator of current cell
-      C_iter C0;                                                //!< Iterator of first cell
-      real_t c;                                                 //!< Root coefficient
-      real_t theta;                                             //!< Multipole acceptance criteria
-      SetRopt(C_iter _C, C_iter _C0, real_t _c, real_t _theta) :// Constructor
-	C(_C), C0(_C0), c(_c), theta(_theta) {}                 // Initialize variables
-      void operator() () const {                                // Overload operator()
-	mk_task_group;                                          //  Initialize tasks
-	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	  SetRopt setRopt(CC, C0, c, theta);                    //   Initialize recusive functor
-	  create_taskc(setRopt);                                //   Create new task for recursive call
-	}                                                       //  End loop over child cells
-	wait_tasks;                                             //  Synchronize tasks
-	real_t x = 1.0 / theta;                                 //  Inverse of theta
-	assert(theta != 1.0);                                   //  Newton-Raphson won't work for theta==1
-	real_t a = c * powf(std::abs(C->M[0]),1.0/3);           //  Cell coefficient
-	for (int i=0; i<5; i++) {                               //  Loop for Newton-Raphson iteration
-	  real_t f = x * x - 2 * x + 1 - a * std::pow(x,-P);    //   Function value
-	  real_t df = (P + 2) * x - 2 * (P + 1) + P / x;        //   Function derivative value
-	  x -= f / df;                                          //   Increment x
-	}                                                       //  End loop for Newton-Raphson iteration
-	C->R *= x * theta;                                      //  Multiply R by error optimized parameter x
-      }                                                         // End overload operator()
-    };
-
     //! Recursive functor for setting cell scale
     struct SetScaleFromRadius {
       C_iter C;                                                 //!< Iterator of current cell
@@ -138,8 +110,8 @@ namespace exafmm {
 
   public:
     //! Constructor
-    UpDownPass(real_t _theta, bool _useRmax, bool _useRopt) :
-      theta(_theta), useRmax(_useRmax), useRopt(_useRopt) {     // Initialize variables
+    UpDownPass(real_t _theta, bool _useRmax) :
+      theta(_theta), useRmax(_useRmax) {     // Initialize variables
     }
 
     //! Upward pass (P2M, M2M)
@@ -152,10 +124,6 @@ namespace exafmm {
 	PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
 	postOrderTraversal();                                   //  Recursive call for upward pass
 	real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
-	if (useRopt) {                                          //  If using error optimized theta
-	  SetRopt setRopt(C0, C0, c, theta);                    //   Instantiate recursive functor
-	  setRopt();                                            //   Error optimization of R
-	}                                                       //  End if for using error optimized theta
       }                                                         // End if for empty cell vector
       logger::stopTimer("Upward pass");                         // Stop timer
     }
