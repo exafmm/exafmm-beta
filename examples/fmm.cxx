@@ -23,7 +23,7 @@ void fmm(Args args) {
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox<Kernel> boundBox;
   Bounds bounds;
-  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> buildTree(args.ncrit);
   Cells cells, jcells;
   Dataset<Kernel> data;
   Kernel kernel;

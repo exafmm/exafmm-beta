@@ -1,10 +1,12 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Remove binray tree from build_tree
+Remove binary tree from build_tree
 TBB
 TBB traversal
 nspawn
+Parametrize P
+.h to .cxx
 Search source files for unnecessary functions
 Search TODO list and extract priority tasks
 

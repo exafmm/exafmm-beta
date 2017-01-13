@@ -17,7 +17,7 @@ int main(int argc, char ** argv) {
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox<Kernel> boundBox;
   Bounds bounds;
-  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> buildTree(args.ncrit);
   Cells cells, jcells;
   Dataset<Kernel> data;
   num_threads(args.threads);

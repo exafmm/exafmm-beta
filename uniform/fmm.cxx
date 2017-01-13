@@ -35,7 +35,7 @@ int main(int argc, char ** argv) {
   const real_t cutoff = 20;
   BaseMPI baseMPI;
   BoundBox<Kernel> boundBox;
-  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
+  BuildTree<Kernel> buildTree(args.ncrit);
   Dataset<Kernel> data;
   Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
   Traversal<Kernel> traversal(args.nspawn, args.images, args.path);

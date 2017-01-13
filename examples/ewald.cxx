@@ -34,8 +34,8 @@ int main(int argc, char ** argv) {
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox<Kernel> boundBox;
   Bounds localBounds, globalBounds;
-  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
-  BuildTree<Kernel> globalTree(1, args.nspawn);
+  BuildTree<Kernel> localTree(args.ncrit);
+  BuildTree<Kernel> globalTree(1);
   Cells cells, jcells;
   Dataset<Kernel> data;
   Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
