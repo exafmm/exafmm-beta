@@ -221,7 +221,7 @@ namespace exafmm {
       IneJ(0),
       numBodies(1000000),
       path("./"),
-      P(Pmax),
+      P(10),
       repeat(1),
       nspawn(5000),
       theta(.4),

@@ -128,12 +128,11 @@ namespace exafmm {
     static complex_t wavek;                                     //!< Helmholtz wave number
   };
 
-  // Multipole/local expansion coefficients
 #ifdef EXAFMM_PMAX
-  const int Pmax = EXAFMM_PMAX;                                 //!< Order of expansions
+  const int Pmax = EXAFMM_PMAX;                                 //!< Max order of expansions
 #else
-  const int Pmax = 10;                                          //!< Order of expansions
+  const int Pmax = 10;                                          //!< Max order of expansions
 #endif
-  const int Pmin = 4;
+  const int Pmin = 4;                                           //!< Min order of expansions
 }
 #endif
