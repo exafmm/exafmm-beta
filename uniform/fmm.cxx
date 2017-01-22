@@ -15,8 +15,8 @@
 #include "../uniform/parallelfmm.h"
 #endif
 using namespace exafmm;
-real_t KernelBase::eps2 = 0.0;
-vec3 KernelBase::Xperiodic = 0.0;
+real_t Kernel::eps2 = 0.0;
+vec3 Kernel::Xperiodic = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;

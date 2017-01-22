@@ -6,12 +6,12 @@
 #endif
 
 namespace exafmm {
-  template<int _P>
-  class LaplaceKernel : public KernelBase {
+  class Kernel {
   public:
-    static const Equation equation = Laplace;                   //!< Set equation to Laplace
-    static const int P = _P;                                    //!< Set order of expansion
-    using KernelBase::Xperiodic;
+    static const int P = Pmax;
+    static vec3      Xperiodic;
+    static real_t    eps2;
+    static complex_t wavek;
 
     static void init() {}
     static void finalize() {}

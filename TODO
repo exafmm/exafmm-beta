@@ -1,12 +1,10 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Set SRC, TRG type with macro
 Remove vecP
 Instantiate kernel
-Remove enum Equation
-Remove args Equation
 Parametrize P
+namespace exafmm > EXAFMM_KERNEL with #define
 TBB
 TBB traversal
 nspawn

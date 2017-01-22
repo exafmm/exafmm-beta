@@ -11,9 +11,9 @@
 #include "verify.h"
 
 namespace exafmm {
-  vec3 KernelBase::Xperiodic = 0;
-  real_t KernelBase::eps2 = 0.0;
-  complex_t KernelBase::wavek = complex_t(0.,0.);
+  vec3 Kernel::Xperiodic = 0;
+  real_t Kernel::eps2 = 0.0;
+  complex_t Kernel::wavek = complex_t(0.,0.);
 
   vec3 cycles;
   Bodies buffer;
@@ -61,8 +61,8 @@ namespace exafmm {
     const int images = 0;
     const real_t theta = 0.4;
     const bool verbose = false;
-    KernelBase::eps2 = eps2;
-    KernelBase::wavek = complex_t(kreal, kimag);
+    Kernel::eps2 = eps2;
+    Kernel::wavek = complex_t(kreal, kimag);
     Kernel::init();
 
     args = new Args;
@@ -81,11 +81,6 @@ namespace exafmm {
     args->ncrit = ncrit;
     args->distribution = "external";
     args->dual = 1;
-#if EXAFMM_LAPLACE
-    args->equation = "Laplace";
-#elif EXAFMM_HELMHOLTZ
-    args->equation = "Helmholtz";
-#endif
     args->graft = 1;
     args->images = images;
     args->numBodies = 0;

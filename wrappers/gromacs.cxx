@@ -15,8 +15,8 @@
 #endif
 
 namespace exafmm {
-  vec3 KernelBase::Xperiodic = 0;
-  real_t KernelBase::eps2 = 0.0;
+  vec3 Kernel::Xperiodic = 0;
+  real_t Kernel::eps2 = 0.0;
 
   Args * args;
   BaseMPI * baseMPI;

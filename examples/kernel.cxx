@@ -4,9 +4,9 @@
 #include <vector>
 #include "verify.h"
 using namespace exafmm;
-vec3 KernelBase::Xperiodic = 0;
-real_t KernelBase::eps2 = 0.0;
-complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+vec3 Kernel::Xperiodic = 0;
+real_t Kernel::eps2 = 0.0;
+complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);

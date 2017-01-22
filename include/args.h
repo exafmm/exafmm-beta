@@ -17,7 +17,6 @@ namespace exafmm {
     {"cutoff",       required_argument, 0, 'C'},
     {"distribution", required_argument, 0, 'd'},
     {"dual",         no_argument,       0, 'D'},
-    {"equation",     required_argument, 0, 'e'},
     {"graft",        no_argument,       0, 'g'},
     {"getMatrix",    no_argument,       0, 'G'},
     {"help",         no_argument,       0, 'h'},
@@ -42,7 +41,6 @@ namespace exafmm {
     double cutoff;
     const char * distribution;
     int dual;
-    const char * equation;
     int graft;
     int getMatrix;
     int images;
@@ -67,7 +65,6 @@ namespace exafmm {
 	      " --cutoff (-C)                   : Cutoff distance of interaction (%f)\n"
 	      " --distribution (-d) [c/l/o/p/s] : lattice, cube, sphere, octant, plummer (%s)\n"
 	      " --dual (-D)                     : Use dual tree traversal (%d)\n"
-	      " --equation (-e) [l/h/b]         : Laplace, Helmholtz, BiotSavart (%s)\n"
 	      " --graft (-g)                    : Graft remote trees to global tree (%d)\n"
 	      " --getMatrix (-G)                : Write G matrix to file (%d)\n"
 	      " --help (-h)                     : Show this help document\n"
@@ -88,7 +85,6 @@ namespace exafmm {
 	      cutoff,
 	      distribution,
 	      dual,
-              equation,
 	      graft,
 	      getMatrix,
 	      images,
@@ -116,21 +112,6 @@ namespace exafmm {
 	return "plummer";
       case 's':
 	return "sphere";
-      default:
-	fprintf(stderr, "invalid distribution %s\n", arg);
-	abort();
-      }
-      return "";
-    }
-
-    const char * parseEquation(const char * arg) {
-      switch (arg[0]) {
-      case 'l':
-	return "Laplace";
-      case 'h':
-	return "Helmholtz";
-      case 'b':
-	return "BiotSavart";
       default:
 	fprintf(stderr, "invalid distribution %s\n", arg);
 	abort();
@@ -176,21 +157,16 @@ namespace exafmm {
       return 0;
     }
 
-    uint64_t getEqNum(const char * _equation) {
-      switch (_equation[0]) {
-      case 'L':
-        return 0;
-      case 'H':
-        return 1;
-      case 'S':
-        return 2;
-      case 'B':
-        return 3;
-      default:
-        fprintf(stderr, "invalid equation %s\n", _equation);
-        abort();
-      }
+    uint64_t getEqNum() {
+#if EXAFMM_LAPLACE
       return 0;
+#elif EXAFMM_HELMHOLTZ
+      return 1;
+#elif EXAFMM_STOKES
+      return 2;
+#elif EXAFMM_BIOTSAVART
+      return 3;
+#endif
     }
 
     uint64_t getConfigNum() {
@@ -214,7 +190,6 @@ namespace exafmm {
       cutoff(.0),
       distribution("cube"),
       dual(0),
-      equation("Laplace"),
       graft(0),
       getMatrix(0),
       images(0),
@@ -247,9 +222,6 @@ namespace exafmm {
 	  break;
 	case 'D':
 	  dual = 1;
-	  break;
-	case 'e':
-	  equation = parseEquation(optarg);
 	  break;
 	case 'g':
 	  graft = 1;
@@ -305,7 +277,7 @@ namespace exafmm {
       key |= uint64_t(round(log(ncrit)/log(2)));
       key |= getDistNum(distribution) << 4;
       key |= dual << 7;
-      key |= getEqNum(equation) << 8;
+      key |= getEqNum() << 8;
       key |= graft << 11;
       key |= images << 12;
       key |= IneJ << 14;
@@ -332,8 +304,6 @@ namespace exafmm {
 		  << "distribution" << " : " << distribution << std::endl
 		  << std::setw(stringLength)
 		  << "dual" << " : " << dual << std::endl
-		  << std::setw(stringLength)
-		  << "equation" << " : " << equation << std::endl
 		  << std::setw(stringLength)
 		  << "graft" << " : " << graft << std::endl
 		  << std::setw(stringLength)

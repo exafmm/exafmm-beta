@@ -12,8 +12,8 @@
 #include "up_down_pass.h"
 #include "verify.h"
 using namespace exafmm;
-vec3 KernelBase::Xperiodic = 0;
-real_t KernelBase::eps2 = 0.0;
+vec3 Kernel::Xperiodic = 0;
+real_t Kernel::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;

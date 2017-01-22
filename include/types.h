@@ -54,14 +54,6 @@ namespace exafmm {
     vec3 Xmax;                                                  //!< Maximum value of coordinates
   };
 
-  //! Equations supported
-  enum Equation {
-    Empty,                                                      //!< Empty kernel
-    Laplace,                                                    //!< Laplace kernel
-    Helmholtz,                                                  //!< Helmholtz kernel
-    BiotSavart                                                  //!< Biot-Savart kernel
-  };
-
   //! Structure of aligned source for SIMD
   struct Source {                                               //!< Base components of source structure
     vec3      X;                                                //!< Position
@@ -130,11 +122,5 @@ namespace exafmm {
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector
-
-  struct KernelBase {
-    static vec3      Xperiodic;                                 //!< Periodic coordinate offset
-    static real_t    eps2;                                      //!< Epslion squared
-    static complex_t wavek;                                     //!< Helmholtz wave number
-  };
 }
 #endif

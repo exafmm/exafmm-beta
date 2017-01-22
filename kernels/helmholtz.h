@@ -11,13 +11,12 @@ namespace exafmm {
   static real_t * wquad, * wquad2;
   static real_t * Anm1, * Anm2;
 
-  template<int _P>
-  class HelmholtzKernel : public KernelBase {
+  class Kernel {
   public:
-    static const Equation equation = Helmholtz;                 //!< Set equation to Helmholtz
-    static const int P = _P;                                    //!< Set order of expansion
-    using KernelBase::Xperiodic;
-    using KernelBase::wavek;
+    static const int P = Pmax;
+    static vec3      Xperiodic;
+    static real_t    eps2;
+    static complex_t wavek;
 
   private:
     static void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
