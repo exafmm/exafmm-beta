@@ -1,48 +1,60 @@
 include ../Makefile.am.include
 
-bin_PROGRAMS = fmm tree vec
-fmm_SOURCES = fmm.cxx
-fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=10
+bin_PROGRAMS = laplace helmholtz biotsavart tree vec
+laplace_SOURCES = fmm.cxx
+laplace_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_PMAX=10
+helmholtz_SOURCES = fmm.cxx
+helmholtz_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_PMAX=20
+biotsavart_SOURCES = fmm.cxx
+biotsavart_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_BIOTSAVART -DEXAFMM_PMAX=10
 tree_SOURCES = tree.cxx
-tree_CPPFLAGS = $(fmm_CPPFLAGS)
+tree_CPPFLAGS = $(laplace_CPPFLAGS)
 vec_SOURCES = vec.cxx
-vec_CPPFLAGS = $(fmm_CPPFLAGS)
+vec_CPPFLAGS = $(laplace_CPPFLAGS)
 
-run_laplace: fmm
-	./$< -aDgv -n 100000 -r 1 -e laplace -P 10
-run_helmholtz: fmm
-	./$< -aDgv -n 10000 -r 1 -e helmholtz -P 14
-run_biotsavart: fmm
-	./$< -agv -n 10000 -r 1 -e biotsavart -P 10
+run_laplace: laplace
+	./$< -aDgv -n 100000 -r 1
+run_helmholtz: helmholtz
+	./$< -aDgv -n 10000 -r 1
+run_biotsavart: biotsavart
+	./$< -agv -n 10000 -r 1
 run_tree: tree
 	./$< -av -n 1000000 -r 1
 run_vec: vec
 	./$<
 
-bin_PROGRAMS += kernel
-kernel_SOURCES = kernel.cxx
-kernel_CPPFLAGS = $(fmm_CPPFLAGS)
+bin_PROGRAMS += laplace_kernel helmholtz_kernel biotsavart_kernel
+laplace_kernel_SOURCES = kernel.cxx
+laplace_kernel_CPPFLAGS = $(laplace_CPPFLAGS)
+helmholtz_kernel_SOURCES = kernel.cxx
+helmholtz_kernel_CPPFLAGS = $(helmholtz_CPPFLAGS)
+biotsavart_kernel_SOURCES = kernel.cxx
+biotsavart_kernel_CPPFLAGS = $(biotsavart_CPPFLAGS)
 
-run_laplace_kernel: kernel
-	./$< -v -e laplace -P 10
-run_helmholtz_kernel: kernel
-	./$< -v -e helmholtz -P 14
-run_biotsavart_kernel: kernel
-	./$< -v -e biotsavart -P 10
+run_laplace_kernel: laplace_kernel
+	./$< -v
+run_helmholtz_kernel: helmholtz_kernel
+	./$< -v
+run_biotsavart_kernel: biotsavart_kernel
+	./$< -v
 
 if EXAFMM_HAVE_MPI
-bin_PROGRAMS += fmm_mpi ewald_mpi
-fmm_mpi_SOURCES = fmm_mpi.cxx
-fmm_mpi_CPPFLAGS = $(fmm_CPPFLAGS)
+bin_PROGRAMS += laplace_mpi helmholtz_mpi biotsavart_mpi ewald_mpi
+laplace_mpi_SOURCES = fmm_mpi.cxx
+laplace_mpi_CPPFLAGS = $(laplace_CPPFLAGS)
+helmholtz_mpi_SOURCES = fmm_mpi.cxx
+helmholtz_mpi_CPPFLAGS = $(helmholtz_CPPFLAGS)
+biotsavart_mpi_SOURCES = fmm_mpi.cxx
+biotsavart_mpi_CPPFLAGS = $(biotsavart_CPPFLAGS)
 ewald_mpi_SOURCES = ewald.cxx
-ewald_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_PMAX=10
+ewald_mpi_CPPFLAGS = $(laplace_CPPFLAGS)
 
-run_laplace_mpi: fmm_mpi
-	$(MPIRUN) -n 2 ./$< -aDgv -n 100000 -r 1 -e laplace -P 10
-run_helmholtz_mpi: fmm_mpi
-	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1 -e helmholtz -P 14
-run_biotsavart_mpi: fmm_mpi
-	$(MPIRUN) -n 2 ./$< -agv -n 10000 -r 1 -e biotsavart -P 10
+run_laplace_mpi: laplace_mpi
+	$(MPIRUN) -n 2 ./$< -aDgv -n 100000 -r 1
+run_helmholtz_mpi: helmholtz_mpi
+	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1
+run_biotsavart_mpi: biotsavart_mpi
+	$(MPIRUN) -n 2 ./$< -agv -n 10000 -r 1
 run_ewald_mpi: ewald_mpi
-	$(MPIRUN) -n 2 ./$< -aDgv -r 1 -P 10
+	$(MPIRUN) -n 2 ./$< -aDgv -r 1
 endif

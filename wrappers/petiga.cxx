@@ -11,17 +11,6 @@
 #include "verify.h"
 
 namespace exafmm {
-#if EXAFMM_LAPLACE
-  typedef LaplaceKernel<Pmax> Kernel;
-#elif EXAFMM_HELMHOLTZ
-  typedef HelmholtzKernel<2*Pmax> Kernel;
-#endif
-
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
   vec3 KernelBase::Xperiodic = 0;
   real_t KernelBase::eps2 = 0.0;
   complex_t KernelBase::wavek = complex_t(0.,0.);
@@ -38,13 +27,13 @@ namespace exafmm {
   bool pass;
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox<Kernel> * boundBox;
-  BuildTree<Kernel> * localTree, * globalTree;
-  Partition<Kernel> * partition;
-  Traversal<Kernel> * traversal;
-  TreeMPI<Kernel> * treeMPI;
-  UpDownPass<Kernel> * upDownPass;
-  Verify<Kernel> * verify;
+  BoundBox * boundBox;
+  BuildTree * localTree, * globalTree;
+  Partition * partition;
+  Traversal * traversal;
+  TreeMPI * treeMPI;
+  UpDownPass * upDownPass;
+  Verify * verify;
 
   void log_initialize() {
     args->verbose &= baseMPI->mpirank == 0;
@@ -78,14 +67,14 @@ namespace exafmm {
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<Kernel>;
-    localTree = new BuildTree<Kernel>(ncrit);
-    globalTree = new BuildTree<Kernel>(1);
-    partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal<Kernel>(nspawn, images, path);
-    treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<Kernel>(theta);
-    verify = new Verify<Kernel>(path);
+    boundBox = new BoundBox;
+    localTree = new BuildTree(ncrit);
+    globalTree = new BuildTree(1);
+    partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
+    traversal = new Traversal(nspawn, images, path);
+    treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
+    upDownPass = new UpDownPass(theta);
+    verify = new Verify(path);
     num_threads(threads);
 
     args->accuracy = 1;

@@ -6,14 +6,7 @@
 
 namespace exafmm {
   //! Handles all the communication of local essential trees
-  template<typename Kernel>
   class TreeMPI {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vector
-    typedef typename Kernel::vecP vecP;                         //!< Vector type for expansion terms
-
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
@@ -121,7 +114,7 @@ namespace exafmm {
     //! Add cells to send buffer
     void addSendCell(C_iter C, int & irank, int & icell, int & iparent, bool copyData) {
       if (copyData) {                                           // If copying data to send cells
-	Cell<B_iter,vecP> cell(*C);                             // Initialize send cell
+	Cell cell(*C);                                          // Initialize send cell
 	cell.NCHILD = cell.NBODY = 0;                           //  Reset counters
 	cell.IPARENT = iparent;                                 //  Index of parent
 	sendCells[sendCellDispl[irank]+icell] = cell;           //  Copy cell to send buffer
@@ -324,7 +317,7 @@ namespace exafmm {
       for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
 	if (irank != mpirank) {                                 //  If not current rank
 	  C_iter C0 = recvCells.begin() + recvCellDispl[irank]; //   Root cell iterator for irank
-	  Body<Kernel::equation> body;                          //   Body to contain remote root coordinates
+	  Body body;                                            //   Body to contain remote root coordinates
 	  body.X = C0->X;                                       //   Copy remote root coordinates
 	  body.IBODY = recvCellDispl[irank];                    //   Copy remote root displacement in vector
 	  bodies.push_back(body);                               //   Push this root cell to body vector

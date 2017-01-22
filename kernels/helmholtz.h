@@ -16,12 +16,6 @@ namespace exafmm {
   public:
     static const Equation equation = Helmholtz;                 //!< Set equation to Helmholtz
     static const int P = _P;                                    //!< Set order of expansion
-    static const int NTERM = P*P;                               //!< # of terms in Helmholtz expansion
-    typedef vec<NTERM,complex_t> vecP;                          //!< Vector type for expansion terms
-    typedef std::vector<Body<equation> > Bodies;                //!< Vector of bodies for Helmholtz
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-    typedef std::vector<Cell<B_iter,vecP> > Cells;              //!< Vector of cells for Helmholtz
-    typedef typename Cells::iterator C_iter;                    //!< Iterator of cell vector
     using KernelBase::Xperiodic;
     using KernelBase::wavek;
 

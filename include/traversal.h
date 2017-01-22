@@ -11,13 +11,7 @@
 #endif
 
 namespace exafmm {
-  template<typename Kernel>
   class Traversal {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
-
   private:
     const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
     const int images;                                           //!< Number of periodic image sublevels

@@ -63,46 +63,53 @@ namespace exafmm {
   };
 
   //! Structure of aligned source for SIMD
-  template<Equation equation=Empty>
   struct Source {                                               //!< Base components of source structure
     vec3      X;                                                //!< Position
-  };
-  template<>
-  struct Source<Laplace> : public Source<> {                    //!< Special components for Laplace
+#if EXAFMM_LAPLACE
     real_t    SRC;                                              //!< Scalar real values
-  };
-  template<>
-  struct Source<Helmholtz> : public Source<> {                  //!< Special components for Helmholtz
+#elif EXAFMM_HELMHOLTZ
     complex_t SRC;                                              //!< Scalar complex values
-  };
-  template<>
-  struct Source<BiotSavart> : public Source<> {                 //!< Special components for Biot-Savart
+#elif EXAFMM_BIOTSAVART
     vec4      SRC;                                              //!< Vector real values
+#else
+#error Please define macro EXAFMM_LAPLACE or EXAFMM_HELMHOLTZ or EXAFMM_BIOTSAVART
+#endif
   };
 
   //! Structure of bodies
-  template<Equation equation=Empty>
-  struct Body {                                                 //!< Base components of body structure
+  struct Body : public Source{                                  //!< Base components of body structure
     int     IBODY;                                              //!< Initial body numbering for sorting back
     int     IRANK;                                              //!< Initial rank numbering for partitioning back
     int64_t ICELL;                                              //!< Cell index
     real_t  WEIGHT;                                             //!< Weight for partitioning
-  };
-  template<>
-  struct Body<Laplace> : public Source<Laplace>, Body<> {       //!< Specialization for Laplace
+#if EXAFMM_LAPLACE
     kvec4   TRG;                                                //!< Scalar+vector3 real values
-  };
-  template<>
-  struct Body<Helmholtz> : public Source<Helmholtz>, Body<> {   //!< Specialization for Helmholtz
+#elif EXAFMM_HELMHOLTZ
     kcvec4  TRG;                                                //!< Scalar+vector3 complex values
-  };
-  template<>
-  struct Body<BiotSavart> : public Source<BiotSavart>, Body<> { //!< Specialization for Biot-Savart
+#elif EXAFMM_BIOTSAVART
     kvec4   TRG;                                                //!< Scalar+vector3 real values
+#endif
   };
+  typedef std::vector<Body> Bodies;                             //!< Vector of bodies
+  typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
+
+#ifdef EXAFMM_PMAX
+  const int Pmax = EXAFMM_PMAX;                                 //!< Max order of expansions
+#else
+  const int Pmax = 10;                                          //!< Max order of expansions
+#endif
+  const int Pmin = 4;                                           //!< Min order of expansions
+
+#if EXAFMM_LAPLACE
+  const int NTERM = Pmax*(Pmax+1)/2;                            //!< # of terms in Laplace expansion
+#elif EXAFMM_HELMHOLTZ
+  const int NTERM = Pmax*Pmax;                                  //!< # of terms in Helmholtz expansion
+#elif EXAFMM_BIOTSAVART
+  const int NTERM = 3*Pmax*(Pmax+1)/2;                          //!< # of terms in Biot-Savart expansion
+#endif
+  typedef vec<NTERM,complex_t> vecP;                            //!< Vector type for expansion terms
 
   //! Structure of cells
-  template<typename B_iter, typename vecP>
   struct Cell {                                                 //!< Base components of cell structure
     int      IPARENT;                                           //!< Index of parent cell
     int      ICHILD;                                            //!< Index of first child cell
@@ -118,21 +125,16 @@ namespace exafmm {
     real_t   SCALE;                                             //!< Scale for Helmholtz kernel
     vec3     X;                                                 //!< Cell center
     real_t   R;                                                 //!< Cell radius
-    B_iter BODY;                                                //!< Iterator of first body
-    vecP   M, L;                                                //!< Multipole/local coefficients
+    B_iter   BODY;                                              //!< Iterator of first body
+    vecP     M, L;                                              //!< Multipole/local coefficients
   };
+  typedef std::vector<Cell> Cells;                              //!< Vector of cells
+  typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector
 
   struct KernelBase {
-    static vec3 Xperiodic;                                      //!< Periodic coordinate offset
-    static real_t eps2;                                         //!< Epslion squared
+    static vec3      Xperiodic;                                 //!< Periodic coordinate offset
+    static real_t    eps2;                                      //!< Epslion squared
     static complex_t wavek;                                     //!< Helmholtz wave number
   };
-
-#ifdef EXAFMM_PMAX
-  const int Pmax = EXAFMM_PMAX;                                 //!< Max order of expansions
-#else
-  const int Pmax = 10;                                          //!< Max order of expansions
-#endif
-  const int Pmin = 4;                                           //!< Min order of expansions
 }
 #endif

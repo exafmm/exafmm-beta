@@ -3,6 +3,7 @@
 #include "bound_box.h"
 #include "build_tree_from_cluster.h"
 #include "ewald.h"
+#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
@@ -12,28 +13,21 @@
 #if EXAFMM_NO_P2P
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
-#include "laplace.h"
 
 namespace exafmm {
-  typedef LaplaceKernel<Pmax> Kernel;
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
   vec3 KernelBase::Xperiodic = 0;
   real_t KernelBase::eps2 = 0.0;
 
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox<Kernel> * boundBox;
-  BuildTreeFromCluster<Kernel> * clusterTree;
-  BuildTree<Kernel> * localTree, * globalTree;
-  Partition<Kernel> * partition;
-  Traversal<Kernel> * traversal;
-  TreeMPI<Kernel> * treeMPI;
-  UpDownPass<Kernel> * upDownPass;
-  Verify<Kernel> * verify;
+  BoundBox * boundBox;
+  BuildTreeFromCluster * clusterTree;
+  BuildTree * localTree, * globalTree;
+  Partition * partition;
+  Traversal * traversal;
+  TreeMPI * treeMPI;
+  UpDownPass * upDownPass;
+  Verify * verify;
 
   bool isTime;
   bool pass;
@@ -49,15 +43,15 @@ namespace exafmm {
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<Kernel>;
-    clusterTree = new BuildTreeFromCluster<Kernel>;
-    localTree = new BuildTree<Kernel>(ncrit);
-    globalTree = new BuildTree<Kernel>(1);
-    partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal<Kernel>(nspawn, images, path);
-    treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<Kernel>(theta);
-    verify = new Verify<Kernel>(path);
+    boundBox = new BoundBox;
+    clusterTree = new BuildTreeFromCluster;
+    localTree = new BuildTree(ncrit);
+    globalTree = new BuildTree(1);
+    partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
+    traversal = new Traversal(nspawn, images, path);
+    treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
+    upDownPass = new UpDownPass(theta);
+    verify = new Verify(path);
 
     args->accuracy = 1;
     args->ncrit = ncrit;
@@ -224,7 +218,7 @@ namespace exafmm {
                                 int ksize, float alpha, float sigma, float cutoff, float cycle) {
     num_threads(args->threads);
     vec3 cycles = cycle;
-    Ewald<Kernel> * ewald = new Ewald<Kernel>(ksize, alpha, sigma, cutoff, cycles);
+    Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
     args->numBodies = n;
     logger::printTitle("Ewald Parameters");
     args->print(logger::stringLength);

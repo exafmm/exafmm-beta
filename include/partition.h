@@ -6,13 +6,7 @@
 
 namespace exafmm {
   //! Handles all the partitioning of domains
-  template<typename Kernel>
   class Partition {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
-
   private:
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
@@ -159,7 +153,7 @@ namespace exafmm {
 	      bodyEnd = bodyBegin + countHist[splitBin];        //     Update body end index
 	    }                                                   //    End loop for bin refinement
 	  }                                                     //   End if for splitting partition
-	  int rankBegin = rankDispl[irank];                     //   Save current range of MPI ranks 
+	  int rankBegin = rankDispl[irank];                     //   Save current range of MPI ranks
 	  int rankEnd = rankBegin + rankCount[irank];           //   so that they don't get overwritten
 	  for (irank=rankBegin; irank<rankEnd; irank++) {       //   Loop over current range of MPI ranks
 	    rankSplit = rankCount[irank] / 2;                   //    MPI rank splitter
@@ -235,7 +229,7 @@ namespace exafmm {
       }                                                         // End loop over bodies
       logger::stopTimer("Partition");                           // Stop timer
       logger::startTimer("Sort");                               // Start timer
-      Sort<Kernel> sort;                                        // Instantiate sort class
+      Sort sort;                                                // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
       return local;
@@ -244,7 +238,7 @@ namespace exafmm {
     //! Send bodies back to where they came from
     void unpartition(Bodies & bodies) {
       logger::startTimer("Sort");                               // Start timer
-      Sort<Kernel> sort;                                        // Instantiate sort class
+      Sort sort;                                                // Instantiate sort class
       bodies = sort.irank(bodies);                              // Sort bodies according to IRANK
       logger::stopTimer("Sort");                                // Stop timer
     }

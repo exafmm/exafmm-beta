@@ -3,23 +3,17 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
+#include "kernel.h"
 using namespace exafmm;
-#include "laplace.h"
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef LaplaceKernel<10> Kernel;
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<Kernel> boundBox;
+  BoundBox boundBox;
   Bounds bounds;
-  BuildTree<Kernel> buildTree(args.ncrit);
+  BuildTree buildTree(args.ncrit);
   Cells cells, jcells;
-  Dataset<Kernel> data;
+  Dataset data;
   num_threads(args.threads);
 
   logger::verbose = args.verbose;

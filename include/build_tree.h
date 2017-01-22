@@ -5,12 +5,7 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename Kernel>
   class BuildTree {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vector
     typedef vec<8,int> ivec8;                                   //!< Vector of 8 integer types
 
   private:
@@ -183,18 +178,23 @@ namespace exafmm {
       return box;                                               // Return box.X and box.R
     }
 
-    //! Grow tree structure top down
-    void growTree(Bodies & bodies, Bodies & buffer, Box box) {
-      assert(box.R > 0);                                        // Check for bounds validity
-      logger::startTimer("Grow tree");                          // Start timer
-      B0 = bodies.begin();                                      // Bodies iterator
-      buildNodes(N0, bodies, buffer, 0, bodies.size(),          // Build octree nodes
-                 box.X, box.R, ncrit);
-      logger::stopTimer("Grow tree");                           // Stop timer
-    }
+  public:
+    BuildTree(int _ncrit) : ncrit(_ncrit), numLevels(0) {}
 
-    //! Link tree structure
-    Cells linkTree(Box box) {
+    //! Build tree structure top down
+    Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
+      logger::startTimer("Grow tree");                          // Start timer
+      Box box = bounds2box(bounds);                             // Get box from bounds
+      if (bodies.empty()) {                                     // If bodies vector is empty
+	N0 = NULL;                                              //  Reinitialize N0 with NULL
+      } else {                                                  // If bodies vector is not empty
+	if (bodies.size() > buffer.size()) buffer.resize(bodies.size());// Enlarge buffer if necessary
+        assert(box.R > 0);                                      // Check for bounds validity
+        B0 = bodies.begin();                                    // Bodies iterator
+        buildNodes(N0, bodies, buffer, 0, bodies.size(),        // Build octree nodes
+                   box.X, box.R, ncrit);
+      }                                                         // End if for empty root
+      logger::stopTimer("Grow tree");                           // Stop timer
       logger::startTimer("Link tree");                          // Start timer
       Cells cells;                                              // Initialize cell array
       if (N0 != NULL) {                                         // If the node tree is not empty
@@ -205,21 +205,6 @@ namespace exafmm {
       }                                                         // End if for empty node tree
       logger::stopTimer("Link tree");                           // Stop timer
       return cells;                                             // Return cells array
-    }
-
-  public:
-    BuildTree(int _ncrit) : ncrit(_ncrit), numLevels(0) {}
-
-    //! Build tree structure top down
-    Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
-      Box box = bounds2box(bounds);                             // Get box from bounds
-      if (bodies.empty()) {                                     // If bodies vector is empty
-	N0 = NULL;                                              //  Reinitialize N0 with NULL
-      } else {                                                  // If bodies vector is not empty
-	if (bodies.size() > buffer.size()) buffer.resize(bodies.size());// Enlarge buffer if necessary
-	growTree(bodies, buffer, box);                          //  Grow tree from root
-      }                                                         // End if for empty root
-      return linkTree(box);                                     // Form parent-child links in tree
     }
 
     //! Print tree structure statistics

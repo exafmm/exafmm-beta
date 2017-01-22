@@ -3,6 +3,7 @@
 #include "bound_box.h"
 #include "build_tree.h"
 #include "dataset.h"
+#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
@@ -11,7 +12,6 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
-#include "helmholtz.h"
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
@@ -29,27 +29,21 @@ double elemops = 0.0;
 const complex_t I1(0.0,1.0);
 
 int main(int argc, char ** argv) {
-  Args args(argc, argv);
-  typedef exafmm::HelmholtzKernel<2*Pmax> Kernel;
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
   const real_t cycle = 2 * M_PI;
+  Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<Kernel> boundBox;
+  BoundBox boundBox;
   Bounds localBounds, globalBounds;
-  BuildTree<Kernel> localTree(args.ncrit);
-  BuildTree<Kernel> globalTree(1);
+  BuildTree localTree(args.ncrit);
+  BuildTree globalTree(1);
   Cells cells, jcells, gcells;
-  Dataset<Kernel> data;
-  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass<Kernel> upDownPass(args.theta);
-  Verify<Kernel> verify(args.path);
+  Dataset data;
+  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
+  Traversal traversal(args.nspawn, args.images, args.path);
+  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass upDownPass(args.theta);
+  Verify verify(args.path);
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;
@@ -583,9 +577,6 @@ int main(int argc, char ** argv) {
 }
 
 void elements(void * obj, int *I, int *J, dcomplex *B, int *descB) {
-  typedef exafmm::HelmholtzKernel<2*Pmax> Kernel;
-  typedef typename Kernel::Bodies Bodies;
-  typedef typename Kernel::B_iter B_iter;
   if(B==NULL)
     return;
 

@@ -4,13 +4,7 @@
 
 namespace exafmm {
   //! Custom radix sort for body and structures
-  template<typename Kernel>
   class Sort {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
-
   private:
     Bodies output;                                              //!< Output buffer
 

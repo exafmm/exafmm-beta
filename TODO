@@ -1,7 +1,11 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+Set SRC, TRG type with macro
+Remove vecP
 Instantiate kernel
+Remove enum Equation
+Remove args Equation
 Parametrize P
 TBB
 TBB traversal
@@ -101,6 +105,14 @@ ORB vs. HOT
 OpenMP vs. TBB vs. Cilk vs. MThreads
 Geometric vs. Algebraic Mat-Vec
 benchmark against uniform on kyoto
+
+-- things that were removed --
+TBB, Cilk, MassiveThreads
+GPU
+2d
+Rmax
+Ropt
+Mass
 
 -- documentation --
 - JOSS paper

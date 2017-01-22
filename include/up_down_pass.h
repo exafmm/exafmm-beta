@@ -4,14 +4,7 @@
 #include "types.h"
 
 namespace exafmm {
-  template<typename Kernel>
   class UpDownPass {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
-    static const int P = Kernel::P;                             //!< Set order of expansion
-
   private:
     const real_t theta;                                         //!< Multipole acceptance criteria
 
@@ -85,14 +78,17 @@ namespace exafmm {
     //! Get dipole of entire system
     vec3 getDipole(Bodies & bodies, vec3 X0) {
       vec3 dipole = 0;                                          // Initialize dipole correction
+#if EXAFMM_LAPLACE
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
 	dipole += (B->X - X0) * std::real(complex_t(B->SRC));   //  Calcuate dipole of the whole system
       }                                                         // End loop over bodies
+#endif
       return dipole;                                            // Return dipole
     }
 
     //! Dipole correction
     void dipoleCorrection(Bodies & bodies, vec3 dipole, int numBodies, vec3 cycle) {
+#if EXAFMM_LAPLACE
       real_t coef = 4 * M_PI / (3 * cycle[0] * cycle[1] * cycle[2]);// Precalcualte constant
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
 	B->TRG[0] -= coef * norm(dipole) / numBodies / B->SRC;  //  Dipole correction for potential
@@ -100,6 +96,7 @@ namespace exafmm {
 	  B->TRG[d+1] -= coef * dipole[d];                      //   Dipole correction for forces
 	}                                                       //  End loop over dimensions
       }                                                         // End loop over bodies
+#endif
     }
   };
 }

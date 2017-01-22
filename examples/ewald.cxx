@@ -4,46 +4,40 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
+#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#include "laplace.h"
 using namespace exafmm;
 vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
-  Args args(argc, argv);
-  typedef LaplaceKernel<10> Kernel;
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
   const int ksize = 11;
   const vec3 cycle = 2 * M_PI;
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = max(cycle) / 2;
+  Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<Kernel> boundBox;
+  BoundBox boundBox;
   Bounds localBounds, globalBounds;
-  BuildTree<Kernel> localTree(args.ncrit);
-  BuildTree<Kernel> globalTree(1);
+  BuildTree localTree(args.ncrit);
+  BuildTree globalTree(1);
   Cells cells, jcells;
-  Dataset<Kernel> data;
-  Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
-  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass<Kernel> upDownPass(args.theta);
-  Verify<Kernel> verify(args.path);
+  Dataset data;
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
+  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
+  Traversal traversal(args.nspawn, args.images, args.path);
+  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass upDownPass(args.theta);
+  Verify verify(args.path);
   num_threads(args.threads);
 
   Kernel::init();

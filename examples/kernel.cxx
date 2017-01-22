@@ -8,34 +8,23 @@ vec3 KernelBase::Xperiodic = 0;
 real_t KernelBase::eps2 = 0.0;
 complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
-template<Equation equation>
-void initSource(Body<equation> & body) {
-  body.SRC = 1;
-}
-template<>
-void initSource<BiotSavart>(Body<BiotSavart> & body) {
-  body.SRC[0] = drand48();
-  body.SRC[1] = drand48();
-  body.SRC[2] = drand48();
-  body.SRC[3] = 0.1;
-}
-
-template<typename Kernel>
-void fmm(Args args) {
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
+int main(int argc, char ** argv) {
+  Args args(argc, argv);
   Bodies bodies(1), bodies2(1), jbodies(1);
   Kernel::init();
   logger::verbose = true;
 
-  const int NTERM = Kernel::NTERM;
   Cells cells(4);
-  Verify<Kernel> verify;
+  Verify verify;
   jbodies[0].X = 2;
-  initSource<Kernel::equation>(jbodies[0]);
+#if EXAFMM_BIOTSAVART
+  jbodies[0].SRC[0] = drand48();
+  jbodies[0].SRC[1] = drand48();
+  jbodies[0].SRC[2] = drand48();
+  jbodies[0].SRC[3] = 0.1;
+#else
+  jbodies[0].SRC = 1;
+#endif
   C_iter Cj = cells.begin();
   Cj->X = 1;
   Cj->X[0] = 3;
@@ -115,23 +104,5 @@ void fmm(Args args) {
   file << args.P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
   Kernel::finalize();
-}
-
-int main(int argc, char ** argv) {
-  Args args(argc, argv);                                        // Argument parser class
-  switch (args.equation[0]) {                                   // Case switch for equation
-  case 'L':                                                     // Laplace equation
-    fmm<LaplaceKernel<Pmax> >(args);                            //  Call Laplace kernel
-    break;                                                      // Break Laplace equation
-  case 'H':                                                     // Helmholtz equation
-    fmm<HelmholtzKernel<2*Pmax> >(args);                        //  Call Helmholtz kernel
-    break;                                                      // Break Helmholtz equation
-  case 'B':                                                     // Biot-Savart equation
-    fmm<BiotSavartKernel<Pmax> >(args);                         //  Call Biot-Savart kernel
-    break;                                                      // Break Biot-Savart equation
-  default:                                                      // No matching case
-    fprintf(stderr,"No matching equation\n");                   //  Print error message
-    abort();                                                    //  Abort execution
-  }                                                             // End case switch for equation
   return 0;
 }
