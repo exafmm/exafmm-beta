@@ -508,7 +508,8 @@ namespace exafmm {
     static void P2M(C_iter C) {
       real_t Ynm[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
-      vecP Mnm = complex_t(0,0);
+      complex_t Mnm[P*P];
+      for (int n=0; n<P*P; n++) Mnm[n] = complex_t(0,0);
       real_t kscale = C->SCALE * abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 	vec3 dX = B->X - C->X;
@@ -539,14 +540,14 @@ namespace exafmm {
 	  }
 	}
       }
-      C->M += Mnm * I * wavek;
+      for (int n=0; n<P; n++) C->M[n] += Mnm[n] * I * wavek;
     }
 
     static void M2M(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2];
       complex_t phitemp[2*P], hn[P], ephi[2*P];
-      vecP Mnm = complex_t(0,0);
-      vecP Mrot = complex_t(0,0);
+      complex_t Mnm[P*P], Mrot[P*P];
+      for (int n=0; n<P*P; n++) Mnm[n] = Mrot[n] = complex_t(0,0);
       real_t kscalei = Ci->SCALE * abs(wavek);
       for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
 	real_t kscalej = Cj->SCALE * abs(wavek);
@@ -618,7 +619,7 @@ namespace exafmm {
 	    Mnm[nm] = ephi[P-m] * Mrot[nm];
 	  }
 	}
-	Ci->M += Mnm;
+	for (int n=0; n<P*P; n++) Ci->M[n] += Mnm[n];
       }
     }
 
@@ -626,9 +627,8 @@ namespace exafmm {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
-      vecP Lnm = complex_t(0,0);
-      vecP Lnmd = complex_t(0,0);
-      vecP Mnm, Mrot, Lrot;
+      complex_t Mnm[P*P], Mrot[P*P], Lnm[P*P], Lrot[P*P], Lnmd[P*P];
+      for (int n=0; n<P*P; n++) Lnm[n] = Lrot[n] = complex_t(0,0);
       real_t kscalej = Cj->SCALE * abs(wavek);
       real_t kscalei = Ci->SCALE * abs(wavek);
       real_t radius = Cj->SCALE * sqrt(3.0) * .5;
@@ -742,14 +742,14 @@ namespace exafmm {
 	  Lnm[nm] = ephi[P-m] * Lrot[nm];
 	}
       }
-      Ci->L += Lnm;
+      for (int n=0; n<P*P; n++) Ci->L[n] += Lnm[n];
     }
 
     static void L2L(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t jn[P+1], jnd[P+1], ephi[2*P];
-      vecP Lnm, Lnmd, Lrot;
+      complex_t Lnm[P*P], Lrot[P*P], Lnmd[P*P];
       real_t kscalei = Ci->SCALE * abs(wavek);
       C_iter Cj = C0 + Ci->IPARENT;
       real_t kscalej = Cj->SCALE * abs(wavek);
@@ -860,7 +860,7 @@ namespace exafmm {
 	  Lnm[nm] = ephi[P-m] * Lrot[nm];
 	}
       }
-      Ci->L += Lnm;
+      for (int n=0; n<P*P; n++) Ci->L[n] += Lnm[n];
     }
 
     static void L2P(C_iter C) {
@@ -869,7 +869,8 @@ namespace exafmm {
       real_t kscale = C->SCALE * abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 	B->TRG /= B->SRC;
-	vecP Lj = C->L;
+	complex_t Lj[P*P];
+        for (int n=0; n<P*P; n++) Lj[n]= C->L[n];
 	kcvec4 TRG = kcomplex_t(0,0);
 	vec3 dX = B->X - C->X;
 	real_t r, theta, phi;

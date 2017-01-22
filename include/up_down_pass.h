@@ -14,8 +14,7 @@ namespace exafmm {
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
         postOrderTraversal(CC, C0, theta);                      //  Recursive call for child cell
       }                                                         // End loop over child cells
-      C->M = 0;                                                 // Initialize multipole expansion coefficients
-      C->L = 0;                                                 // Initialize local expansion coefficients
+      for (int n=0; n<NTERM; n++) C->M[n] = C->L[n] = 0;        // Initialize expansion coefficients
       if(C->NCHILD==0) Kernel::P2M(C);                          // P2M kernel
       else {                                                    // If not leaf cell
         Kernel::M2M(C, C0);                                     //  M2M kernel

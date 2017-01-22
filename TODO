@@ -1,7 +1,6 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Remove vecP
 Instantiate kernel
 Parametrize P
 namespace exafmm > EXAFMM_KERNEL with #define

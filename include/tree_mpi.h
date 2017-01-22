@@ -367,7 +367,7 @@ namespace exafmm {
 	    C->R = std::max(C->X[d] - Xmin[d], C->R);           //    Calculate min distance from center
 	    C->R = std::max(Xmax[d] - C->X[d], C->R);           //    Calculate max distance from center
 	  }                                                     //   End loop over dimensions
-	  C->M = 0;                                             //   Reset multipoles
+	  for (int n=0; n<NTERM; n++) C->M[n] = 0;              //   Reset multipoles
 	  Kernel::M2M(C, C0);                                   //   M2M kernel
 	}                                                       //  End if for non-leaf global cell
       }                                                         // End loop over global cells bottom up

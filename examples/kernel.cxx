@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
   Cj->SCALE = 2;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
-  Cj->M = 0;
+  for (int n=0; n<NTERM; n++) Cj->M[n] = 0;
   Kernel::P2M(Cj);
 
 #if 1
@@ -41,15 +41,15 @@ int main(int argc, char ** argv) {
   CJ->X = 0;
   CJ->X[0] = 4;
   CJ->SCALE = 4;
-  CJ->M = 0;
+  for (int n=0; n<NTERM; n++) CJ->M[n] = 0;
   Kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;
   CI->X[0] = -4;
   CI->SCALE = 4;
-  CI->M = 1;
-  CI->L = 0;
+  for (int n=0; n<NTERM; n++) CI->M[n] = 1;
+  for (int n=0; n<NTERM; n++) CI->L[n] = 0;
   Kernel::M2L(CI, CJ);
 
   C_iter Ci = cells.begin()+3;
@@ -57,16 +57,14 @@ int main(int argc, char ** argv) {
   Ci->X[0] = -3;
   Ci->SCALE = 2;
   Ci->IPARENT = 2;
-  Ci->M = 1;
-  Ci->L = 0;
   Kernel::L2L(Ci, cells.begin());
 #else
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
   Ci->SCALE = 2;
-  Ci->M = 1;
-  Ci->L = 0;
+  for (int n=0; n<NTERM; n++) Ci->M[n] = 1;
+  for (int n=0; n<NTERM; n++) Ci->L[n] = 0;
   Kernel::M2L(Ci, Cj);
 #endif
 

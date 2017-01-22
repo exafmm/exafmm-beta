@@ -99,7 +99,6 @@ namespace exafmm {
 #elif EXAFMM_BIOTSAVART
   const int NTERM = 3*Pmax*(Pmax+1)/2;                          //!< # of terms in Biot-Savart expansion
 #endif
-  typedef vec<NTERM,complex_t> vecP;                            //!< Vector type for expansion terms
 
   //! Structure of cells
   struct Cell {                                                 //!< Base components of cell structure
@@ -112,13 +111,14 @@ namespace exafmm {
     int      numP2P;                                            //!< Size of P2P interaction list per cell
     int      numM2L;                                            //!< Size of M2L interaction list per cell
 #endif
-    uint64_t ICELL;                                             //!< Cell index
-    real_t   WEIGHT;                                            //!< Weight for partitioning
-    real_t   SCALE;                                             //!< Scale for Helmholtz kernel
-    vec3     X;                                                 //!< Cell center
-    real_t   R;                                                 //!< Cell radius
-    B_iter   BODY;                                              //!< Iterator of first body
-    vecP     M, L;                                              //!< Multipole/local coefficients
+    uint64_t  ICELL;                                            //!< Cell index
+    real_t    WEIGHT;                                           //!< Weight for partitioning
+    real_t    SCALE;                                            //!< Scale for Helmholtz kernel
+    vec3      X;                                                //!< Cell center
+    real_t    R;                                                //!< Cell radius
+    B_iter    BODY;                                             //!< Iterator of first body
+    complex_t M[NTERM];                                         //!< Multipole expansion coefficients
+    complex_t L[NTERM];                                         //!< Local expansion coefficients
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector

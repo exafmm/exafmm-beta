@@ -410,13 +410,13 @@ namespace exafmm {
 		Cj->X[0] = Ci->X[0] + ix * cycle[0];            //      Set new x coordinate for periodic image
 		Cj->X[1] = Ci->X[1] + iy * cycle[1];            //      Set new y cooridnate for periodic image
 		Cj->X[2] = Ci->X[2] + iz * cycle[2];            //      Set new z coordinate for periodic image
-		Cj->M    = Ci->M;                               //      Copy multipoles to new periodic image
+		for (int n=0; n<NTERM; n++) Cj->M[n] = Ci->M[n];//      Copy multipoles to new periodic image
 		Cj++;                                           //      Increment periodic cell iterator
 	      }                                                 //     Endif for periodic center cell
 	    }                                                   //    End loop over z periodic direction
 	  }                                                     //   End loop over y periodic direction
 	}                                                       //  End loop over x periodic direction
-	Ci->M = 0;                                              //  Reset multipoles of periodic parent
+	for (int n=0; n<NTERM; n++) Ci->M[n] = 0;               //  Reset multipoles of periodic parent
 	Kernel::M2M(Ci,Cj0);                                    //  Evaluate periodic M2M kernels for this sublevel
 	cycle *= 3;                                             //  Increase center cell size three times
 	Cj0 = C0;                                               //  Reset Cj0 back
