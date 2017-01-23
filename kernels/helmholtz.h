@@ -6,20 +6,20 @@
 #endif
 
 namespace exafmm {
-  static int nquad, nquad2;
-  static real_t * xquad, * xquad2;
-  static real_t * wquad, * wquad2;
-  static real_t * Anm1, * Anm2;
+  int nquad, nquad2;
+  real_t * xquad, * xquad2;
+  real_t * wquad, * wquad2;
+  real_t * Anm1, * Anm2;
 
   class Kernel {
   public:
-    static const int P = Pmax;
-    static vec3      Xperiodic;
-    static real_t    eps2;
-    static complex_t wavek;
+    const int P;
+    real_t    eps2;
+    complex_t wavek;
+    vec3      Xperiodic;
 
   private:
-    static void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
+    void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
       sum = 0.5 + x * x * 1.5;
       real_t pk = 1;
       real_t pkp1 = x;
@@ -41,7 +41,7 @@ namespace exafmm {
       der = n * (x * pkp1 - pk) / (x * x - 1);
     }
 
-    static void legendre(int nq, real_t * xq, real_t * wq) {
+    void legendre(int nq, real_t * xq, real_t * wq) {
       real_t pol = 0, der, sum;
       real_t h = M_PI / (2 * nq);
       for (int i=1; i<=nq; i++) {
@@ -68,7 +68,7 @@ namespace exafmm {
       }
     }
 
-    static void getAnm() {
+    void getAnm() {
       Anm1[0] = 1;
       Anm2[0] = 1;
       for (int m=0; m<=P; m++) {
@@ -86,7 +86,7 @@ namespace exafmm {
       }
     }
 
-    static void rotate(real_t theta, int nterms, complex_t * YnmIn,
+    void rotate(real_t theta, int nterms, complex_t * YnmIn,
                        complex_t * YnmOut) {
       real_t Rnm1[P][2*P];
       real_t Rnm2[P][2*P];
@@ -178,7 +178,7 @@ namespace exafmm {
       }
     }
 
-    static void get_Ynm(int nterms, real_t x, real_t Ynm[P*(P+1)/2]) {
+    void get_Ynm(int nterms, real_t x, real_t * Ynm) {
       real_t y = -sqrt((1 - x) * (1 + x));
       Ynm[0] = 1;
       for (int m=0; m<nterms; m++) {
@@ -202,7 +202,7 @@ namespace exafmm {
       }
     }
 
-    static void get_Ynmd(int nterms, real_t x, real_t Ynm[P*(P+1)/2], real_t Ynmd[P*(P+1)/2]) {
+    void get_Ynmd(int nterms, real_t x, real_t * Ynm, real_t * Ynmd) {
       real_t y = -sqrt((1 - x) * (1 + x));
       real_t y2 = y * y;
       Ynm[0] = 1;
@@ -242,7 +242,7 @@ namespace exafmm {
       }
     }
 
-    static void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
+    void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
       if (abs(z) < EPS) {
         for (int i=0; i<nterms; i++) {
           hn[i] = 0;
@@ -259,7 +259,7 @@ namespace exafmm {
       }
     }
 
-    static void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * hnd) {
+    void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * hnd) {
       if (abs(z) < EPS) {
         for (int i=0; i<nterms; i++) {
           hn[i] = 0;
@@ -279,7 +279,7 @@ namespace exafmm {
       }
     }
 
-    static void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
+    void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
       int iscale[P+1];
       if (abs(z) < EPS) {
         jn[0] = 1;
@@ -344,7 +344,11 @@ namespace exafmm {
     }
 
   public:
-    static void init() {
+    Kernel(real_t _eps2, complex_t _wavek) : P(Pmax), eps2(_eps2), wavek(_wavek) {
+      Xperiodic = 0;
+    }
+
+    void init() {
       xquad = new real_t [P];
       xquad2 = new real_t [2*P];
       wquad = new real_t [P];
@@ -358,7 +362,7 @@ namespace exafmm {
       getAnm();
     }
 
-    static void finalize() {
+    void finalize() {
       delete[] xquad;
       delete[] xquad2;
       delete[] wquad;
@@ -367,13 +371,13 @@ namespace exafmm {
       delete[] Anm2;
     }
 
-    static void normalize(Bodies & bodies) {
+    void normalize(Bodies & bodies) {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
         B->TRG /= B->SRC;
       }
     }
 
-    static void P2P(C_iter Ci, C_iter Cj) {
+    void P2P(C_iter Ci, C_iter Cj) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
       B_iter Bi = Ci->BODY;
@@ -505,7 +509,7 @@ namespace exafmm {
       }
     }
 
-    static void P2M(C_iter C) {
+    void P2M(C_iter C) {
       real_t Ynm[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       complex_t Mnm[P*P];
@@ -543,7 +547,7 @@ namespace exafmm {
       for (int n=0; n<P; n++) C->M[n] += Mnm[n] * I * wavek;
     }
 
-    static void M2M(C_iter Ci, C_iter C0) {
+    void M2M(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2];
       complex_t phitemp[2*P], hn[P], ephi[2*P];
       complex_t Mnm[P*P], Mrot[P*P];
@@ -623,7 +627,7 @@ namespace exafmm {
       }
     }
 
-    static void M2L(C_iter Ci, C_iter Cj) {
+    void M2L(C_iter Ci, C_iter Cj) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
@@ -745,7 +749,7 @@ namespace exafmm {
       for (int n=0; n<P*P; n++) Ci->L[n] += Lnm[n];
     }
 
-    static void L2L(C_iter Ci, C_iter C0) {
+    void L2L(C_iter Ci, C_iter C0) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t jn[P+1], jnd[P+1], ephi[2*P];
@@ -863,7 +867,7 @@ namespace exafmm {
       for (int n=0; n<P*P; n++) Ci->L[n] += Lnm[n];
     }
 
-    static void L2P(C_iter C) {
+    void L2P(C_iter C) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       real_t kscale = C->SCALE * abs(wavek);

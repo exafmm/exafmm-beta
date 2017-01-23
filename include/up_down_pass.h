@@ -6,6 +6,7 @@
 namespace exafmm {
   class UpDownPass {
   private:
+    Kernel kernel;                                              //!< Kernel class
     const real_t theta;                                         //!< Multipole acceptance criteria
 
   private:
@@ -15,18 +16,18 @@ namespace exafmm {
         postOrderTraversal(CC, C0, theta);                      //  Recursive call for child cell
       }                                                         // End loop over child cells
       for (int n=0; n<NTERM; n++) C->M[n] = C->L[n] = 0;        // Initialize expansion coefficients
-      if(C->NCHILD==0) Kernel::P2M(C);                          // P2M kernel
+      if(C->NCHILD==0) kernel.P2M(C);                           // P2M kernel
       else {                                                    // If not leaf cell
-        Kernel::M2M(C, C0);                                     //  M2M kernel
+        kernel.M2M(C, C0);                                      //  M2M kernel
       }                                                         // End if for non leaf cell
       C->R /= theta;                                            // Divide R by theta
     };
 
     //! Pre-order traversal for downward pass
     void preOrderTraversal(C_iter C, C_iter C0) {
-      Kernel::L2L(C, C0);                                       //  L2L kernel
+      kernel.L2L(C, C0);                                        //  L2L kernel
       if (C->NCHILD==0) {                                       //  If leaf cell
-        Kernel::L2P(C);                                         //  L2P kernel
+        kernel.L2P(C);                                          //  L2P kernel
       }                                                         // End if for leaf cell
 #if EXAFMM_USE_WEIGHT
       C_iter CP = C0 + C->IPARENT;                              // Parent cell
@@ -44,7 +45,7 @@ namespace exafmm {
 
   public:
     //! Constructor
-    UpDownPass(real_t _theta) : theta(_theta) {}                // Initialize variables
+    UpDownPass(Kernel _kernel, real_t _theta) : kernel(_kernel), theta(_theta) {} // Initialize variables
 
     //! Upward pass (P2M, M2M)
     void upwardPass(Cells & cells) {
@@ -65,7 +66,7 @@ namespace exafmm {
       if (!cells.empty()) {                                     // If cell vector is not empty
 	C_iter C0 = cells.begin();                              //  Root cell
 	if (C0->NCHILD == 0 ) {                                 //  If root is the only cell
-          Kernel::L2P(C0);                                      //   L2P kernel
+          kernel.L2P(C0);                                       //   L2P kernel
         }                                                       //  End if root is the only cell
 	for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
 	  preOrderTraversal(CC, C0);                            //   Start pre-order traversal from root

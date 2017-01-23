@@ -15,8 +15,6 @@
 #include "../uniform/parallelfmm.h"
 #endif
 using namespace exafmm;
-real_t Kernel::eps2 = 0.0;
-vec3 Kernel::Xperiodic = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
@@ -24,6 +22,8 @@ int main(int argc, char ** argv) {
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   args.ncrit = 32;
   args.images = 1;
@@ -32,14 +32,15 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit);
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal traversal(args.nspawn, args.images, args.path);
-  UpDownPass upDownPass(args.theta);
+  Kernel kernel(eps2, wavek);
+  Traversal traversal(kernel, args.nspawn, args.images, args.path);
+  UpDownPass upDownPass(kernel, args.theta);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
-  TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
+  TreeMPI treeMPI(kernel, FMM.MPIRANK, FMM.MPISIZE, args.images);
   Verify verify(args.path);
   verify.verbose = args.verbose;
 

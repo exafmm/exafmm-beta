@@ -8,6 +8,7 @@ namespace exafmm {
   //! Handles all the communication of local essential trees
   class TreeMPI {
   private:
+    Kernel kernel;                                              //!< Kernel class
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int images;                                           //!< Number of periodic image sublevels
@@ -98,7 +99,6 @@ namespace exafmm {
       }                                                         // End loop over ranks
     }
 
-  protected:
     //! Get distance to other domain
     real_t getDistance(C_iter C, Bounds bounds, vec3 Xperiodic) {
       vec3 dX;                                                  // Distance vector
@@ -185,8 +185,8 @@ namespace exafmm {
 
   public:
     //! Constructor
-    TreeMPI(int _mpirank, int _mpisize, int _images) :
-      mpirank(_mpirank), mpisize(_mpisize), images(_images) {   // Initialize variables
+    TreeMPI(Kernel _kernel, int _mpirank, int _mpisize, int _images) :
+      kernel(_kernel), mpirank(_mpirank), mpisize(_mpisize), images(_images) { // Initialize variables
       allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
       allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
       sendBodyCount = new int [mpisize];                        // Allocate send count
@@ -368,7 +368,7 @@ namespace exafmm {
 	    C->R = std::max(Xmax[d] - C->X[d], C->R);           //    Calculate max distance from center
 	  }                                                     //   End loop over dimensions
 	  for (int n=0; n<NTERM; n++) C->M[n] = 0;              //   Reset multipoles
-	  Kernel::M2M(C, C0);                                   //   M2M kernel
+	  kernel.M2M(C, C0);                                    //   M2M kernel
 	}                                                       //  End if for non-leaf global cell
       }                                                         // End loop over global cells bottom up
       logger::stopTimer("Attach root");                         // Stop timer

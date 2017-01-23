@@ -4,14 +4,14 @@
 #include <vector>
 #include "verify.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
-complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 int main(int argc, char ** argv) {
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   Bodies bodies(1), bodies2(1), jbodies(1);
-  Kernel::init();
+  Kernel kernel(eps2, wavek);
+  kernel.init();
   logger::verbose = true;
 
   Cells cells(4);
@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   for (int n=0; n<NTERM; n++) Cj->M[n] = 0;
-  Kernel::P2M(Cj);
+  kernel.P2M(Cj);
 
 #if 1
   C_iter CJ = cells.begin()+1;
@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
   CJ->X[0] = 4;
   CJ->SCALE = 4;
   for (int n=0; n<NTERM; n++) CJ->M[n] = 0;
-  Kernel::M2M(CJ, cells.begin());
+  kernel.M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;
@@ -50,14 +50,14 @@ int main(int argc, char ** argv) {
   CI->SCALE = 4;
   for (int n=0; n<NTERM; n++) CI->M[n] = 1;
   for (int n=0; n<NTERM; n++) CI->L[n] = 0;
-  Kernel::M2L(CI, CJ);
+  kernel.M2L(CI, CJ);
 
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
   Ci->SCALE = 2;
   Ci->IPARENT = 2;
-  Kernel::L2L(Ci, cells.begin());
+  kernel.L2L(Ci, cells.begin());
 #else
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
   Ci->SCALE = 2;
   for (int n=0; n<NTERM; n++) Ci->M[n] = 1;
   for (int n=0; n<NTERM; n++) Ci->L[n] = 0;
-  Kernel::M2L(Ci, Cj);
+  kernel.M2L(Ci, Cj);
 #endif
 
   bodies[0].X = 2;
@@ -74,7 +74,7 @@ int main(int argc, char ** argv) {
   bodies[0].TRG = 0;
   Ci->BODY = bodies.begin();
   Ci->NBODY = bodies.size();
-  Kernel::L2P(Ci);
+  kernel.L2P(Ci);
 
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     *B = bodies[B-bodies2.begin()];
@@ -83,7 +83,7 @@ int main(int argc, char ** argv) {
   Cj->NBODY = jbodies.size();
   Ci->NBODY = bodies2.size();
   Ci->BODY = bodies2.begin();
-  Kernel::P2P(Ci, Cj);
+  kernel.P2P(Ci, Cj);
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }
@@ -101,6 +101,6 @@ int main(int argc, char ** argv) {
   verify.print("Rel. L2 Error (acc)",accRel);
   file << args.P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
-  Kernel::finalize();
+  kernel.finalize();
   return 0;
 }

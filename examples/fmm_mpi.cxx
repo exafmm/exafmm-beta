@@ -11,12 +11,11 @@
 #include "up_down_pass.h"
 #include "verify.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
-complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
@@ -26,14 +25,15 @@ int main(int argc, char ** argv) {
   BuildTree globalTree(1);
   Cells cells, jcells, gcells;
   Dataset data;
+  Kernel kernel(eps2, wavek);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  Traversal traversal(args.nspawn, args.images, args.path);
-  UpDownPass upDownPass(args.theta);
+  TreeMPI treeMPI(kernel, baseMPI.mpirank, baseMPI.mpisize, args.images);
+  Traversal traversal(kernel, args.nspawn, args.images, args.path);
+  UpDownPass upDownPass(kernel, args.theta);
   Verify verify(args.path);
   num_threads(args.threads);
 
-  Kernel::init();
+  kernel.init();
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
@@ -219,6 +219,6 @@ int main(int argc, char ** argv) {
     }
     abort();
   }
-  Kernel::finalize();
+  kernel.finalize();
   return 0;
 }

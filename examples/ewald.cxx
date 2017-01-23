@@ -12,8 +12,6 @@
 #include "up_down_pass.h"
 #include "verify.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
@@ -21,6 +19,8 @@ int main(int argc, char ** argv) {
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = max(cycle) / 2;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;
@@ -33,14 +33,15 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
+  Kernel kernel(eps2, wavek);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images, args.path);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(args.theta);
+  Traversal traversal(kernel, args.nspawn, args.images, args.path);
+  TreeMPI treeMPI(kernel, baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass upDownPass(kernel, args.theta);
   Verify verify(args.path);
   num_threads(args.threads);
 
-  Kernel::init();
+  kernel.init();
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
@@ -203,6 +204,6 @@ int main(int argc, char ** argv) {
     }
     abort();
   }
-  Kernel::finalize();
+  kernel.finalize();
   return 0;
 }

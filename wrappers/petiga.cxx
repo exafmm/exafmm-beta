@@ -11,10 +11,6 @@
 #include "verify.h"
 
 namespace exafmm {
-  vec3 Kernel::Xperiodic = 0;
-  real_t Kernel::eps2 = 0.0;
-  complex_t Kernel::wavek = complex_t(0.,0.);
-
   vec3 cycles;
   Bodies buffer;
   Bounds globalBounds;
@@ -29,6 +25,7 @@ namespace exafmm {
   BaseMPI * baseMPI;
   BoundBox * boundBox;
   BuildTree * localTree, * globalTree;
+  Kernel * kernel;
   Partition * partition;
   Traversal * traversal;
   TreeMPI * treeMPI;
@@ -61,19 +58,17 @@ namespace exafmm {
     const int images = 0;
     const real_t theta = 0.4;
     const bool verbose = false;
-    Kernel::eps2 = eps2;
-    Kernel::wavek = complex_t(kreal, kimag);
-    Kernel::init();
 
     args = new Args;
     baseMPI = new BaseMPI;
     boundBox = new BoundBox;
+    kernel = new Kernel(eps2, complex_t(kreal, kimag));
     localTree = new BuildTree(ncrit);
     globalTree = new BuildTree(1);
     partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal(nspawn, images, path);
-    treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass(theta);
+    traversal = new Traversal(*kernel, nspawn, images, path);
+    treeMPI = new TreeMPI(*kernel, baseMPI->mpirank, baseMPI->mpisize, images);
+    upDownPass = new UpDownPass(*kernel, theta);
     verify = new Verify(path);
     num_threads(threads);
 
@@ -88,6 +83,8 @@ namespace exafmm {
     args->path = path;
     args->theta = theta;
     args->verbose = verbose & (baseMPI->mpirank == 0);
+    kernel->init();
+
     logger::verbose = args->verbose;
     bbodies.resize(nb);
     for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
@@ -112,7 +109,7 @@ namespace exafmm {
   }
 
   extern "C" void FMM_Finalize() {
-    Kernel::finalize();
+    kernel->finalize();
     delete args;
     delete baseMPI;
     delete boundBox;

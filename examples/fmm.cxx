@@ -8,12 +8,11 @@
 #include "up_down_pass.h"
 #include "verify.h"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
-complex_t Kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox;
@@ -21,12 +20,13 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit);
   Cells cells, jcells;
   Dataset data;
-  Traversal traversal(args.nspawn, args.images, args.path);
-  UpDownPass upDownPass(args.theta);
+  Kernel kernel(eps2, wavek);
+  Traversal traversal(kernel, args.nspawn, args.images, args.path);
+  UpDownPass upDownPass(kernel, args.theta);
   Verify verify(args.path);
   num_threads(args.threads);
 
-  Kernel::init();
+  kernel.init();
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
@@ -137,6 +137,6 @@ int main(int argc, char ** argv) {
     traversal.writeMatrix(bodies, jbodies);
   }
   logger::writeDAG();
-  Kernel::finalize();
+  kernel.finalize();
   return 0;
 }

@@ -8,21 +8,25 @@
 namespace exafmm {
   class Kernel {
   public:
-    static const int P = Pmax;
-    static vec3      Xperiodic;
-    static real_t    eps2;
-    static complex_t wavek;
+    const int P;
+    real_t    eps2;
+    complex_t wavek;
+    vec3      Xperiodic;
 
-    static void init() {}
-    static void finalize() {}
+    Kernel(real_t _eps2, complex_t _wavek) : P(Pmax), eps2(_eps2), wavek(_wavek) {
+      Xperiodic = 0;
+    }
 
-    static void normalize(Bodies & bodies) {
+    void init() {}
+    void finalize() {}
+
+    void normalize(Bodies & bodies) {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
         B->TRG /= B->SRC;
       }
     }
 
-    static void P2P(C_iter Ci, C_iter Cj) {
+    void P2P(C_iter Ci, C_iter Cj) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
       int ni = Ci->NBODY;
@@ -113,7 +117,7 @@ namespace exafmm {
       }
     }
 
-    static void P2M(C_iter C) {
+    void P2M(C_iter C) {
       complex_t Ynm[P*P], YnmTheta[P*P];
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
         vec3 dX = B->X - C->X;
@@ -130,7 +134,7 @@ namespace exafmm {
       }
     }
 
-    static void M2M(C_iter Ci, C_iter C0) {
+    void M2M(C_iter Ci, C_iter C0) {
       complex_t Ynm[P*P], YnmTheta[P*P];
       for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
         vec3 dX = Ci->X - Cj->X;
@@ -159,7 +163,7 @@ namespace exafmm {
       }
     }
 
-    static void M2L(C_iter Ci, C_iter Cj) {
+    void M2L(C_iter Ci, C_iter Cj) {
       complex_t Ynmi[P*P], Ynmj[P*P];
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t rho, alpha, beta;
@@ -188,7 +192,7 @@ namespace exafmm {
       }
     }
 
-    static void L2L(C_iter Ci, C_iter C0) {
+    void L2L(C_iter Ci, C_iter C0) {
       complex_t Ynm[P*P], YnmTheta[P*P];
       C_iter Cj = C0 + Ci->IPARENT;
       vec3 dX = Ci->X - Cj->X;
@@ -218,7 +222,7 @@ namespace exafmm {
       }
     }
 
-    static void L2P(C_iter Ci) {
+    void L2P(C_iter Ci) {
       complex_t Ynm[P*P], YnmTheta[P*P];
       for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
         vec3 dX = B->X - Ci->X + EPS;

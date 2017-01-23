@@ -12,8 +12,6 @@
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
-vec3 Kernel::Xperiodic = 0;
-real_t Kernel::eps2 = 0.0;
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *
@@ -27,6 +25,8 @@ double elemops = 0.0;
 
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
@@ -36,17 +36,18 @@ int main(int argc, char ** argv) {
   BuildTree globalTree(1);
   Cells cells, jcells, gcells;
   Dataset data;
+  Kernel kernel(eps2, wavek);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images, args.path);
-  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(args.theta);
+  Traversal traversal(kernel, args.nspawn, args.images, args.path);
+  TreeMPI treeMPI(kernel, baseMPI.mpirank, baseMPI.mpisize, args.images);
+  UpDownPass upDownPass(kernel, args.theta);
   Verify verify(args.path);
   num_threads(args.threads);
 
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  Kernel::init();
+  kernel.init();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
@@ -397,7 +398,7 @@ int main(int argc, char ** argv) {
     delete[] B;
     delete[] Btrue;
   }
-  Kernel::finalize();
+  kernel.finalize();
   return 0;
 }
 
@@ -433,7 +434,7 @@ void elements(void * obj, int *I, int *J, double *B, int *descB) {
       B_iter Bi=bodies->begin()+iii-1;
       B_iter Bj=jbodies->begin()+jjj-1;
       vec3 dX=Bi->X-Bj->X;
-      real_t R2=norm(dX)+Kernel::eps2;
+      real_t R2=norm(dX);
       B[locr*(j-1)+(i-1)]=R2==0?0.0:1.0/sqrt(R2);
     }
   }

@@ -13,14 +13,15 @@
 #include "verify.h"
 
 namespace exafmm {
-  vec3 Kernel::Xperiodic = 0;
-  real_t Kernel::eps2 = 0.0;
   static const double Celec = 332.0716;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
   Args * args;
   BaseMPI * baseMPI;
   BoundBox * boundBox;
   BuildTree * localTree, * globalTree;
+  Kernel * kernel;
   Partition * partition;
   Traversal * traversal;
   TreeMPI * treeMPI;
@@ -36,17 +37,17 @@ namespace exafmm {
   extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, char * path, size_t *) {
     const int ncrit = 16;
     const int nspawn = 1000;
-    Kernel::init();
 
     args = new Args;
     baseMPI = new BaseMPI;
     boundBox = new BoundBox;
     localTree = new BuildTree(ncrit);
     globalTree = new BuildTree(1);
+    kernel = new Kernel(eps2, wavek);
     partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal(nspawn, images, path);
-    treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass(theta);
+    traversal = new Traversal(*kernel, nspawn, images, path);
+    treeMPI = new TreeMPI(*kernel, baseMPI->mpirank, baseMPI->mpisize, images);
+    upDownPass = new UpDownPass(*kernel, theta);
     verify = new Verify(path);
 
     args->ncrit = ncrit;
@@ -65,13 +66,14 @@ namespace exafmm {
     logger::path = args->path;
     logger::printTitle("Initial Parameters");
     args->print(logger::stringLength);
+    kernel->init();
 
     pass = true;
     isTime = false;
   }
 
   extern "C" void fmm_finalize_() {
-    Kernel::finalize();
+    kernel->finalize();
     delete args;
     delete baseMPI;
     delete boundBox;
