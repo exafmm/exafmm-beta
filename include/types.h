@@ -111,33 +111,18 @@ namespace exafmm {
     int numP2P;                                                 //!< Size of P2P interaction list per cell
     int numM2L;                                                 //!< Size of M2L interaction list per cell
 #endif
-    uint64_t  ICELL;                                            //!< Cell index
-    real_t    WEIGHT;                                           //!< Weight for partitioning
-    real_t    SCALE;                                            //!< Scale for Helmholtz kernel
-    vec3      X;                                                //!< Cell center
-    real_t    R;                                                //!< Cell radius
-    B_iter    BODY;                                             //!< Iterator of first body
+    uint64_t ICELL;                                             //!< Cell index
+    real_t   WEIGHT;                                            //!< Weight for partitioning
+    real_t   SCALE;                                             //!< Scale for Helmholtz kernel
+    vec3     X;                                                 //!< Cell center
+    real_t   R;                                                 //!< Cell radius
+    B_iter   BODY;                                              //!< Iterator of first body
   };
   //! Structure of cells
   struct Cell : public CellBase {
     complex_t M[NTERM];                                         //!< Multipole expansion coefs
     complex_t L[NTERM];                                         //!< Local expansion coefs
-    Cell& operator=(const CellBase& cellBase) {                 //!< Assignment to derived struct
-      IPARENT = cellBase.IPARENT;                               //!< Copy index of parent cell
-      ICHILD  = cellBase.ICHILD;                                //!< Copy index of first child cell
-      NCHILD  = cellBase.NCHILD;                                //!< Copy number of child cells
-      IBODY   = cellBase.IBODY;                                 //!< Copy index of first body
-      NBODY   = cellBase.NBODY;                                 //!< Copy number of descendant bodies
-#if EXAFMM_COUNT_LIST
-      numP2P  = cellBase.numP2P;                                //!< Copy size of P2P list
-      numM2L  = cellBase.numM2L;                                //!< Copy isze of M2L list
-#endif
-      ICELL   = cellBase.ICELL;                                 //!< Copy cell index
-      WEIGHT  = cellBase.WEIGHT;                                //!< Copy weight for partitioning
-      SCALE   = cellBase.SCALE;                                 //!< Copy scale for Helmholtz kernel
-      X       = cellBase.X;                                     //!< Copy cell center
-      R       = cellBase.R;                                     //!< Copy cell radius
-    }
+    using CellBase::operator=;
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef std::vector<CellBase> CellBases;                      //!< Vector of cell bases

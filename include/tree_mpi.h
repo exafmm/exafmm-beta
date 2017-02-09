@@ -76,10 +76,9 @@ namespace exafmm {
       std::vector<complex_t>::iterator CD = sendCellData.begin(); // Iterator for cell's data
       for (C_iter C=sendCells.begin(); C!=sendCells.end(); C++,CB++) { // Loop over send cells
         *CB = *C;                                               //  Copy cell's base components
-        for (int n=0; n<kernel.NTERM; n++,CD++) {               //  Loop over M/L coefs
-          *CD = C->M[n];                                        //   Copy send cell's multipole coefs
-          CD++;                                                 //   Increment send cell's data iterator
-          *CD = C->L[n];                                        //   Copy send cell's local coefs
+        for (int n=0; n<kernel.NTERM; n++) {                    //  Loop over M/L coefs
+          *CD++ = C->M[n];                                      //   Copy send cell's multipole coefs
+          *CD++ = C->L[n];                                      //   Copy send cell's local coefs
         }                                                       //  End loop over M/L coefs
       }                                                         // End loop over send cells
       MPI_Datatype cellType;                                    // MPI data type of cell structure
@@ -100,10 +99,9 @@ namespace exafmm {
       recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
       for (C_iter C=recvCells.begin(); C!=recvCells.end(); C++,CB++) { // Loop over recv cells
         *C = *CB;                                               //  Copy cell's base components
-        for (int n=0; n<kernel.NTERM; n++,CD++) {               //  Loop over M/L coefs
-          C->M[n] = *CD;                                        //   Copy recv cell's multipole coefs
-          CD++;                                                 //   Increment recv cell's data iterator
-          C->L[n] = *CD;                                        //   Copy recv cell's local coefs
+        for (int n=0; n<kernel.NTERM; n++) {                    //  Loop over M/L coefs
+          C->M[n] = *CD++;                                      //   Copy recv cell's multipole coefs
+          C->L[n] = *CD++;                                      //   Copy recv cell's local coefs
         }                                                       //  End loop over M/L coefs
       }                                                         // End loop over send cells
     }
