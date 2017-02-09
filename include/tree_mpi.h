@@ -80,6 +80,18 @@ namespace exafmm {
 
     //! Exchange cells
     void alltoallv(Cells & cells) {
+      CellBases sendCellBases(sendCells.size());                // Send buffer for cells base components
+      std::vector<complex_t> sendCellData(sendCells.size()*kernel.NTERM*2);
+      CB_iter CB = sendCellBases.begin();
+      std::vector<complex_t>::iterator CD = sendCellData.begin();
+      for (C_iter C=sendCells.begin(); C!=sendCells.end(); C++,CB++) {
+        *CB = *C;
+        for (int n=0; n<kernel.NTERM; n++,CD++) {
+          *CD = C->M[n];
+          CD++;
+          *CD = C->L[n];
+        }
+      }
       assert( (sizeof(cells[0]) & 3) == 0 );                    // Cell structure must be 4 Byte aligned
       int word = sizeof(cells[0]) / 4;                          // Word size of body structure
       recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer

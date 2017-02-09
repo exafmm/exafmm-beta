@@ -69,7 +69,7 @@ namespace exafmm {
   };
 
   //! Structure of bodies
-  struct Body : public Source{                                  //!< Base components of body structure
+  struct Body : public Source {                                 //!< Base components of body structure
     int     IBODY;                                              //!< Initial body numbering for sorting back
     int     IRANK;                                              //!< Initial rank numbering for partitioning back
     int64_t ICELL;                                              //!< Cell index
@@ -100,16 +100,16 @@ namespace exafmm {
   const int NTERM = 3*Pmax*(Pmax+1)/2;                          //!< # of terms in Biot-Savart expansion
 #endif
 
-  //! Structure of cells
-  struct Cell {                                                 //!< Base components of cell structure
-    int      IPARENT;                                           //!< Index of parent cell
-    int      ICHILD;                                            //!< Index of first child cell
-    int      NCHILD;                                            //!< Number of child cells
-    int      IBODY;                                             //!< Index of first body
-    int      NBODY;                                             //!< Number of descendant bodies
+  //! Base components of cells
+  struct CellBase {
+    int IPARENT;                                                //!< Index of parent cell
+    int ICHILD;                                                 //!< Index of first child cell
+    int NCHILD;                                                 //!< Number of child cells
+    int IBODY;                                                  //!< Index of first body
+    int NBODY;                                                  //!< Number of descendant bodies
 #if EXAFMM_COUNT_LIST
-    int      numP2P;                                            //!< Size of P2P interaction list per cell
-    int      numM2L;                                            //!< Size of M2L interaction list per cell
+    int numP2P;                                                 //!< Size of P2P interaction list per cell
+    int numM2L;                                                 //!< Size of M2L interaction list per cell
 #endif
     uint64_t  ICELL;                                            //!< Cell index
     real_t    WEIGHT;                                           //!< Weight for partitioning
@@ -117,10 +117,15 @@ namespace exafmm {
     vec3      X;                                                //!< Cell center
     real_t    R;                                                //!< Cell radius
     B_iter    BODY;                                             //!< Iterator of first body
+  };
+  //! Structure of cells
+  struct Cell : public CellBase {
     complex_t M[NTERM];                                         //!< Multipole expansion coefficients
     complex_t L[NTERM];                                         //!< Local expansion coefficients
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
+  typedef std::vector<CellBase> CellBases;                      //!< Vector of cell bases
   typedef typename Cells::iterator C_iter;                      //!< Iterator of cell vector
+  typedef typename CellBases::iterator CB_iter;                 //!< Iterator of cell vector
 }
 #endif

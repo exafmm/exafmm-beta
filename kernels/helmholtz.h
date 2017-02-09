@@ -14,6 +14,7 @@ namespace exafmm {
   class Kernel {
   public:
     const int P;
+    const int NTERM;
     real_t    eps2;
     complex_t wavek;
     vec3      Xperiodic;
@@ -344,7 +345,7 @@ namespace exafmm {
     }
 
   public:
-    Kernel(real_t _eps2, complex_t _wavek) : P(Pmax), eps2(_eps2), wavek(_wavek) {
+    Kernel(real_t _eps2, complex_t _wavek) : P(Pmax), NTERM(P*P), eps2(_eps2), wavek(_wavek) {
       Xperiodic = 0;
     }
 
