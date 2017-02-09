@@ -1,8 +1,7 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Instantiate kernel
-Remove static from kernel functions
+Use derived data type for MPI
 Parametrize P
 namespace exafmm > EXAFMM_KERNEL with #define
 TBB

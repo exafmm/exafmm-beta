@@ -49,23 +49,13 @@ namespace exafmm {
 
     //! Exchange bodies
     void alltoallv(Bodies & bodies) {
-      assert( (sizeof(bodies[0]) & 3) == 0 );                   // Body structure must be 4 Byte aligned
-      int word = sizeof(bodies[0]) / 4;                         // Word size of body structure
+      MPI_Datatype bodyType;                                    // MPI data type of body structure
+      int bytes = sizeof(bodies[0]);                            // Byte size of body structure
+      MPI_Type_contiguous(bytes, MPI_CHAR, &bodyType);          // Set MPI data type
+      MPI_Type_commit(&bodyType);                               // Commit MPI data type
       recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
-      for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
-	sendBodyCount[irank] *= word;                           //  Multiply send count by word size of data
-	sendBodyDispl[irank] *= word;                           //  Multiply send displacement by word size of data
-	recvBodyCount[irank] *= word;                           //  Multiply receive count by word size of data
-	recvBodyDispl[irank] *= word;                           //  Multiply receive displacement by word size of data
-      }                                                         // End loop over ranks
-      MPI_Alltoallv((int*)&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
-		    (int*)&recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
-      for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
-	sendBodyCount[irank] /= word;                           //  Divide send count by word size of data
-	sendBodyDispl[irank] /= word;                           //  Divide send displacement by word size of data
-	recvBodyCount[irank] /= word;                           //  Divide receive count by word size of data
-	recvBodyDispl[irank] /= word;                           //  Divide receive displacement by word size of data
-      }                                                         // End loop over ranks
+      MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, bodyType,// Communicate bodies
+		    &recvBodies[0], recvBodyCount, recvBodyDispl, bodyType, MPI_COMM_WORLD);
     }
 
     //! Exchange send count for cells
@@ -80,35 +70,42 @@ namespace exafmm {
 
     //! Exchange cells
     void alltoallv(Cells & cells) {
-      CellBases sendCellBases(sendCells.size());                // Send buffer for cells base components
-      std::vector<complex_t> sendCellData(sendCells.size()*kernel.NTERM*2);
-      CB_iter CB = sendCellBases.begin();
-      std::vector<complex_t>::iterator CD = sendCellData.begin();
-      for (C_iter C=sendCells.begin(); C!=sendCells.end(); C++,CB++) {
-        *CB = *C;
-        for (int n=0; n<kernel.NTERM; n++,CD++) {
-          *CD = C->M[n];
-          CD++;
-          *CD = C->L[n];
-        }
-      }
-      assert( (sizeof(cells[0]) & 3) == 0 );                    // Cell structure must be 4 Byte aligned
-      int word = sizeof(cells[0]) / 4;                          // Word size of body structure
+      CellBases sendCellBases(sendCells.size());                // Send buffer for cell's base components
+      std::vector<complex_t> sendCellData(sendCells.size()*kernel.NTERM*2); // Send buffer for cell's data
+      CB_iter CB = sendCellBases.begin();                       // Iterator for cell's base components
+      std::vector<complex_t>::iterator CD = sendCellData.begin(); // Iterator for cell's data
+      for (C_iter C=sendCells.begin(); C!=sendCells.end(); C++,CB++) { // Loop over send cells
+        *CB = *C;                                               //  Copy cell's base components
+        for (int n=0; n<kernel.NTERM; n++,CD++) {               //  Loop over M/L coefs
+          *CD = C->M[n];                                        //   Copy send cell's multipole coefs
+          CD++;                                                 //   Increment send cell's data iterator
+          *CD = C->L[n];                                        //   Copy send cell's local coefs
+        }                                                       //  End loop over M/L coefs
+      }                                                         // End loop over send cells
+      MPI_Datatype cellType;                                    // MPI data type of cell structure
+      int bytes = sizeof(sendCellBases[0]);                     // Byte size of send cell's base components
+      MPI_Type_contiguous(bytes, MPI_CHAR, &cellType);          // Set MPI data type
+      MPI_Type_commit(&cellType);                               // Commit MPI data type
+      CellBases recvCellBases(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]); // Recv buffer for cell's base components
+      MPI_Alltoallv(&sendCellBases[0], sendCellCount, sendCellDispl, cellType,// Communicate cells
+		    &recvCellBases[0], recvCellCount, recvCellDispl, cellType, MPI_COMM_WORLD);
+      bytes = sizeof(complex_t) * kernel.NTERM * 2;             // Byte size of send cell's data
+      MPI_Type_contiguous(bytes, MPI_CHAR, &cellType);          // Set MPI data type
+      MPI_Type_commit(&cellType);                               // Commit MPI data type
+      std::vector<complex_t> recvCellData(recvCellBases.size()*kernel.NTERM*2); // Recv buffer for cell's data
+      MPI_Alltoallv(&sendCellData[0], sendCellCount, sendCellDispl, cellType,// Communicate cells
+		    &recvCellData[0], recvCellCount, recvCellDispl, cellType, MPI_COMM_WORLD);
+      CB = recvCellBases.begin();                               // Iterator for recv cell's base components
+      CD = recvCellData.begin();                                // Iterator for recv cell's data
       recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
-      for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
-	sendCellCount[irank] *= word;                           //  Multiply send count by word size of data
-	sendCellDispl[irank] *= word;                           //  Multiply send displacement by word size of data
-	recvCellCount[irank] *= word;                           //  Multiply receive count by word size of data
-	recvCellDispl[irank] *= word;                           //  Multiply receive displacement by word size of data
-      }                                                         // End loop over ranks
-      MPI_Alltoallv((int*)&cells[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
-		    (int*)&recvCells[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
-      for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
-	sendCellCount[irank] /= word;                           //  Divide send count by word size of data
-	sendCellDispl[irank] /= word;                           //  Divide send displacement by word size of data
-	recvCellCount[irank] /= word;                           //  Divide receive count by word size of data
-	recvCellDispl[irank] /= word;                           //  Divide receive displacement by word size of data
-      }                                                         // End loop over ranks
+      for (C_iter C=recvCells.begin(); C!=recvCells.end(); C++,CB++) { // Loop over recv cells
+        *C = *CB;                                               //  Copy cell's base components
+        for (int n=0; n<kernel.NTERM; n++,CD++) {               //  Loop over M/L coefs
+          C->M[n] = *CD;                                        //   Copy recv cell's multipole coefs
+          CD++;                                                 //   Increment recv cell's data iterator
+          C->L[n] = *CD;                                        //   Copy recv cell's local coefs
+        }                                                       //  End loop over M/L coefs
+      }                                                         // End loop over send cells
     }
 
     //! Get distance to other domain

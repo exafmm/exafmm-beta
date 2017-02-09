@@ -120,8 +120,24 @@ namespace exafmm {
   };
   //! Structure of cells
   struct Cell : public CellBase {
-    complex_t M[NTERM];                                         //!< Multipole expansion coefficients
-    complex_t L[NTERM];                                         //!< Local expansion coefficients
+    complex_t M[NTERM];                                         //!< Multipole expansion coefs
+    complex_t L[NTERM];                                         //!< Local expansion coefs
+    Cell& operator=(const CellBase& cellBase) {                 //!< Assignment to derived struct
+      IPARENT = cellBase.IPARENT;                               //!< Copy index of parent cell
+      ICHILD  = cellBase.ICHILD;                                //!< Copy index of first child cell
+      NCHILD  = cellBase.NCHILD;                                //!< Copy number of child cells
+      IBODY   = cellBase.IBODY;                                 //!< Copy index of first body
+      NBODY   = cellBase.NBODY;                                 //!< Copy number of descendant bodies
+#if EXAFMM_COUNT_LIST
+      numP2P  = cellBase.numP2P;                                //!< Copy size of P2P list
+      numM2L  = cellBase.numM2L;                                //!< Copy isze of M2L list
+#endif
+      ICELL   = cellBase.ICELL;                                 //!< Copy cell index
+      WEIGHT  = cellBase.WEIGHT;                                //!< Copy weight for partitioning
+      SCALE   = cellBase.SCALE;                                 //!< Copy scale for Helmholtz kernel
+      X       = cellBase.X;                                     //!< Copy cell center
+      R       = cellBase.R;                                     //!< Copy cell radius
+    }
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef std::vector<CellBase> CellBases;                      //!< Vector of cell bases
