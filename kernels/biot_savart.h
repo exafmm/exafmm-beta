@@ -14,7 +14,7 @@ namespace exafmm {
     complex_t wavek;
     vec3      Xperiodic;
 
-    Kernel(real_t _eps2, complex_t _wavek) : P(Pmax), NTERM(3*P*(P+1)/2), eps2(_eps2), wavek(_wavek) {
+    Kernel(int _P, real_t _eps2, complex_t _wavek) : P(_P), NTERM(3*P*(P+1)/2), eps2(_eps2), wavek(_wavek) {
       Xperiodic = 0;
     }
 

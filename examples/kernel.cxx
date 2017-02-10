@@ -10,7 +10,7 @@ int main(int argc, char ** argv) {
   const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   Bodies bodies(1), bodies2(1), jbodies(1);
-  Kernel kernel(eps2, wavek);
+  Kernel kernel(args.P, eps2, wavek);
   kernel.init();
   logger::verbose = true;
 

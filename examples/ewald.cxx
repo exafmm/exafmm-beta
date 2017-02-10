@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Kernel kernel(eps2, wavek);
+  Kernel kernel(args.P, eps2, wavek);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal traversal(kernel, args.nspawn, args.images, args.path);
   TreeMPI treeMPI(kernel, baseMPI.mpirank, baseMPI.mpisize, args.images);

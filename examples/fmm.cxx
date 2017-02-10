@@ -20,7 +20,7 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit);
   Cells cells, jcells;
   Dataset data;
-  Kernel kernel(eps2, wavek);
+  Kernel kernel(args.P, eps2, wavek);
   Traversal traversal(kernel, args.nspawn, args.images, args.path);
   UpDownPass upDownPass(kernel, args.theta);
   Verify verify(args.path);

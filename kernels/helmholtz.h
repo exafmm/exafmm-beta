@@ -345,7 +345,7 @@ namespace exafmm {
     }
 
   public:
-    Kernel(real_t _eps2, complex_t _wavek) : P(Pmax), NTERM(P*P), eps2(_eps2), wavek(_wavek) {
+    Kernel(int _P, real_t _eps2, complex_t _wavek) : P(_P), NTERM(P*P), eps2(_eps2), wavek(_wavek) {
       Xperiodic = 0;
     }
 

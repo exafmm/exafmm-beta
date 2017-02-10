@@ -34,6 +34,7 @@ namespace exafmm {
   Bounds globalBounds;
 
   extern "C" void FMM_Init(int images, int threads, double theta, double cutoff, bool verbose, const char * path) {
+    const int P = 10;
     const int ncrit = 32;
     const int nspawn = 1000;
 
@@ -41,7 +42,7 @@ namespace exafmm {
     baseMPI = new BaseMPI;
     boundBox = new BoundBox;
     clusterTree = new BuildTreeFromCluster();
-    kernel = new Kernel(eps2, wavek);
+    kernel = new Kernel(P, eps2, wavek);
     localTree = new BuildTree(ncrit);
     globalTree = new BuildTree(1);
     partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);

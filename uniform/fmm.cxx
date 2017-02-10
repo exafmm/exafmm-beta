@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit);
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Kernel kernel(eps2, wavek);
+  Kernel kernel(args.P, eps2, wavek);
   Traversal traversal(kernel, args.nspawn, args.images, args.path);
   UpDownPass upDownPass(kernel, args.theta);
 #if EXAFMM_SERIAL

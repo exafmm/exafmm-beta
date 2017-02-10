@@ -85,21 +85,13 @@ namespace exafmm {
   typedef std::vector<Body> Bodies;                             //!< Vector of bodies
   typedef typename Bodies::iterator B_iter;                     //!< Iterator of body vector
 
+  /*
 #ifdef EXAFMM_PMAX
   const int Pmax = EXAFMM_PMAX;                                 //!< Max order of expansions
 #else
   const int Pmax = 10;                                          //!< Max order of expansions
 #endif
   const int Pmin = 4;                                           //!< Min order of expansions
-
-  /*
-#if EXAFMM_LAPLACE
-  const int NTERM = Pmax*(Pmax+1)/2;                            //!< # of terms in Laplace expansion
-#elif EXAFMM_HELMHOLTZ
-  const int NTERM = Pmax*Pmax;                                  //!< # of terms in Helmholtz expansion
-#elif EXAFMM_BIOTSAVART
-  const int NTERM = 3*Pmax*(Pmax+1)/2;                          //!< # of terms in Biot-Savart expansion
-#endif
   */
 
   //! Base components of cells

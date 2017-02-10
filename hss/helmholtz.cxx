@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
   BuildTree globalTree(1);
   Cells cells, jcells, gcells;
   Dataset data;
-  Kernel kernel(eps2, wavek);
+  Kernel kernel(args.P, eps2, wavek);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal traversal(kernel, args.nspawn, args.images, args.path);
   TreeMPI treeMPI(kernel, baseMPI.mpirank, baseMPI.mpisize, args.images);

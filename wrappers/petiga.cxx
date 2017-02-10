@@ -54,6 +54,7 @@ namespace exafmm {
   extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads, const char * path,
                            int nb, double * xb, double * yb, double * zb, double * vb,
                            int nv, double * xv, double * yv, double * zv, double * vv) {
+    const int P = 10;
     const int nspawn = 1000;
     const int images = 0;
     const real_t theta = 0.4;
@@ -62,7 +63,7 @@ namespace exafmm {
     args = new Args;
     baseMPI = new BaseMPI;
     boundBox = new BoundBox;
-    kernel = new Kernel(eps2, complex_t(kreal, kimag));
+    kernel = new Kernel(P, eps2, complex_t(kreal, kimag));
     localTree = new BuildTree(ncrit);
     globalTree = new BuildTree(1);
     partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
