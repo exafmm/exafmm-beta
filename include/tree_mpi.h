@@ -99,6 +99,8 @@ namespace exafmm {
       recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
       for (C_iter C=recvCells.begin(); C!=recvCells.end(); C++,CB++) { // Loop over recv cells
         *C = *CB;                                               //  Copy cell's base components
+        C->M.resize(kernel.NTERM);                              //  Allocate M coefs
+        C->L.resize(kernel.NTERM);                              //  Allocate L coefs
         for (int n=0; n<kernel.NTERM; n++) {                    //  Loop over M/L coefs
           C->M[n] = *CD++;                                      //   Copy recv cell's multipole coefs
           C->L[n] = *CD++;                                      //   Copy recv cell's local coefs
@@ -374,7 +376,7 @@ namespace exafmm {
 	    C->R = std::max(C->X[d] - Xmin[d], C->R);           //    Calculate min distance from center
 	    C->R = std::max(Xmax[d] - C->X[d], C->R);           //    Calculate max distance from center
 	  }                                                     //   End loop over dimensions
-	  for (int n=0; n<NTERM; n++) C->M[n] = 0;              //   Reset multipoles
+          std::fill(C->M.begin(), C->M.end(), 0);               //   Reset multipoles
 	  kernel.M2M(C, C0);                                    //   M2M kernel
 	}                                                       //  End if for non-leaf global cell
       }                                                         // End loop over global cells bottom up

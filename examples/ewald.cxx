@@ -78,7 +78,6 @@ int main(int argc, char ** argv) {
       treeMPI.setLET(cells, cycle);
       treeMPI.commBodies();
       treeMPI.commCells();
-
       traversal.initListCount(cells);
       traversal.initWeight(cells);
       traversal.traverse(cells, cells, cycle, args.dual);

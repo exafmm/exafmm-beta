@@ -11,11 +11,10 @@ namespace exafmm {
 
   private:
     //! Post-order traversal for upward pass
-    void postOrderTraversal(C_iter C, C_iter C0, real_t theta) {
+    void postOrderTraversal(C_iter C, C_iter C0) {
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
-        postOrderTraversal(CC, C0, theta);                      //  Recursive call for child cell
+        postOrderTraversal(CC, C0);                             //  Recursive call for child cell
       }                                                         // End loop over child cells
-      for (int n=0; n<NTERM; n++) C->M[n] = C->L[n] = 0;        // Initialize expansion coefficients
       if(C->NCHILD==0) kernel.P2M(C);                           // P2M kernel
       else {                                                    // If not leaf cell
         kernel.M2M(C, C0);                                      //  M2M kernel
@@ -54,8 +53,10 @@ namespace exafmm {
 	C_iter C0 = cells.begin();                              //  Set iterator of target root cell
         for (C_iter C=cells.begin(); C!=cells.end(); C++) {     //  Loop over cells
           C->SCALE = 2 * C->R;                                  //   Set cell scale for Helmholtz kernel
+          C->M.resize(kernel.NTERM, 0.0);                       //   Allocate & initialize M coefs
+          C->L.resize(kernel.NTERM, 0.0);                       //   Allocate & initialize L coefs
         }                                                       //  End loop over cells
-	postOrderTraversal(C0, C0, theta);                      //  Start post-order traversal from root
+	postOrderTraversal(C0, C0);                             //  Start post-order traversal from root
       }                                                         // End if for empty cell vector
       logger::stopTimer("Upward pass");                         // Stop timer
     }

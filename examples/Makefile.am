@@ -32,11 +32,17 @@ biotsavart_kernel_SOURCES = kernel.cxx
 biotsavart_kernel_CPPFLAGS = $(biotsavart_CPPFLAGS)
 
 run_laplace_kernel: laplace_kernel
-	./$< -v
+	./$< -v -P 10
+	./$< -v -P 20
+	./$< -v -P 30
 run_helmholtz_kernel: helmholtz_kernel
-	./$< -v
+	./$< -v -P 10
+	./$< -v -P 20
+	./$< -v -P 30
 run_biotsavart_kernel: biotsavart_kernel
-	./$< -v
+	./$< -v -P 10
+	./$< -v -P 20
+	./$< -v -P 30
 
 if EXAFMM_HAVE_MPI
 bin_PROGRAMS += laplace_mpi helmholtz_mpi biotsavart_mpi ewald_mpi

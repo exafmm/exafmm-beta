@@ -21,7 +21,7 @@ AM_FCFLAGS += -ansi_alias
 endif
 else
 if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS = -ansi_alias -fabi-version=6 -Wfatal-errors
+AM_CXXFLAGS = -ansi_alias -fabi-version=6 -Wfatal-errors -wd11070,11071
 AM_FCFLAGS = -ansi_alias
 else
 if EXAFMM_HAVE_CLANG

@@ -25,7 +25,7 @@ namespace exafmm {
 
   private:
     //! Counting bodies in each octant
-    static void countBodies(Bodies & bodies, int begin, int end, vec3 X, ivec8 & NBODY) {
+    void countBodies(Bodies & bodies, int begin, int end, vec3 X, ivec8 & NBODY) {
       for (int i=0; i<8; i++) NBODY[i] = 0;                     // Initialize number of bodies in octant
       for (int i=begin; i<end; i++) {                           // Loop over bodies in node
         vec3 x = bodies[i].X;                                   //  Coordinates of body
@@ -37,7 +37,7 @@ namespace exafmm {
     }
 
     //! Sorting bodies according to octant (Morton order)
-    static void moveBodies(Bodies & bodies, Bodies & buffer, int begin, int end,
+    void moveBodies(Bodies & bodies, Bodies & buffer, int begin, int end,
                            ivec8 octantOffset, vec3 X) {
       for (int i=begin; i<end; i++) {                           // Loop over bodies
         vec3 x = bodies[i].X;                                   //  Coordinates of body
@@ -50,7 +50,7 @@ namespace exafmm {
     }
 
     //! Create an octree node
-    static OctreeNode * makeOctNode(OctreeNode *& octNode, int begin, int end, vec3 X, bool nochild) {
+    OctreeNode * makeOctNode(OctreeNode *& octNode, int begin, int end, vec3 X, bool nochild) {
       octNode = new OctreeNode();                               // Allocate memory for single node
       octNode->IBODY = begin;                                   // Index of first body in node
       octNode->NBODY = end - begin;                             // Number of bodies in node
@@ -63,7 +63,7 @@ namespace exafmm {
     }
 
     //! Exclusive scan with offset
-    static inline ivec8 exclusiveScan(ivec8 input, int offset) {
+    inline ivec8 exclusiveScan(ivec8 input, int offset) {
       ivec8 output;                                             // Output vector
       for (int i=0; i<8; i++) {                                 // Loop over elements
         output[i] = offset;                                     //  Set value
@@ -73,8 +73,8 @@ namespace exafmm {
     }
 
     //! Recursive functor for building nodes of an octree adaptively using a top-down approach
-    static void buildNodes(OctreeNode *& octNode, Bodies & bodies, Bodies & buffer,
-                           int begin, int end, vec3 X, real_t R0, int ncrit,
+    void buildNodes(OctreeNode *& octNode, Bodies & bodies, Bodies & buffer,
+                           int begin, int end, vec3 X, real_t R0,
                            int level=0, bool direction=false) {
       if (begin == end) {                                       // If no bodies are left
         octNode = NULL;                                         //  Assign null pointer
@@ -99,7 +99,7 @@ namespace exafmm {
         }                                                       //  End loop over dimensions
         buildNodes(octNode->CHILD[i], buffer, bodies,           //  Recursive call for children
                    octantOffset[i], octantOffset[i] + NBODY[i],
-                   Xchild, R0, ncrit, level+1, !direction);
+                   Xchild, R0, level+1, !direction);
       }                                                         // End loop over children
       for (int i=0; i<8; i++) {                                 // Loop over children
         if (octNode->CHILD[i]) octNode->NNODE += octNode->CHILD[i]->NNODE;// If child exists increment child node count
@@ -119,9 +119,9 @@ namespace exafmm {
     }
 
     //! Creating cell data structure from nodes
-    void nodes2cells(OctreeNode * octNode, B_iter B0, C_iter C,
+    void nodes2cells(OctreeNode * octNode, C_iter C,
                      C_iter C0, C_iter CN, vec3 X0, real_t R0,
-                     int & numLevels, int level=0, int iparent=0) {
+                     int & maxLevel, int level=0, int iparent=0) {
       C->IPARENT = iparent;                                     //  Index of parent cell
       C->R       = R0 / (1 << level);                           //  Cell radius
       C->X       = octNode->X;                                  //  Cell center
@@ -133,7 +133,7 @@ namespace exafmm {
         C->ICHILD = 0;                                          //   Set index of first child cell to zero
         C->NCHILD = 0;                                          //   Number of child cells
         assert(C->NBODY > 0);                                   //   Check for empty leaf cells
-        numLevels = std::max(numLevels, level);                 //   Update maximum level of tree
+        maxLevel = std::max(maxLevel, level);                   //   Update maximum level of tree
       } else {                                                  //  Else if node has children
         int nchild = 0;                                         //   Initialize number of child cells
         int octants[8];                                         //   Map of child index to octants
@@ -150,7 +150,7 @@ namespace exafmm {
         CN += nchild;                                           //   Increment next free memory address
         for (int i=0; i<nchild; i++) {                          //   Loop over children
           int octant = octants[i];                              //    Get octant from child index
-          nodes2cells(octNode->CHILD[octant], B0, Ci, C0, CN,   //    Recursive call for child cells
+          nodes2cells(octNode->CHILD[octant], Ci, C0, CN,       //    Recursive call for child cells
                       X0, R0, numLevels, level+1, C-C0);
           Ci++;                                                 //    Increment cell iterator
           CN += octNode->CHILD[octant]->NNODE - 1;              //    Increment next free memory address
@@ -159,7 +159,7 @@ namespace exafmm {
           int octant = octants[i];                              //    Get octant from child index
           delete octNode->CHILD[octant];                        //    Free child pointer to avoid memory leak
         }                                                       //   End loop over children
-        numLevels = std::max(numLevels, level+1);               //   Update maximum level of tree
+        maxLevel = std::max(maxLevel, level+1);                 //   Update maximum level of tree
       }                                                         //  End if for child existance
     };
 
@@ -192,7 +192,7 @@ namespace exafmm {
         assert(box.R > 0);                                      // Check for bounds validity
         B0 = bodies.begin();                                    // Bodies iterator
         buildNodes(N0, bodies, buffer, 0, bodies.size(),        // Build octree nodes
-                   box.X, box.R, ncrit);
+                   box.X, box.R);
       }                                                         // End if for empty root
       logger::stopTimer("Grow tree");                           // Stop timer
       logger::startTimer("Link tree");                          // Start timer
@@ -200,7 +200,7 @@ namespace exafmm {
       if (N0 != NULL) {                                         // If the node tree is not empty
 	cells.resize(N0->NNODE);                                //  Allocate cells array
 	C_iter C0 = cells.begin();                              //  Cell begin iterator
-	nodes2cells(N0, B0, C0, C0, C0+1, box.X, box.R, numLevels);// Instantiate recursive functor
+	nodes2cells(N0, C0, C0, C0+1, box.X, box.R, numLevels); // Instantiate recursive functor
 	delete N0;                                              //  Deallocate nodes
       }                                                         // End if for empty node tree
       logger::stopTimer("Link tree");                           // Stop timer

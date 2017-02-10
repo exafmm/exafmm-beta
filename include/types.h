@@ -92,6 +92,7 @@ namespace exafmm {
 #endif
   const int Pmin = 4;                                           //!< Min order of expansions
 
+  /*
 #if EXAFMM_LAPLACE
   const int NTERM = Pmax*(Pmax+1)/2;                            //!< # of terms in Laplace expansion
 #elif EXAFMM_HELMHOLTZ
@@ -99,6 +100,7 @@ namespace exafmm {
 #elif EXAFMM_BIOTSAVART
   const int NTERM = 3*Pmax*(Pmax+1)/2;                          //!< # of terms in Biot-Savart expansion
 #endif
+  */
 
   //! Base components of cells
   struct CellBase {
@@ -123,10 +125,6 @@ namespace exafmm {
     std::vector<complex_t> M;                                   //!< Multipole expansion coefs
     std::vector<complex_t> L;                                   //!< Local expansion coefs
     using CellBase::operator=;
-    Cell() {
-      M.resize(NTERM);
-      L.resize(NTERM);
-    }
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef std::vector<CellBase> CellBases;                      //!< Vector of cell bases

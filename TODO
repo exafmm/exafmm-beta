@@ -1,7 +1,9 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Use derived data type for MPI
+Remove Pmax from types.h
+std::vector<complex_t> expansion_t
+Use E_iter instead of n<kernel.NTERM
 Parametrize P
 namespace exafmm > EXAFMM_KERNEL with #define
 TBB
