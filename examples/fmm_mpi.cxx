@@ -145,7 +145,6 @@ int main(int argc, char ** argv) {
     logger::stopPAPI();
     double totalFMM = logger::stopTimer("Total FMM", 0);
     totalFMM /= numIteration;
-    logger::resetTimer("Total FMM");
     if (args.write) {
       logger::writeTime(baseMPI.mpirank);
     }
@@ -168,6 +167,7 @@ int main(int argc, char ** argv) {
       logger::printTitle("Total runtime");
       logger::printTime("Total FMM");
       logger::stopTimer("Total Direct");
+      logger::resetTimer("Total FMM");
       logger::resetTimer("Total Direct");
       double potDif = verify.getDifScalar(bodies, bodies2);
       double potNrm = verify.getNrmScalar(bodies);

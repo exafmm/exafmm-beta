@@ -120,9 +120,13 @@ namespace exafmm {
   };
   //! Structure of cells
   struct Cell : public CellBase {
-    complex_t M[NTERM];                                         //!< Multipole expansion coefs
-    complex_t L[NTERM];                                         //!< Local expansion coefs
+    std::vector<complex_t> M;                                   //!< Multipole expansion coefs
+    std::vector<complex_t> L;                                   //!< Local expansion coefs
     using CellBase::operator=;
+    Cell() {
+      M.resize(NTERM);
+      L.resize(NTERM);
+    }
   };
   typedef std::vector<Cell> Cells;                              //!< Vector of cells
   typedef std::vector<CellBase> CellBases;                      //!< Vector of cell bases
