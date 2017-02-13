@@ -165,11 +165,11 @@ namespace exafmm {
     }
 
     void M2L(C_iter Ci, C_iter Cj) {
-      complex_t Ynmi[P*P], Ynmj[P*P];
+      complex_t Ynm[4*P*P];
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
-      evalLocal(P, rho, alpha, beta, Ynmi);
+      evalLocal(2*P, rho, alpha, beta, Ynm);
       for (int j=0; j<P; j++) {
         real_t Cnm = oddOrEven(j);
         for (int k=0; k<=j; k++) {
@@ -179,13 +179,13 @@ namespace exafmm {
             for (int m=-n; m<0; m++) {
               int nms  = n * (n + 1) / 2 - m;
               int jnkm = (j + n) * (j + n) + j + n + m - k;
-              Li += std::conj(Cj->M[nms]) * Cnm * Ynmi[jnkm];
+              Li += std::conj(Cj->M[nms]) * Cnm * Ynm[jnkm];
             }
             for (int m=0; m<=n; m++) {
               int nms  = n * (n + 1) / 2 + m;
               int jnkm = (j + n) * (j + n) + j + n + m - k;
               real_t Cnm2 = Cnm * oddOrEven((k-m)*(k<m)+m);
-              Li += Cj->M[nms] * Cnm2 * Ynmi[jnkm];
+              Li += Cj->M[nms] * Cnm2 * Ynm[jnkm];
             }
           }
           Ci->L[jks] += Li;

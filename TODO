@@ -1,9 +1,7 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-std::vector<complex_t> expansion_t
-Use E_iter instead of n<kernel.NTERM
-Parametrize P
+P-j > P in M2L
 namespace exafmm > EXAFMM_KERNEL with #define
 TBB
 TBB traversal
@@ -15,7 +13,7 @@ Search TODO list and extract priority tasks
 -- Check later --
 Do we need C->SCALE? Why not use 2 * C->R?
 Add back time regression
-Fix CBRC buildbot
+Fix CBRC, Tokyo buildbot
 Fix parallel Biot-Savart
 Fix nightly
 Test debug option
