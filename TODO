@@ -1,6 +1,14 @@
 -- Immediate --
 * Rank items in this list according to importance
 
+Remove -beta from P2M, M2M
+Make precalculated variables class variables
+Make Ynm STL vector
+Remove init(), finalize()
+Fix wrappers
+Ewald for periodic
+Remove normalize()
+
 namespace exafmm > EXAFMM_KERNEL with #define
 TBB
 TBB traversal
@@ -17,11 +25,6 @@ Fix parallel Biot-Savart
 Fix nightly
 Test debug option
 Remove 1e-5 from bound_box
-
-- Modylas
- - Full P loop in M2L
- - Runtime P in wrapper
- - Ewald for periodic
 
 - PetIGA no macro
 - Helmholtz breaks for very low P

@@ -13,7 +13,7 @@
 namespace exafmm {
   class Traversal {
   private:
-    Kernel kernel;                                              //!< Kernel class
+    Kernel & kernel;                                            //!< Kernel class
     const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
     const int images;                                           //!< Number of periodic image sublevels
     const char * path;                                          //!< Path to save files
@@ -431,7 +431,7 @@ namespace exafmm {
 
   public:
     //! Constructor
-    Traversal(Kernel _kernel, int _nspawn, int _images, const char * _path) : // Constructor
+    Traversal(Kernel & _kernel, int _nspawn, int _images, const char * _path) : // Constructor
       kernel(_kernel), nspawn(_nspawn), images(_images), path(_path) // Initialize variables
 #if EXAFMM_COUNT_KERNEL
       , numP2P(0), numM2L(0)

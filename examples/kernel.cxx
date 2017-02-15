@@ -43,8 +43,6 @@ int main(int argc, char ** argv) {
   CJ->SCALE = 4;
   CJ->M.resize(kernel.NTERM, 0.0);
   kernel.M2M(CJ, cells.begin());
-  //for (int n=0; n<kernel.NTERM; n++)
-  //  std::cout << n << " " << CJ->M[n] << std::endl;
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;

@@ -15,7 +15,7 @@ vec_CPPFLAGS = $(laplace_CPPFLAGS)
 run_laplace: laplace
 	./$< -aDgv -n 100000 -r 1
 run_helmholtz: helmholtz
-	./$< -aDgv -n 10000 -r 1
+	./$< -aDgv -n 10000 -r 1 -P 20
 run_biotsavart: biotsavart
 	./$< -agv -n 10000 -r 1
 run_tree: tree
@@ -58,7 +58,7 @@ ewald_mpi_CPPFLAGS = $(laplace_CPPFLAGS)
 run_laplace_mpi: laplace_mpi
 	$(MPIRUN) -n 2 ./$< -aDgv -n 100000 -r 1
 run_helmholtz_mpi: helmholtz_mpi
-	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1
+	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1 -P 20
 run_biotsavart_mpi: biotsavart_mpi
 	$(MPIRUN) -n 2 ./$< -agv -n 10000 -r 1
 run_ewald_mpi: ewald_mpi

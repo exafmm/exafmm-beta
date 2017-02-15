@@ -1,17 +1,17 @@
 #ifndef helmholtz_h
 #define helmholtz_h
-#include "spherical.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
 #endif
 
 namespace exafmm {
-  int nquad, nquad2;
-  real_t * xquad, * xquad2;
-  real_t * wquad, * wquad2;
-  real_t * Anm1, * Anm2;
-
   class Kernel {
+  private:
+    int nquad, nquad2;
+    std::vector<real_t> xquad, xquad2;
+    std::vector<real_t> wquad, wquad2;
+    std::vector<real_t> Anm1, Anm2;
+
   public:
     const int P;
     const int NTERM;
@@ -20,6 +20,25 @@ namespace exafmm {
     vec3      Xperiodic;
 
   private:
+    //! Get r,theta,phi from x,y,z
+    void cart2sph(vec3 dX, real_t & r, real_t & theta, real_t & phi) {
+      r = sqrt(norm(dX));                                       // r = sqrt(x^2 + y^2 + z^2)
+      theta = r == 0 ? 0 : acos(dX[2] / r);                     // theta = acos(z / r)
+      phi = atan2(dX[1], dX[0]);                                // phi = atan(y / x)
+    }
+
+    //! Spherical to cartesian coordinates
+    void sph2cart(real_t r, real_t theta, real_t phi, vec3 spherical, vec3 & cartesian) {
+      cartesian[0] = std::sin(theta) * std::cos(phi) * spherical[0] // x component (not x itself)
+        + std::cos(theta) * std::cos(phi) / r * spherical[1]
+        - std::sin(phi) / r / std::sin(theta) * spherical[2];
+      cartesian[1] = std::sin(theta) * std::sin(phi) * spherical[0] // y component (not y itself)
+        + std::cos(theta) * std::sin(phi) / r * spherical[1]
+        + std::cos(phi) / r / std::sin(theta) * spherical[2];
+      cartesian[2] = std::cos(theta) * spherical[0]             // z component (not z itself)
+        - std::sin(theta) / r * spherical[1];
+    }
+
     void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
       sum = 0.5 + x * x * 1.5;
       real_t pk = 1;
@@ -42,7 +61,7 @@ namespace exafmm {
       der = n * (x * pkp1 - pk) / (x * x - 1);
     }
 
-    void legendre(int nq, real_t * xq, real_t * wq) {
+    void legendre(int nq, std::vector<real_t> & xq, std::vector<real_t> & wq) {
       real_t pol = 0, der, sum;
       real_t h = M_PI / (2 * nq);
       for (int i=1; i<=nq; i++) {
@@ -347,15 +366,12 @@ namespace exafmm {
   public:
     Kernel(int _P, real_t _eps2, complex_t _wavek) : P(_P), NTERM(P*P), eps2(_eps2), wavek(_wavek) {
       Xperiodic = 0;
-    }
-
-    void init() {
-      xquad = new real_t [P];
-      xquad2 = new real_t [2*P];
-      wquad = new real_t [P];
-      wquad2 = new real_t [2*P];
-      Anm1 = new real_t [(P+1)*(P+2)/2];
-      Anm2 = new real_t [(P+1)*(P+2)/2];
+      xquad.resize(P);
+      xquad2.resize(2*P);
+      wquad.resize(P);
+      wquad2.resize(2*P);
+      Anm1.resize((P+1)*(P+2)/2);
+      Anm2.resize((P+1)*(P+2)/2);
       nquad = fmax(6, P);
       legendre(nquad, xquad, wquad);
       nquad2 = fmax(6, 2*P);
@@ -363,14 +379,9 @@ namespace exafmm {
       getAnm();
     }
 
-    void finalize() {
-      delete[] xquad;
-      delete[] xquad2;
-      delete[] wquad;
-      delete[] wquad2;
-      delete[] Anm1;
-      delete[] Anm2;
-    }
+    void init() {}
+
+    void finalize() {}
 
     void normalize(Bodies & bodies) {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {

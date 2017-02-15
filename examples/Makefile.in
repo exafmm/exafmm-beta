@@ -1070,7 +1070,7 @@ save:
 run_laplace: laplace
 	./$< -aDgv -n 100000 -r 1
 run_helmholtz: helmholtz
-	./$< -aDgv -n 10000 -r 1
+	./$< -aDgv -n 10000 -r 1 -P 20
 run_biotsavart: biotsavart
 	./$< -agv -n 10000 -r 1
 run_tree: tree
@@ -1094,7 +1094,7 @@ run_biotsavart_kernel: biotsavart_kernel
 @EXAFMM_HAVE_MPI_TRUE@run_laplace_mpi: laplace_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -n 100000 -r 1
 @EXAFMM_HAVE_MPI_TRUE@run_helmholtz_mpi: helmholtz_mpi
-@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -aDgv -n 10000 -r 1 -P 20
 @EXAFMM_HAVE_MPI_TRUE@run_biotsavart_mpi: biotsavart_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -agv -n 10000 -r 1
 @EXAFMM_HAVE_MPI_TRUE@run_ewald_mpi: ewald_mpi

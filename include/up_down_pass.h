@@ -6,7 +6,7 @@
 namespace exafmm {
   class UpDownPass {
   private:
-    Kernel kernel;                                              //!< Kernel class
+    Kernel & kernel;                                            //!< Kernel class
     const real_t theta;                                         //!< Multipole acceptance criteria
 
   private:
@@ -44,7 +44,7 @@ namespace exafmm {
 
   public:
     //! Constructor
-    UpDownPass(Kernel _kernel, real_t _theta) : kernel(_kernel), theta(_theta) {} // Initialize variables
+    UpDownPass(Kernel & _kernel, real_t _theta) : kernel(_kernel), theta(_theta) {} // Initialize variables
 
     //! Upward pass (P2M, M2M)
     void upwardPass(Cells & cells) {

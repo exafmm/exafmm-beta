@@ -34,8 +34,8 @@ namespace exafmm {
   Bounds localBounds;
   Bounds globalBounds;
 
-  extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, char * path, size_t *) {
-    const int P = 10;
+  extern "C" void fmm_init_(int & expansions, int & images, double & theta, int & verbose, int &, char * path, size_t *) {
+    const int P = expansions;
     const int ncrit = 16;
     const int nspawn = 1000;
 

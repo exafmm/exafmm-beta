@@ -7,10 +7,18 @@
 namespace exafmm {
   class Kernel {
   private:
-    real_t * prefactor;
-    real_t * Anm;
-    complex_t * Cnm;
+    std::vector<real_t> prefactor;                              // sqrt( (n - |m|)! / (n + |m|)! )
+    std::vector<real_t> Anm;                                    // (-1)^n / sqrt( (n + m)! / (n - m)! )
+    std::vector<complex_t> Cnm;                                 // M2L translation matrix Cjknm
 
+  public:
+    const int P;
+    const int NTERM;
+    real_t eps2;
+    complex_t wavek;
+    vec3 Xperiodic;
+
+  private:
     //! Odd or even
     inline int oddOrEven(int n) {
       return (((n) & 1) == 1) ? -1 : 1;
@@ -36,7 +44,7 @@ namespace exafmm {
     }
 
     //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-    void evalMultipole(int P, real_t rho, real_t alpha, real_t beta, complex_t * Ynm, complex_t * YnmTheta) {
+    void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t * Ynm, complex_t * YnmTheta) {
       real_t x = std::cos(alpha);                               // x = cos(alpha)
       real_t y = std::sin(alpha);                               // y = sin(alpha)
       real_t fact = 1;                                          // Initialize 2 * m + 1
@@ -71,7 +79,7 @@ namespace exafmm {
     }
 
   //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-    void evalLocal(int P, real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
+    void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm2) {
       real_t x = std::cos(alpha);                               // x = cos(alpha)
       real_t y = std::sin(alpha);                               // y = sin(alpha)
       real_t fact = 1;                                          // Initialize 2 * m + 1
@@ -82,8 +90,8 @@ namespace exafmm {
         real_t p = pn;                                          //  Associated Legendre polynomial Pnm
         int npn = m * m + 2 * m;                                //  Index of Ynm for m > 0
         int nmn = m * m;                                        //  Index of Ynm for m < 0
-        Ynm[npn] = rhom * p * prefactor[npn] * eim;             //  rho^(-m-1) * Ynm for m > 0
-        Ynm[nmn] = std::conj(Ynm[npn]);                         //  Use conjugate relation for m < 0
+        Ynm2[npn] = rhom * p * prefactor[npn] * eim;            //  rho^(-m-1) * Ynm for m > 0
+        Ynm2[nmn] = std::conj(Ynm2[npn]);                       //  Use conjugate relation for m < 0
         real_t p1 = p;                                          //  Pnm-1
         p = x * (2 * m + 1) * p1;                               //  Pnm using recurrence relation
         rhom /= rho;                                            //  rho^(-m-1)
@@ -91,8 +99,8 @@ namespace exafmm {
         for (int n=m+1; n<2*P; n++) {                           //  Loop over n in Ynm
           int npm = n * n + n + m;                              //   Index of Ynm for m > 0
           int nmm = n * n + n - m;                              //   Index of Ynm for m < 0
-          Ynm[npm] = rhon * p * prefactor[npm] * eim;           //   rho^n * Ynm for m > 0
-          Ynm[nmm] = std::conj(Ynm[npm]);                       //   Use conjugate relation for m < 0
+          Ynm2[npm] = rhon * p * prefactor[npm] * eim;          //   rho^n * Ynm for m > 0
+          Ynm2[nmm] = std::conj(Ynm2[npm]);                     //   Use conjugate relation for m < 0
           real_t p2 = p1;                                       //   Pnm-2
           p1 = p;                                               //   Pnm-1
           p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
@@ -103,44 +111,32 @@ namespace exafmm {
       }                                                         // End loop over m in Ynm
     }
 
-
   public:
-    const int P;
-    const int NTERM;
-    real_t eps2;
-    complex_t wavek;
-    vec3 Xperiodic;
-
     Kernel(int _P, real_t _eps2, complex_t _wavek) : P(_P), NTERM(P*(P+1)/2), eps2(_eps2), wavek(_wavek) {
       Xperiodic = 0;
-    }
-
-    void init() {
-      prefactor = new real_t [4*P*P];                           // sqrt( (n - |m|)! / (n + |m|)! )
-      Anm       = new real_t [4*P*P];                           // (-1)^n / sqrt( (n + m)! / (n - m)! )
-      Cnm       = new complex_t [P*P*P*P];                      // M2L translation matrix Cjknm
-
-      for( int n=0; n!=2*P; ++n ) {                             // Loop over n in Anm
-        for( int m=-n; m<=n; ++m ) {                            //  Loop over m in Anm
+      prefactor.resize(4*P*P);
+      Anm.resize(4*P*P);
+      Cnm.resize(P*P*P*P);
+      for (int n=0; n<2*P; n++) {                               // Loop over n in Anm
+        for (int m=-n; m<=n; m++) {                             //  Loop over m in Anm
           int nm = n*n+n+m;                                     //   Index of Anm
           int nabsm = abs(m);                                   //   |m|
           real_t fnmm = EPS;                                    //   Initialize (n - m)!
-          for( int i=1; i<=n-m; ++i ) fnmm *= i;                //   (n - m)!
+          for (int i=1; i<=n-m; i++) fnmm *= i;                 //   (n - m)!
           real_t fnpm = EPS;                                    //   Initialize (n + m)!
-          for( int i=1; i<=n+m; ++i ) fnpm *= i;                //   (n + m)!
+          for (int i=1; i<=n+m; i++) fnpm *= i;                 //   (n + m)!
           real_t fnma = 1.0;                                    //   Initialize (n - |m|)!
-          for( int i=1; i<=n-nabsm; ++i ) fnma *= i;            //   (n - |m|)!
+          for (int i=1; i<=n-nabsm; i++) fnma *= i;             //   (n - |m|)!
           real_t fnpa = 1.0;                                    //   Initialize (n + |m|)!
-          for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;            //   (n + |m|)!
+          for (int i=1; i<=n+nabsm; i++) fnpa *= i;             //   (n + |m|)!
           prefactor[nm] = std::sqrt(fnma/fnpa);                 //   sqrt( (n - |m|)! / (n + |m|)! )
           Anm[nm] = oddOrEven(n)/std::sqrt(fnmm*fnpm);          //   (-1)^n / sqrt( (n + m)! / (n - m)! )
         }                                                       //  End loop over m in Anm
       }                                                         // End loop over n in Anm
-
-      for( int j=0, jk=0, jknm=0; j!=P; ++j ) {                 // Loop over j in Cjknm
-        for( int k=-j; k<=j; ++k, ++jk ){                       //  Loop over k in Cjknm
-          for( int n=0, nm=0; n!=P; ++n ) {                     //   Loop over n in Cjknm
-            for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {          //    Loop over m in Cjknm
+      for (int j=0, jk=0, jknm=0; j<P; j++) {                   // Loop over j in Cjknm
+        for (int k=-j; k<=j; k++, jk++) {                       //  Loop over k in Cjknm
+          for (int n=0, nm=0; n<P; n++) {                       //   Loop over n in Cjknm
+            for (int m=-n; m<=n; m++, nm++, jknm++) {           //    Loop over m in Cjknm
               const int jnkm = (j+n)*(j+n)+j+n+m-k;             //     Index C_{j+n}^{m-k}
               Cnm[jknm] = std::pow(I,real_t(abs(k-m)-abs(k)-abs(m)))//     Cjknm
                 * real_t(oddOrEven(j)*Anm[nm]*Anm[jk]/Anm[jnkm]) * EPS;
@@ -150,12 +146,8 @@ namespace exafmm {
       }                                                         // End loop over in j in Cjknm
     }
 
-    //! Free temporary allocations
-    void finalize() {
-      delete[] prefactor;                                       // Free sqrt( (n - |m|)! / (n + |m|)! )
-      delete[] Anm;                                             // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
-      delete[] Cnm;                                             // Free M2L translation matrix Cjknm
-    }
+    void init() {}
+    void finalize() {}
 
     void normalize(Bodies & bodies) {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -260,7 +252,7 @@ namespace exafmm {
         vec3 dX = B->X - C->X;
         real_t rho, alpha, beta;
         cart2sph(dX, rho, alpha, beta);
-        evalMultipole(P, rho, alpha, -beta, Ynm, YnmTheta);
+        evalMultipole(rho, alpha, -beta, Ynm, YnmTheta);
         for (int n=0; n<P; n++) {
           for (int m=0; m<=n; m++) {
             int nm  = n * n + n + m;
@@ -277,7 +269,7 @@ namespace exafmm {
         vec3 dX = Ci->X - Cj->X;
         real_t rho, alpha, beta;
         cart2sph(dX, rho, alpha, beta);
-        evalMultipole(P, rho, alpha, -beta, Ynm, YnmTheta);
+        evalMultipole(rho, alpha, -beta, Ynm, YnmTheta);
         for (int j=0; j<P; j++) {
           for (int k=0; k<=j; k++) {
             int jk = j * j + j + k;
@@ -310,11 +302,11 @@ namespace exafmm {
     }
 
     void M2L(C_iter Ci, C_iter Cj) {
-      complex_t Ynm[4*P*P];
+      complex_t Ynm2[4*P*P];
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
-      evalLocal(P, rho, alpha, beta, Ynm);
+      evalLocal(rho, alpha, beta, Ynm2);
       for (int j=0; j<P; j++) {
         for (int k=0; k<=j; k++) {
           int jk = j * j + j + k;
@@ -326,14 +318,14 @@ namespace exafmm {
               int nms  = n * (n + 1) / 2 - m;
               int jknm = jk * P * P + nm;
               int jnkm = (j + n) * (j + n) + j + n + m - k;
-              L += std::conj(Cj->M[nms]) * Cnm[jknm] * Ynm[jnkm];
+              L += std::conj(Cj->M[nms]) * Cnm[jknm] * Ynm2[jnkm];
             }
             for (int m=0; m<=n; m++) {
               int nm   = n * n + n + m;
               int nms  = n * (n + 1) / 2 + m;
               int jknm = jk * P * P + nm;
               int jnkm = (j + n) * (j + n) + j + n + m - k;
-              L += Cj->M[nms] * Cnm[jknm] * Ynm[jnkm];
+              L += Cj->M[nms] * Cnm[jknm] * Ynm2[jnkm];
             }
           }
           Ci->L[jks] += L;
@@ -347,7 +339,7 @@ namespace exafmm {
       vec3 dX = Ci->X - Cj->X;
       real_t rho, alpha, beta;
       cart2sph(dX, rho, alpha, beta);
-      evalMultipole(P, rho, alpha, beta, Ynm, YnmTheta);
+      evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
       for (int j=0; j<P; j++) {
         for (int k=0; k<=j; k++) {
           int jk = j * j + j + k;
@@ -384,7 +376,7 @@ namespace exafmm {
         vec3 cartesian = 0;
         real_t r, theta, phi;
         cart2sph(dX, r, theta, phi);
-        evalMultipole(P, r, theta, phi, Ynm, YnmTheta);
+        evalMultipole(r, theta, phi, Ynm, YnmTheta);
         B->TRG /= B->SRC;
         for (int n=0; n<P; n++) {
           int nm  = n * n + n;
