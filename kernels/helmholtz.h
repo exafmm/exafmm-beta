@@ -379,12 +379,6 @@ namespace exafmm {
       getAnm();
     }
 
-    void normalize(Bodies & bodies) {
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-        B->TRG /= B->SRC;
-      }
-    }
-
     void P2P(C_iter Ci, C_iter Cj) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
@@ -411,8 +405,6 @@ namespace exafmm {
 	simdvec xi = SIMD<simdvec,B_iter,0,NSIMD>::setBody(Bi,i);
 	simdvec yi = SIMD<simdvec,B_iter,1,NSIMD>::setBody(Bi,i);
 	simdvec zi = SIMD<simdvec,B_iter,2,NSIMD>::setBody(Bi,i);
-	simdvec mi_r = SIMD<simdvec,B_iter,4,NSIMD>::setBody(Bi,i);
-	simdvec mi_i = SIMD<simdvec,B_iter,5,NSIMD>::setBody(Bi,i);
 
 	simdvec dx = Xperiodic[0];
 	xi -= dx;
@@ -440,10 +432,7 @@ namespace exafmm {
 	  invR &= R2 > zero;
 	  R &= R2 > zero;
 
-	  simdvec tmp = mi_r * mj_r - mi_i * mj_i;
-	  mj_i = mi_r * mj_i + mi_i * mj_r;
-	  mj_r = tmp;
-	  tmp = invR / exp(wave_ivec * R);
+	  simdvec tmp = invR / exp(wave_ivec * R);
 	  simdvec coef_r = cos(wave_rvec * R) * tmp;
 	  simdvec coef_i = sin(wave_rvec * R) * tmp;
 	  tmp = mj_r * coef_r - mj_i * coef_i;
@@ -480,8 +469,6 @@ namespace exafmm {
 	real_t ay_i = 0.0;
 	real_t az_r = 0.0;
 	real_t az_i = 0.0;
-	real_t mi_r = std::real(Bi[i].SRC);
-	real_t mi_i = std::imag(Bi[i].SRC);
 	for (int j=0; j<nj; j++) {
 	  real_t mj_r = std::real(Bj[j].SRC);
 	  real_t mj_i = std::imag(Bj[j].SRC);
@@ -489,13 +476,11 @@ namespace exafmm {
 	  real_t R2 = norm(dX) + eps2;
 	  if (R2 != 0) {
 	    real_t R = sqrt(R2);
-	    real_t src2_r = mi_r * mj_r - mi_i * mj_i;
-	    real_t src2_i = mi_r * mj_i + mi_i * mj_r;
 	    real_t expikr = std::exp(wave_i * R) * R;
 	    real_t expikr_r = std::cos(wave_r * R) / expikr;
 	    real_t expikr_i = std::sin(wave_r * R) / expikr;
-	    real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
-	    real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
+	    real_t coef1_r = mj_r * expikr_r - mj_i * expikr_i;
+	    real_t coef1_i = mj_r * expikr_i + mj_i * expikr_r;
 	    real_t kr_r = (1 + wave_i * R) / R2;
 	    real_t kr_i = - wave_r / R;
 	    real_t coef2_r = kr_r * coef1_r - kr_i * coef1_i;
@@ -880,7 +865,6 @@ namespace exafmm {
       complex_t ephi[P], jn[P+1], jnd[P+1];
       real_t kscale = C->SCALE * abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
-	B->TRG /= B->SRC;
 	complex_t Lj[P*P];
         for (int n=0; n<P*P; n++) Lj[n]= C->L[n];
 	kcvec4 TRG = kcomplex_t(0,0);

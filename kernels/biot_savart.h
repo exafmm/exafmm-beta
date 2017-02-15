@@ -146,8 +146,6 @@ namespace exafmm {
       }                                                         // End loop over in j in Cjknm
     }
 
-    void normalize(Bodies) {}
-
     void P2P(C_iter Ci, C_iter Cj) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;

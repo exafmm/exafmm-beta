@@ -529,11 +529,6 @@ namespace exafmm {
       }                                                         //  End loop over x periodic direction
     }
 
-    //! Normalize bodies after direct summation
-    void normalize(Bodies & bodies) {
-      kernel.normalize(bodies);                                 // Normalize bodies
-    }
-
     //! Write G matrix to file
     void writeMatrix(Bodies & bodies, Bodies & jbodies) {
       std::stringstream name;                                   // File name

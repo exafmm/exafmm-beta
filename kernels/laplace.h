@@ -146,12 +146,6 @@ namespace exafmm {
       }                                                         // End loop over in j in Cjknm
     }
 
-    void normalize(Bodies & bodies) {
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-        B->TRG /= B->SRC;
-      }
-    }
-
     void P2P(C_iter Ci, C_iter Cj) {
       B_iter Bi = Ci->BODY;
       B_iter Bj = Cj->BODY;
@@ -169,7 +163,6 @@ namespace exafmm {
         simdvec xi = SIMD<simdvec,B_iter,0,NSIMD>::setBody(Bi,i);
         simdvec yi = SIMD<simdvec,B_iter,1,NSIMD>::setBody(Bi,i);
         simdvec zi = SIMD<simdvec,B_iter,2,NSIMD>::setBody(Bi,i);
-        simdvec mi = SIMD<simdvec,B_iter,3,NSIMD>::setBody(Bi,i);
 
         simdvec xj = Xperiodic[0];
         xi -= xj;
@@ -197,16 +190,13 @@ namespace exafmm {
           simdvec invR = rsqrt(R2);
           invR &= R2 > zero;
 
-          mj *= invR * mi;
+          mj *= invR;
           pot += mj;
           invR = invR * invR * mj;
-
           xj *= invR;
           ax += xj;
-
           yj *= invR;
           ay += yj;
-
           zj *= invR;
           az += zj;
         }
@@ -228,7 +218,7 @@ namespace exafmm {
           real_t R2 = norm(dX) + eps2;
           if (R2 != 0) {
             real_t invR2 = 1.0 / R2;
-            real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
+            real_t invR = Bj[j].SRC * sqrt(invR2);
             dX *= invR2 * invR;
             pot += invR;
             ax += dX[0];
@@ -374,7 +364,6 @@ namespace exafmm {
         real_t r, theta, phi;
         cart2sph(dX, r, theta, phi);
         evalMultipole(r, theta, phi, Ynm, YnmTheta);
-        B->TRG /= B->SRC;
         for (int n=0; n<P; n++) {
           int nm  = n * n + n;
           int nms = n * (n + 1) / 2;

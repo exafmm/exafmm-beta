@@ -94,7 +94,6 @@ int main(int argc, char ** argv) {
       data.initTarget(bodies);
       logger::startTimer("Total Direct");
       traversal.direct(bodies, jbodies, cycle);
-      traversal.normalize(bodies);
       logger::stopTimer("Total Direct");
       double potDif = verify.getDifScalar(bodies, bodies2);
       double potNrm = verify.getNrmScalar(bodies);

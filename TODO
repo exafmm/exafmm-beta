@@ -1,15 +1,10 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Remove init(), finalize()
-Fix wrappers
 Ewald for periodic
-Remove normalize()
-
 namespace exafmm > EXAFMM_KERNEL with #define
-TBB
-TBB traversal
-nspawn
+TBB > OpenMP
+Remove nspawn
 .h to .cxx
 Search source files for unnecessary functions
 Search TODO list and extract priority tasks

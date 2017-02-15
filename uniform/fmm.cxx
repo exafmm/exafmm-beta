@@ -170,7 +170,6 @@ int main(int argc, char ** argv) {
       if (FMM.MPISIZE > 1) treeMPI.shiftBodies(jbodies);
       traversal.direct(bodies, jbodies, cycle);
     }
-    traversal.normalize(bodies);
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     logger::printTitle("Total runtime");
     logger::printTime("Total FMM");

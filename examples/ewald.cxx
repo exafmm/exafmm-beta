@@ -144,7 +144,6 @@ int main(int argc, char ** argv) {
         traversal.direct(bodies, jbodies, cycle);
         if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
       }
-      traversal.normalize(bodies);
       upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
       logger::printTitle("Total runtime");
       logger::printTime("Total FMM");

@@ -91,7 +91,6 @@ int main(int argc, char ** argv) {
       treeMPI.shiftBodies(jbodies);
       traversal.direct(bodies, jbodies, cycle);
     }
-    traversal.normalize(bodies);
     logger::printTitle("Total runtime");
     logger::printTime("Total FMM");
     logger::stopTimer("Total Direct");
