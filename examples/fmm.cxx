@@ -26,7 +26,6 @@ int main(int argc, char ** argv) {
   Verify verify(args.path);
   num_threads(args.threads);
 
-  kernel.init();
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
@@ -137,6 +136,5 @@ int main(int argc, char ** argv) {
     traversal.writeMatrix(bodies, jbodies);
   }
   logger::writeDAG();
-  kernel.finalize();
   return 0;
 }

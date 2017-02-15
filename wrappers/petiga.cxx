@@ -84,8 +84,6 @@ namespace exafmm {
     args->path = path;
     args->theta = theta;
     args->verbose = verbose & (baseMPI->mpirank == 0);
-    kernel->init();
-
     logger::verbose = args->verbose;
     bbodies.resize(nb);
     for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
@@ -110,7 +108,6 @@ namespace exafmm {
   }
 
   extern "C" void FMM_Finalize() {
-    kernel->finalize();
     delete args;
     delete baseMPI;
     delete boundBox;

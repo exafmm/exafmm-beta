@@ -33,7 +33,6 @@ int main(int argc, char ** argv) {
   Verify verify(args.path);
   num_threads(args.threads);
 
-  kernel.init();
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
@@ -219,6 +218,5 @@ int main(int argc, char ** argv) {
     }
     abort();
   }
-  kernel.finalize();
   return 0;
 }

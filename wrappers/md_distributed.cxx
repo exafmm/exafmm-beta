@@ -69,14 +69,11 @@ namespace exafmm {
     logger::path = args->path;
     logger::printTitle("Initial Parameters");
     args->print(logger::stringLength);
-    kernel->init();
-
     pass = true;
     isTime = false;
   }
 
   extern "C" void FMM_Finalize() {
-    kernel->finalize();
     delete args;
     delete baseMPI;
     delete boundBox;

@@ -47,7 +47,6 @@ int main(int argc, char ** argv) {
   int myid = baseMPI.mpirank;
   int np = baseMPI.mpisize;
 
-  kernel.init();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
@@ -398,7 +397,6 @@ int main(int argc, char ** argv) {
     delete[] B;
     delete[] Btrue;
   }
-  kernel.finalize();
   return 0;
 }
 

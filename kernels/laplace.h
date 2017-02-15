@@ -146,9 +146,6 @@ namespace exafmm {
       }                                                         // End loop over in j in Cjknm
     }
 
-    void init() {}
-    void finalize() {}
-
     void normalize(Bodies & bodies) {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
         B->TRG /= B->SRC;

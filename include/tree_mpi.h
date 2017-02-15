@@ -8,7 +8,7 @@ namespace exafmm {
   //! Handles all the communication of local essential trees
   class TreeMPI {
   private:
-    Kernel kernel;                                              //!< Kernel class
+    Kernel & kernel;                                            //!< Kernel class
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int images;                                           //!< Number of periodic image sublevels
@@ -194,7 +194,7 @@ namespace exafmm {
 
   public:
     //! Constructor
-    TreeMPI(Kernel _kernel, int _mpirank, int _mpisize, int _images) :
+    TreeMPI(Kernel & _kernel, int _mpirank, int _mpisize, int _images) :
       kernel(_kernel), mpirank(_mpirank), mpisize(_mpisize), images(_images) { // Initialize variables
       allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
       allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains

@@ -1,9 +1,6 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Remove -beta from P2M, M2M
-Make precalculated variables class variables
-Make Ynm STL vector
 Remove init(), finalize()
 Fix wrappers
 Ewald for periodic

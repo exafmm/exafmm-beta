@@ -379,10 +379,6 @@ namespace exafmm {
       getAnm();
     }
 
-    void init() {}
-
-    void finalize() {}
-
     void normalize(Bodies & bodies) {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
         B->TRG /= B->SRC;

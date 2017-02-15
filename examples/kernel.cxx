@@ -11,7 +11,6 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   Bodies bodies(1), bodies2(1), jbodies(1);
   Kernel kernel(args.P, eps2, wavek);
-  kernel.init();
   logger::verbose = true;
 
   Cells cells(4);
@@ -101,6 +100,5 @@ int main(int argc, char ** argv) {
   verify.print("Rel. L2 Error (acc)",accRel);
   file << args.P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
-  kernel.finalize();
   return 0;
 }
