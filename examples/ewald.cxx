@@ -6,12 +6,13 @@
 #include "ewald.h"
 #include "kernel.h"
 #include "logger.h"
+#include "namespace.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-using namespace exafmm;
+using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;

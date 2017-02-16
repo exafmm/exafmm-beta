@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include "namespace.h"
 #include <pthread.h>
 #include <queue>
 #include <stdint.h>
@@ -19,7 +20,7 @@
 #include <papi.h>
 #endif
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   //! Structure for pthread based tracer
   struct Tracer {
     pthread_t thread;                                           //!< pthread id

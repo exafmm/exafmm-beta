@@ -12,7 +12,7 @@
 #include "van_der_waals.h"
 #include "verify.h"
 
-namespace exafmm {
+namespace exafmm_laplace {
   static const double Celec = 332.0716;
   const real_t eps2 = 0.0;
   const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);

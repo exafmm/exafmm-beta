@@ -5,10 +5,11 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include "namespace.h"
 #include <sstream>
 #include "types.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class Dataset {                                               // Class for datasets
   private:
     long filePosition;                                          //!< Position of file stream

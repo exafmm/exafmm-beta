@@ -2,9 +2,10 @@
 #define tree_mpi_h
 #include <mpi.h>
 #include "logger.h"
+#include "namespace.h"
 #include "types.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   //! Handles all the communication of local essential trees
   class TreeMPI {
   private:

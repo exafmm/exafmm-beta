@@ -7,10 +7,11 @@
 #include <getopt.h>
 #include <iostream>
 #include <iomanip>
+#include "namespace.h"
 #include <stdint.h>
 #include "types.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   static struct option long_options[] = {
     {"accuracy",     no_argument,       0, 'a'},
     {"ncrit",        required_argument, 0, 'c'},

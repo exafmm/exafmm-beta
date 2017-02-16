@@ -1,8 +1,9 @@
 #ifndef build_tree_from_cluster_h
 #define build_tree_from_cluster_h
 #include "build_tree.h"
+#include "namespace.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class BuildTreeFromCluster {
   private:
     typedef std::vector<int> ints;                              //!< Vector of integer types

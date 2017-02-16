@@ -1,5 +1,6 @@
 #ifndef vec_h
 #define vec_h
+#include "namespace.h"
 #include <ostream>
 #if defined __FUJITSU || defined __INTEL_COMPILER
 #else
@@ -10,7 +11,7 @@
 #define EXAFMM_VEC_NEWTON 1
 #endif
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
 #ifndef __CUDACC__
   template<int N, typename T>
   class vec {

@@ -4,7 +4,8 @@
 #include "dataset.h"
 #include "logger.h"
 #include "kernel.h"
-using namespace exafmm;
+#include "namespace.h"
+using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);

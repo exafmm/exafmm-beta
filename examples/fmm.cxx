@@ -4,10 +4,11 @@
 #include "dataset.h"
 #include "kernel.h"
 #include "logger.h"
+#include "namespace.h"
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
-using namespace exafmm;
+using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;

@@ -11,7 +11,7 @@
 #include "up_down_pass.h"
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
-using namespace exafmm;
+using namespace exafmm_laplace;
 
 /* Laplace, cartesian coordinates example, 3D geometry.
  *

@@ -1,10 +1,11 @@
 #ifndef laplace_h
 #define laplace_h
+#include "namespace.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
 #endif
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class Kernel {
   private:
     std::vector<real_t> prefactor;                              // sqrt( (n - |m|)! / (n + |m|)! )

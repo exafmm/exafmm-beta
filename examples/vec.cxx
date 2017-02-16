@@ -2,9 +2,10 @@
 #include <assert.h>
 #include <cmath>
 #include <iostream>
+#include "namespace.h"
 #include "vec.h"
 
-using namespace exafmm;
+using namespace EXAFMM_NAMESPACE;
 
 template<int S, typename T>
 struct SIMD {

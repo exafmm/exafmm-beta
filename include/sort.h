@@ -1,8 +1,9 @@
 #ifndef sort_h
 #define sort_h
+#include "namespace.h"
 #include "types.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   //! Custom radix sort for body and structures
   class Sort {
   private:

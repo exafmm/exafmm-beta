@@ -1,7 +1,8 @@
 #include <mpi.h>
 #include "evaluator.h"
+#include "namespace.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class SerialFMM : public Evaluator {
   protected:
     int bodiesDispl[26];

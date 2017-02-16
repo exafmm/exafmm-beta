@@ -1,10 +1,11 @@
 #ifndef helmholtz_h
 #define helmholtz_h
+#include "namespace.h"
 #if EXAFMM_USE_SIMD
 #include "simdvec.h"
 #endif
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class Kernel {
   private:
     int nquad, nquad2;

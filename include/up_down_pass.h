@@ -1,9 +1,10 @@
 #ifndef up_down_pass_h
 #define up_down_pass_h
 #include "logger.h"
+#include "namespace.h"
 #include "types.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class UpDownPass {
   private:
     Kernel & kernel;                                            //!< Kernel class

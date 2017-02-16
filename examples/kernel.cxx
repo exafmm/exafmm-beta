@@ -1,9 +1,10 @@
 #include "args.h"
 #include <fstream>
 #include "kernel.h"
+#include "namespace.h"
 #include <vector>
 #include "verify.h"
-using namespace exafmm;
+using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
   const real_t eps2 = 0.0;

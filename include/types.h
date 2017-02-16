@@ -4,11 +4,12 @@
 #include <complex>
 #include "kahan.h"
 #include "macros.h"
+#include "namespace.h"
 #include <stdint.h>
 #include <vector>
 #include "vec.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   // Basic type definitions
 #if EXAFMM_SINGLE
   typedef float real_t;                                         //!< Floating point type is single precision
@@ -63,8 +64,6 @@ namespace exafmm {
     complex_t SRC;                                              //!< Scalar complex values
 #elif EXAFMM_BIOTSAVART
     vec4      SRC;                                              //!< Vector real values
-#else
-#error Please define macro EXAFMM_LAPLACE or EXAFMM_HELMHOLTZ or EXAFMM_BIOTSAVART
 #endif
   };
 

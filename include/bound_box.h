@@ -1,9 +1,10 @@
 #ifndef bound_box_h
 #define bound_box_h
 #include "logger.h"
+#include "namespace.h"
 #include "types.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class BoundBox {
   public:
     //! Get Xmin and Xmax of bodies

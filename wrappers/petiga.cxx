@@ -4,13 +4,14 @@
 #include "build_tree.h"
 #include "kernel.h"
 #include "logger.h"
+#include "namespace.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   vec3 cycles;
   Bodies buffer;
   Bounds globalBounds;

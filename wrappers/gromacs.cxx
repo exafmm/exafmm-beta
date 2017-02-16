@@ -14,7 +14,7 @@
 #warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
 
-namespace exafmm {
+namespace exafmm_laplace {
   const real_t eps2 = 0.0;
   const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 

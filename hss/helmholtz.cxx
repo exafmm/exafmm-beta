@@ -11,7 +11,7 @@
 #include "up_down_pass.h"
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
-using namespace exafmm;
+using namespace exafmm_helmholtz;
 /* Helmholtz, spherical coordinates example, 3D geometry.
  *
  * Run with mpirun -np {#processes} ./helmholtz -DgGmovx -n {matrixsize}

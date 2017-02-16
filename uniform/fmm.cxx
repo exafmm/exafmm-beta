@@ -5,6 +5,7 @@
 #include "dataset.h"
 #include "ewald.h"
 #include "kernel.h"
+#include "namespace.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
@@ -14,7 +15,7 @@
 #else
 #include "../uniform/parallelfmm.h"
 #endif
-using namespace exafmm;
+using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;

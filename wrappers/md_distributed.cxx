@@ -11,7 +11,7 @@
 #include "up_down_pass.h"
 #include "verify.h"
 
-namespace exafmm {
+namespace exafmm_laplace {
   const real_t eps2 = 0.0;
   const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
