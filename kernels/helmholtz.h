@@ -508,7 +508,7 @@ namespace EXAFMM_NAMESPACE {
       complex_t ephi[P], jn[P+1], jnd[P+1];
       complex_t Mnm[P*P];
       for (int n=0; n<P*P; n++) Mnm[n] = complex_t(0,0);
-      real_t kscale = C->SCALE * abs(wavek);
+      real_t kscale = 2 * C->R * abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 	vec3 dX = B->X - C->X;
 	real_t r, theta, phi;
@@ -546,10 +546,10 @@ namespace EXAFMM_NAMESPACE {
       complex_t phitemp[2*P], hn[P], ephi[2*P];
       complex_t Mnm[P*P], Mrot[P*P];
       for (int n=0; n<P*P; n++) Mnm[n] = Mrot[n] = complex_t(0,0);
-      real_t kscalei = Ci->SCALE * abs(wavek);
+      real_t kscalei = 2 * Ci->R * abs(wavek);
       for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
-	real_t kscalej = Cj->SCALE * abs(wavek);
-	real_t radius = Cj->SCALE * sqrt(3.0);
+	real_t kscalej = 2 * Cj->R * abs(wavek);
+	real_t radius = 2 * Cj->R * sqrt(3.0);
 	vec3 dX = Ci->X - Cj->X;
 	real_t r, theta, phi;
 	cart2sph(dX, r, theta, phi);
@@ -627,13 +627,13 @@ namespace EXAFMM_NAMESPACE {
       complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
       complex_t Mnm[P*P], Mrot[P*P], Lnm[P*P], Lrot[P*P], Lnmd[P*P];
       for (int n=0; n<P*P; n++) Lnm[n] = Lrot[n] = complex_t(0,0);
-      real_t kscalej = Cj->SCALE * abs(wavek);
-      real_t kscalei = Ci->SCALE * abs(wavek);
-      real_t radius = Cj->SCALE * sqrt(3.0) * .5;
+      real_t kscalej = 2 * Cj->R * abs(wavek);
+      real_t kscalei = 2 * Ci->R * abs(wavek);
+      real_t radius = 2 * Cj->R * sqrt(3.0) * .5;
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t r, theta, phi;
       cart2sph(dX, r, theta, phi);
-      dX /= Cj->SCALE;
+      dX /= 2 * Cj->R;
       if (fabs(dX[0]) > EPS) dX[0] = fabs(dX[0]) - .5;
       if (fabs(dX[1]) > EPS) dX[1] = fabs(dX[1]) - .5;
       if (fabs(dX[2]) > EPS) dX[2] = fabs(dX[2]) - .5;
@@ -748,10 +748,10 @@ namespace EXAFMM_NAMESPACE {
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t jn[P+1], jnd[P+1], ephi[2*P];
       complex_t Lnm[P*P], Lrot[P*P], Lnmd[P*P];
-      real_t kscalei = Ci->SCALE * abs(wavek);
+      real_t kscalei = 2 * Ci->R * abs(wavek);
       C_iter Cj = C0 + Ci->IPARENT;
-      real_t kscalej = Cj->SCALE * abs(wavek);
-      real_t radius = Cj->SCALE * sqrt(3.0) * .5;
+      real_t kscalej = 2 * Cj->R * abs(wavek);
+      real_t radius = 2 * Cj->R * sqrt(3.0) * .5;
       vec3 dX = Ci->X - Cj->X;
       real_t r, theta, phi;
       cart2sph(dX, r, theta, phi);
@@ -864,7 +864,7 @@ namespace EXAFMM_NAMESPACE {
     void L2P(C_iter C) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
-      real_t kscale = C->SCALE * abs(wavek);
+      real_t kscale = 2 * C->R * abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 	complex_t Lj[P*P];
         for (int n=0; n<P*P; n++) Lj[n]= C->L[n];

@@ -425,7 +425,7 @@ namespace EXAFMM_NAMESPACE {
 	}                                                       //  End loop over x periodic direction
         std::fill(Ci->M.begin(), Ci->M.end(), 0);               //  Reset multipoles of periodic parent
 	kernel.M2M(Ci,Cj0);                                     //  Evaluate periodic M2M kernels for this sublevel
-	cycle *= 3;                                             //  Increase center cell size three times
+	cycle *= 3;                                             //  Increase periodic cycle three times
 	Cj0 = C0;                                               //  Reset Cj0 back
       }                                                         // End loop over sublevels of tree
       logger::stopTimer("Traverse periodic");                   // Stop timer

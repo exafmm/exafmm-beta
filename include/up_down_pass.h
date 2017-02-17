@@ -51,7 +51,6 @@ namespace EXAFMM_NAMESPACE {
       if (!cells.empty()) {                                     // If cell vector is not empty
 	C_iter C0 = cells.begin();                              //  Set iterator of target root cell
         for (C_iter C=cells.begin(); C!=cells.end(); C++) {     //  Loop over cells
-          C->SCALE = 2 * C->R;                                  //   Set cell scale for Helmholtz kernel
           C->M.resize(kernel.NTERM, 0.0);                       //   Allocate & initialize M coefs
           C->L.resize(kernel.NTERM, 0.0);                       //   Allocate & initialize L coefs
         }                                                       //  End loop over cells

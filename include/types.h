@@ -106,7 +106,6 @@ namespace EXAFMM_NAMESPACE {
 #endif
     uint64_t ICELL;                                             //!< Cell index
     real_t   WEIGHT;                                            //!< Weight for partitioning
-    real_t   SCALE;                                             //!< Scale for Helmholtz kernel
     vec3     X;                                                 //!< Cell center
     real_t   R;                                                 //!< Cell radius
     B_iter   BODY;                                              //!< Iterator of first body
