@@ -8,7 +8,7 @@ using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
   const real_t eps2 = 0.0;
-  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  const complex_t wavek = complex_t(1.,.1) / real_t(2 * M_PI);
   Args args(argc, argv);
   Bodies bodies(1), bodies2(1), jbodies(1);
   Kernel kernel(args.P, eps2, wavek);
@@ -28,7 +28,7 @@ int main(int argc, char ** argv) {
   C_iter Cj = cells.begin();
   Cj->X = 1;
   Cj->X[0] = 3;
-  Cj->SCALE = 2;
+  Cj->R = 1;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M.resize(kernel.NTERM, 0.0);
@@ -40,21 +40,21 @@ int main(int argc, char ** argv) {
   CJ->NCHILD = 1;
   CJ->X = 0;
   CJ->X[0] = 4;
-  CJ->SCALE = 4;
+  CJ->R = 2;
   CJ->M.resize(kernel.NTERM, 0.0);
   kernel.M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = 0;
   CI->X[0] = -4;
-  CI->SCALE = 4;
+  CI->R = 2;
   CI->L.resize(kernel.NTERM, 0.0);
   kernel.M2L(CI, CJ);
 
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
-  Ci->SCALE = 2;
+  Ci->R = 1;
   Ci->IPARENT = 2;
   Ci->L.resize(kernel.NTERM, 0.0);
   kernel.L2L(Ci, cells.begin());
@@ -62,7 +62,7 @@ int main(int argc, char ** argv) {
   C_iter Ci = cells.begin()+3;
   Ci->X = 1;
   Ci->X[0] = -3;
-  Ci->SCALE = 2;
+  Ci->R = 1;
   Ci->L.resize(kernel.NTERM, 0.0);
   kernel.M2L(Ci, Cj);
 #endif
