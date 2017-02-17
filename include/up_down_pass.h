@@ -8,7 +8,6 @@ namespace EXAFMM_NAMESPACE {
   class UpDownPass {
   private:
     Kernel & kernel;                                            //!< Kernel class
-    const real_t theta;                                         //!< Multipole acceptance criteria
 
   private:
     //! Post-order traversal for upward pass
@@ -20,7 +19,6 @@ namespace EXAFMM_NAMESPACE {
       else {                                                    // If not leaf cell
         kernel.M2M(C, C0);                                      //  M2M kernel
       }                                                         // End if for non leaf cell
-      C->R /= theta;                                            // Divide R by theta
     };
 
     //! Pre-order traversal for downward pass
@@ -45,7 +43,7 @@ namespace EXAFMM_NAMESPACE {
 
   public:
     //! Constructor
-    UpDownPass(Kernel & _kernel, real_t _theta) : kernel(_kernel), theta(_theta) {} // Initialize variables
+    UpDownPass(Kernel & _kernel) : kernel(_kernel) {}           // Initialize variables
 
     //! Upward pass (P2M, M2M)
     void upwardPass(Cells & cells) {

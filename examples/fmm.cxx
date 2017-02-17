@@ -22,8 +22,8 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   Kernel kernel(args.P, eps2, wavek);
-  Traversal traversal(kernel, args.nspawn, args.images, args.path);
-  UpDownPass upDownPass(kernel, args.theta);
+  Traversal traversal(kernel, args.theta, args.nspawn, args.images, args.path);
+  UpDownPass upDownPass(kernel);
   Verify verify(args.path);
   num_threads(args.threads);
 

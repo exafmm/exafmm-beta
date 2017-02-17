@@ -68,9 +68,9 @@ namespace EXAFMM_NAMESPACE {
     localTree = new BuildTree(ncrit);
     globalTree = new BuildTree(1);
     partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal(*kernel, nspawn, images, path);
-    treeMPI = new TreeMPI(*kernel, baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass(*kernel, theta);
+    traversal = new Traversal(*kernel, theta, nspawn, images, path);
+    treeMPI = new TreeMPI(*kernel, baseMPI->mpirank, baseMPI->mpisize, theta, images);
+    upDownPass = new UpDownPass(*kernel);
     verify = new Verify(path);
     num_threads(threads);
 

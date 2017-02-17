@@ -12,6 +12,7 @@ namespace EXAFMM_NAMESPACE {
     Kernel & kernel;                                            //!< Kernel class
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
+    const real_t theta;                                         //!< Multipole acceptance criteria
     const int images;                                           //!< Number of periodic image sublevels
     float (* allBoundsXmin)[3];                                 //!< Array for local Xmin for all ranks
     float (* allBoundsXmax)[3];                                 //!< Array for local Xmax for all ranks
@@ -158,6 +159,7 @@ namespace EXAFMM_NAMESPACE {
       bool divide[8] = {0, 0, 0, 0, 0, 0, 0, 0};                // Initialize divide flag
       int icells[8] = {0, 0, 0, 0, 0, 0, 0, 0};                 // Initialize icell array
       int cc = 0;                                               // Initialize child index
+      real_t T2 = theta * theta;                                // Theta squared
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++,cc++) { // Loop over child cells
 	icells[cc] = icell;                                     //  Store cell index
 	addSendCell(CC, irank, icell, iparent, copyData);       //  Add cells to send
@@ -167,7 +169,7 @@ namespace EXAFMM_NAMESPACE {
 	  vec3 Xperiodic = 0;                                   //   Periodic coordinate offset
 	  if (images == 0) {                                    //   If free boundary condition
 	    real_t R2 = getDistance(CC, bounds, Xperiodic);     //    Get distance to other domain
-	    divide[cc] |= 4 * CC->R * CC->R > R2;               //    Divide if the cell seems too close
+	    divide[cc] |= 4 * CC->R * CC->R > R2 * T2;          //    Divide if the cell seems too close
 	  } else {                                              //   If periodic boundary condition
 	    for (int ix=-1; ix<=1; ix++) {                      //    Loop over x periodic direction
 	      for (int iy=-1; iy<=1; iy++) {                    //     Loop over y periodic direction
@@ -176,7 +178,7 @@ namespace EXAFMM_NAMESPACE {
 		  Xperiodic[1] = iy * cycle[1];                 //       Coordinate offset for y periodic direction
 		  Xperiodic[2] = iz * cycle[2];                 //       Coordinate offset for z periodic direction
 		  real_t R2 = getDistance(CC, bounds, Xperiodic); //       Get distance to other domain
-		  divide[cc] |= 4 * CC->R * CC->R > R2;         //       Divide if cell seems too close
+		  divide[cc] |= 4 * CC->R * CC->R > R2 * T2;    //       Divide if cell seems too close
 		}                                               //      End loop over z periodic direction
 	      }                                                 //     End loop over y periodic direction
 	    }                                                   //    End loop over x periodic direction
@@ -195,8 +197,8 @@ namespace EXAFMM_NAMESPACE {
 
   public:
     //! Constructor
-    TreeMPI(Kernel & _kernel, int _mpirank, int _mpisize, int _images) :
-      kernel(_kernel), mpirank(_mpirank), mpisize(_mpisize), images(_images) { // Initialize variables
+    TreeMPI(Kernel & _kernel, int _mpirank, int _mpisize, real_t _theta, int _images) :
+      kernel(_kernel), mpirank(_mpirank), mpisize(_mpisize), theta(_theta), images(_images) { // Initialize variables
       allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
       allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
       sendBodyCount = new int [mpisize];                        // Allocate send count

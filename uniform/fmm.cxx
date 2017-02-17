@@ -34,14 +34,14 @@ int main(int argc, char ** argv) {
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   Kernel kernel(args.P, eps2, wavek);
-  Traversal traversal(kernel, args.nspawn, args.images, args.path);
-  UpDownPass upDownPass(kernel, args.theta);
+  Traversal traversal(kernel, args.theta, args.nspawn, args.images, args.path);
+  UpDownPass upDownPass(kernel);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
-  TreeMPI treeMPI(kernel, FMM.MPIRANK, FMM.MPISIZE, args.images);
+  TreeMPI treeMPI(kernel, FMM.MPIRANK, FMM.MPISIZE, args.theta, args.images);
   Verify verify(args.path);
   verify.verbose = args.verbose;
 

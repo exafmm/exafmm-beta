@@ -39,9 +39,9 @@ int main(int argc, char ** argv) {
   Dataset data;
   Kernel kernel(args.P, eps2, wavek);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(kernel, args.nspawn, args.images, args.path);
-  TreeMPI treeMPI(kernel, baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass upDownPass(kernel, args.theta);
+  Traversal traversal(kernel, args.theta, args.nspawn, args.images, args.path);
+  TreeMPI treeMPI(kernel, baseMPI.mpirank, baseMPI.mpisize, args.theta, args.images);
+  UpDownPass upDownPass(kernel);
   Verify verify(args.path);
   num_threads(args.threads);
 

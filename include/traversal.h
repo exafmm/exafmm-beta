@@ -15,6 +15,7 @@ namespace EXAFMM_NAMESPACE {
   class Traversal {
   private:
     Kernel & kernel;                                            //!< Kernel class
+    const real_t theta;                                         //!< Multipole acceptance criteria
     const int nspawn;                                           //!< Threshold of NBODY for spawning new threads
     const int images;                                           //!< Number of periodic image sublevels
     const char * path;                                          //!< Path to save files
@@ -210,8 +211,8 @@ namespace EXAFMM_NAMESPACE {
     //! Dual tree traversal for a single pair of cells
     void dualTreeTraversal(C_iter Ci, C_iter Cj, real_t remote) {
       vec3 dX = Ci->X - Cj->X - kernel.Xperiodic;               // Distance vector from source to target
-      real_t R2 = norm(dX);                                     // Scalar distance squared
-      if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R) * (1 - 1e-3)) {    // If distance is far enough
+      real_t RT2 = norm(dX) * theta * theta;                    // Scalar distance squared
+      if (RT2 > (Ci->R+Cj->R) * (Ci->R+Cj->R) * (1 - 1e-3)) {   // If distance is far enough
 	kernel.M2L(Ci, Cj);                                     //  M2L kernel
 	countKernel(numM2L);                                    //  Increment M2L counter
 	countList(Ci, Cj, false);                               //  Increment M2L list
@@ -432,8 +433,8 @@ namespace EXAFMM_NAMESPACE {
 
   public:
     //! Constructor
-    Traversal(Kernel & _kernel, int _nspawn, int _images, const char * _path) : // Constructor
-      kernel(_kernel), nspawn(_nspawn), images(_images), path(_path) // Initialize variables
+    Traversal(Kernel & _kernel, real_t _theta, int _nspawn, int _images, const char * _path) : // Constructor
+      kernel(_kernel), theta(_theta), nspawn(_nspawn), images(_images), path(_path) // Initialize variables
 #if EXAFMM_COUNT_KERNEL
       , numP2P(0), numM2L(0)
 #endif
