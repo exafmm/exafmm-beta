@@ -1,6 +1,6 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
-#include <mpi.h>
+#include "base_mpi.h"
 #include "logger.h"
 #include "namespace.h"
 #include "types.h"
@@ -10,6 +10,7 @@ namespace EXAFMM_NAMESPACE {
   class TreeMPI {
   private:
     Kernel & kernel;                                            //!< Kernel class
+    BaseMPI & baseMPI;                                          //!< MPI utils
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const real_t theta;                                         //!< Multipole acceptance criteria
@@ -197,8 +198,9 @@ namespace EXAFMM_NAMESPACE {
 
   public:
     //! Constructor
-    TreeMPI(Kernel & _kernel, int _mpirank, int _mpisize, real_t _theta, int _images) :
-      kernel(_kernel), mpirank(_mpirank), mpisize(_mpisize), theta(_theta), images(_images) { // Initialize variables
+    TreeMPI(Kernel & _kernel, BaseMPI & _baseMPI, real_t _theta, int _images) :
+      kernel(_kernel), baseMPI(_baseMPI), mpirank(baseMPI.mpirank), mpisize(baseMPI.mpisize),
+      theta(_theta), images(_images) { // Initialize variables
       allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
       allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
       sendBodyCount = new int [mpisize];                        // Allocate send count

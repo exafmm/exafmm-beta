@@ -41,7 +41,7 @@ int main(int argc, char ** argv) {
 #else
   ParallelFMM FMM;
 #endif
-  TreeMPI treeMPI(kernel, FMM.MPIRANK, FMM.MPISIZE, args.theta, args.images);
+  TreeMPI treeMPI(kernel, baseMPI, args.theta, args.images);
   Verify verify(args.path);
   verify.verbose = args.verbose;
 

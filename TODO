@@ -1,8 +1,8 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Do we need C->SCALE? Why not use 2 * C->R?
 Pass baseMPI to partition and treeMPI
+array > STL vector
 TBB > OpenMP
 Remove nspawn
 .h to .cxx

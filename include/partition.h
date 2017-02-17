@@ -1,6 +1,6 @@
 #ifndef partition_h
 #define partition_h
-#include <mpi.h>
+#include "base_mpi.h"
 #include "logger.h"
 #include "namespace.h"
 #include "sort.h"
@@ -9,6 +9,7 @@ namespace EXAFMM_NAMESPACE {
   //! Handles all the partitioning of domains
   class Partition {
   private:
+    BaseMPI & baseMPI;                                          //!< MPI utils
     const int mpirank;                                          //!< Rank of MPI communicator
     const int mpisize;                                          //!< Size of MPI communicator
     const int numBins;                                          //!< Number of sampling bins
@@ -29,7 +30,8 @@ namespace EXAFMM_NAMESPACE {
 
   public:
     //! Constructor
-    Partition(int _mpirank, int _mpisize) : mpirank(_mpirank), mpisize(_mpisize), numBins(16) {
+    Partition(BaseMPI & _baseMPI) : baseMPI(_baseMPI), mpirank(baseMPI.mpirank),
+                                  mpisize(baseMPI.mpisize), numBins(16) {
       rankDispl  = new int [mpisize];                           // Allocate displacement of MPI rank group
       rankCount  = new int [mpisize];                           // Allocate size of MPI rank group
       rankColor  = new int [mpisize];                           // Allocate color of MPI rank group

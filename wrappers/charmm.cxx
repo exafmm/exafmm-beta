@@ -45,9 +45,9 @@ namespace exafmm_laplace {
     localTree = new BuildTree(ncrit);
     globalTree = new BuildTree(1);
     kernel = new Kernel(P, eps2, wavek);
-    partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
+    partition = new Partition(*baseMPI);
     traversal = new Traversal(*kernel, theta, nspawn, images, path);
-    treeMPI = new TreeMPI(*kernel, baseMPI->mpirank, baseMPI->mpisize, theta, images);
+    treeMPI = new TreeMPI(*kernel, *baseMPI, theta, images);
     upDownPass = new UpDownPass(*kernel);
     verify = new Verify(path);
 
