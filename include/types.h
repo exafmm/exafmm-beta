@@ -24,6 +24,7 @@ namespace EXAFMM_NAMESPACE {
   typedef vec<3,int> ivec3;                                     //!< Vector of 3 int types
   typedef vec<3,real_t> vec3;                                   //!< Vector of 3 real_t types
   typedef vec<4,real_t> vec4;                                   //!< Vector of 4 real_t types
+  typedef vec<3,float> fvec3;                                   //!< Vector of 3 float types
   typedef vec<3,complex_t> cvec3;                               //!< Vector of 3 complex_t types
 
   // SIMD vector types for AVX512, AVX, and SSE

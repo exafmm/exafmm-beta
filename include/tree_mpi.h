@@ -15,20 +15,20 @@ namespace EXAFMM_NAMESPACE {
     const int mpisize;                                          //!< Size of MPI communicator
     const real_t theta;                                         //!< Multipole acceptance criteria
     const int images;                                           //!< Number of periodic image sublevels
-    float (* allBoundsXmin)[3];                                 //!< Array for local Xmin for all ranks
-    float (* allBoundsXmax)[3];                                 //!< Array for local Xmax for all ranks
+    std::vector<fvec3> allBoundsXmin;                           //!< Array for local Xmin for all ranks
+    std::vector<fvec3> allBoundsXmax;                           //!< Array for local Xmax for all ranks
     Bodies sendBodies;                                          //!< Send buffer for bodies
     Bodies recvBodies;                                          //!< Receive buffer for bodies
     Cells sendCells;                                            //!< Send buffer for cells
     Cells recvCells;                                            //!< Receive buffer for cells
-    int * sendBodyCount;                                        //!< Send count
-    int * sendBodyDispl;                                        //!< Send displacement
-    int * recvBodyCount;                                        //!< Receive count
-    int * recvBodyDispl;                                        //!< Receive displacement
-    int * sendCellCount;                                        //!< Send count
-    int * sendCellDispl;                                        //!< Send displacement
-    int * recvCellCount;                                        //!< Receive count
-    int * recvCellDispl;                                        //!< Receive displacement
+    std::vector<int> sendBodyCount;                             //!< Send count
+    std::vector<int> sendBodyDispl;                             //!< Send displacement
+    std::vector<int> recvBodyCount;                             //!< Receive count
+    std::vector<int> recvBodyDispl;                             //!< Receive displacement
+    std::vector<int> sendCellCount;                             //!< Send count
+    std::vector<int> sendCellDispl;                             //!< Send displacement
+    std::vector<int> recvCellCount;                             //!< Receive count
+    std::vector<int> recvCellDispl;                             //!< Receive displacement
 
   private:
     //! Exchange send count for bodies
@@ -41,8 +41,8 @@ namespace EXAFMM_NAMESPACE {
 	sendBodyCount[B->IRANK]++;                              //  Fill send count bucket
 	B->IRANK = mpirank;                                     //  Tag for sending back to original rank
       }                                                         // End loop over bodies
-      MPI_Alltoall(sendBodyCount, 1, MPI_INT,                   // Communicate send count to get receive count
-		   recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
+      MPI_Alltoall(&sendBodyCount[0], 1, MPI_INT,               // Communicate send count to get receive count
+		   &recvBodyCount[0], 1, MPI_INT, MPI_COMM_WORLD);
       sendBodyDispl[0] = recvBodyDispl[0] = 0;                  // Initialize send/receive displacements
       for (int irank=0; irank<mpisize-1; irank++) {             // Loop over ranks
 	sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement
@@ -57,14 +57,14 @@ namespace EXAFMM_NAMESPACE {
       MPI_Type_contiguous(bytes, MPI_CHAR, &bodyType);          // Set MPI data type
       MPI_Type_commit(&bodyType);                               // Commit MPI data type
       recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
-      MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, bodyType,// Communicate bodies
-		    &recvBodies[0], recvBodyCount, recvBodyDispl, bodyType, MPI_COMM_WORLD);
+      MPI_Alltoallv(&bodies[0], &sendBodyCount[0], &sendBodyDispl[0], bodyType,// Communicate bodies
+		    &recvBodies[0], &recvBodyCount[0], &recvBodyDispl[0], bodyType, MPI_COMM_WORLD);
     }
 
     //! Exchange send count for cells
     void alltoall(Cells) {
-      MPI_Alltoall(sendCellCount, 1, MPI_INT,                   // Communicate send count to get receive count
-		   recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
+      MPI_Alltoall(&sendCellCount[0], 1, MPI_INT,               // Communicate send count to get receive count
+		   &recvCellCount[0], 1, MPI_INT, MPI_COMM_WORLD);
       recvCellDispl[0] = 0;                                     // Initialize receive displacements
       for (int irank=0; irank<mpisize-1; irank++) {             // Loop over ranks
 	recvCellDispl[irank+1] = recvCellDispl[irank] + recvCellCount[irank];//  Set receive displacement
@@ -89,14 +89,14 @@ namespace EXAFMM_NAMESPACE {
       MPI_Type_contiguous(bytes, MPI_CHAR, &cellType);          // Set MPI data type
       MPI_Type_commit(&cellType);                               // Commit MPI data type
       CellBases recvCellBases(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]); // Recv buffer for cell's base components
-      MPI_Alltoallv(&sendCellBases[0], sendCellCount, sendCellDispl, cellType,// Communicate cells
-		    &recvCellBases[0], recvCellCount, recvCellDispl, cellType, MPI_COMM_WORLD);
+      MPI_Alltoallv(&sendCellBases[0], &sendCellCount[0], &sendCellDispl[0], cellType,// Communicate cells
+		    &recvCellBases[0], &recvCellCount[0], &recvCellDispl[0], cellType, MPI_COMM_WORLD);
       bytes = sizeof(complex_t) * kernel.NTERM * 2;             // Byte size of send cell's data
       MPI_Type_contiguous(bytes, MPI_CHAR, &cellType);          // Set MPI data type
       MPI_Type_commit(&cellType);                               // Commit MPI data type
       std::vector<complex_t> recvCellData(recvCellBases.size()*kernel.NTERM*2); // Recv buffer for cell's data
-      MPI_Alltoallv(&sendCellData[0], sendCellCount, sendCellDispl, cellType,// Communicate cells
-		    &recvCellData[0], recvCellCount, recvCellDispl, cellType, MPI_COMM_WORLD);
+      MPI_Alltoallv(&sendCellData[0], &sendCellCount[0], &sendCellDispl[0], cellType,// Communicate cells
+		    &recvCellData[0], &recvCellCount[0], &recvCellDispl[0], cellType, MPI_COMM_WORLD);
       CB = recvCellBases.begin();                               // Iterator for recv cell's base components
       CD = recvCellData.begin();                                // Iterator for recv cell's data
       recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
@@ -201,29 +201,16 @@ namespace EXAFMM_NAMESPACE {
     TreeMPI(Kernel & _kernel, BaseMPI & _baseMPI, real_t _theta, int _images) :
       kernel(_kernel), baseMPI(_baseMPI), mpirank(baseMPI.mpirank), mpisize(baseMPI.mpisize),
       theta(_theta), images(_images) { // Initialize variables
-      allBoundsXmin = new float [mpisize][3];                   // Allocate array for minimum of local domains
-      allBoundsXmax = new float [mpisize][3];                   // Allocate array for maximum of local domains
-      sendBodyCount = new int [mpisize];                        // Allocate send count
-      sendBodyDispl = new int [mpisize];                        // Allocate send displacement
-      recvBodyCount = new int [mpisize];                        // Allocate receive count
-      recvBodyDispl = new int [mpisize];                        // Allocate receive displacement
-      sendCellCount = new int [mpisize];                        // Allocate send count
-      sendCellDispl = new int [mpisize];                        // Allocate send displacement
-      recvCellCount = new int [mpisize];                        // Allocate receive count
-      recvCellDispl = new int [mpisize];                        // Allocate receive displacement
-    }
-    //! Destructor
-    ~TreeMPI() {
-      delete[] allBoundsXmin;                                   // Deallocate array for minimum of local domains
-      delete[] allBoundsXmax;                                   // Deallocate array for maximum of local domains
-      delete[] sendBodyCount;                                   // Deallocate send count
-      delete[] sendBodyDispl;                                   // Deallocate send displacement
-      delete[] recvBodyCount;                                   // Deallocate receive count
-      delete[] recvBodyDispl;                                   // Deallocate receive displacement
-      delete[] sendCellCount;                                   // Deallocate send count
-      delete[] sendCellDispl;                                   // Deallocate send displacement
-      delete[] recvCellCount;                                   // Deallocate receive count
-      delete[] recvCellDispl;                                   // Deallocate receive displacement
+      allBoundsXmin.resize(mpisize);                      // Allocate array for minimum of local domains
+      allBoundsXmax.resize(mpisize);                      // Allocate array for maximum of local domains
+      sendBodyCount.resize(mpisize);                        // Allocate send count
+      sendBodyDispl.resize(mpisize);                        // Allocate send displacement
+      recvBodyCount.resize(mpisize);                        // Allocate receive count
+      recvBodyDispl.resize(mpisize);                        // Allocate receive displacement
+      sendCellCount.resize(mpisize);                        // Allocate send count
+      sendCellDispl.resize(mpisize);                        // Allocate send displacement
+      recvCellCount.resize(mpisize);                        // Allocate receive count
+      recvCellDispl.resize(mpisize);                        // Allocate receive displacement
     }
 
     //! Allgather bounds from all ranks
@@ -233,8 +220,8 @@ namespace EXAFMM_NAMESPACE {
 	Xmin[d] = bounds.Xmin[d];                               //  Convert Xmin to float
 	Xmax[d] = bounds.Xmax[d];                               //  Convert Xmax to float
       }                                                         // End loop over dimensions
-      MPI_Allgather(Xmin, 3, MPI_FLOAT, allBoundsXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
-      MPI_Allgather(Xmax, 3, MPI_FLOAT, allBoundsXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
+      MPI_Allgather(Xmin, 3, MPI_FLOAT, &allBoundsXmin[0][0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
+      MPI_Allgather(Xmax, 3, MPI_FLOAT, &allBoundsXmax[0][0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
     }
 
     //! Set local essential tree to send to each process
@@ -447,8 +434,8 @@ namespace EXAFMM_NAMESPACE {
     Bodies allgatherBodies(Bodies & bodies) {
       const int word = sizeof(bodies[0]) / 4;                   // Word size of body structure
       sendBodyCount[0] = bodies.size();                         // Determine send count
-      MPI_Allgather(sendBodyCount, 1, MPI_INT,                  // Allgather number of bodies
-		    recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
+      MPI_Allgather(&sendBodyCount[0], 1, MPI_INT,              // Allgather number of bodies
+		    &recvBodyCount[0], 1, MPI_INT, MPI_COMM_WORLD);
       recvBodyDispl[0] = 0;                                     // Initialize receive displacement
       for (int irank=0; irank<mpisize-1; irank++) {             // Loop over ranks
 	recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];// Set receive displacement
@@ -459,7 +446,7 @@ namespace EXAFMM_NAMESPACE {
 	recvBodyDispl[irank] *= word;                           //  Multiply receive displacement by word size of data
       }                                                         // End loop over ranks
       MPI_Allgatherv((int*)&bodies[0], sendBodyCount[0]*word, MPI_INT,// Allgather bodies
-		     (int*)&recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
+		     (int*)&recvBodies[0], &recvBodyCount[0], &recvBodyDispl[0], MPI_INT, MPI_COMM_WORLD);
       return recvBodies;                                        // Return bodies
     }
   };

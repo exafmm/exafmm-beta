@@ -1,8 +1,7 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-Pass baseMPI to partition and treeMPI
-array > STL vector
+Change loop syntax in uniform/
 TBB > OpenMP
 Remove nspawn
 .h to .cxx

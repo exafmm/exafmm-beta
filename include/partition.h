@@ -14,58 +14,42 @@ namespace EXAFMM_NAMESPACE {
     const int mpisize;                                          //!< Size of MPI communicator
     const int numBins;                                          //!< Number of sampling bins
     int numLevels;                                              //!< Levels of MPI rank binary tree
-    int * rankDispl;                                            //!< Displacement of MPI rank group
-    int * rankCount;                                            //!< Size of MPI rank group
-    int * rankColor;                                            //!< Color of MPI rank group
-    int * rankKey;                                              //!< Key of MPI rank group
-    int * rankMap;                                              //!< Map partition to MPI rank group
-    int * sendDispl;                                            //!< Displacement of bodies to send per rank
-    int * sendCount;                                            //!< Count of bodies to send per rank
-    int * scanHist;                                             //!< Scan of histogram
-    int * countHist;                                            //!< Body count histogram
-    float * weightHist;                                         //!< Body weight histogram
-    float * globalHist;                                         //!< Global body weight histogram
-    Bounds * rankBounds;                                        //!< Bounds of each rank
+    std::vector<int> rankDispl;                                 //!< Displacement of MPI rank group
+    std::vector<int> rankCount;                                 //!< Size of MPI rank group
+    std::vector<int> rankColor;                                 //!< Color of MPI rank group
+    std::vector<int> rankKey;                                   //!< Key of MPI rank group
+    std::vector<int> rankMap;                                   //!< Map partition to MPI rank group
+    std::vector<int> sendDispl;                                 //!< Displacement of bodies to send per rank
+    std::vector<int> sendCount;                                 //!< Count of bodies to send per rank
+    std::vector<int> scanHist;                                  //!< Scan of histogram
+    std::vector<int> countHist;                                 //!< Body count histogram
+    std::vector<float> weightHist;                              //!< Body weight histogram
+    std::vector<float> globalHist;                              //!< Global body weight histogram
+    std::vector<Bounds> rankBounds;                             //!< Bounds of each rank
     Bodies buffer;                                              //!< MPI communication buffer for bodies
 
   public:
     //! Constructor
     Partition(BaseMPI & _baseMPI) : baseMPI(_baseMPI), mpirank(baseMPI.mpirank),
                                   mpisize(baseMPI.mpisize), numBins(16) {
-      rankDispl  = new int [mpisize];                           // Allocate displacement of MPI rank group
-      rankCount  = new int [mpisize];                           // Allocate size of MPI rank group
-      rankColor  = new int [mpisize];                           // Allocate color of MPI rank group
-      rankKey    = new int [mpisize];                           // Allocate key of MPI rank group
-      rankMap    = new int [mpisize];                           // Allocate map for partition to MPI rank group
-      sendDispl  = new int [mpisize];                           // Allocate displacement of bodies to send per rank
-      sendCount  = new int [mpisize];                           // Allocate count of bodies to send per rank
-      scanHist   = new int [numBins];                           // Allocate scan of histogram
-      countHist  = new int [numBins];                           // Allocate body count histogram
-      weightHist = new float [numBins];                         // Allocate body weight histogram
-      globalHist = new float [numBins];                         // Allocate global body weight histogram
-      rankBounds = new Bounds [mpisize];                        // Allocate bounds of each rank
+      rankDispl.resize(mpisize);                                // Allocate displacement of MPI rank group
+      rankCount.resize(mpisize);                                // Allocate size of MPI rank group
+      rankColor.resize(mpisize);                                // Allocate color of MPI rank group
+      rankKey.resize(mpisize);                                  // Allocate key of MPI rank group
+      rankMap.resize(mpisize);                                  // Allocate map for partition to MPI rank group
+      sendDispl.resize(mpisize);                                // Allocate displacement of bodies to send per rank
+      sendCount.resize(mpisize);                                // Allocate count of bodies to send per rank
+      scanHist.resize(numBins);                                 // Allocate scan of histogram
+      countHist.resize(numBins);                                // Allocate body count histogram
+      weightHist.resize(numBins);                               // Allocate body weight histogram
+      globalHist.resize(numBins);                               // Allocate global body weight histogram
+      rankBounds.resize(mpisize);                               // Allocate bounds of each rank
       numLevels = 0;                                            // Initialize levels of MPI rank binary tree
       int size = mpisize - 1;                                   // Initialize size of MPI rank binary tree
       while (size > 0) {                                        // While there are bits to process
 	size >>= 1;                                             //  Bitshift MPI size
 	numLevels++;                                            //  Increment levels of MPI rank binary tree
       }                                                         // End while for bits to process
-    }
-
-    //! Destructor
-    ~Partition() {
-      delete[] rankDispl;                                       // Deallocate displacement of MPI rank group
-      delete[] rankCount;                                       // Deallocate size of MPI rank group
-      delete[] rankColor;                                       // Deallocate color of MPI rank group
-      delete[] rankKey;                                         // Deallocate key of MPI rank group
-      delete[] rankMap;                                         // Deallocate map for partition to MPI rank group
-      delete[] sendDispl;                                       // Deallocate displacement of bodies to send per rank
-      delete[] sendCount;                                       // Deallocate count of bodies to send per rank
-      delete[] scanHist;                                        // Deallocate scan of histogram
-      delete[] countHist;                                       // Deallocate body count histogram
-      delete[] weightHist;                                      // Deallocate body weight histogram
-      delete[] globalHist;                                      // Deallocate global body weight histogram
-      delete[] rankBounds;                                      // Deallocate bounds of each rank
     }
 
     //! Partitioning by orthogonal recursive bisection
@@ -137,7 +121,7 @@ namespace EXAFMM_NAMESPACE {
 	      for (int b=bodyBegin; b<bodyEnd; b++) {           //     Loop over bodies
 		B[b] = buffer[b];                               //      Copy back bodies from buffer
 	      }                                                 //     End loop over bodies
-	      MPI_Allreduce(weightHist, globalHist, numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Reduce weight histogram
+	      MPI_Allreduce(&weightHist[0], &globalHist[0], numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Reduce weight histogram
 	      int splitBin = 0;                                 //     Initialize bin splitter
 	      while (globalOffset < globalSplit) {              //     While scan of global histogram is less than splitter
 		globalOffset += globalHist[splitBin];           //      Scan global histogram
