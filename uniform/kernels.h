@@ -65,11 +65,11 @@ namespace EXAFMM_NAMESPACE {
     inline void getIndex(int *ix, int index) const {
       for_3d ix[d] = 0;
       int d = 0, level = 0;
-      while( index != 0 ) {
+      while (index != 0) {
 	ix[d] += (index % 2) * (1 << level);
 	index >>= 1;
 	d = (d+1) % 3;
-	if( d == 0 ) level++;
+	if (d == 0) level++;
       }
     }
 
@@ -86,14 +86,14 @@ namespace EXAFMM_NAMESPACE {
     }
 
     void P2P(int ibegin, int iend, int jbegin, int jend, real_t *periodic) const {
-      for( int i=ibegin; i<iend; i++ ) {
+      for (int i=ibegin; i<iend; i++) {
 	real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
-	for( int j=jbegin; j<jend; j++ ) {
+	for (int j=jbegin; j<jend; j++) {
 	  real_t dX[3];
 	  for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
 	  real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
 	  real_t invR2 = 1.0 / R2;
-	  if( R2 == 0 ) invR2 = 0;
+	  if (R2 == 0) invR2 = 0;
 	  real_t invR = Jbodies[j][3] * sqrt(invR2);
 	  real_t invR3 = invR2 * invR;
 	  Po += invR;
@@ -117,21 +117,21 @@ namespace EXAFMM_NAMESPACE {
       int nxmin[3], nxmax[3];
       for_3d nxmin[d] = -ixc[d] * nunit;
       for_3d nxmax[d] = nunitGlob[d] + nxmin[d] - 1;
-      if( numImages != 0 ) {
+      if (numImages != 0) {
 	for_3d nxmin[d] -= nunitGlob[d];
 	for_3d nxmax[d] += nunitGlob[d];
       }
 #pragma omp parallel for
-      for( int i=0; i<numLeafs; i++ ) {
+      for (int i=0; i<numLeafs; i++) {
 	int ix[3] = {0, 0, 0};
 	getIndex(ix,i);
 	int jxmin[3], jxmax[3];
 	for_3d jxmin[d] = EXAFMM_MAX(nxmin[d],ix[d] - DP2P);
 	for_3d jxmax[d] = EXAFMM_MIN(nxmax[d],ix[d] + DP2P);
 	int jx[3];
-	for( jx[2]=jxmin[2]; jx[2]<=jxmax[2]; jx[2]++ ) {
-	  for( jx[1]=jxmin[1]; jx[1]<=jxmax[1]; jx[1]++ ) {
-	    for( jx[0]=jxmin[0]; jx[0]<=jxmax[0]; jx[0]++ ) {
+	for (jx[2]=jxmin[2]; jx[2]<=jxmax[2]; jx[2]++) {
+	  for (jx[1]=jxmin[1]; jx[1]<=jxmax[1]; jx[1]++) {
+	    for (jx[0]=jxmin[0]; jx[0]<=jxmax[0]; jx[0]++) {
 	      int jxp[3];
 	      for_3d jxp[d] = (jx[d] + nunit) % nunit;
 	      int j = getKey(jxp,maxLevel,false);
@@ -157,10 +157,10 @@ namespace EXAFMM_NAMESPACE {
       int rankOffset = 13 * numLeafs;
       int levelOffset = ((1 << 3 * maxLevel) - 1) / 7 + 13 * numCells;
 #pragma omp parallel for
-      for( int i=0; i<numLeafs; i++ ) {
+      for (int i=0; i<numLeafs; i++) {
 	real_t center[3];
 	getCenter(center,i,maxLevel);
-	for( int j=Leafs[i+rankOffset][0]; j<Leafs[i+rankOffset][1]; j++ ) {
+	for (int j=Leafs[i+rankOffset][0]; j<Leafs[i+rankOffset][1]; j++) {
 	  real_t dX[3];
 	  for_3d dX[d] = center[d] - Jbodies[j][d];
 	  real_t M[MTERM];
@@ -173,12 +173,12 @@ namespace EXAFMM_NAMESPACE {
 
     void M2M() const {
       int rankOffset = 13 * numCells;
-      for( int lev=maxLevel; lev>0; lev-- ) {
+      for (int lev=maxLevel; lev>0; lev--) {
 	int childOffset = ((1 << 3 * lev) - 1) / 7 + rankOffset;
 	int parentOffset = ((1 << 3 * (lev - 1)) - 1) / 7 + rankOffset;
 	real_t radius = R0 / (1 << lev);
 #pragma omp parallel for schedule(static, 8)
-	for( int i=0; i<(1 << 3 * lev); i++ ) {
+	for (int i=0; i<(1 << 3 * lev); i++) {
 	  int c = i + childOffset;
 	  int p = (i >> 3) + parentOffset;
 	  int ix[3];
@@ -202,7 +202,7 @@ namespace EXAFMM_NAMESPACE {
       int ixc[3];
       int DM2LC = DM2L;
       getGlobIndex(ixc,MPIRANK,maxGlobLevel);
-      for( int lev=1; lev<=maxLevel; lev++ ) {
+      for (int lev=1; lev<=maxLevel; lev++) {
 	if (lev==maxLevel) DM2LC = DP2P;
 	int levelOffset = ((1 << 3 * lev) - 1) / 7;
 	int nunit = 1 << lev;
@@ -211,13 +211,13 @@ namespace EXAFMM_NAMESPACE {
 	int nxmin[3], nxmax[3];
 	for_3d nxmin[d] = -ixc[d] * (nunit >> 1);
 	for_3d nxmax[d] = (nunitGlob[d] >> 1) + nxmin[d] - 1;
-	if( numImages != 0 ) {
+	if (numImages != 0) {
 	  for_3d nxmin[d] -= (nunitGlob[d] >> 1);
 	  for_3d nxmax[d] += (nunitGlob[d] >> 1);
 	}
 	real_t diameter = 2 * R0 / (1 << lev);
 #pragma omp parallel for
-	for( int i=0; i<(1 << 3 * lev); i++ ) {
+	for (int i=0; i<(1 << 3 * lev); i++) {
 	  real_t L[LTERM];
 	  for_l L[l] = 0;
 	  int ix[3] = {0, 0, 0};
@@ -227,9 +227,9 @@ namespace EXAFMM_NAMESPACE {
 	  int jxmax[3];
 	  for_3d jxmax[d] = (EXAFMM_MIN(nxmax[d],(ix[d] >> 1) + DM2L) << 1) + 1;
 	  int jx[3];
-	  for( jx[2]=jxmin[2]; jx[2]<=jxmax[2]; jx[2]++ ) {
-	    for( jx[1]=jxmin[1]; jx[1]<=jxmax[1]; jx[1]++ ) {
-	      for( jx[0]=jxmin[0]; jx[0]<=jxmax[0]; jx[0]++ ) {
+	  for (jx[2]=jxmin[2]; jx[2]<=jxmax[2]; jx[2]++) {
+	    for (jx[1]=jxmin[1]; jx[1]<=jxmax[1]; jx[1]++) {
+	      for (jx[0]=jxmin[0]; jx[0]<=jxmax[0]; jx[0]++) {
 		if(jx[0] < ix[0]-DM2LC || ix[0]+DM2LC < jx[0] ||
 		   jx[1] < ix[1]-DM2LC || ix[1]+DM2LC < jx[1] ||
 		   jx[2] < ix[2]-DM2LC || ix[2]+DM2LC < jx[2]) {
@@ -262,12 +262,12 @@ namespace EXAFMM_NAMESPACE {
     }
 
     void L2L() const {
-      for( int lev=1; lev<=maxLevel; lev++ ) {
+      for (int lev=1; lev<=maxLevel; lev++) {
 	int childOffset = ((1 << 3 * lev) - 1) / 7;
 	int parentOffset = ((1 << 3 * (lev - 1)) - 1) / 7;
 	real_t radius = R0 / (1 << lev);
 #pragma omp parallel for
-	for( int i=0; i<(1 << 3 * lev); i++ ) {
+	for (int i=0; i<(1 << 3 * lev); i++) {
 	  int c = i + childOffset;
 	  int p = (i >> 3) + parentOffset;
 	  int ix[3];
@@ -280,7 +280,7 @@ namespace EXAFMM_NAMESPACE {
 	  C[0] = 1;
 	  powerL(C,dX);
 	  for_l Local[c][l] += Local[p][l];
-	  for( int l=1; l<LTERM; l++ ) Local[c][0] += C[l] * Local[p][l];
+	  for (int l=1; l<LTERM; l++) Local[c][0] += C[l] * Local[p][l];
 	  L2LSum(Local[c],C,Local[p]);
 	}
       }
@@ -290,19 +290,19 @@ namespace EXAFMM_NAMESPACE {
       int rankOffset = 13 * numLeafs;
       int levelOffset = ((1 << 3 * maxLevel) - 1) / 7;
 #pragma omp parallel for
-      for( int i=0; i<numLeafs; i++ ) {
+      for (int i=0; i<numLeafs; i++) {
 	real_t center[3];
 	getCenter(center,i,maxLevel);
 	real_t L[LTERM];
 	for_l L[l] = Local[i+levelOffset][l];
-	for( int j=Leafs[i+rankOffset][0]; j<Leafs[i+rankOffset][1]; j++ ) {
+	for (int j=Leafs[i+rankOffset][0]; j<Leafs[i+rankOffset][1]; j++) {
 	  real_t dX[3];
 	  for_3d dX[d] = Jbodies[j][d] - center[d];
 	  real_t C[LTERM];
 	  C[0] = 1;
 	  powerL(C,dX);
 	  for_4d Ibodies[j][d] += L[d];
-	  for( int l=1; l<LTERM; l++ ) Ibodies[j][0] += C[l] * L[l];
+	  for (int l=1; l<LTERM; l++) Ibodies[j][0] += C[l] * L[l];
 	  L2PSum(Ibodies[j],C,L);
 	}
       }
@@ -314,8 +314,8 @@ namespace EXAFMM_NAMESPACE {
 
     inline int getKey(int *ix, int level, bool levelOffset=true) const {
       int id = 0;
-      if( levelOffset ) id = ((1 << 3 * level) - 1) / 7;
-      for( int lev=0; lev<level; ++lev ) {
+      if (levelOffset) id = ((1 << 3 * level) - 1) / 7;
+      for(int lev=0; lev<level; ++lev ) {
 	for_3d id += ix[d] % 2 << (3 * lev + d);
 	for_3d ix[d] >>= 1;
       }

@@ -198,7 +198,7 @@ namespace EXAFMM_NAMESPACE {
 	  } else {                                              //   If Ci != Cj
 	    for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {          //    Loop over all Ci cells
 	      for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {        //     Loop over all Cj cells
-		traversal->dualTreeTraversal(Ci, Cj, remote);//   Call traverse for single pair
+		traversal->dualTreeTraversal(Ci, Cj, remote);   //      Call traverse for single pair
 	      }                                                 //     End loop over all Cj cells
 	    }                                                   //    End loop over all Ci cells
 	  }                                                     //   End if for Ci == Cj
@@ -276,7 +276,7 @@ namespace EXAFMM_NAMESPACE {
 	    }                                                   //    End loop over z periodic direction
 	  }                                                     //   End loop over y periodic direction
 	}                                                       //  End loop over x periodic direction
-        std::fill(Ci->M.begin(), Ci->M.end(), 0);               //  Reset multipoles of periodic parent
+        //std::fill(Ci->M.begin(), Ci->M.end(), 0);               //  Reset multipoles of periodic parent
 	kernel.M2M(Ci,Cj0);                                     //  Evaluate periodic M2M kernels for this sublevel
 	cycle *= 3;                                             //  Increase periodic cycle three times
 	Cj0 = C0;                                               //  Reset Cj0 back

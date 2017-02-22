@@ -24,7 +24,7 @@ int main(int argc, char ** argv) {
   const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
   args.numBodies = 1000;
-  args.images = 3;
+  //args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox boundBox;
@@ -96,17 +96,18 @@ int main(int argc, char ** argv) {
         }
       }
       upDownPass.downwardPass(cells);
-      vec3 localDipole = upDownPass.getDipole(bodies,0);
-      vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
-      int numBodies = baseMPI.allreduceInt(bodies.size());
-      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     }
     logger::stopPAPI();
     double totalFMM = logger::stopTimer("Total FMM");
     totalFMM /= numIteration;
 
     if (!isTime) {
-#if 1
+      buffer = bodies;
+#if 0
+      vec3 localDipole = upDownPass.getDipole(bodies,0);
+      vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
+      int numBodies = baseMPI.allreduceInt(bodies.size());
+      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
       bodies2 = bodies;
       data.initTarget(bodies);
       logger::printTitle("Ewald Profiling");
@@ -127,7 +128,6 @@ int main(int argc, char ** argv) {
       ewald.wavePart(bodies, jbodies);
       ewald.realPart(cells, jcells);
 #endif
-
       ewald.selfTerm(bodies);
       logger::printTitle("Total runtime");
       logger::printTime("Total FMM");
@@ -135,7 +135,6 @@ int main(int argc, char ** argv) {
 #else
       jbodies = bodies;
       const int numTargets = 100;
-      buffer = bodies;
       data.sampleBodies(bodies, numTargets);
       bodies2 = bodies;
       data.initTarget(bodies);
@@ -145,11 +144,9 @@ int main(int argc, char ** argv) {
         traversal.direct(bodies, jbodies, cycle);
         if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
       }
-      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
       logger::printTitle("Total runtime");
       logger::printTime("Total FMM");
       logger::stopTimer("Total Direct");
-      bodies = buffer;
 #endif
       double potSum = verify.getSumScalar(bodies);
       double potSum2 = verify.getSumScalar(bodies2);
@@ -180,6 +177,7 @@ int main(int argc, char ** argv) {
         t = -1;
         isTime = true;
       }
+      bodies = buffer;
     } else {
       double totalFMMGlob;
       MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
