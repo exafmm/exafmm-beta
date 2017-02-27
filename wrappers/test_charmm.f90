@@ -744,9 +744,9 @@ program main
   call mpi_comm_size(mpi_comm_world,mpisize,ierr)
   call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
   nglobal = 1000
-  expansions = 10
-  images = 3
-  theta = 0.3
+  expansions = 16
+  images = 5
+  theta = 0.5
   verbose = 0
   pcycle = 2 * nglobal ** (1. / 6)
   cutoff = 3 * nglobal ** (1. / 6)

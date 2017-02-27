@@ -15,15 +15,16 @@
 using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
+  const int numBodies = 1000;
   const int ksize = 11;
   const vec3 cycle = 2 * M_PI;
-  const real_t alpha = 10 / max(cycle);
+  const real_t alpha = ksize / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = max(cycle) / 2;
   const real_t eps2 = 0.0;
   const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   Args args(argc, argv);
-  args.numBodies = 1000;
+  args.numBodies = numBodies;
   //args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
@@ -103,7 +104,7 @@ int main(int argc, char ** argv) {
 
     if (!isTime) {
       buffer = bodies;
-#if 0
+#if 0 // 0: direct 1: Ewald
       vec3 localDipole = upDownPass.getDipole(bodies,0);
       vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
       int numBodies = baseMPI.allreduceInt(bodies.size());
@@ -112,7 +113,7 @@ int main(int argc, char ** argv) {
       data.initTarget(bodies);
       logger::printTitle("Ewald Profiling");
       logger::startTimer("Total Ewald");
-#if 1
+#if 1 // 0: gather bodies 1: shift bodies
       jbodies = bodies;
       for (int i=0; i<baseMPI.mpisize; i++) {
         if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
@@ -122,7 +123,7 @@ int main(int argc, char ** argv) {
         ewald.wavePart(bodies, jbodies);
         ewald.realPart(cells, jcells);
       }
-#else
+#else // gather bodies
       jbodies = treeMPI.allgatherBodies(bodies);
       jcells = localTree.buildTree(jbodies, buffer, globalBounds);
       ewald.wavePart(bodies, jbodies);
@@ -132,7 +133,7 @@ int main(int argc, char ** argv) {
       logger::printTitle("Total runtime");
       logger::printTime("Total FMM");
       logger::stopTimer("Total Ewald");
-#else
+#else // direct
       jbodies = bodies;
       const int numTargets = 100;
       data.sampleBodies(bodies, numTargets);
