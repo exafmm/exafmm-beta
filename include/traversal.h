@@ -358,7 +358,7 @@ namespace EXAFMM_NAMESPACE {
       int neighbor = 2 * (.5 / theta + 1) + 1;                  // Neighbor reigon
       int prange = 0;                                           // Range of periodic images
       for (int i=0; i<images; i++) {                            // Loop over periodic image sublevels
-	prange += int(std::pow(neighbor,i));                    //  Accumulate range of periodic images
+	prange += int(pow(neighbor,i));                         //  Accumulate range of periodic images
       }                                                         // End loop over perioidc image sublevels
       for (int ix=-prange; ix<=prange; ix++) {                  //  Loop over x periodic direction
 	for (int iy=-prange; iy<=prange; iy++) {                //   Loop over y periodic direction

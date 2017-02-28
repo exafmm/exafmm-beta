@@ -1,7 +1,9 @@
 #ifndef thread_h
 #define thread_h
 #include "config.h"
+#if !__FUJITSU
 #pragma GCC system_header
+#endif
 
 #if EXAFMM_WITH_TBB
 #define num_threads(E)                tbb::task_scheduler_init init(E)
