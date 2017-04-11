@@ -239,7 +239,7 @@ namespace exafmm {
     }
 
     void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
-      if (abs(z) < EPS) {
+      if (std::abs(z) < EPS) {
         for (int i=0; i<nterms; i++) {
           hn[i] = 0;
         }
@@ -256,7 +256,7 @@ namespace exafmm {
     }
 
     void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * hnd) {
-      if (abs(z) < EPS) {
+      if (std::abs(z) < EPS) {
         for (int i=0; i<nterms; i++) {
           hn[i] = 0;
           hnd[i] = 0;
@@ -277,7 +277,7 @@ namespace exafmm {
 
     void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
       int iscale[P+1];
-      if (abs(z) < EPS) {
+      if (std::abs(z) < EPS) {
         jn[0] = 1;
         for (int i=1; i<nterms; i++) {
           jn[i] = 0;
@@ -306,7 +306,7 @@ namespace exafmm {
         coef = 2 * i + 1;
         ztmp = coef * zinv * jn[i] - jn[i+1];
         jn[i-1] = ztmp;
-        if (abs(ztmp) > 1.0/EPS) {
+        if (std::abs(ztmp) > 1.0/EPS) {
           jn[i] *= EPS;
           jn[i-1] *= EPS;
           iscale[i] = 1;
@@ -321,7 +321,7 @@ namespace exafmm {
       }
       complex_t fj0 = sin(z) * zinv;
       complex_t fj1 = fj0 * zinv - cos(z) * zinv;
-      if (abs(fj1) > abs(fj0)) {
+      if (std::abs(fj1) > std::abs(fj0)) {
         ztmp = fj1 / (jn[1] * scale);
       } else {
         ztmp = fj0 / jn[0];
@@ -351,7 +351,7 @@ namespace exafmm {
       real_t Ynm[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
       vecP Mnm = complex_t(0,0);
-      real_t kscale = C->SCALE * abs(wavek);
+      real_t kscale = C->SCALE * std::abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
         vec3 dX = B->X - C->X;
         real_t r, theta, phi;
@@ -365,7 +365,11 @@ namespace exafmm {
         complex_t z = wavek * r;
         get_jn(P, z, kscale, jn, 0, jnd);
         for (int n=0; n<P; n++) {
-          jn[n] *= B->SRC;
+#if EXAFMM_ACOUSTICS
+        jn[n] *= B->SRC * B->QWEIGHT;
+#else
+        jn[n] *= B->SRC;
+#endif                            
         }
         for (int n=0; n<P; n++) {
           int nm = n * n + n;
@@ -389,9 +393,9 @@ namespace exafmm {
       complex_t phitemp[2*P], hn[P], ephi[2*P];
       vecP Mnm = complex_t(0,0);
       vecP Mrot = complex_t(0,0);
-      real_t kscalei = Ci->SCALE * abs(wavek);
+      real_t kscalei = Ci->SCALE * std::abs(wavek);
       for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
-        real_t kscalej = Cj->SCALE * abs(wavek);
+        real_t kscalej = Cj->SCALE * std::abs(wavek);
         real_t radius = Cj->SCALE * sqrt(3.0);
         vec3 dX = Ci->X - Cj->X;
         real_t r, theta, phi;
@@ -426,7 +430,7 @@ namespace exafmm {
           get_Ynm(P, cthetaj, Ynm);
           get_hn(P, z, kscalej, hn);
           for (int m=-P+1; m<P; m++) {
-            int mabs = abs(m);
+            int mabs = std::abs(m);
             phitemp[P+m] = 0;
             for (int n=mabs; n<P; n++) {
               int nm = n * n + n + m;
@@ -436,7 +440,7 @@ namespace exafmm {
           }
           get_Ynm(P, xquad2[l], Ynm);
           for (int m=-P+1; m<P; m++) {
-            int mabs = abs(m);
+            int mabs = std::abs(m);
             complex_t z = phitemp[P+m] * wquad2[l] * real_t(.5);
             for (int n=mabs; n<P; n++) {
               int nm = n * n + n + m;
@@ -472,8 +476,8 @@ namespace exafmm {
       vecP Lnm = complex_t(0,0);
       vecP Lnmd = complex_t(0,0);
       vecP Mnm, Mrot, Lrot;
-      real_t kscalej = Cj->SCALE * abs(wavek);
-      real_t kscalei = Ci->SCALE * abs(wavek);
+      real_t kscalej = Cj->SCALE * std::abs(wavek);
+      real_t kscalei = Ci->SCALE * std::abs(wavek);
       real_t radius = Cj->SCALE * sqrt(3.0) * .5;
       vec3 dX = Ci->X - Cj->X - Xperiodic;
       real_t r, theta, phi;
@@ -552,7 +556,7 @@ namespace exafmm {
         }
         get_Ynm(Popt, xquad[l], Ynm);
         for (int m=-Popt+1; m<Popt; m++) {
-          int mabs = abs(m);
+          int mabs = std::abs(m);
           complex_t z = phitemp[Popt+m] * wquad[l] * real_t(.5);
           for (int n=mabs; n<Popt; n++) {
             int nm = n * n + n + m;
@@ -593,9 +597,9 @@ namespace exafmm {
       complex_t phitemp[2*P], phitempn[2*P];
       complex_t jn[P+1], jnd[P+1], ephi[2*P];
       vecP Lnm, Lnmd, Lrot;
-      real_t kscalei = Ci->SCALE * abs(wavek);
+      real_t kscalei = Ci->SCALE * std::abs(wavek);
       C_iter Cj = C0 + Ci->IPARENT;
-      real_t kscalej = Cj->SCALE * abs(wavek);
+      real_t kscalej = Cj->SCALE * std::abs(wavek);
       real_t radius = Cj->SCALE * sqrt(3.0) * .5;
       vec3 dX = Ci->X - Cj->X;
       real_t r, theta, phi;
@@ -670,7 +674,7 @@ namespace exafmm {
         }
         get_Ynm(P, xquad[l], Ynm);
         for (int m=-P+1; m<P; m++) {
-          int mabs = abs(m);
+          int mabs = std::abs(m);
           complex_t z = phitemp[P+m] * wquad[l] * real_t(.5);
           for (int n=mabs; n<P; n++) {
             int nm = n * n + n + m;
@@ -709,9 +713,13 @@ namespace exafmm {
     void L2P(C_iter C) {
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
       complex_t ephi[P], jn[P+1], jnd[P+1];
-      real_t kscale = C->SCALE * abs(wavek);
+      real_t kscale = C->SCALE * std::abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
+#if EXAFMM_ACOUSTICS
+        B->TRG /= (B->SRC * B->QWEIGHT);
+#else
         B->TRG /= B->SRC;
+#endif        
         vecP Lj = C->L;
         kcvec4 TRG = kcomplex_t(0,0);
         vec3 dX = B->X - C->X;

@@ -95,7 +95,12 @@ namespace exafmm {
     kvec4    TRG;                                               //!< Scalar+vector3 target values
 #elif EXAFMM_HELMHOLTZ
     kcvec4   TRG;                                               //!< Scalar+vector3 target values
+#if EXAFMM_ACOUSTICS
+    int      PATCH;                                             //!< Triangular patch id
+    complex_t QWEIGHT;                                          //!< Quadrature point weight for far field interaction
+#endif    
 #endif
+
   };
 #if _SX
   typedef std::vector<Body> Bodies;                             //!< Vector of bodies
