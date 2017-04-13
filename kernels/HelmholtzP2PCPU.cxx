@@ -8,7 +8,6 @@ namespace exafmm {
     vec3 Xperiodic;
 
     const complex_t I(0.,1.);
-
     void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);
@@ -67,15 +66,9 @@ namespace exafmm {
 	  simdvec tmp = mi_r * mj_r - mi_i * mj_i;
 	  mj_i = mi_r * mj_i + mi_i * mj_r;
 	  mj_r = tmp;
-#if EXAFMM_ACOUSTICS	    	    	    
-	  tmp = invR * exp(wave_rvec * R);	    
-	  simdvec coef_r = cos(wave_ivec * R) * tmp;
- 	  simdvec coef_i = sin(wave_ivec * R) * tmp;	  
-#else	  
 	  tmp = invR / exp(wave_ivec * R);
 	  simdvec coef_r = cos(wave_rvec * R) * tmp;
 	  simdvec coef_i = sin(wave_rvec * R) * tmp;
-#endif	  
 	  tmp = mj_r * coef_r - mj_i * coef_i;
 	  coef_i = mj_r * coef_i + mj_i * coef_r;
 	  coef_r = tmp;
@@ -114,42 +107,20 @@ namespace exafmm {
 	real_t ay_i = 0.0;
 	real_t az_r = 0.0;
 	real_t az_i = 0.0;
-#if EXAFMM_ACOUSTICS	
-	real_t mi_r = std::real(Bi[i].SRC * Bi[i].QWEIGHT);
-	real_t mi_i = std::imag(Bi[i].SRC * Bi[i].QWEIGHT);
-#else	
 	real_t mi_r = std::real(Bi[i].SRC);
 	real_t mi_i = std::imag(Bi[i].SRC);
-#endif	
-	for (int j=0; j<nj; j++) {
-#if EXAFMM_ACOUSTICS
-	  if(Bi[i].PATCH == Bj[j].PATCH) {
-	  	// complex_t pot = Bi[i].SRC * Bj[j].SELF;
-	  	// pot_r += std::real(pot);
-	  	// pot_i += std::imag(pot);
-	  	continue;	
-	  }
-	  real_t mj_r = std::real(Bj[j].SRC * Bj[j].QWEIGHT);
-	  real_t mj_i = std::imag(Bj[j].SRC * Bj[j].QWEIGHT);
-#else
-	  real_t mj_r = std::real(Bj[j].SRC);
-	  real_t mj_i = std::imag(Bj[j].SRC);
-#endif	  
+	for (int j=0; j<nj; j++) {  
 	  vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
 	  real_t R2 = norm(dX) + eps2;
+	  real_t mj_r = std::real(Bj[j].SRC);
+	  real_t mj_i = std::imag(Bj[j].SRC);
 	  if (R2 != 0) {
 	    real_t R = sqrt(R2);
 	   	real_t src2_r = mi_r * mj_r - mi_i * mj_i;
 	    real_t src2_i = mi_r * mj_i + mi_i * mj_r;	    
-#if EXAFMM_ACOUSTICS	    	    	    
-	    real_t expikr_r_= std::exp(wave_r * R) / R;	    
-	    real_t expikr_r = std::cos(wave_i * R) * expikr_r_;
- 	    real_t expikr_i = std::sin(wave_i * R) * expikr_r_;	  
-#else
  	    real_t expikr =   std::exp(wave_i * R) * R;
  	    real_t expikr_r = std::cos(wave_r * R) / expikr;
  	    real_t expikr_i = std::sin(wave_r * R) / expikr;	  
-#endif	   	    
 	    real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
 	    real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
 	    real_t kr_r = (1 + wave_i * R) / R2;
@@ -230,15 +201,9 @@ namespace exafmm {
 	  simdvec tmp = mi_r * mj_r - mi_i * mj_i;
 	  mj_i = mi_r * mj_i + mi_i * mj_r;
 	  mj_r = tmp;
-#if EXAFMM_ACOUSTICS	    	    	    
-	  tmp = invR * exp(wave_rvec * R);	    
-	  simdvec coef_r = cos(wave_ivec * R) * tmp;
- 	  simdvec coef_i = sin(wave_ivec * R) * tmp;	  
-#else	  
 	  tmp = invR / exp(wave_ivec * R);
 	  simdvec coef_r = cos(wave_rvec * R) * tmp;
 	  simdvec coef_i = sin(wave_rvec * R) * tmp;
-#endif
 	  tmp = mj_r * coef_r - mj_i * coef_i;
 	  coef_i = mj_r * coef_i + mj_i * coef_r;
 	  coef_r = tmp;
@@ -277,41 +242,19 @@ namespace exafmm {
 	kreal_t ay_i = 0;
 	kreal_t az_r = 0;
 	kreal_t az_i = 0;
-#if EXAFMM_ACOUSTICS	
-	real_t mi_r = std::real(B[i].SRC * B[i].QWEIGHT);
-	real_t mi_i = std::imag(B[i].SRC * B[i].QWEIGHT);
-#else	
 	real_t mi_r = std::real(B[i].SRC);
 	real_t mi_i = std::imag(B[i].SRC);
-#endif
 	for (int j=i+1; j<n; j++) {
-#if EXAFMM_ACOUSTICS
-	  if(B[i].PATCH == B[j].PATCH) {
-	  	// complex_t pot = B[i].SRC * B[j].SELF;
-	  	// pot_r += std::real(pot);
-	  	// pot_i += std::imag(pot);
-	   	continue;	
-	  }
-	  real_t mj_r = std::real(B[j].SRC * B[j].QWEIGHT);
-	  real_t mj_i = std::imag(B[j].SRC * B[j].QWEIGHT);
-#else
 	  real_t mj_r = std::real(B[j].SRC);
 	  real_t mj_i = std::imag(B[j].SRC);
-#endif			 
 	  vec3 dX = B[j].X - B[i].X;
 	  real_t R2 = norm(dX) + eps2;
 	  real_t R = sqrt(R2);
 	  real_t src2_r = mi_r * mj_r - mi_i * mj_i;
 	  real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-#if EXAFMM_ACOUSTICS	    	    	    
-	    real_t expikr_r_= std::exp(wave_r * R) / R;	    
-	    real_t expikr_r = std::cos(wave_i * R) * expikr_r_;
- 	    real_t expikr_i = std::sin(wave_i * R) * expikr_r_;	  
-#else
  	    real_t expikr =   std::exp(wave_i * R) * R;
  	    real_t expikr_r = std::cos(wave_r * R) / expikr;
  	    real_t expikr_i = std::sin(wave_r * R) / expikr;	  
-#endif
 	  real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
 	  real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
 	  real_t kr_r = (1 + wave_i * R) / R2;
