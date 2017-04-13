@@ -46,7 +46,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
                          std::vector<std::vector<double> > nearGaussPoints, int nhdgqp, int nipp, double nearpd, std::vector<double> ws, std::vector<std::vector<double> > ipolator_near) {
   const int nspawn = 1000;
   const int images = 0;
-  const real_t theta = 0.4;
+  const double theta = 0.4;
   const bool useRmax = false;
   const bool useRopt = false;
   const bool verbose = false;  
@@ -55,10 +55,19 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   kernel::nhdgqp = nhdgqp;
   kernel::nipp = nipp;
   kernel::nearpd = nearpd;
+#if EXAFMM_SINGLE
+  kernel::ws.resize(ws.size());
+  std::copy(ws.begin(), ws.end(), kernel::ws.begin());
+  kernel::ipolator_near.resize(ipolator_near.size());
+  for (int i = 0; i < ipolator_near.size(); ++i) {
+    kernel::ipolator_near[i].resize(ipolator_near[i].size());
+    std::copy(ipolator_near[i].begin(), ipolator_near[i].end(), kernel::ipolator_near[i].begin());
+  }
+#else
   kernel::ws = ws;
   kernel::ipolator_near = ipolator_near;
+#endif
   kernel::setup();
-
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
@@ -90,7 +99,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
     B->X[1] = yb[i];
     B->X[2] = zb[i];
     B->PATCH = patch;
-    //B->GAUSS_NEAR.resize(nhdgqp);
+    B->POINT_LOC = i%nipp;
     for (int j = 0; j < nhdgqp; ++j) { 
       B->GAUSS_NEAR[j][0] = nearGaussPoints[patch*nhdgqp+j][0];
       B->GAUSS_NEAR[j][1] = nearGaussPoints[patch*nhdgqp+j][1];
@@ -136,7 +145,7 @@ extern "C" void FMM_BuildTree() {
   bcells = localTree->buildTree(bbodies, buffer, localBoundsB);
 }
 
-extern "C" void FMM_B2B(complex_t * vi, complex_t* vb, complex_t* wb, bool verbose) { 
+extern "C" void FMM_B2B(std::complex<double> * vi, std::complex<double>* vb, std::complex<double>* wb, bool verbose) { 
   args->verbose = verbose;
   log_initialize();
   FMM_BuildTree();
@@ -212,7 +221,7 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * v
 }
 
 
-extern "C" void DirectAll(complex_t * vi, complex_t* vb, complex_t* wb, bool verbose) {
+extern "C" void DirectAll(std::complex<double> * vi, std::complex<double>* vb, std::complex<double>* wb, bool verbose) {
   args->verbose = verbose;
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     B->SRC    = 1;    

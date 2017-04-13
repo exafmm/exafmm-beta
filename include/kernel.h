@@ -11,8 +11,8 @@ namespace exafmm {
     extern int nhdgqp;                                          //!< Number of high degree gauss quadrature points 
     extern int nipp;                                            //!< Number of integration points
     extern std::vector<std::vector<real_t> > ipolator_near;     //!< Basis vector for near interactions
-    extern std::vector<double> ws;                              //!< Gauss quadrature integral points
-    extern double nearpd;                                       //!< Minimum near patch distance
+    extern std::vector<real_t> ws;                              //!< Gauss quadrature integral points
+    extern real_t nearpd;                                       //!< Minimum near patch distance
 
     void setup();                                               //!< Setup phase for kernels
     void P2P(C_iter Ci, C_iter Cj, bool mutual);                //!< P2P kernel between cells Ci and Cj

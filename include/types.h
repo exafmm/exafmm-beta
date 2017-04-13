@@ -105,6 +105,7 @@ namespace exafmm {
     int      PATCH;                                             //!< Triangular patch id
     complex_t QWEIGHT;                                          //!< Quadrature point weight for far field interaction    
     vec<INT_TERMS, vec3> GAUSS_NEAR;                            //!< Near field quadrature points
+    short POINT_LOC;                                            //!< Quad point location in patch
 #endif    
 #endif
 
