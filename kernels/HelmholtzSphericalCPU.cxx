@@ -365,7 +365,7 @@ namespace exafmm {
         complex_t z = wavek * r;
         get_jn(P, z, kscale, jn, 0, jnd);
         for (int n=0; n<P; n++) {
-#if EXAFMM_ACOUSTICS
+#if EXAFMM_ACOUSTICS        
         jn[n] *= B->SRC * B->QWEIGHT;
 #else
         jn[n] *= B->SRC;
@@ -716,7 +716,7 @@ namespace exafmm {
       real_t kscale = C->SCALE * std::abs(wavek);
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
 #if EXAFMM_ACOUSTICS
-        B->TRG /= (B->SRC * B->QWEIGHT);
+        B->TRG  /= (B->SRC * B->QWEIGHT);
 #else
         B->TRG /= B->SRC;
 #endif        

@@ -186,11 +186,11 @@ libacoustics_exafmm_helmholtz_a_AR = $(AR) $(ARFLAGS)
 libacoustics_exafmm_helmholtz_a_LIBADD =
 am__libacoustics_exafmm_helmholtz_a_SOURCES_DIST = acoustics.cxx \
 	../kernels/HelmholtzSphericalCPU.cxx \
-	../kernels/HelmholtzP2PCPU.cxx
+	../kernels/HelmholtzP2PAcousticsCPU.cxx
 am__dirstamp = $(am__leading_dot)dirstamp
 @EXAFMM_HAVE_MPI_TRUE@am_libacoustics_exafmm_helmholtz_a_OBJECTS = libacoustics_exafmm_helmholtz_a-acoustics.$(OBJEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzSphericalCPU.$(OBJEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.$(OBJEXT)
 libacoustics_exafmm_helmholtz_a_OBJECTS =  \
 	$(am_libacoustics_exafmm_helmholtz_a_OBJECTS)
 libcharmm2_exafmm_a_AR = $(AR) $(ARFLAGS)
@@ -613,8 +613,8 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_SOURCES = petiga.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
-@EXAFMM_HAVE_MPI_TRUE@libacoustics_exafmm_helmholtz_a_SOURCES = acoustics.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
-@EXAFMM_HAVE_MPI_TRUE@libacoustics_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
+@EXAFMM_HAVE_MPI_TRUE@libacoustics_exafmm_helmholtz_a_SOURCES = acoustics.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PAcousticsCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@libacoustics_exafmm_helmholtz_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_ACOUSTICS -DEXAFMM_EXPANSION=10
 @EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_SOURCES = gromacs.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@libgromacs_exafmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9 -DEXAFMM_NO_P2P
 @EXAFMM_HAVE_MPI_TRUE@libcharmm_exafmm_a_SOURCES = charmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
@@ -726,7 +726,7 @@ clean-libLIBRARIES:
 ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzSphericalCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.$(OBJEXT):  \
+../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
 
@@ -874,7 +874,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceP2PCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm2_exafmm_a-LaplaceSphericalCPU.Po@am__quote@
@@ -946,19 +946,19 @@ libacoustics_exafmm_helmholtz_a-acoustics.obj: acoustics.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzSphericalCPU.obj `if test -f '../kernels/HelmholtzSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzSphericalCPU.cxx'; fi`
 
-../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.o: ../kernels/HelmholtzP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.o: ../kernels/HelmholtzP2PAcousticsCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.Tpo -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.o `test -f '../kernels/HelmholtzP2PAcousticsCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PAcousticsCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.Tpo ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PAcousticsCPU.cxx' object='../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.o `test -f '../kernels/HelmholtzP2PAcousticsCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PAcousticsCPU.cxx
 
-../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.obj: ../kernels/HelmholtzP2PCPU.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.obj: ../kernels/HelmholtzP2PAcousticsCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.Tpo -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.obj `if test -f '../kernels/HelmholtzP2PAcousticsCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PAcousticsCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PAcousticsCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.Tpo ../kernels/$(DEPDIR)/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PAcousticsCPU.cxx' object='../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libacoustics_exafmm_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libacoustics_exafmm_helmholtz_a-HelmholtzP2PAcousticsCPU.obj `if test -f '../kernels/HelmholtzP2PAcousticsCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PAcousticsCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PAcousticsCPU.cxx'; fi`
 
 libcharmm2_exafmm_a-charmm2.o: charmm2.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libcharmm2_exafmm_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libcharmm2_exafmm_a-charmm2.o -MD -MP -MF $(DEPDIR)/libcharmm2_exafmm_a-charmm2.Tpo -c -o libcharmm2_exafmm_a-charmm2.o `test -f 'charmm2.cxx' || echo '$(srcdir)/'`charmm2.cxx

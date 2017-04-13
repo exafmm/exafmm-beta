@@ -60,7 +60,13 @@ namespace exafmm {
 #endif
   typedef vec<NTERM,complex_t> vecP;                            //!< Multipole/local coefficient type
 #endif
-
+#if EXAFMM_ACOUSTICS
+#ifdef EXAFMM_HDPOINTS
+  const int INT_TERMS = EXAFMM_HDPOINTS;
+#else
+  const int INT_TERMS = 16;
+#endif
+#endif
   //! Center and radius of bounding box
   struct Box {
     vec3   X;                                                   //!< Box center
@@ -97,7 +103,8 @@ namespace exafmm {
     kcvec4   TRG;                                               //!< Scalar+vector3 target values
 #if EXAFMM_ACOUSTICS
     int      PATCH;                                             //!< Triangular patch id
-    complex_t QWEIGHT;                                          //!< Quadrature point weight for far field interaction
+    complex_t QWEIGHT;                                          //!< Quadrature point weight for far field interaction    
+    vec<INT_TERMS, vec3> GAUSS_NEAR;                            //!< Near field quadrature points
 #endif    
 #endif
 

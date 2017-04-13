@@ -42,18 +42,22 @@ void log_finalize() {
 }
 
 extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads,
-			                   int nb, double * xb, double * yb, double * zb, int* patchids, std::complex<double>* self_contributions) {
+			                   int nb, double * xb, double * yb, double * zb, int* patchids, 
+                         std::vector<std::vector<double> > nearGaussPoints, int nhdgqp, int nipp, double nearpd, std::vector<double> ws, std::vector<std::vector<double> > ipolator_near) {
   const int nspawn = 1000;
   const int images = 0;
   const real_t theta = 0.4;
   const bool useRmax = false;
   const bool useRopt = false;
   const bool verbose = false;  
- kernel::eps2 = eps2;
-#if EXAFMM_HELMHOLTZ
- kernel::wavek = complex_t(kreal, kimag);
-#endif
- kernel::setup();
+  kernel::eps2 = eps2;
+  kernel::wavek = complex_t(kreal, kimag);
+  kernel::nhdgqp = nhdgqp;
+  kernel::nipp = nipp;
+  kernel::nearpd = nearpd;
+  kernel::ws = ws;
+  kernel::ipolator_near = ipolator_near;
+  kernel::setup();
 
   args = new Args;
   baseMPI = new BaseMPI;
@@ -81,12 +85,17 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   bbodies.resize(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
+    int patch = patchids[i];
     B->X[0] = xb[i];
     B->X[1] = yb[i];
     B->X[2] = zb[i];
-    B->PATCH = patchids[i];
-    //B->SELF  = self_contributions[i];
-    //B->SRC  = vb[i];
+    B->PATCH = patch;
+    //B->GAUSS_NEAR.resize(nhdgqp);
+    for (int j = 0; j < nhdgqp; ++j) { 
+      B->GAUSS_NEAR[j][0] = nearGaussPoints[patch*nhdgqp+j][0];
+      B->GAUSS_NEAR[j][1] = nearGaussPoints[patch*nhdgqp+j][1];
+      B->GAUSS_NEAR[j][2] = nearGaussPoints[patch*nhdgqp+j][2]; 
+    }
     B->WEIGHT = 1;
   }
 }
@@ -118,11 +127,6 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb) {
     xb[i] = B->X[0];
     yb[i] = B->X[1];
     zb[i] = B->X[2];
-// #if EXAFMM_HELMHOLTZ
-//     vb[i] = std::real(B->SRC);
-// #else
-//     vb[i] = B->SRC;
-// #endif
     B->IBODY = i;
   }
 }
@@ -132,13 +136,16 @@ extern "C" void FMM_BuildTree() {
   bcells = localTree->buildTree(bbodies, buffer, localBoundsB);
 }
 
-extern "C" void FMM_B2B(complex_t * vi, complex_t* vb, complex_t* wb, bool verbose) {  
+extern "C" void FMM_B2B(complex_t * vi, complex_t* vb, complex_t* wb, bool verbose) { 
   args->verbose = verbose;
   log_initialize();
+  FMM_BuildTree();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    B->SRC    = vb[B->IBODY];// * wb[B->IBODY];
-    B->QWEIGHT= wb[B->IBODY];
+    int i = B-bbodies.begin();     
+    B->SRC    = vb[B->IBODY];// * wb[B->IBODY];   
+    B->QWEIGHT = wb[B->IBODY];  
     B->TRG    = 0;
+    B->ICELL = 0;    
   }
   upDownPass->upwardPass(bcells);
   treeMPI->setLET(bcells, cycles);
@@ -167,11 +174,6 @@ extern "C" void FMM_B2B(complex_t * vi, complex_t* vb, complex_t* wb, bool verbo
 
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     vi[B->IBODY] = B->TRG[0];
-// #if EXAFMM_HELMHOLTZ
-//     vi[B->IBODY] += std::real(B->TRG[0]);
-// #else
-//     vi[B->IBODY] += B->TRG[0];
-// #endif
   }
 }
 
@@ -213,14 +215,14 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * v
 extern "C" void DirectAll(complex_t * vi, complex_t* vb, complex_t* wb, bool verbose) {
   args->verbose = verbose;
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    B->SRC    = 1;
-    B->QWEIGHT = 1;
+    B->SRC    = 1;    
     B->TRG    = 0;
+    B->QWEIGHT = 1;
   }
   Bodies jbodies(bbodies);  
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    B->SRC    = vb[B->IBODY];// * wb[B->IBODY];
-    B->QWEIGHT = wb[B->IBODY];
+    B->SRC    = vb[B->IBODY];// * wb[B->IBODY];  
+    B->QWEIGHT = wb[B->IBODY];  
   }
   for (int irank=0; irank<baseMPI->mpisize; irank++) {
     if (args->verbose) std::cout << "Direct loop          : " << irank+1 << "/" << baseMPI->mpisize << std::endl;
@@ -229,10 +231,6 @@ extern "C" void DirectAll(complex_t * vi, complex_t* vb, complex_t* wb, bool ver
   }
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
-//#if EXAFMM_HELMHOLTZ
-//    vi[i] += std::real(B->TRG[0]);
-//#else
     vi[i] = B->TRG[0];
-//#endif
   }
 }
