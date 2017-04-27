@@ -180,7 +180,9 @@ extern "C" void FMM_B2B(std::complex<double> * vi, std::complex<double>* vb, std
   }
   upDownPass->downwardPass(bcells);
   log_finalize();
-
+	if(verbose) {
+		localTree->printTreeData(bcells);	
+	}
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     vi[B->IBODY] = B->TRG[0];
   }
