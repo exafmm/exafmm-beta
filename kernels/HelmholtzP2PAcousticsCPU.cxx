@@ -83,9 +83,9 @@ namespace exafmm {
           tmp = mi_r * mj_r - mi_i * mj_i;
           mj_i = mi_r * mj_i + mi_i * mj_r;
           mj_r = tmp;
-          tmp = invR * exp(wave_rvec * R);
-          simdvec coef_r = cos(wave_ivec * R) * tmp;
-          simdvec coef_i = sin(wave_ivec * R) * tmp;
+          tmp = invR / exp(wave_ivec * R);
+          simdvec coef_r = cos(wave_rvec * R) * tmp;
+          simdvec coef_i = sin(wave_rvec * R) * tmp;
           tmp = mj_r * coef_r - mj_i * coef_i;
           coef_i = mj_r * coef_i + mj_i * coef_r;
           coef_r = tmp;
@@ -128,9 +128,9 @@ namespace exafmm {
                   real_t RR = sqrt(norm(dX_near));
                   real_t src2_r = mi_r * mj_r - mi_i * mj_i;
                   real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-                  real_t expikr_r_= std::exp(wave_r * RR) / RR;     
-                  real_t expikr_r = std::cos(wave_i * RR) * expikr_r_;
-                  real_t expikr_i = std::sin(wave_i * RR) * expikr_r_;   
+                  real_t expikr_r_= std::exp(wave_i * RR) * RR;     
+                  real_t expikr_r = std::cos(wave_r * RR) / expikr_r_;
+                  real_t expikr_i = std::sin(wave_r * RR) / expikr_r_;   
                   coef1_r = src2_r * expikr_r - src2_i * expikr_i;
                   coef1_i = src2_r * expikr_i + src2_i * expikr_r;
                   pot_r += coef1_r;
@@ -139,9 +139,9 @@ namespace exafmm {
               } else {
                 real_t src2_r = mi_r * mj_r - mi_i * mj_i;
                 real_t src2_i = mi_r * mj_i + mi_i * mj_r;      
-                real_t expikr_r_= std::exp(wave_r * R) / R;     
-                real_t expikr_r = std::cos(wave_i * R) * expikr_r_;
-                real_t expikr_i = std::sin(wave_i * R) * expikr_r_;   
+                real_t expikr_r_= std::exp(wave_i * R) * R;     
+                real_t expikr_r = std::cos(wave_r * R) / expikr_r_;
+                real_t expikr_i = std::sin(wave_r * R) / expikr_r_;   
                 real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
                 real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
                 pot_r += coef1_r;
@@ -182,9 +182,9 @@ namespace exafmm {
               real_t RR = sqrt(norm(dX_near));
               real_t src2_r = mi_r * mj_r - mi_i * mj_i;
               real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-              real_t expikr_r_= std::exp(wave_r * RR) / RR;     
-              real_t expikr_r = std::cos(wave_i * RR) * expikr_r_;
-              real_t expikr_i = std::sin(wave_i * RR) * expikr_r_;   
+              real_t expikr_r_= std::exp(wave_i * RR) * RR;     
+              real_t expikr_r = std::cos(wave_r * RR) / expikr_r_;
+              real_t expikr_i = std::sin(wave_r * RR) / expikr_r_;   
               coef1_r = src2_r * expikr_r - src2_i * expikr_i;
               coef1_i = src2_r * expikr_i + src2_i * expikr_r;
               pot_r += coef1_r;
@@ -268,9 +268,9 @@ namespace exafmm {
           tmp = mi_r * mj_r - mi_i * mj_i;
           mj_i = mi_r * mj_i + mi_i * mj_r;
           mj_r = tmp;
-          tmp = invR * exp(wave_rvec * R);
-          simdvec coef_r = cos(wave_ivec * R) * tmp;
-          simdvec coef_i = sin(wave_ivec * R) * tmp;
+          tmp = invR / exp(wave_ivec * R);
+          simdvec coef_r = cos(wave_rvec * R) * tmp;
+          simdvec coef_i = sin(wave_rvec * R) * tmp;
           tmp = mj_r * coef_r - mj_i * coef_i;
           coef_i = mj_r * coef_i + mj_i * coef_r;
           coef_r = tmp;
@@ -312,9 +312,9 @@ namespace exafmm {
                 real_t RR = sqrt(norm(dX_near));
                 real_t src2_r = mi_r * mj_r - mi_i * mj_i;
                 real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-                real_t expikr_r_= std::exp(wave_r * RR) / RR;     
-                real_t expikr_r = std::cos(wave_i * RR) * expikr_r_;
-                real_t expikr_i = std::sin(wave_i * RR) * expikr_r_;   
+                real_t expikr_r_= std::exp(wave_i * RR) * RR;     
+                real_t expikr_r = std::cos(wave_r * RR) / expikr_r_;
+                real_t expikr_i = std::sin(wave_r * RR) / expikr_r_;   
                 coef1_r = src2_r * expikr_r - src2_i * expikr_i;
                 coef1_i = src2_r * expikr_i + src2_i * expikr_r;
                 pot_r += coef1_r;
@@ -323,9 +323,9 @@ namespace exafmm {
             } else {
               real_t src2_r = mi_r * mj_r - mi_i * mj_i;
               real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-              real_t expikr_r_= std::exp(wave_r * R) / R;     
-              real_t expikr_r = std::cos(wave_i * R) * expikr_r_;
-              real_t expikr_i = std::sin(wave_i * R) * expikr_r_;   
+              real_t expikr_r_= std::exp(wave_i * R) * R;     
+              real_t expikr_r = std::cos(wave_r * R) / expikr_r_;
+              real_t expikr_i = std::sin(wave_r * R) / expikr_r_;   
               real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
               real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
               pot_r += coef1_r;
@@ -363,9 +363,9 @@ namespace exafmm {
               real_t RR = sqrt(norm(dX_near));
               real_t src2_r = mi_r * mj_r - mi_i * mj_i;
               real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-              real_t expikr_r_= std::exp(wave_r * RR) / RR;     
-              real_t expikr_r = std::cos(wave_i * RR) * expikr_r_;
-              real_t expikr_i = std::sin(wave_i * RR) * expikr_r_;   
+              real_t expikr_r_= std::exp(wave_i * RR) * RR;     
+              real_t expikr_r = std::cos(wave_r * RR) / expikr_r_;
+              real_t expikr_i = std::sin(wave_r * RR) / expikr_r_;   
               coef1_r = src2_r * expikr_r - src2_i * expikr_i;
               coef1_i = src2_r * expikr_i + src2_i * expikr_r;
               pot_r += coef1_r;
