@@ -10,7 +10,7 @@ namespace exafmm {
     int nipp;                                            
     std::vector<std::vector<real_t> > ipolator_near;     
     std::vector<real_t> ws;       
-    real_t nearpd;                       
+    real_t nearpd;
 
     const complex_t I(0.,1.);
     void P2P(C_iter Ci, C_iter Cj, bool mutual) {
@@ -117,12 +117,12 @@ namespace exafmm {
             real_t mj_i = std::imag(Bj[j].SRC * Bj[j].QWEIGHT);
             if (R2 != 0) {
               real_t R = sqrt(R2);
-              if(R < nearpd) {
+              if(R <= nearpd) {
                 real_t coef1_r = 0;
                 real_t coef1_i = 0;
                 for (int ll = 0; ll < nhdgqp; ++ll) {
                   vec3 dX_near = Bi[i].X - Bj[j].GAUSS_NEAR[ll] - Xperiodic;
-                  complex_t mj_near = (real_t)0.5 * Bj[j].SRC * ws[ll] * ipolator_near[Bj[j].POINT_LOC][ll]/(real_t)4.0/(real_t)M_PI;
+                  complex_t mj_near = (real_t)0.5 * ws[ll] * ipolator_near[Bj[j].POINT_LOC][ll]/((real_t)4.0*(real_t)M_PI);
                   mj_r = std::real(mj_near);
                   mj_i = std::imag(mj_near);
                   real_t RR = sqrt(norm(dX_near));
@@ -131,11 +131,13 @@ namespace exafmm {
                   real_t expikr_r_= std::exp(wave_i * RR) * RR;     
                   real_t expikr_r = std::cos(wave_r * RR) / expikr_r_;
                   real_t expikr_i = std::sin(wave_r * RR) / expikr_r_;   
-                  coef1_r = src2_r * expikr_r - src2_i * expikr_i;
-                  coef1_i = src2_r * expikr_i + src2_i * expikr_r;
-                  pot_r += coef1_r;
-                  pot_i += coef1_i;
+                  coef1_r += src2_r * expikr_r - src2_i * expikr_i;
+                  coef1_i += src2_r * expikr_i + src2_i * expikr_r;                
                 }              
+                mj_r = std::real(Bj[j].SRC);
+                mj_i = std::imag(Bj[j].SRC);
+                pot_r += mj_r * coef1_r - mj_i * coef1_i;
+                pot_i += mj_r * coef1_i + mj_i * coef1_r;
               } else {
                 real_t src2_r = mi_r * mj_r - mi_i * mj_i;
                 real_t src2_i = mi_r * mj_i + mi_i * mj_r;      
@@ -176,7 +178,7 @@ namespace exafmm {
             real_t coef1_i = 0;
             for (int ll = 0; ll < nhdgqp; ++ll) {
               vec3 dX_near = Bi[i].X - Bj[j].GAUSS_NEAR[ll] - Xperiodic;
-              complex_t mj_near = (real_t)0.5 * Bj[j].SRC * ws[ll] * ipolator_near[Bj[j].POINT_LOC][ll]/(real_t)4.0/(real_t)M_PI;
+              complex_t mj_near = (real_t)0.5 * Bj[j].SRC * ws[ll] * ipolator_near[Bj[j].POINT_LOC][ll]/((real_t)4.0*(real_t)M_PI);
               real_t mj_r = std::real(mj_near);
               real_t mj_i = std::imag(mj_near);
               real_t RR = sqrt(norm(dX_near));
@@ -306,7 +308,7 @@ namespace exafmm {
               real_t coef1_i = 0;
               for (int ll = 0; ll < nhdgqp; ++ll) {
                 vec3 dX_near = B[i].X - B[j].GAUSS_NEAR[ll] - Xperiodic;
-                complex_t mj_near = (real_t)0.5 * B[j].SRC * ws[ll] * ipolator_near[B[j].POINT_LOC][ll]/(real_t)4.0/(real_t)M_PI;
+                complex_t mj_near = (real_t)0.5 * ws[ll] * ipolator_near[B[j].POINT_LOC][ll]/((real_t)4.0*(real_t)M_PI);
                 mj_r = std::real(mj_near);
                 mj_i = std::imag(mj_near);
                 real_t RR = sqrt(norm(dX_near));
@@ -315,11 +317,15 @@ namespace exafmm {
                 real_t expikr_r_= std::exp(wave_i * RR) * RR;     
                 real_t expikr_r = std::cos(wave_r * RR) / expikr_r_;
                 real_t expikr_i = std::sin(wave_r * RR) / expikr_r_;   
-                coef1_r = src2_r * expikr_r - src2_i * expikr_i;
-                coef1_i = src2_r * expikr_i + src2_i * expikr_r;
-                pot_r += coef1_r;
-                pot_i += coef1_i;
+                coef1_r += src2_r * expikr_r - src2_i * expikr_i;
+                coef1_i += src2_r * expikr_i + src2_i * expikr_r;
+                // pot_r += coef1_r;
+                // pot_i += coef1_i;
               }
+                mj_r = std::real(B[j].SRC);
+                mj_i = std::imag(B[j].SRC);
+                pot_r += mj_r * coef1_r - mj_i * coef1_i;
+                pot_i += mj_r * coef1_i + mj_i * coef1_r;
             } else {
               real_t src2_r = mi_r * mj_r - mi_i * mj_i;
               real_t src2_i = mi_r * mj_i + mi_i * mj_r;
@@ -357,7 +363,7 @@ namespace exafmm {
             real_t coef1_i = 0;
             for (int ll = 0; ll < nhdgqp; ++ll) {
               vec3 dX_near = B[i].X - B[j].GAUSS_NEAR[ll] - Xperiodic;
-              complex_t mj_near = (real_t)0.5 * B[j].SRC * ws[ll] * ipolator_near[B[j].POINT_LOC][ll]/(real_t)4.0/(real_t)M_PI;
+              complex_t mj_near = (real_t)0.5 * B[j].SRC * ws[ll] * ipolator_near[B[j].POINT_LOC][ll]/((real_t)4.0*(real_t)M_PI);
               real_t mj_r = std::real(mj_near);
               real_t mj_i = std::imag(mj_near);
               real_t RR = sqrt(norm(dX_near));

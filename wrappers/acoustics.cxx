@@ -180,46 +180,6 @@ extern "C" void FMM_BuildTree() {
 extern "C" void FMM_B2B(std::complex<double>* vi, std::complex<double>* vb, std::complex<double>* wb, bool verbose) { 
   args->verbose = verbose;
   log_initialize();
-  FMM_BuildTree();
- //  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
- //    B->SRC    = vb[B->IBODY] *  wb[B->IBODY];   
- //    B->QWEIGHT = 1;  
- //    B->TRG    = 0;
- //    B->ICELL = 0;    
- //  }
- //  upDownPass->upwardPass(bcells);
- //  treeMPI->setLET(bcells, cycles);
- //  Cells jcells = bcells;
- //  treeMPI->commBodies();
- //  treeMPI->commCells();
- //  traversal->initListCount(bcells);
- //  traversal->initWeight(bcells);
- //  traversal->traverse(bcells, jcells, cycles, args->dual, args->mutual);
- //  if (baseMPI->mpisize > 1) {
- //    if (args->graft) {
- //      treeMPI->linkLET();
- //      Bodies gbodies = treeMPI->root2body();
- //      jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
- //      treeMPI->attachRoot(jcells);
- //      traversal->traverse(bcells, jcells, cycles, args->dual, false);
- //    } else {
- //      for (int irank=0; irank<baseMPI->mpisize; irank++) {
-	// treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-	// traversal->traverse(bcells, jcells, cycles, args->dual, false);
- //      }
- //    }
- //  }
- //  upDownPass->downwardPass(bcells);
- //  log_finalize();
-	// if(verbose) {
-	// 	localTree->printTreeData(bcells);	
- //    traversal->printTraversalData();
-	// }
- //  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
- //    vi[B->IBODY] = B->TRG[0];
- //  }
-  //args->verbose = verbose;
-  //log_initialize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     B->SRC    = 1;   
     B->QWEIGHT = 1;  
@@ -262,14 +222,10 @@ extern "C" void FMM_B2B(std::complex<double>* vi, std::complex<double>* vb, std:
   }
   log_finalize();
 
-  size_t s = bbodies.size();
-  for (int i = 0; i < s; ++i) vi[i] = 0;  
+  //size_t s = bbodies.size();
+  //for (int i = 0; i < s; ++i) vi[i] = 0;  
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-// #if EXAFMM_HELMHOLTZ
-//     vb[B->IBODY] += std::real(B->TRG[0]);
-// #else
     vi[B->IBODY] += B->TRG[0];
-//#endif
   }
 }
 
