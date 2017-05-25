@@ -6,8 +6,7 @@ namespace exafmm {
     real_t eps2;
     complex_t wavek;
     vec3 Xperiodic;
-
-    const complex_t I(0.,1.);
+ const complex_t I(0.,1.);
     void P2P(C_iter Ci, C_iter Cj, bool mutual) {
       real_t wave_r = std::real(wavek);
       real_t wave_i = std::imag(wavek);

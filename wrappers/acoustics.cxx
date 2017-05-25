@@ -180,6 +180,7 @@ extern "C" void FMM_BuildTree() {
 extern "C" void FMM_B2B(std::complex<double>* vi, std::complex<double>* vb, std::complex<double>* wb, bool verbose) { 
   args->verbose = verbose;
   log_initialize();
+  FMM_BuildTree();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     B->SRC    = 1;   
     B->QWEIGHT = 1;  
@@ -225,7 +226,7 @@ extern "C" void FMM_B2B(std::complex<double>* vi, std::complex<double>* vb, std:
   //size_t s = bbodies.size();
   //for (int i = 0; i < s; ++i) vi[i] = 0;  
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    vi[B->IBODY] += B->TRG[0];
+    vi[B->IBODY] = B->TRG[0];
   }
 }
 
