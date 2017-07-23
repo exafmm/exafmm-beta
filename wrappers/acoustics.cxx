@@ -84,6 +84,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
   num_threads(threads);
   args->ncrit = ncrit;
+  args->threads = threads;
   args->distribution = "external";
   args->dual = 1;
   args->graft = 1;
@@ -195,12 +196,21 @@ extern "C" void FMM_B2B(std::complex<double>* vi, std::complex<double>* vb, std:
   }
   upDownPass->upwardPass(bcells);
   upDownPass->upwardPass(vcells);
+#pragma omp parallel sections
+{
+#pragma omp section
+{
   treeMPI->setLET(vcells, cycles);
   treeMPI->commBodies();
   treeMPI->commCells();
+}
+#pragma omp section
+{ 
   traversal->initListCount(bcells);
   traversal->initWeight(bcells);
   traversal->traverse(bcells, vcells, cycles, args->dual, args->mutual);
+}
+}
   if (baseMPI->mpisize > 1) {
     if (args->graft) {
       treeMPI->linkLET();
