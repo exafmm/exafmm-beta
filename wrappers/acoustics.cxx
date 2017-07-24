@@ -33,6 +33,7 @@ void log_initialize() {
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
+  logger::resetTimer();
   logger::startTimer("Total FMM");
   logger::startPAPI();
 }
