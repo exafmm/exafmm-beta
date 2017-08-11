@@ -17,6 +17,7 @@ Bodies bbodies;
 Bodies vbodies;
 Cells bcells;
 Cells vcells;
+int ntriangles;
 Args * args;
 BaseMPI * baseMPI;
 BoundBox * boundBox;
@@ -47,7 +48,9 @@ void log_finalize() {
 
 extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads,
 			                   int nb, double * xb, double * yb, double * zb, int* patchids, 
-                         std::vector<std::vector<double> > nearGaussPoints, int nhdgqp, int nipp, double nearpd, std::vector<double> ws, std::vector<std::vector<double> > ipolator_near) {
+                         std::vector<std::vector<double> > nearGaussPoints, int nhdgqp, int ntriangles_,
+                         int nipp_, double nearpd, std::vector<double> ws, 
+                         std::vector<std::vector<double> > ipolator_near) {
   const int nspawn = 1000;
   const int images = 0;
   const double theta = 0.4;
@@ -57,7 +60,8 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   kernel::eps2 = eps2;
   kernel::wavek = complex_t(kreal, kimag);
   kernel::nhdgqp = nhdgqp;
-  kernel::nipp = nipp;
+  kernel::nipp = nipp_;
+  ntriangles = ntriangles_;
   kernel::nearpd = nearpd;
   nearGauss = nearGaussPoints;
 
@@ -98,6 +102,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   args->verbose = verbose & (baseMPI->mpirank == 0);
   args->useRmax = useRmax;
   logger::verbose = args->verbose;
+  if(baseMPI->mpirank != 0) return;
   bbodies.resize(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
@@ -107,7 +112,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
     B->X[1] = yb[i];
     B->X[2] = zb[i];
     B->PATCH = patch;
-    B->POINT_LOC = i%nipp;
+    B->POINT_LOC = i%kernel::nipp;
     for (int j = 0; j < nhdgqp; ++j) { 
       B->GAUSS_NEAR[j][0] = nearGaussPoints[patch*nhdgqp+j][0];
       B->GAUSS_NEAR[j][1] = nearGaussPoints[patch*nhdgqp+j][1];
@@ -123,7 +128,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
     B->X[1] = yb[i];
     B->X[2] = zb[i];
     B->PATCH = patch;
-    B->POINT_LOC = i%nipp;
+    B->POINT_LOC = i%kernel::nipp;
     for (int j = 0; j < nhdgqp; ++j) { 
       B->GAUSS_NEAR[j][0] = nearGaussPoints[patch*nhdgqp+j][0];
       B->GAUSS_NEAR[j][1] = nearGaussPoints[patch*nhdgqp+j][1];
@@ -145,21 +150,71 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb) {
+//extern "C" void FMM_Partition(int& nb, double * xb, double * yb, double * zb) { 
+extern "C" void FMM_Partition(int& nb, std::vector<double>&xb, std::vector<double>&yb, std::vector<double>&zb, std::vector<int>& patch, std::vector<short>& loc) {
  logger::printTitle("Partition Profiling");
-  Bounds localBounds = boundBox->getBounds(bbodies);
-  localBounds = boundBox->getBounds(vbodies, localBounds);
+ Bounds localBounds;
+  if(baseMPI->mpirank == 0) {
+    localBounds = boundBox->getBounds(bbodies);
+    localBounds = boundBox->getBounds(vbodies, localBounds);
+  } else {
+    localBounds.Xmin = 0;
+    localBounds.Xmax = 0;
+  }
   globalBounds = baseMPI->allreduceBounds(localBounds);
   cycles = globalBounds.Xmax - globalBounds.Xmin;
-  partition->bisection(bbodies, globalBounds);
+  if(baseMPI->mpisize == 1)  { 
+    for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) { 
+      int i = B-bbodies.begin();
+      B->IBODY = i;
+    }
+    for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+      int i = B-vbodies.begin();
+      B->IBODY = i;
+    }
+    nb = bbodies.size();
+    return;
+  }
+  int nPatches = bbodies.size()/kernel::nipp;
+  Bodies partitionBodies(nPatches);
+  for (B_iter B=bbodies.begin(), BP=partitionBodies.begin(); B!=bbodies.end(); B+=kernel::nipp, BP++) {
+     BP->X[0] = B->X[0];
+     BP->X[1] = B->X[1];
+     BP->X[2] = B->X[2];
+     BP->PATCH = B->PATCH;
+     BP->WEIGHT = 1;
+
+  }
+  partition->bisection(partitionBodies, globalBounds);
+  Bodies tempBodies(bbodies);
+  int currPatch = 0;
+  B_iter bbodiesBegin = bbodies.begin();
+  B_iter vbodiesBegin = vbodies.begin();
+
+  for (B_iter B=partitionBodies.begin(); B!=partitionBodies.end(); B++) { 
+    B_iter TB = tempBodies.begin() + kernel::nipp * B->PATCH;
+    B_iter BB = bbodiesBegin+currPatch*kernel::nipp;
+    B_iter VB = vbodiesBegin+currPatch*kernel::nipp;
+    for (int i = 0; i < kernel::nipp; ++i) {
+      (TB+i)->IRANK = B->IRANK;
+      *(BB+i) = *(TB+i);
+      *(VB+i) = *(TB+i);
+    }    
+    currPatch++;
+  }
   bbodies = treeMPI->commBodies(bbodies);
-  partition->bisection(vbodies, globalBounds);
   vbodies = treeMPI->commBodies(vbodies);
   treeMPI->allgatherBounds(localBounds);
-
   nb = bbodies.size();
+  patch.resize(nb);
+  loc.resize(nb);
+  xb.resize(nb);
+  yb.resize(nb);
+  zb.resize(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
+    patch[i] = B->PATCH;
+    loc[i] = B->POINT_LOC;
     xb[i] = B->X[0];
     yb[i] = B->X[1];
     zb[i] = B->X[2];
