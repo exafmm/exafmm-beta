@@ -92,7 +92,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   args->threads = threads;
   args->distribution = "external";
   args->dual = 1;
-  args->graft = 1;
+  args->graft = 0;
   args->images = images;
   args->mutual = 0;
   args->numBodies = 0;
