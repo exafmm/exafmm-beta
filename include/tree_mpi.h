@@ -1379,6 +1379,7 @@ public:
           C->R = std::max(Xmax[d] - C->X[d], C->R);           //    Calculate max distance from center
         }                                                     //   End loop over dimensions
         C->M = 0;                                             //   Reset multipoles
+        C->SCALE = 2 * C->R;                                  //   Update scale
         kernel::M2M(C, C0);                                   //   M2M kernel
       }                                                       //  End if for non-leaf global cell
     }                                                         // End loop over global cells bottom up

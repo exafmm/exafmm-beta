@@ -491,7 +491,7 @@ namespace exafmm {
       real_t coef2 = P * 0.25 + 3.0;
       int Popt = coef1 / (rr * rr) + coef2;
       assert(0 < Popt);
-      assert(Popt <= 2*P);
+      //assert(Popt <= 2*P);
       if(Popt > P) Popt = P;
       ephi[P+1] = exp(I * phi);
       ephi[P] = 1;
