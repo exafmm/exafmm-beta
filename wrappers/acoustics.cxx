@@ -106,6 +106,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   int temp = nb;
   nb = nb/baseMPI->mpisize;
   nb = round((double)nb/kernel::nipp)*kernel::nipp; 
+  int nb_avg = nb;
   if(baseMPI->mpirank == baseMPI->mpisize-1) {
     nb = temp - nb * (baseMPI->mpisize-1);
   }
@@ -113,7 +114,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   bbodies.resize(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
-    int point_index = i + irank*nb;
+    int point_index = i + irank*nb_avg;
     int patch = patchids[point_index];
     patches.push_back(patch);
     B->X[0] = xb[point_index];
@@ -131,7 +132,7 @@ extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int
   vbodies.resize(nb);
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
     int i = B-vbodies.begin();
-    int point_index = i + irank*nb;
+    int point_index = i + irank*nb_avg;
     int patch = patchids[point_index];
     B->X[0] = xb[point_index];
     B->X[1] = yb[point_index];
