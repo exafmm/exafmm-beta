@@ -1,5 +1,12 @@
-# exafmm-alpha
-
-Mar. 3, 2017 -- This repository has been renamed from `exafmm` to `exafmm-alpha`.
-If you have previously cloned this repo, and have encountered a conflict with `git pull`, you'll have to modify your remote URL.
-Use `git remote set-URL origin <new URL.`.
+#### exafmm-alpha/old + vortex_method > exafmm-alpha
+History: 2010/12/22 - 2012/07/21  
+Branch: none  
+Kernel: Laplace, Van der Waals, Biot Savart, Stretching, Gaussian  
+Periodic: yes  
+SIMD: none  
+Thread: QUARK  
+MPI: ORB (global nth_element)  
+GPU: offload all kernels  
+Build: Makefile  
+Wrapper: MR3 compatible MD  
+Plotting: VTK  
