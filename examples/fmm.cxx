@@ -4,35 +4,29 @@
 #include "dataset.h"
 #include "kernel.h"
 #include "logger.h"
+#include "namespace.h"
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
-using namespace exafmm;
-vec3 KernelBase::Xperiodic = 0;
-real_t KernelBase::eps2 = 0.0;
-complex_t KernelBase::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+using namespace EXAFMM_NAMESPACE;
 
-template<typename Kernel>
-void fmm(Args args) {
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
+int main(int argc, char ** argv) {
   const vec3 cycle = 2 * M_PI;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<Kernel> boundBox(args.nspawn);
+  BoundBox boundBox;
   Bounds bounds;
-  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
+  BuildTree buildTree(args.ncrit);
   Cells cells, jcells;
-  Dataset<Kernel> data;
-  Kernel kernel;
-  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<Kernel> verify(args.path);
+  Dataset data;
+  Kernel kernel(args.P, eps2, wavek);
+  Traversal traversal(kernel, args.theta, args.nspawn, args.images, args.path);
+  UpDownPass upDownPass(kernel);
+  Verify verify(args.path);
   num_threads(args.threads);
 
-  Kernel::init();
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
   logger::path = args.path;
@@ -49,11 +43,6 @@ void fmm(Args args) {
     for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
       B->X[0] -= M_PI;
       B->X[0] *= 0.5;
-    }
-  }
-  if (args.mass) {
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      B->SRC = 1. / bodies.size();
     }
   }
   bool pass = true;
@@ -80,12 +69,12 @@ void fmm(Args args) {
       if (args.IneJ) {
         jcells = buildTree.buildTree(jbodies, buffer, bounds);
         upDownPass.upwardPass(jcells);
-        traversal.traverse(cells, jcells, cycle, args.dual, false);
+        traversal.traverse(cells, jcells, cycle, args.dual);
       } else {
-        traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+        traversal.traverse(cells, cells, cycle, args.dual);
         jbodies = bodies;
       }
-      upDownPass.downwardPass(cells, args.mass);
+      upDownPass.downwardPass(cells);
     }
     logger::printTitle("Total runtime");
     logger::stopDAG();
@@ -106,7 +95,6 @@ void fmm(Args args) {
       data.initTarget(bodies);
       logger::startTimer("Total Direct");
       traversal.direct(bodies, jbodies, cycle);
-      traversal.normalize(bodies);
       logger::stopTimer("Total Direct");
       double potDif = verify.getDifScalar(bodies, bodies2);
       double potNrm = verify.getNrmScalar(bodies);
@@ -148,100 +136,5 @@ void fmm(Args args) {
     traversal.writeMatrix(bodies, jbodies);
   }
   logger::writeDAG();
-  Kernel::finalize();
-}
-
-
-template<int P>
-struct CallFMM {
-  static inline void LaplaceCartesianCPU_P1(Args args) {
-    if(args.P == P) fmm<LaplaceCartesianCPU<P,1> >(args);
-    CallFMM<P-1>::LaplaceCartesianCPU_P1(args);
-  }
-  static inline void LaplaceCartesianCPU_P0(Args args) {
-    if(args.P == P) fmm<LaplaceCartesianCPU<P,0> >(args);
-    CallFMM<P-1>::LaplaceCartesianCPU_P0(args);
-  }
-  static inline void LaplaceSphericalCPU_P(Args args) {
-    if(args.P == P) fmm<LaplaceSphericalCPU<P> >(args);
-    CallFMM<P-1>::LaplaceSphericalCPU_P(args);
-  }
-  static inline void HelmholtzSphericalCPU_P(Args args) {
-    if(args.P == P) fmm<HelmholtzSphericalCPU<P> >(args);
-    CallFMM<P-1>::HelmholtzSphericalCPU_P(args);
-  }
-  static inline void BiotSavartSphericalCPU_P(Args args) {
-    if(args.P == P) fmm<BiotSavartSphericalCPU<P> >(args);
-    CallFMM<P-1>::BiotSavartSphericalCPU_P(args);
-  }
-};
-
-template<>
-struct CallFMM<Pmin-1> {
-  static inline void LaplaceCartesianCPU_P1(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-  static inline void LaplaceCartesianCPU_P0(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-  static inline void LaplaceSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-  static inline void HelmholtzSphericalCPU_P(Args args) {
-    if(args.P < Pmin || 2*Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= 2*Pmax\n");
-      abort();
-    }
-  }
-  static inline void BiotSavartSphericalCPU_P(Args args) {
-    if(args.P < Pmin || Pmax < args.P) {
-      fprintf(stderr,"Pmin <= P <= Pmax\n");
-      abort();
-    }
-  }
-};
-
-int main(int argc, char ** argv) {
-  Args args(argc, argv);                                        // Argument parser class
-#if EXAFMM_DEBUG
-  fmm<LaplaceSphericalCPU<2*Pmax> >(args);
-#else
-  switch (args.equation[0]) {                                   // Case switch for equation
-  case 'L':                                                     // Laplace equation
-    switch (args.basis[0]) {                                    //  Case switch for basis
-    case 'C':                                                   //  Cartesian basis
-      if (args.mass)                                            //   If all charges are positive
-        CallFMM<Pmax>::LaplaceCartesianCPU_P1(args);            //    Call Laplace Cartesian kernel for mass
-      else                                                      //   Elseif charges are both positive and negative
-        CallFMM<Pmax>::LaplaceCartesianCPU_P0(args);            //    Call Laplace Cartesian kernel for charge
-      break;                                                    //  Break Cartesian basis
-    case 'S':                                                   //  Spherical basis
-      CallFMM<Pmax>::LaplaceSphericalCPU_P(args);               //   Call Laplace Spherical kernel
-      break;                                                    //  Break Spherical basis
-    default:                                                    //  No matching case
-      fprintf(stderr,"No matching basis\n");                    //   Print error message
-      abort();                                                  //   Abort execution
-    }                                                           //  End case switch for basis
-    break;                                                      // Break Laplace equation
-  case 'H':                                                     // Helmholtz equation
-    CallFMM<2*Pmax>::HelmholtzSphericalCPU_P(args);             //  Call Helmholtz Spherical kernel
-    break;                                                      // Break Helmholtz equation
-  case 'B':                                                     // Biot-Savart equation
-    CallFMM<Pmax>::BiotSavartSphericalCPU_P(args);              //  Call Biot-Savart Spherical kernel
-    break;                                                      // Break Biot-Savart equation
-  default:                                                      // No matching case
-    fprintf(stderr,"No matching equation\n");                   //  Print error message
-    abort();                                                    //  Abort execution
-  }                                                             // End case switch for equation
-#endif
   return 0;
 }

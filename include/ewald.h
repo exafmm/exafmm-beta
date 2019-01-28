@@ -3,14 +3,8 @@
 #include "logger.h"
 #include "types.h"
 
-namespace exafmm {
-  template<typename Kernel>
+namespace exafmm_laplace {
   class Ewald {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
-
     //! Wave structure for Ewald summation
     struct Wave {
       vec3   K;                                                 //!< 3-D wave number vector

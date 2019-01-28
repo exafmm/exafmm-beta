@@ -2,13 +2,13 @@
 #include <assert.h>
 #include <cmath>
 #include <iostream>
+#include "namespace.h"
 #include "vec.h"
 
-using namespace exafmm;
+using namespace EXAFMM_NAMESPACE;
 
 template<int S, typename T>
 struct SIMD {
-  static const T EPS = 1e-5;
   static inline vec<S,T> sequence() {
     vec<S,T> v(0);
     return v;
@@ -21,7 +21,6 @@ struct SIMD {
 #if defined __AVX512F__ || defined __MIC__
 template<>
 struct SIMD<16,float> {
-  static const float EPS = 1e-5;
   static inline vec<16,float> sequence() {
     vec<16,float> v(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
     return v;
@@ -33,7 +32,6 @@ struct SIMD<16,float> {
 
 template<>
 struct SIMD<8,double> {
-  static const double EPS = 1e-13;
   static inline vec<8,double> sequence() {
     vec<8,double> v(0,1,2,3,4,5,6,7);
     return v;
@@ -47,7 +45,6 @@ struct SIMD<8,double> {
 #ifdef __AVX__
 template<>
 struct SIMD<8,float> {
-  static const float EPS = 1e-5;
   static inline vec<8,float> sequence() {
     vec<8,float> v(0,1,2,3,4,5,6,7);
     return v;
@@ -59,7 +56,6 @@ struct SIMD<8,float> {
 
 template<>
 struct SIMD<4,double> {
-  static const double EPS = 1e-13;
   static inline vec<4,double> sequence() {
     vec<4,double> v(0,1,2,3);
     return v;
@@ -73,7 +69,6 @@ struct SIMD<4,double> {
 #ifdef __SSE__
 template<>
 struct SIMD<4,float> {
-  static const float EPS = 1e-5;
   static inline vec<4,float> sequence() {
     vec<4,float> v(0,1,2,3);
     return v;
@@ -85,7 +80,6 @@ struct SIMD<4,float> {
 
 template<>
 struct SIMD<2,double> {
-  static const double EPS = 1e-13;
   static inline vec<2,double> sequence() {
     vec<2,double> v(0,1);
     return v;
@@ -98,7 +92,8 @@ struct SIMD<2,double> {
 
 template<int S, typename T>
 void test() {
-  T EPS = SIMD<S,T>::EPS;
+  T EPS = 1e-13;
+  if (sizeof(T) == 4) EPS = 1e-5;
   vec<S,T> a(1);
   vec<S,T> b(a+1);
   vec<S,T> c = SIMD<S,T>::sequence();

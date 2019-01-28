@@ -5,12 +5,13 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include "namespace.h"
 #include <sstream>
 #include "types.h"
 
-namespace exafmm {
-  class DatasetBase {                                           // Base class for datasets
-  protected:
+namespace EXAFMM_NAMESPACE {
+  class Dataset {                                               // Class for datasets
+  private:
     long filePosition;                                          //!< Position of file stream
 
     //! Split range and return partial range
@@ -23,248 +24,6 @@ namespace exafmm {
       end = begin + increment;                                  // Increment the end counter
       if (remainder > iSplit) end++;                            // Adjust the end counter for remainder
     }
-  public:
-    DatasetBase() : filePosition(0) {}                          // Constructor
-  };
-
-  template<Equation equation=Laplace>
-  class DatasetEquation : public DatasetBase {                  // Equation dependent parts
-  public:
-    typedef std::vector<Body<equation> > Bodies;                //!< Vector of bodies
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-    using DatasetBase::filePosition;                            //!< Position of file stream
-    using DatasetBase::splitRange;                              //!< Split range and return partial range
-
-    //! Initialize source values
-    void initSource(Bodies & bodies, int seed, int numSplit) {
-      for (int i=0; i<numSplit; i++, seed++) {                  // Loop over partitions (if there are any)
-	int begin = 0;                                          //  Begin index of bodies
-	int end = bodies.size();                                //  End index of bodies
-	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
-	srand48(seed);                                          //  Set seed for random number generator
-	real_t average = 0;                                     //  Initialize average charge
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  B->SRC = drand48() - .5;                              //   Initialize charge
-	  average += B->SRC;                                    //   Accumulate average
-	}                                                       //  End loop over bodies
-	average /= (end - begin);                               //  Normalize average
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  B->SRC -= average;                                    //   Subtract average charge
-	}                                                       //  End loop over bodies
-      }                                                         // End loop over partitions
-    }
-
-    //! Get bodies with positive charges
-    Bodies getPositive(Bodies & bodies) {
-      Bodies buffer = bodies;                                   // Copy bodies to buffer
-      B_iter B2 = buffer.begin();                               // Initialize iterator of buffer
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	if (B->SRC >= 0) {                                      //  If source is positive
-	  *B2 = *B;                                             //   Copy data to buffer
-	  B2++;                                                 //   Increment iterator
-	}                                                       //  End if for positive source
-      }                                                         // End loop over bodies
-      buffer.resize(B2-buffer.begin());                         // Resize buffer
-      return buffer;                                            // Return buffer
-    }
-
-    //! Get bodies with negative charges
-    Bodies getNegative(Bodies & bodies) {
-      Bodies buffer = bodies;                                   // Copy bodies to buffer
-      B_iter B2 = buffer.begin();                               // Initialize iterator of buffer
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	if (B->SRC < 0) {                                       //  If source is negative
-	  *B2 = *B;                                             //   Copy data to buffer
-	  B2++;                                                 //   Increment iterator
-	}                                                       //  End if for negative source
-      }                                                         // End loop over bodies
-      buffer.resize(B2-buffer.begin());                         // Resize buffer
-      return buffer;                                            // Return buffer
-    }
-
-    //! Read source values from file
-    void readSources(Bodies & bodies, int mpirank) {
-      std::stringstream name;                                   // File name
-      name << "source" << std::setfill('0') << std::setw(4)     // Set format
-	   << mpirank << ".dat";                                // Create file name
-      std::ifstream file(name.str().c_str(),std::ios::in);      // Open file
-      file.seekg(filePosition);                                 // Set position in file
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	file >> B->X[0];                                        //  Read data for x coordinates
-	file >> B->X[1];                                        //  Read data for y coordinates
-	file >> B->X[2];                                        //  Read data for z coordinates
-	file >> B->SRC;                                         //  Read data for charge
-      }                                                         // End loop over bodies
-      filePosition = file.tellg();                              // Get position in file
-      file.close();                                             // Close file
-    }
-
-    //! Write source values to file
-    void writeSources(Bodies & bodies, int mpirank) {
-      std::stringstream name;                                   // File name
-      name << "source" << std::setfill('0') << std::setw(4)     // Set format
-	   << mpirank << ".dat";                                // Create file name
-      std::ofstream file(name.str().c_str(),std::ios::out);     // Open file
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	file << B->X[0] << std::endl;                           //  Write data for x coordinates
-	file << B->X[1] << std::endl;                           //  Write data for y coordinates
-	file << B->X[2] << std::endl;                           //  Write data for z coordinates
-	file << B->SRC << std::endl;                            //  Write data for charge
-      }                                                         // End loop over bodies
-      file.close();                                             // Close file
-    }
-
-  };
-
-  template<>
-  class DatasetEquation<Helmholtz> : public DatasetBase {       // Equation dependent parts
-  public:
-    typedef std::vector<Body<Helmholtz> > Bodies;               //!< Vector of bodies
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-    using DatasetBase::filePosition;                            //!< Position of file stream
-    using DatasetBase::splitRange;                              //!< Split range and return partial range
-
-    //! Initialize source values
-    void initSource(Bodies & bodies, int seed, int numSplit) {
-      for (int i=0; i<numSplit; i++, seed++) {                  // Loop over partitions (if there are any)
-	int begin = 0;                                          //  Begin index of bodies
-	int end = bodies.size();                                //  End index of bodies
-	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
-	srand48(seed);                                          //  Set seed for random number generator
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  B->SRC = B->X[0] + I * B->X[1];                       //   Initialize source
-	}                                                       //  End loop over bodies
-      }                                                         // End loop over partitions
-    }
-
-    //! Get bodies with positive charges
-    Bodies getPositive(Bodies & bodies) {
-      Bodies buffer = bodies;                                   // Copy bodies to buffer
-      return buffer;                                            // Return buffer
-    }
-
-    //! Get bodies with negative charges
-    Bodies getNegative(Bodies & bodies) {
-      Bodies buffer = bodies;                                   // Copy bodies to buffer
-      return buffer;                                            // Return buffer
-    }
-    //! Read source values from file
-    void readSources(Bodies & bodies, int mpirank) {
-      std::stringstream name;                                   // File name
-      name << "source" << std::setfill('0') << std::setw(4)     // Set format
-	   << mpirank << ".dat";                                // Create file name
-      std::ifstream file(name.str().c_str(),std::ios::in);      // Open file
-      file.seekg(filePosition);                                 // Set position in file
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	file >> B->X[0];                                        //  Read data for x coordinates
-	file >> B->X[1];                                        //  Read data for y coordinates
-	file >> B->X[2];                                        //  Read data for z coordinates
-	file >> B->SRC;                                         //  Read data for charge
-      }                                                         // End loop over bodies
-      filePosition = file.tellg();                              // Get position in file
-      file.close();                                             // Close file
-    }
-
-    //! Write source values to file
-    void writeSources(Bodies & bodies, int mpirank) {
-      std::stringstream name;                                   // File name
-      name << "source" << std::setfill('0') << std::setw(4)     // Set format
-	   << mpirank << ".dat";                                // Create file name
-      std::ofstream file(name.str().c_str(),std::ios::out);     // Open file
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	file << B->X[0] << std::endl;                           //  Write data for x coordinates
-	file << B->X[1] << std::endl;                           //  Write data for y coordinates
-	file << B->X[2] << std::endl;                           //  Write data for z coordinates
-	file << B->SRC << std::endl;                            //  Write data for charge
-      }                                                         // End loop over bodies
-      file.close();                                             // Close file
-    }
-  };
-
-  template<>
-  class DatasetEquation<BiotSavart> : public DatasetBase {      // Equation dependent parts
-  public:
-    typedef std::vector<Body<BiotSavart> > Bodies;              //!< Vector of bodies
-    typedef typename Bodies::iterator B_iter;                   //!< Iterator of body vector
-    using DatasetBase::filePosition;                            //!< Position of file stream
-    using DatasetBase::splitRange;                              //!< Split range and return partial range
-
-    //! Initialize source values
-    void initSource(Bodies & bodies, int seed, int numSplit) {
-      for (int i=0; i<numSplit; i++, seed++) {                  // Loop over partitions (if there are any)
-	int begin = 0;                                          //  Begin index of bodies
-	int end = bodies.size();                                //  End index of bodies
-	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
-	srand48(seed);                                          //  Set seed for random number generator
-        for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  for (int d=0; d<3; d++) {                             //   Loop over dimensions
-	    B->SRC[d] = drand48() / bodies.size();              //    Initialize source
-	  }                                                     //   End loop over dimensions
-	  B->SRC[3] = powf(bodies.size() * numSplit, -1./3) * 2 * M_PI * 0.01; // Initialize core radius
-        }                                                       //  End loop over bodies
-      }                                                         // End loop over partitions
-    }
-
-    //! Get bodies with positive charges
-    Bodies getPositive(Bodies & bodies) {
-      Bodies buffer = bodies;                                   // Copy bodies to buffer
-      return buffer;                                            // Return buffer
-    }
-
-    //! Get bodies with negative charges
-    Bodies getNegative(Bodies & bodies) {
-      Bodies buffer = bodies;                                   // Copy bodies to buffer
-      return buffer;                                            // Return buffer
-    }
-
-    //! Read source values from file
-    void readSources(Bodies & bodies, int mpirank) {
-      std::stringstream name;                                   // File name
-      name << "source" << std::setfill('0') << std::setw(4)     // Set format
-	   << mpirank << ".dat";                                // Create file name
-      std::ifstream file(name.str().c_str(),std::ios::in);      // Open file
-      file.seekg(filePosition);                                 // Set position in file
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	file >> B->X[0];                                        //  Read data for x coordinates
-	file >> B->X[1];                                        //  Read data for y coordinates
-	file >> B->X[2];                                        //  Read data for z coordinates
-	file >> B->SRC[0];                                      //  Read data for x source
-	file >> B->SRC[1];                                      //  Read data for y source
-	file >> B->SRC[2];                                      //  Read data for z source
-	file >> B->SRC[3];                                      //  Read data for core radius
-      }                                                         // End loop over bodies
-      filePosition = file.tellg();                              // Get position in file
-      file.close();                                             // Close file
-    }
-
-    //! Write source values to file
-    void writeSources(Bodies & bodies, int mpirank) {
-      std::stringstream name;                                   // File name
-      name << "source" << std::setfill('0') << std::setw(4)     // Set format
-	   << mpirank << ".dat";                                // Create file name
-      std::ofstream file(name.str().c_str(),std::ios::out);     // Open file
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	file << B->X[0] << std::endl;                           //  Write data for x coordinates
-	file << B->X[1] << std::endl;                           //  Write data for y coordinates
-	file << B->X[2] << std::endl;                           //  Write data for z coordinates
-	file << B->SRC[0] << std::endl;                         //  Write data for x source
-	file << B->SRC[1] << std::endl;                         //  Write data for y source
-	file << B->SRC[2] << std::endl;                         //  Write data for z source
-	file << B->SRC[3] << std::endl;                         //  Write data for core radius
-      }                                                         // End loop over bodies
-      file.close();                                             // Close file
-    }
-  };
-
-  template<typename Kernel>
-  class Dataset : public DatasetEquation<Kernel::equation> {    // Creates all the different datasets
-    using typename DatasetEquation<Kernel::equation>::Bodies;   //!< Vector of bodies
-    using typename DatasetEquation<Kernel::equation>::B_iter;   //!< Iterator of body vector
-    using DatasetEquation<Kernel::equation>::initSource;        //!< Initialize source values 
-    using DatasetEquation<Kernel::equation>::splitRange;        //!< Split range and return partial range
-
-  private:
-    using DatasetEquation<Kernel::equation>::filePosition;      //!< Position of file stream
 
     //! Uniform distribution on [-1,1]^3 lattice
     Bodies lattice(int numBodies, int mpirank, int mpisize) {
@@ -377,6 +136,86 @@ namespace exafmm {
     }
 
   public:
+    Dataset() : filePosition(0) {}                              // Constructor
+
+    //! Initialize source values
+    void initSource(Bodies & bodies, int seed, int numSplit) {
+      for (int i=0; i<numSplit; i++, seed++) {                  // Loop over partitions (if there are any)
+	int begin = 0;                                          //  Begin index of bodies
+	int end = bodies.size();                                //  End index of bodies
+	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
+	srand48(seed);                                          //  Set seed for random number generator
+#if EXAFMM_LAPLACE
+	real_t average = 0;                                     //  Initialize average charge
+	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	  B->SRC = drand48() - .5;                              //   Initialize charge
+	  average += B->SRC;                                    //   Accumulate average
+	}                                                       //  End loop over bodies
+	average /= (end - begin);                               //  Normalize average
+	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	  B->SRC -= average;                                    //   Subtract average charge
+	}                                                       //  End loop over bodies
+#elif EXAFMM_HELMHOLTZ
+	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	  B->SRC = B->X[0] + I * B->X[1];                       //   Initialize source
+	}                                                       //  End loop over bodies
+#elif EXAFMM_BIOTSAVART
+        for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	  for (int d=0; d<3; d++) {                             //   Loop over dimensions
+	    B->SRC[d] = drand48() / bodies.size();              //    Initialize source
+	  }                                                     //   End loop over dimensions
+	  B->SRC[3] = powf(bodies.size() * numSplit, -1./3) * 2 * M_PI * 0.01; // Initialize core radius
+        }                                                       //  End loop over bodies
+#endif
+      }                                                         // End loop over partitions
+    }
+
+    //! Read source values from file
+    void readSources(Bodies & bodies, int mpirank) {
+      std::stringstream name;                                   // File name
+      name << "source" << std::setfill('0') << std::setw(4)     // Set format
+	   << mpirank << ".dat";                                // Create file name
+      std::ifstream file(name.str().c_str(),std::ios::in);      // Open file
+      file.seekg(filePosition);                                 // Set position in file
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
+	file >> B->X[0];                                        //  Read data for x coordinates
+	file >> B->X[1];                                        //  Read data for y coordinates
+	file >> B->X[2];                                        //  Read data for z coordinates
+#if EXAFMM_BIOTSAVART
+	file >> B->SRC[0];                                      //  Read data for x source
+	file >> B->SRC[1];                                      //  Read data for y source
+	file >> B->SRC[2];                                      //  Read data for z source
+	file >> B->SRC[3];                                      //  Read data for core radius
+#else
+	file >> B->SRC;                                         //  Read data for charge
+#endif
+      }                                                         // End loop over bodies
+      filePosition = file.tellg();                              // Get position in file
+      file.close();                                             // Close file
+    }
+
+    //! Write source values to file
+    void writeSources(Bodies & bodies, int mpirank) {
+      std::stringstream name;                                   // File name
+      name << "source" << std::setfill('0') << std::setw(4)     // Set format
+	   << mpirank << ".dat";                                // Create file name
+      std::ofstream file(name.str().c_str(),std::ios::out);     // Open file
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
+	file << B->X[0] << std::endl;                           //  Write data for x coordinates
+	file << B->X[1] << std::endl;                           //  Write data for y coordinates
+	file << B->X[2] << std::endl;                           //  Write data for z coordinates
+#if EXAFMM_BIOTSAVART
+	file << B->SRC[0] << std::endl;                         //  Write data for x source
+	file << B->SRC[1] << std::endl;                         //  Write data for y source
+	file << B->SRC[2] << std::endl;                         //  Write data for z source
+	file << B->SRC[3] << std::endl;                         //  Write data for core radius
+#else
+	file << B->SRC << std::endl;                            //  Write data for charge
+#endif
+      }                                                         // End loop over bodies
+      file.close();                                             // Close file
+    }
+
     //! Initialize target values
     void initTarget(Bodies & bodies) {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies

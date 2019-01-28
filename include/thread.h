@@ -1,17 +1,14 @@
 #ifndef thread_h
 #define thread_h
 #include "config.h"
+#if !__FUJITSU
 #pragma GCC system_header
-
-#if EXAFMM_WITH_CILK
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 #endif
 
 #if EXAFMM_WITH_TBB
 #define num_threads(E)                tbb::task_scheduler_init init(E)
 #if DAG_RECORDER == 2  /* TBB with DAG Recorder */
-#define TO_TBB 1 
+#define TO_TBB 1
 #include <tpswitch/tpswitch.h>
 #include <tbb/task_scheduler_init.h>
 using namespace mtbb;
@@ -30,15 +27,6 @@ using namespace tbb;
 #define num_threads(E)		      myth_init_ex(E, 1 << 16)
 #define TO_MTHREAD_NATIVE 1
 #include <tpswitch/tpswitch.h>
-
-#elif EXAFMM_WITH_CILK
-#define num_threads(E)                char nworkers[32]; sprintf(nworkers,"%d",E); __cilkrts_set_param("nworkers",nworkers)
-#define mk_task_group
-#define wait_tasks                    cilk_sync
-template<class Call>
-void call(Call C) { C(); }
-#define create_taskc(E)               cilk_spawn call(E)
-#define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
 
 #elif EXAFMM_WITH_OPENMP
 #include <omp.h>

@@ -2,8 +2,9 @@
 #define kahan_h
 #include <iostream>
 #include "macros.h"
+#include "namespace.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   //! Operator overloading for Kahan summation
   template<typename T>
   struct kahan {
@@ -42,19 +43,19 @@ namespace exafmm {
       T y = - v - c;
       T t = s + y;
       c = (t - s) - y;
-      s = t; 
+      s = t;
       return *this;
     }
     __host__ __device__ __forceinline__
     const kahan &operator*=(const T v) {                        // Scalar compound assignment (multiply)
       c *= v;
-      s *= v; 
+      s *= v;
       return *this;
     }
     __host__ __device__ __forceinline__
     const kahan &operator/=(const T v) {                        // Scalar compound assignment (divide)
       c /= v;
-      s /= v; 
+      s /= v;
       return *this;
     }
     __host__ __device__ __forceinline__
@@ -90,13 +91,13 @@ namespace exafmm {
     __host__ __device__ __forceinline__
     const kahan &operator*=(const kahan & v) {                  // Vector compound assignment (multiply)
       c *= (v.c + v.s);
-      s *= (v.c + v.s); 
+      s *= (v.c + v.s);
       return *this;
     }
     __host__ __device__ __forceinline__
     const kahan &operator/=(const kahan & v) {                  // Vector compound assignment (divide)
       c /= (v.c + v.s);
-      s /= (v.c + v.s); 
+      s /= (v.c + v.s);
       return *this;
     }
     __host__ __device__ __forceinline__
@@ -109,7 +110,7 @@ namespace exafmm {
     __host__ __device__ __forceinline__
     operator       T ()       {return s+c;}                     // Type-casting (lvalue)
     __host__ __device__ __forceinline__
-    operator const T () const {return s+c;}                     // Type-casting (rvalue) 
+    operator const T () const {return s+c;}                     // Type-casting (rvalue)
     friend std::ostream &operator<<(std::ostream & o, const kahan & v) { // Output stream
       o << (v.s + v.c);
       return o;

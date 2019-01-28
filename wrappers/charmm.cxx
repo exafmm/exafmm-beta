@@ -3,6 +3,7 @@
 #include "bound_box.h"
 #include "build_tree.h"
 #include "ewald.h"
+#include "kernel.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
@@ -10,28 +11,22 @@
 #include "up_down_pass.h"
 #include "van_der_waals.h"
 #include "verify.h"
-#include "laplace_spherical_cpu.h"
 
-namespace exafmm {
-  typedef LaplaceSphericalCPU<Pmax> Kernel;
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
-  vec3 KernelBase::Xperiodic = 0;
-  real_t KernelBase::eps2 = 0.0;
+namespace exafmm_laplace {
   static const double Celec = 332.0716;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 
   Args * args;
   BaseMPI * baseMPI;
-  BoundBox<Kernel> * boundBox;
-  BuildTree<Kernel> * localTree, * globalTree;
-  Partition<Kernel> * partition;
-  Traversal<Kernel> * traversal;
-  TreeMPI<Kernel> * treeMPI;
-  UpDownPass<Kernel> * upDownPass;
-  Verify<Kernel> * verify;
+  BoundBox * boundBox;
+  BuildTree * localTree, * globalTree;
+  Kernel * kernel;
+  Partition * partition;
+  Traversal * traversal;
+  TreeMPI * treeMPI;
+  UpDownPass * upDownPass;
+  Verify * verify;
 
   bool isTime;
   bool pass;
@@ -39,23 +34,22 @@ namespace exafmm {
   Bounds localBounds;
   Bounds globalBounds;
 
-  extern "C" void fmm_init_(int & images, double & theta, int & verbose, int &, char * path, size_t *) {
-    const int ncrit = 16;
+  extern "C" void fmm_init_(int & expansions, int & images, double & theta, int & verbose, int &, char * path, size_t *) {
+    const int P = expansions;
+    const int ncrit = 64;
     const int nspawn = 1000;
-    const bool useRmax = true;
-    const bool useRopt = false;
-    Kernel::init();
 
     args = new Args;
     baseMPI = new BaseMPI;
-    boundBox = new BoundBox<Kernel>(nspawn);
-    localTree = new BuildTree<Kernel>(ncrit, nspawn);
-    globalTree = new BuildTree<Kernel>(1, nspawn);
-    partition = new Partition<Kernel>(baseMPI->mpirank, baseMPI->mpisize);
-    traversal = new Traversal<Kernel>(nspawn, images, path);
-    treeMPI = new TreeMPI<Kernel>(baseMPI->mpirank, baseMPI->mpisize, images);
-    upDownPass = new UpDownPass<Kernel>(theta, useRmax, useRopt);
-    verify = new Verify<Kernel>(path);
+    boundBox = new BoundBox;
+    localTree = new BuildTree(ncrit);
+    globalTree = new BuildTree(1);
+    kernel = new Kernel(P, eps2, wavek);
+    partition = new Partition(*baseMPI);
+    traversal = new Traversal(*kernel, theta, nspawn, images, path);
+    treeMPI = new TreeMPI(*kernel, *baseMPI, theta, images);
+    upDownPass = new UpDownPass(*kernel);
+    verify = new Verify(path);
 
     args->ncrit = ncrit;
     args->accuracy = 1;
@@ -63,26 +57,21 @@ namespace exafmm {
     args->dual = 1;
     args->graft = 0;
     args->images = images;
-    args->mutual = 0;
     args->numBodies = 0;
     args->path = path;
-    args->useRopt = useRopt;
     args->nspawn = nspawn;
     args->theta = theta;
     args->verbose = verbose & (baseMPI->mpirank == 0);
-    args->useRmax = useRmax;
     verify->verbose = baseMPI->mpirank == 0;
     logger::verbose = args->verbose;
     logger::path = args->path;
     logger::printTitle("Initial Parameters");
     args->print(logger::stringLength);
-
     pass = true;
     isTime = false;
   }
 
   extern "C" void fmm_finalize_() {
-    Kernel::finalize();
     delete args;
     delete baseMPI;
     delete boundBox;
@@ -184,7 +173,7 @@ namespace exafmm {
     treeMPI->commCells();
     traversal->initListCount(cells);
     traversal->initWeight(cells);
-    traversal->traverse(cells, cells, cycles, args->dual, args->mutual);
+    traversal->traverse(cells, cells, cycles, args->dual);
     Cells jcells;
     if (baseMPI->mpisize > 1) {
       if (args->graft) {
@@ -192,11 +181,11 @@ namespace exafmm {
         Bodies gbodies = treeMPI->root2body();
         jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
         treeMPI->attachRoot(jcells);
-        traversal->traverse(cells, jcells, cycles, args->dual, false);
+        traversal->traverse(cells, jcells, cycles, args->dual);
       } else {
         for (int irank=0; irank<baseMPI->mpisize; irank++) {
           treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-          traversal->traverse(cells, jcells, cycles, args->dual, false);
+          traversal->traverse(cells, jcells, cycles, args->dual);
         }
       }
     }
@@ -234,7 +223,7 @@ namespace exafmm {
   extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
                                  int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
     vec3 cycles = cycle;
-    Ewald<Kernel> * ewald = new Ewald<Kernel>(ksize, alpha, sigma, cutoff, cycles);
+    Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycles);
     const int shift = 29;
     const int mask = ~(0x7U << shift);
     int nlocal = 0;
@@ -404,7 +393,7 @@ namespace exafmm {
                                    double & cuton, double & cutoff, double & cycle,
                                    int & numTypes, double * rscale, double * gscale, double * fgscale) {
     vec3 cycles = cycle;
-    VanDerWaals<Kernel> * VDW = new VanDerWaals<Kernel>(cuton, cutoff, cycles, numTypes, rscale, gscale, fgscale);
+    VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycles, numTypes, rscale, gscale, fgscale);
     const int shift = 29;
     const int mask = ~(0x7U << shift);
     int nlocal = 0;

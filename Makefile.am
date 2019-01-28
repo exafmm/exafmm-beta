@@ -11,6 +11,7 @@ cleanlib:
 cleanreg:
 	@find . -name "*.reg" | xargs rm -f
 cleanall:
+	make clean
 	make cleanbin
 	make cleandat
 	make cleanlib

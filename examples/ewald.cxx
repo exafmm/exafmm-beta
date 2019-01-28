@@ -4,48 +4,45 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
+#include "kernel.h"
 #include "logger.h"
+#include "namespace.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#include "laplace_spherical_cpu.h"
-using namespace exafmm;
-vec3 KernelBase::Xperiodic = 0;
-real_t KernelBase::eps2 = 0.0;
+using namespace EXAFMM_NAMESPACE;
 
-template<typename Kernel>
-void fmm(Args args) {
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
+int main(int argc, char ** argv) {
+  const int numBodies = 1000;
   const int ksize = 11;
   const vec3 cycle = 2 * M_PI;
-  const real_t alpha = 10 / max(cycle);
+  const real_t alpha = ksize / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = max(cycle) / 2;
-  args.numBodies = 1000;
-  args.images = 3;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  Args args(argc, argv);
+  args.numBodies = numBodies;
+  //args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
-  BoundBox<Kernel> boundBox(args.nspawn);
+  BoundBox boundBox;
   Bounds localBounds, globalBounds;
-  BuildTree<Kernel> localTree(args.ncrit, args.nspawn);
-  BuildTree<Kernel> globalTree(1, args.nspawn);
+  BuildTree localTree(args.ncrit);
+  BuildTree globalTree(1);
   Cells cells, jcells;
-  Dataset<Kernel> data;
-  Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
-  Partition<Kernel> partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  TreeMPI<Kernel> treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
-  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify<Kernel> verify(args.path);
+  Dataset data;
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
+  Kernel kernel(args.P, eps2, wavek);
+  Partition partition(baseMPI);
+  Traversal traversal(kernel, args.theta, args.nspawn, args.images, args.path);
+  TreeMPI treeMPI(kernel, baseMPI, args.theta, args.images);
+  UpDownPass upDownPass(kernel);
+  Verify verify(args.path);
   num_threads(args.threads);
 
-  Kernel::init();
   args.verbose &= baseMPI.mpirank == 0;
   verify.verbose = args.verbose;
   logger::verbose = args.verbose;
@@ -82,41 +79,41 @@ void fmm(Args args) {
       treeMPI.setLET(cells, cycle);
       treeMPI.commBodies();
       treeMPI.commCells();
-
       traversal.initListCount(cells);
       traversal.initWeight(cells);
-      traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
+      traversal.traverse(cells, cells, cycle, args.dual);
       if (baseMPI.mpisize > 1) {
         if (args.graft) {
           treeMPI.linkLET();
           gbodies = treeMPI.root2body();
           jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
           treeMPI.attachRoot(jcells);
-          traversal.traverse(cells, jcells, cycle, args.dual, false);
+          traversal.traverse(cells, jcells, cycle, args.dual);
         } else {
           for (int irank=0; irank<baseMPI.mpisize; irank++) {
             treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
-            traversal.traverse(cells, jcells, cycle, args.dual, false);
+            traversal.traverse(cells, jcells, cycle, args.dual);
           }
         }
       }
       upDownPass.downwardPass(cells);
-      vec3 localDipole = upDownPass.getDipole(bodies,0);
-      vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
-      int numBodies = baseMPI.allreduceInt(bodies.size());
-      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     }
     logger::stopPAPI();
     double totalFMM = logger::stopTimer("Total FMM");
     totalFMM /= numIteration;
 
     if (!isTime) {
-#if 1
+      buffer = bodies;
+#if 0 // 0: direct 1: Ewald
+      vec3 localDipole = upDownPass.getDipole(bodies,0);
+      vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
+      int numBodies = baseMPI.allreduceInt(bodies.size());
+      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
       bodies2 = bodies;
       data.initTarget(bodies);
       logger::printTitle("Ewald Profiling");
       logger::startTimer("Total Ewald");
-#if 1
+#if 1 // 0: gather bodies 1: shift bodies
       jbodies = bodies;
       for (int i=0; i<baseMPI.mpisize; i++) {
         if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
@@ -126,21 +123,19 @@ void fmm(Args args) {
         ewald.wavePart(bodies, jbodies);
         ewald.realPart(cells, jcells);
       }
-#else
+#else // gather bodies
       jbodies = treeMPI.allgatherBodies(bodies);
       jcells = localTree.buildTree(jbodies, buffer, globalBounds);
       ewald.wavePart(bodies, jbodies);
       ewald.realPart(cells, jcells);
 #endif
-
       ewald.selfTerm(bodies);
       logger::printTitle("Total runtime");
       logger::printTime("Total FMM");
       logger::stopTimer("Total Ewald");
-#else
+#else // direct
       jbodies = bodies;
       const int numTargets = 100;
-      buffer = bodies;
       data.sampleBodies(bodies, numTargets);
       bodies2 = bodies;
       data.initTarget(bodies);
@@ -150,12 +145,9 @@ void fmm(Args args) {
         traversal.direct(bodies, jbodies, cycle);
         if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
       }
-      traversal.normalize(bodies);
-      upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
       logger::printTitle("Total runtime");
       logger::printTime("Total FMM");
       logger::stopTimer("Total Direct");
-      bodies = buffer;
 #endif
       double potSum = verify.getSumScalar(bodies);
       double potSum2 = verify.getSumScalar(bodies2);
@@ -186,6 +178,7 @@ void fmm(Args args) {
         t = -1;
         isTime = true;
       }
+      bodies = buffer;
     } else {
       double totalFMMGlob;
       MPI_Reduce(&totalFMM, &totalFMMGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -208,11 +201,5 @@ void fmm(Args args) {
     }
     abort();
   }
-  Kernel::finalize();
-}
-
-int main(int argc, char ** argv) {
-  Args args(argc, argv);
-  fmm<LaplaceSphericalCPU<10> >(args);
   return 0;
 }

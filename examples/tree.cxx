@@ -3,33 +3,28 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
-using namespace exafmm;
-#include "laplace_cartesian_cpu.h"
+#include "kernel.h"
+#include "namespace.h"
+using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  typedef LaplaceCartesianCPU<4,0> Kernel;
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
   Bodies bodies, bodies2, jbodies, buffer;
-  BoundBox<Kernel> boundBox(args.nspawn);
+  BoundBox boundBox;
   Bounds bounds;
-  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
+  BuildTree buildTree(args.ncrit);
   Cells cells, jcells;
-  Dataset<Kernel> data;
+  Dataset data;
   num_threads(args.threads);
 
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength);
   buffer.reserve(args.numBodies);
-  double * grow1 = new double [args.repeat+1];
-  double * link1 = new double [args.repeat+1];
-  double * grow2 = new double [args.repeat+1];
-  double * link2 = new double [args.repeat+1];
+  std::vector<double> grow1(args.repeat+1);
+  std::vector<double> link1(args.repeat+1);
+  std::vector<double> grow2(args.repeat+1);
+  std::vector<double> link2(args.repeat+1);
   for (int t=0; t<args.repeat+1; t++) {
     std::cout << t << std::endl;
     bodies = data.initBodies(args.numBodies, args.distribution, 0);
@@ -71,10 +66,6 @@ int main(int argc, char ** argv) {
 	    << " Link2: " << link2ave << "+-" << link2std << std::endl;
   std::ofstream fid("time.dat", std::ios::app);
   fid << args.numBodies << " " << args.threads << " " << grow1ave << " " << grow2ave << std::endl;
-  delete[] grow1;
-  delete[] link1;
-  delete[] grow2;
-  delete[] link2;
   fid.close();
   return 0;
 }

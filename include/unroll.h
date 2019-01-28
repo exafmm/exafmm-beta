@@ -1,8 +1,9 @@
 #ifndef unroll_h
 #define unroll_h
 #include "macros.h"
+#include "namespace.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   namespace Ops {
     template<typename T> struct Assign {
       __host__ __device__ __forceinline__

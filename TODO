@@ -1,10 +1,19 @@
 -- Immediate --
 * Rank items in this list according to importance
 
-- Modylas
- - Full P loop in M2L
- - Runtime P in wrapper
- - Ewald for periodic
+Debug images >= 3
+Remove nspawn
+.h to .cxx
+Ewald on multipoles
+Search source files for unnecessary functions
+Search TODO list and extract priority tasks
+
+-- later --
+Add back time regression
+Fix parallel Biot-Savart
+Fix nightly
+Test debug option
+Remove 1e-5 from bound_box
 
 - PetIGA no macro
 - Helmholtz breaks for very low P
@@ -55,6 +64,7 @@ Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
 FX10 sin, cos, exp intrinsic
+Use kvec3 in Biot-Savart
 
 -- driver --
 - System benchmarking, HPCC, SPEC, for CPU, GPU, MPI performance
@@ -82,6 +92,14 @@ ORB vs. HOT
 OpenMP vs. TBB vs. Cilk vs. MThreads
 Geometric vs. Algebraic Mat-Vec
 benchmark against uniform on kyoto
+
+-- things that were removed --
+TBB, Cilk, MassiveThreads
+GPU
+2d
+Rmax
+Ropt
+Mass
 
 -- documentation --
 - JOSS paper

@@ -73,8 +73,8 @@ int main(int argc, char ** argv) {
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
-  int nb = 50000 / mpisize;
-  int nv = 100000 / mpisize;
+  int nb = 5000 / mpisize;
+  int nv = 10000 / mpisize;
   int nit = 10;
 
   srand48(mpirank);

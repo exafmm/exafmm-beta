@@ -595,8 +595,6 @@ EXAFMM_HAVE_INTEL_FALSE
 EXAFMM_HAVE_INTEL_TRUE
 EXAFMM_HAVE_CRAY_FALSE
 EXAFMM_HAVE_CRAY_TRUE
-EXAFMM_HAVE_SX_FALSE
-EXAFMM_HAVE_SX_TRUE
 EXAFMM_HAVE_FX_FALSE
 EXAFMM_HAVE_FX_TRUE
 EXAFMM_HAVE_BG_FALSE
@@ -656,8 +654,6 @@ EXAFMM_WITH_STRUMPACK_FALSE
 EXAFMM_WITH_STRUMPACK_TRUE
 EXAFMM_WITH_MTHREAD_FALSE
 EXAFMM_WITH_MTHREAD_TRUE
-EXAFMM_WITH_CILK_FALSE
-EXAFMM_WITH_CILK_TRUE
 EXAFMM_WITH_TBB_FALSE
 EXAFMM_WITH_TBB_TRUE
 EXAFMM_HAVE_OPENMP_FALSE
@@ -768,7 +764,6 @@ enable_maintainer_mode
 enable_dependency_tracking
 enable_openmp
 with_tbb
-with_cilk
 with_mthread
 with_strumpack
 enable_single
@@ -1452,7 +1447,6 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-tbb              use Intel TBB
-  --with-cilk             use Intel Cilk
   --with-mthread          use MassiveThreads
   --with-strumpack        use Strumpack
 
@@ -4789,29 +4783,6 @@ else
 fi
 
 
-# Intel Cilk
-
-# Check whether --with-cilk was given.
-if test "${with_cilk+set}" = set; then :
-  withval=$with_cilk; with_cilk=$withval
-else
-  with_cilk=no
-fi
-
-if test "$with_cilk" = "yes"; then
-
-$as_echo "#define EXAFMM_WITH_CILK 1" >>confdefs.h
-
-fi
- if test "$with_cilk" = "yes"; then
-  EXAFMM_WITH_CILK_TRUE=
-  EXAFMM_WITH_CILK_FALSE='#'
-else
-  EXAFMM_WITH_CILK_TRUE='#'
-  EXAFMM_WITH_CILK_FALSE=
-fi
-
-
 # MassiveThreads
 
 # Check whether --with-mthread was given.
@@ -6433,14 +6404,6 @@ else
   EXAFMM_HAVE_FX_FALSE=
 fi
 
- if test "$ax_cv_cxx_compiler_vendor" = "nec"; then
-  EXAFMM_HAVE_SX_TRUE=
-  EXAFMM_HAVE_SX_FALSE='#'
-else
-  EXAFMM_HAVE_SX_TRUE='#'
-  EXAFMM_HAVE_SX_FALSE=
-fi
-
  if test "$CXX" = "CC"; then
   EXAFMM_HAVE_CRAY_TRUE=
   EXAFMM_HAVE_CRAY_FALSE='#'
@@ -6623,10 +6586,6 @@ if test -z "${EXAFMM_WITH_TBB_TRUE}" && test -z "${EXAFMM_WITH_TBB_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_WITH_TBB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${EXAFMM_WITH_CILK_TRUE}" && test -z "${EXAFMM_WITH_CILK_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_WITH_CILK\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${EXAFMM_WITH_MTHREAD_TRUE}" && test -z "${EXAFMM_WITH_MTHREAD_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_WITH_MTHREAD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -6709,10 +6668,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_FX_TRUE}" && test -z "${EXAFMM_HAVE_FX_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_HAVE_FX\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_SX_TRUE}" && test -z "${EXAFMM_HAVE_SX_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_SX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_CRAY_TRUE}" && test -z "${EXAFMM_HAVE_CRAY_FALSE}"; then

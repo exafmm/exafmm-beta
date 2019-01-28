@@ -57,9 +57,6 @@
 /* Enable weight for partitioning. */
 #undef EXAFMM_USE_WEIGHT
 
-/* Use Intel Cilk */
-#undef EXAFMM_WITH_CILK
-
 /* Use MassiveThreads */
 #undef EXAFMM_WITH_MTHREAD
 

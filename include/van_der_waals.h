@@ -1,16 +1,11 @@
 #ifndef van_der_waals_h
 #define van_der_waals_h
 #include "logger.h"
+#include "namespace.h"
 #include "types.h"
 
-namespace exafmm {
-  template<typename Kernel>
+namespace EXAFMM_NAMESPACE {
   class VanDerWaals {
-    typedef typename Kernel::Bodies Bodies;                     //!< Vector of bodies
-    typedef typename Kernel::Cells Cells;                       //!< Vector of cells
-    typedef typename Kernel::B_iter B_iter;                     //!< Iterator of body vector
-    typedef typename Kernel::C_iter C_iter;                     //!< Iterator of cell vecto
-
   private:
     const real_t cuton;                                         //!< Cuton distance
     const real_t cutoff;                                        //!< Cutoff distance
@@ -75,7 +70,7 @@ namespace exafmm {
         vec3 Xperiodic = Ci->X - Cj->X - dX;                    //  Coordinate offset for periodic B.C.
         real_t R = std::sqrt(norm(dX));                         //  Scalar distance
         if (R - Ci->R - Cj->R < sqrtf(3) * VdW->cutoff) {       //  If cells are close
-          if(Cj->NCHILD == 0) VdW->P2P(Ci, Cj, Xperiodic);      //   Van der Waals kernel 
+          if(Cj->NCHILD == 0) VdW->P2P(Ci, Cj, Xperiodic);      //   Van der Waals kernel
           for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
             Neighbor neighbor(VdW, Ci, CC, C0);                 //    Instantiate recursive functor
             neighbor();                                         //    Recursive call

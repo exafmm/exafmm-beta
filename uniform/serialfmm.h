@@ -1,7 +1,8 @@
 #include <mpi.h>
 #include "evaluator.h"
+#include "namespace.h"
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class SerialFMM : public Evaluator {
   protected:
     int bodiesDispl[26];
@@ -130,7 +131,7 @@ namespace exafmm {
 	Imin = EXAFMM_MIN(Imin,key[i]);
       }
       int numBucket = Imax - Imin + 1;
-      int *bucket = new int [numBucket];
+      std::vector<int> bucket(numBucket);
       for( int i=0; i<numBucket; i++ ) bucket[i] = 0;
       for( int i=0; i<numBodies; i++ ) bucket[key[i]-Imin]++;
       for( int i=1; i<numBucket; i++ ) bucket[i] += bucket[i-1];
@@ -140,7 +141,6 @@ namespace exafmm {
 	ibuffer[inew] = index[i];
 	for_4d buffer[inew][d] = bodies[i][d];
       }
-      delete[] bucket;
     }
 
   public:

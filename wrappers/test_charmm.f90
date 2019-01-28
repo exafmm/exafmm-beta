@@ -728,7 +728,7 @@ program main
   logical test_force
   character(len=128) path,infile,outfile,nstp
   integer dynsteps,accuracy
-  integer i,itry,nitr,itr,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
+  integer i,itry,nitr,itr,ierr,expansions,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
   real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time,tic,toc
   real(8) pl2err,fl2err,enerf,enere,grmsf,grmse
@@ -744,8 +744,9 @@ program main
   call mpi_comm_size(mpi_comm_world,mpisize,ierr)
   call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
   nglobal = 1000
-  images = 3
-  theta = 0.3
+  expansions = 16
+  images = 5
+  theta = 0.5
   verbose = 0
   pcycle = 2 * nglobal ** (1. / 6)
   cutoff = 3 * nglobal ** (1. / 6)
@@ -827,7 +828,7 @@ program main
   enddo
   if (mpirank == 0) print*,'FMM init'
   path = trim(path)//c_null_char
-  call fmm_init(images,theta,verbose,nglobal,path)
+  call fmm_init(expansions,images,theta,verbose,nglobal,path)
   if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
 

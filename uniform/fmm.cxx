@@ -4,6 +4,8 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
+#include "kernel.h"
+#include "namespace.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
@@ -13,40 +15,34 @@
 #else
 #include "../uniform/parallelfmm.h"
 #endif
-using namespace exafmm;
-#include "laplace_cartesian_cpu.h"
-real_t KernelBase::eps2 = 0.0;
-vec3 KernelBase::Xperiodic = 0.0;
+using namespace EXAFMM_NAMESPACE;
 
 int main(int argc, char ** argv) {
-  Args args(argc, argv);
-  args.ncrit = 32;
-  args.images = 1;
-  typedef LaplaceCartesianCPU<6,0> Kernel;
-  typedef typename Kernel::Bodies Bodies;                       //!< Vector of bodies
-  typedef typename Kernel::Cells Cells;                         //!< Vector of cells
-  typedef typename Kernel::B_iter B_iter;                       //!< Iterator of body vector
-  typedef typename Kernel::C_iter C_iter;                       //!< Iterator of cell vector
-
   const int ksize = 11;
   const vec3 cycle = 20 * M_PI;
   const real_t alpha = 10 / max(cycle);
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
+  const real_t eps2 = 0.0;
+  const complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  Args args(argc, argv);
+  args.ncrit = 32;
+  args.images = 1;
   BaseMPI baseMPI;
-  BoundBox<Kernel> boundBox(args.nspawn);
-  BuildTree<Kernel> buildTree(args.ncrit, args.nspawn);
-  Dataset<Kernel> data;
-  Ewald<Kernel> ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal<Kernel> traversal(args.nspawn, args.images, args.path);
-  UpDownPass<Kernel> upDownPass(args.theta, args.useRmax, args.useRopt);
+  BoundBox boundBox;
+  BuildTree buildTree(args.ncrit);
+  Dataset data;
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
+  Kernel kernel(args.P, eps2, wavek);
+  Traversal traversal(kernel, args.theta, args.nspawn, args.images, args.path);
+  UpDownPass upDownPass(kernel);
 #if EXAFMM_SERIAL
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
-  TreeMPI<Kernel> treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
-  Verify<Kernel> verify(args.path);
+  TreeMPI treeMPI(kernel, baseMPI, args.theta, args.images);
+  Verify verify(args.path);
   verify.verbose = args.verbose;
 
   args.numBodies /= FMM.MPISIZE;
@@ -71,7 +67,7 @@ int main(int argc, char ** argv) {
   FMM.partitioner(gatherLevel);
   logger::stopTimer("Partition");
 
-  for( int it=0; it<1; it++ ) {
+  for (int it=0; it<1; it++) {
     int ix[3] = {0, 0, 0};
     FMM.R0 = 0.5 * max(cycle) / FMM.numPartition[FMM.maxGlobLevel][0];
     for_3d FMM.RGlob[d] = FMM.R0 * FMM.numPartition[FMM.maxGlobLevel][d];
@@ -79,7 +75,7 @@ int main(int argc, char ** argv) {
     for_3d FMM.X0[d] = 2 * FMM.R0 * (ix[d] + .5);
     srand48(FMM.MPIRANK);
     real_t average = 0;
-    for( int i=0; i<FMM.numBodies; i++ ) {
+    for (int i=0; i<FMM.numBodies; i++) {
       FMM.Jbodies[i][0] = 2 * FMM.R0 * (drand48() + ix[0]);
       FMM.Jbodies[i][1] = 2 * FMM.R0 * (drand48() + ix[1]);
       FMM.Jbodies[i][2] = 2 * FMM.R0 * (drand48() + ix[2]);
@@ -87,10 +83,10 @@ int main(int argc, char ** argv) {
       average += FMM.Jbodies[i][3];
     }
     average /= FMM.numBodies;
-    for( int i=0; i<FMM.numBodies; i++ ) {
+    for (int i=0; i<FMM.numBodies; i++) {
       FMM.Jbodies[i][3] -= average;
     }
-  
+
     logger::startTimer("Grow tree");
     FMM.sortBodies();
     FMM.buildTree();
@@ -103,15 +99,15 @@ int main(int argc, char ** argv) {
     FMM.P2PRecv();
     logger::stopTimer("Comm LET bodies");
 #endif
-  
+
     logger::startTimer("Upward pass");
     FMM.upwardPass();
     logger::stopTimer("Upward pass");
-  
+
 #if EXAFMM_SERIAL
 #else
     logger::startTimer("Comm LET cells");
-    for( int lev=FMM.maxLevel; lev>0; lev-- ) {
+    for (int lev=FMM.maxLevel; lev>0; lev--) {
       MPI_Barrier(MPI_COMM_WORLD);
       FMM.M2LSend(lev);
       FMM.M2LRecv(lev);
@@ -121,7 +117,7 @@ int main(int argc, char ** argv) {
     FMM.globM2M();
     FMM.globM2L();
 #endif
-  
+
     FMM.periodicM2L();
 
 #if EXAFMM_SERIAL
@@ -130,7 +126,7 @@ int main(int argc, char ** argv) {
     FMM.globL2L();
     logger::stopTimer("Downward pass", 0);
 #endif
-  
+
     FMM.downwardPass();
     logger::stopTimer("Total FMM", 0);
 
@@ -175,7 +171,6 @@ int main(int argc, char ** argv) {
       if (FMM.MPISIZE > 1) treeMPI.shiftBodies(jbodies);
       traversal.direct(bodies, jbodies, cycle);
     }
-    traversal.normalize(bodies);
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     logger::printTitle("Total runtime");
     logger::printTime("Total FMM");
@@ -201,7 +196,7 @@ int main(int argc, char ** argv) {
     double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
     double potNrmGlob = potSumGlob * potSumGlob;
     double potRel = std::sqrt(potDifGlob/potNrmGlob);
-    double accRel = std::sqrt(accDifGlob/accNrmGlob); 
+    double accRel = std::sqrt(accDifGlob/accNrmGlob);
     verify.print("Rel. L2 Error (pot)",potRel);
     verify.print("Rel. L2 Error (acc)",accRel);
 #endif

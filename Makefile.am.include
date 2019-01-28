@@ -5,12 +5,8 @@ AM_CXXFLAGS = -qarch=qp -qtune=qp -O3 -qhot
 AM_FCFLAGS = -qarch=qp -qtune=qp -O3 -qhot
 else
 if EXAFMM_HAVE_FX
-AM_CXXFLAGS = -Kopenmp
+AM_CXXFLAGS = -Xg -Kopenmp
 AM_FCFLAGS = -Kopenmp -f w
-else
-if EXAFMM_HAVE_SX
-AM_CXXFLAGS = -Caopt -Nacct -O nomsg -pi nomsg -pvctl nomsg
-AM_FCFLAGS = -Caopt -Nacct -O nomsg -pvctl nomsg
 else
 if EXAFMM_HAVE_CRAY
 AM_CXXFLAGS = -dynamic
@@ -25,7 +21,7 @@ AM_FCFLAGS += -ansi_alias
 endif
 else
 if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS = -ansi_alias -fabi-version=6 -Wfatal-errors
+AM_CXXFLAGS = -ansi_alias -fabi-version=6 -Wfatal-errors -wd11070,11071
 AM_FCFLAGS = -ansi_alias
 else
 if EXAFMM_HAVE_CLANG
@@ -44,7 +40,6 @@ endif
 endif
 endif
 endif
-endif
 
 # Thread libraries
 if EXAFMM_HAVE_OPENMP
@@ -54,9 +49,6 @@ AM_FCFLAGS += $(OPENMP_CXXFLAGS)
 endif
 if EXAFMM_WITH_TBB
 LIBS += -ltbb
-endif
-if EXAFMM_WITH_CILK
-LIBS += -lcilkrts
 endif
 if EXAFMM_WITH_MTHREAD
 LIBS += -lmyth-native

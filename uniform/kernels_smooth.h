@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include "namespace.h"
 #include <omp.h>
 
 #define EXAFMM_PP 6
@@ -22,7 +23,7 @@ const real_t ALPHA_L = 100;
 #define EXAFMM_MAX(a,b) (((a) > (b)) ? (a) : (b))
 #define EXAFMM_MIN(a,b) (((a) < (b)) ? (a) : (b))
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   class UniformKernel {
   public:
     int maxLevel;
@@ -99,8 +100,8 @@ namespace exafmm {
 	  real_t dX[3];
 	  for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
 	  real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
-	  real_t invR2 = 1.0 / R2;                                  
-	  if( R2 == 0 ) invR2 = 0;                                
+	  real_t invR2 = 1.0 / R2;
+	  if( R2 == 0 ) invR2 = 0;
 	  real_t invR = Jbodies[j][3] * sqrt(invR2) * wi * wj;
 	  real_t invR3 = invR2 * invR;
 	  Po += invR;

@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include "namespace.h"
 #include <pthread.h>
 #include <queue>
 #include <stdint.h>
@@ -19,7 +20,7 @@
 #include <papi.h>
 #endif
 
-namespace exafmm {
+namespace EXAFMM_NAMESPACE {
   //! Structure for pthread based tracer
   struct Tracer {
     pthread_t thread;                                           //!< pthread id
@@ -61,7 +62,7 @@ namespace exafmm {
     //! Cycle counter
     inline uint64_t get_cycle() {
       uint32_t low = 0, high = 0;                               // Define low and high 32 bits of cycle counter
-#if !(__FUJITSU | _SX)
+#if !__FUJITSU
       asm volatile ("rdtsc" : "=a" (low), "=d" (high));         // Call rdtsc
 #endif
       return (uint64_t(high) << 32) | uint64_t(low);            // Return 64 bit cycle counter
@@ -71,7 +72,7 @@ namespace exafmm {
     inline uint64_t get_cycle(uint32_t * id) {
       uint32_t low = 0, high = 0;                               // Define low and high 32 bits of cycle counter
       if (!id) return 0;                                        // Count only for valid thread ID
-#if !(__FUJITSU | _SX)
+#if !__FUJITSU
       asm volatile ("rdtscp" : "=a" (low), "=d" (high), "=c" (*id));// Call rdtscp
 #endif
       return (uint64_t(high) << 32) | uint64_t(low);            // Return 64 bit cycle counter
