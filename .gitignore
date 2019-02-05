@@ -6,7 +6,6 @@
 *.so
 *.out*
 *.th_o
-.deps
 .dirstamp
 
 autom4te.cache

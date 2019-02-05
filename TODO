@@ -19,9 +19,8 @@ Remove 1e-5 from bound_box
 - Helmholtz breaks for very low P
 - Helmholtz breaks for -D
 - With strumpack
-- uniform/fmm.cxx accuracy problem
 - Use EXAFMM_CLUSTER in md_distributed
-- Add kernel.cxx vec.cxx uniform/fmm.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
+- Add kernel.cxx vec.cxx hss/laplace.cxx hss/helmholtz.cxx to nightly test
 - Full simdList, threadList, configList in nightly.py
 
 - Remove make cleanall from build
@@ -91,7 +90,6 @@ Cartesian vs. Spherical vs. Planewave
 ORB vs. HOT
 OpenMP vs. TBB vs. Cilk vs. MThreads
 Geometric vs. Algebraic Mat-Vec
-benchmark against uniform on kyoto
 
 -- things that were removed --
 TBB, Cilk, MassiveThreads

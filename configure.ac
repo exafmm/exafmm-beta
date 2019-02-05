@@ -1,7 +1,7 @@
 # https://www.gnu.org/software/autoconf-archive/The-Macros.html#The-Macros
 AC_INIT([exaFMM], [2.0])
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_FILES([Makefile examples/Makefile wrappers/Makefile uniform/Makefile hss/Makefile])
+AC_CONFIG_FILES([Makefile examples/Makefile wrappers/Makefile hss/Makefile])
 AC_CONFIG_HEADER(config.h)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([examples/fmm.cxx])
