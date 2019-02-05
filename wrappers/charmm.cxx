@@ -36,7 +36,7 @@ namespace exafmm_laplace {
 
   extern "C" void fmm_init_(int & expansions, int & images, double & theta, int & verbose, int &, char * path, size_t *) {
     const int P = expansions;
-    const int ncrit = 64;
+    const int ncrit = 16;
     const int nspawn = 1000;
 
     args = new Args;
